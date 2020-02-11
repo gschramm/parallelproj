@@ -58,7 +58,7 @@ lib_NCparallelproj.joseph3d_lm_back.argtypes = [ar_1d_single,
 np.random.seed(1)
 
 # load full sinogram coordinates
-xstart, xend, img, img_origin, voxsize = setup_testdata(nviews = 244)
+xstart, xend, img, img_origin, voxsize = setup_testdata(nviews = 224)
 
 n_lors = np.prod(xstart.shape[1:])
 
