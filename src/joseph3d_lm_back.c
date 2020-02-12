@@ -19,9 +19,7 @@
  *  @param voxsize     array [vs0, vs1, vs2] of the voxel sizes
  *  @param p           array of length np with the values to be back projected
  *  @param np          number of projections (length of p array)
- *  @param n0          dimension of input img array in 0 direction
- *  @param n1          dimension of input img array in 1 direction
- *  @param n2          dimension of input img array in 2 direction
+ *  @param img_dim     array with dimensions of image [n0,n1,n2]
  */
 void joseph3d_lm_back(float *xstart, 
                       float *xend, 
@@ -30,9 +28,7 @@ void joseph3d_lm_back(float *xstart,
                       float *voxsize,
                       float *p, 
                       unsigned long long np, 
-                      unsigned int n0, 
-                      unsigned int n1, 
-                      unsigned int n2)
+                      unsigned int *img_dim)
 {
   unsigned long long i;
 
@@ -50,6 +46,10 @@ void joseph3d_lm_back(float *xstart,
       int i0_ceil, i1_ceil, i2_ceil;
       float x_pr0, x_pr1, x_pr2;
       float tmp_0, tmp_1, tmp_2;
+
+      unsigned int n0 = img_dim[0];
+      unsigned int n1 = img_dim[1];
+      unsigned int n2 = img_dim[2];
    
       // test whether the ray between the two detectors is most parallel
       // with the 0, 1, or 2 axis
