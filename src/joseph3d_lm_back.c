@@ -32,6 +32,10 @@ void joseph3d_lm_back(float *xstart,
 {
   unsigned long long i;
 
+  unsigned int n0 = img_dim[0];
+  unsigned int n1 = img_dim[1];
+  unsigned int n2 = img_dim[2];
+
   # pragma omp parallel for schedule(static)
   for(i = 0; i < np; i++)
   {
@@ -46,10 +50,6 @@ void joseph3d_lm_back(float *xstart,
       int i0_ceil, i1_ceil, i2_ceil;
       float x_pr0, x_pr1, x_pr2;
       float tmp_0, tmp_1, tmp_2;
-
-      unsigned int n0 = img_dim[0];
-      unsigned int n1 = img_dim[1];
-      unsigned int n2 = img_dim[2];
    
       // test whether the ray between the two detectors is most parallel
       // with the 0, 1, or 2 axis

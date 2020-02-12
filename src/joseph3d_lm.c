@@ -31,6 +31,10 @@ void joseph3d_lm(float *xstart,
 {
   unsigned long long i;
 
+  unsigned int n0 = img_dim[0];
+  unsigned int n1 = img_dim[1];
+  unsigned int n2 = img_dim[2];
+
   # pragma omp parallel for schedule(static)
   for(i = 0; i < np; i++)
   {
@@ -43,10 +47,7 @@ void joseph3d_lm(float *xstart,
     float x_pr0, x_pr1, x_pr2;
     float tmp_0, tmp_1, tmp_2;
     
-    unsigned int n0 = img_dim[0];
-    unsigned int n1 = img_dim[1];
-    unsigned int n2 = img_dim[2];
-    
+        
     // initialize projected value to 0 
     p[i] = 0;
 
