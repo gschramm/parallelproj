@@ -1,8 +1,28 @@
+/**
+ * @file joseph3d_lm_cuda.cu
+ */
+
 #include<stdio.h>
 #include<stdlib.h>
 #include<cuda.h>
 #include<cuda_runtime.h>
 
+/** @brief 3D listmode non-tof joseph forward projector CUDA kernel
+ *
+ *  @param xstart array of shape [3*nlors] with the coordinates of the start points of the LORs.
+ *                The start coordinates of the n-th LOR are at xstart[n*3 + i] with i = 0,1,2 
+ *  @param xend   array of shape [3*nlors] with the coordinates of the end   points of the LORs.
+ *                The start coordinates of the n-th LOR are at xstart[n*3 + i] with i = 0,1,2 
+ *  @param img    array of shape [n0*n1*n2] containing the 3D image to be projected.
+ *                The pixel [i,j,k] ist stored at [n1*n2+i + n2*k + j].
+ *  @param img_origin  array [x0_0,x0_1,x0_2] of coordinates of the center of the [0,0,0] voxel
+ *  @param voxsize     array [vs0, vs1, vs2] of the voxel sizes
+ *  @param p           array of length np (output) used to store the projections
+ *  @param np          number of projections (length of p array)
+ *  @param n0          dimension of input img array in 0 direction
+ *  @param n1          dimension of input img array in 1 direction
+ *  @param n2          dimension of input img array in 2 direction
+ */
 __global__ void joseph3d_lm_cuda_kernel(float *xstart, 
                                         float *xend, 
                                         float *img,
@@ -14,34 +34,6 @@ __global__ void joseph3d_lm_cuda_kernel(float *xstart,
                                         unsigned int n1, 
                                         unsigned int n2)
 {
-  //  3D listmode non-tof joseph forward projector cuda kernel
-  //
-  //  Parameters
-  //  ----------
-  //  xstart, xend : 1d float device arrays of shape [3*nlors]
-  //    with the coordinates of the start / end points of the LORs.
-  //    The start coordinates of the n-th LOR are at xstart[n*3 + i] with i = 0,1,2 
-  //    The end   coordinates of the n-th LOR are at xend[n*3 + i]   with i = 0,1,2 
-  //
-  //  img : 1d float device array [n0*n1*n2]
-  //    containing the 3D image to be projected.
-  //    The pixel [i,j,k] ist stored at [n1*n2+i + n2*k + j].
-  //
-  //  img_origin : 1d float device array [x0_0,x0_1,x0_2]
-  //    coordinates of the center of the [0,0,0] voxel
-  //
-  //  voxsize : 1d float device array [vs0, vs1, vs2]
-  //    the voxel size
-  //
-  //  p : 1d float device array of length np (output)
-  //    used to store the projections
-  //
-  //  np : unsigned long long
-  //    number of projections (length of p array)
-  //
-  //  n0, n1, n2 : unsigned int
-  //    dimension of input img array
-
   unsigned long long i = blockDim.x * blockIdx.x + threadIdx.x;
 
   float d0, d1, d2, d0_sq, d1_sq, d2_sq; 
@@ -233,6 +225,24 @@ __global__ void joseph3d_lm_cuda_kernel(float *xstart,
 //------------------------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
+/** @brief 3D listmode non-tof joseph forward projector CUDA wrapper
+ *
+ *  @param h_xstart array of shape [3*nlors] with the coordinates of the start points of the LORs.
+ *                  The start coordinates of the n-th LOR are at xstart[n*3 + i] with i = 0,1,2 
+ *  @param h_xend   array of shape [3*nlors] with the coordinates of the end   points of the LORs.
+ *                  The start coordinates of the n-th LOR are at xstart[n*3 + i] with i = 0,1,2 
+ *  @param h_img    array of shape [n0*n1*n2] containing the 3D image to be projected.
+ *                  The pixel [i,j,k] ist stored at [n1*n2+i + n2*k + j].
+ *  @param h_img_origin  array [x0_0,x0_1,x0_2] of coordinates of the center of the [0,0,0] voxel
+ *  @param h_voxsize     array [vs0, vs1, vs2] of the voxel sizes
+ *  @param h_p           array of length np (output) used to store the projections
+ *  @param np          number of projections (length of p array)
+ *  @param n0          dimension of input img array in 0 direction
+ *  @param n1          dimension of input img array in 1 direction
+ *  @param n2          dimension of input img array in 2 direction
+ *  @param threadsperblock number of threads per block
+ *  @param num_devices     number of CUDA devices to use. if set to -1 cudaGetDeviceCount() is used
+ */
 extern "C" void joseph3d_lm_cuda(float *h_xstart, 
                                  float *h_xend, 
                                  float *h_img,
@@ -246,42 +256,6 @@ extern "C" void joseph3d_lm_cuda(float *h_xstart,
                                  unsigned int threadsperblock,
                                  int num_devices)
 {
-  //  3D listmode non-tof joseph forward projector cuda wrapper
-  //
-  //  Parameters
-  //  ----------
-  //  h_xstart, h_xend : 1d float arrays of shape [3*nlors]
-  //    with the coordinates of the start / end points of the LORs.
-  //    The start coordinates of the n-th LOR are at xstart[n*3 + i] with i = 0,1,2 
-  //    The end   coordinates of the n-th LOR are at xend[n*3 + i]   with i = 0,1,2 
-  //
-  //  h_img : 1d float array [n0*n1*n2]
-  //    containing the 3D image to be projected.
-  //    The pixel [i,j,k] ist stored at [n1*n2+i + n2*k + j].
-  //
-  //  h_img_origin : 1d float array [x0_0,x0_1,x0_2]
-  //    coordinates of the center of the [0,0,0] voxel
-  //
-  //  h_voxsize : 1d float  array [vs0, vs1, vs2]
-  //    the voxel size
-  //
-  //  h_p : 1d float array of length np (output)
-  //    used to store the projections
-  //
-  //  np : unsigned long long
-  //    number of projections (length of p array)
-  //
-  //  n0, n1, n2 : unsigned int
-  //    dimension of input img array
-  //
-  //  threadsperblock : unsigned int
-  //    number of threads per block
-  //
-  //  num_devices : int
-  //    number of CUDA devices to use
-  //    if this is < 0 than cudaGetDeviceCount() is used to determine
-  //    the number of devices
-
   unsigned int blockspergrid;
 
   dim3 block(threadsperblock);

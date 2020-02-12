@@ -1,8 +1,28 @@
+/**
+ * @file joseph3d_lm_back.c
+ */
+
 #include<stdio.h>
 #include<stdlib.h>
 #include<math.h>
 #include<omp.h>
 
+/** @brief 3D listmode non-tof joseph back projector
+ *
+ *  @param xstart array of shape [3*nlors] with the coordinates of the start points of the LORs.
+ *                The start coordinates of the n-th LOR are at xstart[n*3 + i] with i = 0,1,2 
+ *  @param xend   array of shape [3*nlors] with the coordinates of the end   points of the LORs.
+ *                The start coordinates of the n-th LOR are at xstart[n*3 + i] with i = 0,1,2 
+ *  @param img    array of shape [n0*n1*n2] containing the 3D image used for back projection (output).
+ *                The pixel [i,j,k] ist stored at [n1*n2+i + n2*k + j].
+ *  @param img_origin  array [x0_0,x0_1,x0_2] of coordinates of the center of the [0,0,0] voxel
+ *  @param voxsize     array [vs0, vs1, vs2] of the voxel sizes
+ *  @param p           array of length np with the values to be back projected
+ *  @param np          number of projections (length of p array)
+ *  @param n0          dimension of input img array in 0 direction
+ *  @param n1          dimension of input img array in 1 direction
+ *  @param n2          dimension of input img array in 2 direction
+ */
 void joseph3d_lm_back(float *xstart, 
                       float *xend, 
                       float *img,
@@ -14,34 +34,6 @@ void joseph3d_lm_back(float *xstart,
                       unsigned int n1, 
                       unsigned int n2)
 {
-  //  3D listmode non-tof joseph back projector
-  //  Projection is done in parallel using OpenMP's parallel for
-  //
-  //  Parameters
-  //  ----------
-  //  xstart, xend : 1d float arrays of shape [3*nlors]
-  //    with the coordinates of the start / end points of the LORs.
-  //    The start coordinates of the n-th LOR are at xstart[n*3 + i] with i = 0,1,2 
-  //    The end   coordinates of the n-th LOR are at xend[n*3 + i]   with i = 0,1,2 
-  //
-  //  img : 1d float array [n0*n1*n2] used for the back projection (output)
-  //    The pixel [i,j,k] ist stored at [n1*n2+i + n2*k + j].
-  //
-  //  img_origin : 1d float array [x0_0,x0_1,x0_2]
-  //    coordinates of the center of the [0,0,0] voxel
-  //
-  //  voxsize : 1d float array [vs0, vs1, vs2]
-  //    the voxel size
-  //
-  //  p : 1d float array of length np
-  //    containing the values to be back projected
-  //
-  //  np : unsigned long long
-  //    number of projections (length of p array)
-  //
-  //  n0, n1, n2 : unsigned int
-  //    dimension of input img array
-
   unsigned long long i;
 
   # pragma omp parallel for schedule(static)
