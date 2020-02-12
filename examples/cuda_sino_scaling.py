@@ -23,8 +23,8 @@ threadsperblock = args.tpb
 ###############################################################
 # wrappers to call functions from compiled libs ###############
 
-ar_1d_single = npct.ndpointer(dtype = np.float32, ndim = 1, flags = 'C')
-ar_1d_double = npct.ndpointer(dtype = np.float64, ndim = 1, flags = 'C')
+ar_1d_single = npct.ndpointer(dtype = ctypes.c_float, ndim = 1, flags = 'C')
+ar_1d_uint   = npct.ndpointer(dtype = ctypes.c_uint,  ndim = 1, flags = 'C')
 
 lib_cudaproj = npct.load_library('libparallelproj_cuda.so','../lib')
 
@@ -36,9 +36,7 @@ lib_cudaproj.joseph3d_lm_cuda.argtypes = [ar_1d_single,
                                           ar_1d_single,
                                           ar_1d_single,
                                           ctypes.c_ulonglong,
-                                          ctypes.c_uint,
-                                          ctypes.c_uint,
-                                          ctypes.c_uint,
+                                          ar_1d_uint,
                                           ctypes.c_uint,
                                           ctypes.c_int]
 
@@ -50,9 +48,7 @@ lib_cudaproj.joseph3d_lm_back_cuda.argtypes = [ar_1d_single,
                                                ar_1d_single,
                                                ar_1d_single,
                                                ctypes.c_ulonglong,
-                                               ctypes.c_uint,
-                                               ctypes.c_uint,
-                                               ctypes.c_uint,
+                                               ar_1d_uint,
                                                ctypes.c_uint,
                                                ctypes.c_int]
 
@@ -77,15 +73,15 @@ print(sino_shape)
 xstart = xstart.reshape((3,) + (np.prod(sino_shape),)).transpose()
 xend   = xend.reshape((3,) + (np.prod(sino_shape),)).transpose()
 
-n0, n1, n2 = img.shape
+img_dim    = np.array(img.shape, dtype = ctypes.c_uint)
 nLORs      = xstart.shape[0]
 
 # forward projection
 t0 = time()
-img_fwd = np.zeros(nLORs, np.float32)  
+img_fwd = np.zeros(nLORs, ctypes.c_float)  
 
 ok = lib_cudaproj.joseph3d_lm_cuda(xstart.flatten(), xend.flatten(), img.flatten(), 
-                                  img_origin, voxsize, img_fwd, nLORs, n0, n1, n2, 
+                                  img_origin, voxsize, img_fwd, nLORs, img_dim, 
                                   threadsperblock, ngpus)
 
 img_fwd_sino = img_fwd.reshape(sino_shape)
@@ -93,12 +89,12 @@ t1 = time()
 t_fwd = t1 - t0
 
 # back projection
-ones     = np.ones(nLORs, np.float32)
-back_img = np.zeros(np.prod(img.shape), np.float32)
+ones     = np.ones(nLORs, ctypes.c_float)
+back_img = np.zeros(np.prod(img.shape), ctypes.c_float)
 
 t2 = time()
 ok = lib_cudaproj.joseph3d_lm_back_cuda(xstart.flatten(), xend.flatten(), back_img, 
-                                        img_origin, voxsize, ones, nLORs, n0, n1, n2,
+                                        img_origin, voxsize, ones, nLORs, img_dim,
                                         threadsperblock, ngpus)
 back_img = back_img.reshape(img.shape)
 t3 = time()

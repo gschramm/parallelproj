@@ -39,9 +39,7 @@ __global__ void add_to_first_kernel(float* a, float* b, unsigned long long n)
  *  @param voxsize     array [vs0, vs1, vs2] of the voxel sizes
  *  @param p           array of length np containg the values to be back projected
  *  @param np          number of projections (length of p array)
- *  @param n0          dimension of input img array in 0 direction
- *  @param n1          dimension of input img array in 1 direction
- *  @param n2          dimension of input img array in 2 direction
+ *  @param img_dim     array with dimensions of image [n0,n1,n2]
  */
 __global__ void joseph3d_lm_back_cuda_kernel(float *xstart, 
                                              float *xend, 
@@ -50,11 +48,13 @@ __global__ void joseph3d_lm_back_cuda_kernel(float *xstart,
                                              float *voxsize, 
                                              float *p,              
                                              unsigned long long np,
-                                             unsigned int n0, 
-                                             unsigned int n1, 
-                                             unsigned int n2)
+                                             unsigned int *img_dim)
 {
   unsigned long long i = blockDim.x * blockIdx.x + threadIdx.x;
+
+  unsigned int n0 = img_dim[0];
+  unsigned int n1 = img_dim[1];
+  unsigned int n2 = img_dim[2];
 
   float d0, d1, d2, d0_sq, d1_sq, d2_sq;
   float cs0, cs1, cs2, corfac; 
@@ -274,9 +274,7 @@ __global__ void joseph3d_lm_back_cuda_kernel(float *xstart,
  *  @param h_voxsize     array [vs0, vs1, vs2] of the voxel sizes
  *  @param h_p           array of length np containg the values to be back projected
  *  @param np          number of projections (length of p array)
- *  @param n0          dimension of input img array in 0 direction
- *  @param n1          dimension of input img array in 1 direction
- *  @param n2          dimension of input img array in 2 direction
+ *  @param h_img_dim     array with dimensions of image [n0,n1,n2]
  *  @param threadsperblock number of threads per block
  *  @param num_devices     number of CUDA devices to use. if set to -1 cudaGetDeviceCount() is used
  */
@@ -287,9 +285,7 @@ extern "C" void joseph3d_lm_back_cuda(float *h_xstart,
                                       float *h_voxsize, 
                                       float *h_p,
                                       unsigned long long np, 
-                                      unsigned int n0, 
-                                      unsigned int n1, 
-                                      unsigned int n2,
+                                      unsigned int *h_img_dim, 
                                       unsigned int threadsperblock,
                                       int num_devices)
 {
@@ -303,6 +299,10 @@ extern "C" void joseph3d_lm_back_cuda(float *h_xstart,
   // number of projections to be calculated on a device
   unsigned long long dev_nproj;
 
+  unsigned int n0 = h_img_dim[0];
+  unsigned int n1 = h_img_dim[1];
+  unsigned int n2 = h_img_dim[2];
+
   unsigned long long nimg_vox  = n0*n1*n2;
   unsigned long long img_bytes = nimg_vox*sizeof(float);
   unsigned long long proj_bytes_dev;
@@ -311,12 +311,13 @@ extern "C" void joseph3d_lm_back_cuda(float *h_xstart,
   if(num_devices <= 0){cudaGetDeviceCount(&num_devices);}  
 
   // init the dynamic array of device arrays
-  float **d_p          = new float * [num_devices];
-  float **d_xstart     = new float * [num_devices];
-  float **d_xend       = new float * [num_devices];
-  float **d_img        = new float * [num_devices];
-  float **d_img_origin = new float * [num_devices];
-  float **d_voxsize    = new float * [num_devices];
+  float **d_p              = new float * [num_devices];
+  float **d_xstart         = new float * [num_devices];
+  float **d_xend           = new float * [num_devices];
+  float **d_img            = new float * [num_devices];
+  float **d_img_origin     = new float * [num_devices];
+  float **d_voxsize        = new float * [num_devices];
+  unsigned int **d_img_dim = new unsigned int * [num_devices];
 
   // auxiallary image array needed to sum all back projections on device 0
   float *d_img2;
@@ -370,11 +371,14 @@ extern "C" void joseph3d_lm_back_cuda(float *h_xstart,
     cudaMalloc(&d_voxsize[i_dev], 3*sizeof(float));
     cudaMemcpyAsync(d_voxsize[i_dev], h_voxsize, 3*sizeof(float), cudaMemcpyHostToDevice);
 
+    cudaMalloc(&d_img_dim[i_dev], 3*sizeof(unsigned int));
+    cudaMemcpyAsync(d_img_dim[i_dev], h_img_dim, 3*sizeof(unsigned int), cudaMemcpyHostToDevice);
+
     // call the kernel
     joseph3d_lm_back_cuda_kernel<<<grid,block>>>(d_xstart[i_dev], d_xend[i_dev], 
                                                  d_img[i_dev], d_img_origin[i_dev], 
                                                  d_voxsize[i_dev], d_p[i_dev], 
-                                                 dev_nproj, n0, n1, n2); 
+                                                 dev_nproj, d_img_dim[i_dev]); 
 
   }
 
