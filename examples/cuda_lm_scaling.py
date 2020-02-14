@@ -24,8 +24,8 @@ threadsperblock = args.tpb
 ###############################################################
 # wrappers to call functions from compiled libs ###############
 
-ar_1d_single = npct.ndpointer(dtype = np.float32, ndim = 1, flags = 'C')
-ar_1d_double = npct.ndpointer(dtype = np.float64, ndim = 1, flags = 'C')
+ar_1d_single = npct.ndpointer(dtype = ctypes.c_float, ndim = 1, flags = 'C')
+ar_1d_uint   = npct.ndpointer(dtype = ctypes.c_uint,  ndim = 1, flags = 'C')
 
 lib_cudaproj = npct.load_library('libparallelproj_cuda.so','../lib')
 
@@ -37,9 +37,7 @@ lib_cudaproj.joseph3d_lm_cuda.argtypes = [ar_1d_single,
                                           ar_1d_single,
                                           ar_1d_single,
                                           ctypes.c_ulonglong,
-                                          ctypes.c_uint,
-                                          ctypes.c_uint,
-                                          ctypes.c_uint,
+                                          ar_1d_uint,
                                           ctypes.c_uint,
                                           ctypes.c_int]
 
@@ -51,13 +49,9 @@ lib_cudaproj.joseph3d_lm_back_cuda.argtypes = [ar_1d_single,
                                                ar_1d_single,
                                                ar_1d_single,
                                                ctypes.c_ulonglong,
-                                               ctypes.c_uint,
-                                               ctypes.c_uint,
-                                               ctypes.c_uint,
+                                               ar_1d_uint,
                                                ctypes.c_uint,
                                                ctypes.c_int]
-
-
 
 ###############################################################
 ###############################################################
@@ -79,7 +73,7 @@ xend_sino   = xend.reshape((3,n_lors)).transpose()
 # shuffle the LORs to simulate LM behavior
 r_inds = np.random.permutation(n_lors)
 
-n0, n1, n2 = img.shape
+img_dim = np.array(img.shape, dtype = ctypes.c_uint)
 
 for nevents in ne:
   inds   = r_inds[:nevents]
@@ -92,7 +86,7 @@ for nevents in ne:
   img_fwd = np.zeros(nLORs, np.float32)  
   
   ok = lib_cudaproj.joseph3d_lm_cuda(xstart.flatten(), xend.flatten(), img.flatten(), 
-                                     img_origin, voxsize, img_fwd, nLORs, n0, n1, n2,
+                                     img_origin, voxsize, img_fwd, nLORs, img_dim,
                                      threadsperblock, ngpus)
   t1 = time()
   t_fwd = t1 - t0
@@ -103,7 +97,7 @@ for nevents in ne:
   
   t2 = time()
   ok = lib_cudaproj.joseph3d_lm_back_cuda(xstart.flatten(), xend.flatten(), back_img, 
-                                          img_origin, voxsize, ones, nLORs, n0, n1, n2,
+                                          img_origin, voxsize, ones, nLORs, img_dim,
                                           threadsperblock, ngpus)
   back_img = back_img.reshape(img.shape)
   t3 = time()
