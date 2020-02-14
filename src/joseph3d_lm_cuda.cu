@@ -17,8 +17,8 @@
  *                The pixel [i,j,k] ist stored at [n1*n2+i + n2*k + j].
  *  @param img_origin  array [x0_0,x0_1,x0_2] of coordinates of the center of the [0,0,0] voxel
  *  @param voxsize     array [vs0, vs1, vs2] of the voxel sizes
- *  @param p           array of length np (output) used to store the projections
- *  @param np          number of projections (length of p array)
+ *  @param p           array of length nlors (output) used to store the projections
+ *  @param nlors       number of projections (length of p array)
  *  @param img_dim     array with dimensions of image [n0,n1,n2]
  */
 __global__ void joseph3d_lm_cuda_kernel(float *xstart, 
@@ -27,7 +27,7 @@ __global__ void joseph3d_lm_cuda_kernel(float *xstart,
                                         float *img_origin, 
                                         float *voxsize, 
                                         float *p,
-                                        unsigned long long np, 
+                                        unsigned long long nlors, 
                                         unsigned int *img_dim)
 {
   unsigned long long i = blockDim.x * blockIdx.x + threadIdx.x;
@@ -45,7 +45,7 @@ __global__ void joseph3d_lm_cuda_kernel(float *xstart,
   float x_pr0, x_pr1, x_pr2;
   float tmp_0, tmp_1, tmp_2;
 
-  if(i < np)
+  if(i < nlors)
   {
     
     // initialize projected value to 0 
@@ -235,8 +235,8 @@ __global__ void joseph3d_lm_cuda_kernel(float *xstart,
  *                  The pixel [i,j,k] ist stored at [n1*n2+i + n2*k + j].
  *  @param h_img_origin  array [x0_0,x0_1,x0_2] of coordinates of the center of the [0,0,0] voxel
  *  @param h_voxsize     array [vs0, vs1, vs2] of the voxel sizes
- *  @param h_p           array of length np (output) used to store the projections
- *  @param np            number of projections (length of p array)
+ *  @param h_p           array of length nlors (output) used to store the projections
+ *  @param nlors            number of projections (length of p array)
  *  @param h_img_dim     array with dimensions of image [n0,n1,n2]
  *  @param threadsperblock number of threads per block
  *  @param num_devices     number of CUDA devices to use. if set to -1 cudaGetDeviceCount() is used
@@ -247,7 +247,7 @@ extern "C" void joseph3d_lm_cuda(float *h_xstart,
                                  float *h_img_origin, 
                                  float *h_voxsize, 
                                  float *h_p,
-                                 unsigned long long np, 
+                                 unsigned long long nlors, 
                                  unsigned int *h_img_dim,
                                  unsigned int threadsperblock,
                                  int num_devices)
@@ -259,7 +259,7 @@ extern "C" void joseph3d_lm_cuda(float *h_xstart,
   // offset for chunk of projections passed to a device 
   unsigned long long dev_offset;
   // number of projections to be calculated on a device
-  unsigned long long dev_nproj;
+  unsigned long long dev_nlors;
 
   unsigned int n0 = h_img_dim[0];
   unsigned int n1 = h_img_dim[1];
@@ -287,16 +287,16 @@ extern "C" void joseph3d_lm_cuda(float *h_xstart,
   {
     cudaSetDevice(i_dev);
     // () are important in integer division!
-    dev_offset = i_dev*(np/num_devices);
+    dev_offset = i_dev*(nlors/num_devices);
  
     // calculate the number of projections for a device (last chunck can be a bit bigger) 
-    dev_nproj = i_dev == (num_devices - 1) ? (np - dev_offset) : (np/num_devices);
+    dev_nlors = i_dev == (num_devices - 1) ? (nlors - dev_offset) : (nlors/num_devices);
 
     // calculate the number of bytes for the projection array on the device
-    proj_bytes_dev = dev_nproj*sizeof(float);
+    proj_bytes_dev = dev_nlors*sizeof(float);
 
     // calculate the number of blocks needed for every device (chunk)
-    blockspergrid = (unsigned int)ceil((float)dev_nproj / threadsperblock);
+    blockspergrid = (unsigned int)ceil((float)dev_nlors / threadsperblock);
     dim3 grid(blockspergrid);
 
     // allocate the memory for the array containing the projection on the device
@@ -328,7 +328,7 @@ extern "C" void joseph3d_lm_cuda(float *h_xstart,
     // call the kernel
     joseph3d_lm_cuda_kernel<<<grid,block>>>(d_xstart[i_dev], d_xend[i_dev], d_img[i_dev], 
                                             d_img_origin[i_dev], d_voxsize[i_dev], 
-                                            d_p[i_dev], dev_nproj, d_img_dim[i_dev]); 
+                                            d_p[i_dev], dev_nlors, d_img_dim[i_dev]); 
 
     // copy projection back from device to host
     cudaMemcpyAsync(h_p + dev_offset, d_p[i_dev], proj_bytes_dev, cudaMemcpyDeviceToHost);

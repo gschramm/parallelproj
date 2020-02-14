@@ -17,8 +17,8 @@
  *                The pixel [i,j,k] ist stored at [n1*n2+i + n2*k + j].
  *  @param img_origin  array [x0_0,x0_1,x0_2] of coordinates of the center of the [0,0,0] voxel
  *  @param voxsize     array [vs0, vs1, vs2] of the voxel sizes
- *  @param p           array of length np with the values to be back projected
- *  @param np          number of projections (length of p array)
+ *  @param p           array of length nlors with the values to be back projected
+ *  @param nlors       number of geometrical LORs
  *  @param img_dim     array with dimensions of image [n0,n1,n2]
  */
 void joseph3d_lm_back(float *xstart, 
@@ -27,7 +27,7 @@ void joseph3d_lm_back(float *xstart,
                       float *img_origin, 
                       float *voxsize,
                       float *p, 
-                      unsigned long long np, 
+                      unsigned long long nlors, 
                       unsigned int *img_dim)
 {
   unsigned long long i;
@@ -37,7 +37,7 @@ void joseph3d_lm_back(float *xstart,
   unsigned int n2 = img_dim[2];
 
   # pragma omp parallel for schedule(static)
-  for(i = 0; i < np; i++)
+  for(i = 0; i < nlors; i++)
   {
     if(p[i] != 0)
     {

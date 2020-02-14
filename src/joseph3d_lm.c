@@ -17,7 +17,8 @@
  *                The pixel [i,j,k] ist stored at [n1*n2+i + n2*k + j].
  *  @param img_origin  array [x0_0,x0_1,x0_2] of coordinates of the center of the [0,0,0] voxel
  *  @param voxsize     array [vs0, vs1, vs2] of the voxel sizes
- *  @param p           array of length np (output) used to store the projections
+ *  @param p           array of length nlors (output) used to store the projections
+ *  @param nlors       number of geomtrical LORs
  *  @param img_dim     array with dimensions of image [n0,n1,n2]
  */
 void joseph3d_lm(float *xstart, 
@@ -26,7 +27,7 @@ void joseph3d_lm(float *xstart,
                  float *img_origin, 
                  float *voxsize, 
                  float *p,
-                 unsigned long long np, 
+                 unsigned long long nlors, 
                  unsigned int *img_dim)
 {
   unsigned long long i;
@@ -36,7 +37,7 @@ void joseph3d_lm(float *xstart,
   unsigned int n2 = img_dim[2];
 
   # pragma omp parallel for schedule(static)
-  for(i = 0; i < np; i++)
+  for(i = 0; i < nlors; i++)
   {
     float d0, d1, d2, d0_sq, d1_sq, d2_sq; 
     float lsq, cos0_sq, cos1_sq, cos2_sq;
