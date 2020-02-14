@@ -45,22 +45,22 @@ x_m2 = 0.5*(xstart[i*3 + 2] + xend[i*3 + 2])
 # voxel specific stuff
 
 # generate dummy voxel coordinates
-x_v0 = xstart[i*3 + 0] + 0.99*u0*u_norm
-x_v1 = xstart[i*3 + 1] + 0.99*u1*u_norm
-x_v2 = xstart[i*3 + 2] + 0.99*u2*u_norm
+x_v0 = xstart[i*3 + 0] + 0.5*u0*u_norm
+x_v1 = xstart[i*3 + 1] + 0.5*u1*u_norm
+x_v2 = xstart[i*3 + 2] + 0.5*u2*u_norm
 
 
 # calculate which TOF bins it are within +- n_sigmas
 # it runs from -n_tofbins//2 ... 0 ... n_tofbins//2
-i1 = (((x_v0 - x_m0)*u0 + (x_v1 - x_m1)*u1 + (x_v2 - x_m2)*u2) - tofcenter_offset[i] + n_sigmas*sigma_tof[i]) / tofbin_width
-i2 = (((x_v0 - x_m0)*u0 + (x_v1 - x_m1)*u1 + (x_v2 - x_m2)*u2) - tofcenter_offset[i] - n_sigmas*sigma_tof[i]) / tofbin_width
+b1 = (((x_v0 - x_m0)*u0 + (x_v1 - x_m1)*u1 + (x_v2 - x_m2)*u2) - tofcenter_offset[i] + n_sigmas*sigma_tof[i]) / tofbin_width
+b2 = (((x_v0 - x_m0)*u0 + (x_v1 - x_m1)*u1 + (x_v2 - x_m2)*u2) - tofcenter_offset[i] - n_sigmas*sigma_tof[i]) / tofbin_width
 
-if i1 <= i2:
-  it1 = math.floor(i1)
-  it2 = math.ceil(i2)
+if b1 <= b2:
+  it1 = math.floor(b1)
+  it2 = math.ceil(b2)
 else:
-  it1 = math.floor(i2)
-  it2 = math.ceil(i1)
+  it1 = math.floor(b2)
+  it2 = math.ceil(b1)
 
 n_half = n_tofbins // 2
 
@@ -83,12 +83,12 @@ for it in range(it1, it2 + 1):
   x_c2 = x_m2 + (it*tofbin_width + tofcenter_offset[i])*u2
   
   # calculate the distance between voxel and tof bin center
-  d = math.sqrt((x_c0 - x_v0)**2 +  (x_c1 - x_v1)**2 + (x_c2 - x_v2)**2)
+  dtof = math.sqrt((x_c0 - x_v0)**2 +  (x_c1 - x_v1)**2 + (x_c2 - x_v2)**2)
   
-  d_far  = d + 0.5*tofbin_width
-  d_near = d - 0.5*tofbin_width
+  dtof_far  = dtof + 0.5*tofbin_width
+  dtof_near = dtof - 0.5*tofbin_width
   
-  tof_weight = 0.5*(math.erf(d_far/(math.sqrt(2)*sigma_tof[i])) - math.erf(d_near/(math.sqrt(2)*sigma_tof[i])))
+  tof_weight = 0.5*(math.erf(dtof_far/(math.sqrt(2)*sigma_tof[i])) - math.erf(dtof_near/(math.sqrt(2)*sigma_tof[i])))
 
   inds.append(it)
   tof_weights.append(tof_weight)
