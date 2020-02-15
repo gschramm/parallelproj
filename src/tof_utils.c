@@ -89,7 +89,7 @@ void relevant_tof_bins(float x_m0,
 		       float tofcenter_offset,
 		       float sigma_tof,
 		       unsigned int n_sigmas,
-		       unsigned int n_half,
+		       int n_half,
 		       int *it1,
 		       int *it2)
 {

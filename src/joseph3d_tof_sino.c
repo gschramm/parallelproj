@@ -51,7 +51,7 @@ void joseph3d_tof_sino(float *xstart,
   unsigned int n1 = img_dim[1];
   unsigned int n2 = img_dim[2];
 
-  unsigned int n_half = n_tofbins/2;
+  int n_half = n_tofbins/2;
 
   # pragma omp parallel for schedule(static)
   for(i = 0; i < nlors; i++)
@@ -120,7 +120,6 @@ void joseph3d_tof_sino(float *xstart,
     x_m2 = 0.5*(xstart[i*3 + 2] + xend[i*3 + 2]);
 
     //---------------------------------------------------------
-
 
     if (direction == 0)
     {
