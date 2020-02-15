@@ -11,7 +11,7 @@ from time import time
 #---- parse the command line
 import argparse
 parser = argparse.ArgumentParser()
-parser.add_argument('--nv', type=int, default = 1, help='number of view to project')
+parser.add_argument('--nv', type=int, default = 7, help='number of view to project')
 args = parser.parse_args()
 
 nviews = args.nv
@@ -31,9 +31,9 @@ lib_parallelproj.joseph3d_tof_sino.argtypes = [ar_1d_single,
                                                ar_1d_single,
                                                ar_1d_single,
                                                ar_1d_single,
-                                               ctypes.c_ulonglong,
+                                               ctypes.c_longlong,
                                                ar_1d_uint,        #
-                                               ctypes.c_uint,     # n_tofbins
+                                               ctypes.c_int,      # n_tofbins
                                                ctypes.c_float,    # tofbin_width 
                                                ar_1d_single,      # sigma tof
                                                ar_1d_single,      # tofcenter_offset
@@ -79,10 +79,12 @@ ok = lib_parallelproj.joseph3d_tof_sino(xstart.flatten(), xend.flatten(), img.fl
                                         img_origin, voxsize, img_fwd, nLORs, img_dim,
                                         n_tofbins, tofbin_width, sigma_tof, tofcenter_offset, n_sigmas)
 
-img_fwd_sino = img_fwd.reshape(sino_shape)
-t1 = time()
-t_fwd = t1 - t0
+#fwd_tof_sino = img_fwd.reshape(sino_shape)
+#t1 = time()
+#t_fwd = t1 - t0
 #
+#nontof_sino = fwd_tof_sino.sum(3)
+
 ##----
 ## print results
 #print('openmp cpu','#views',nviews,'fwd',t_fwd)

@@ -37,15 +37,15 @@ void joseph3d_tof_sino(float *xstart,
                        float *img_origin, 
                        float *voxsize, 
                        float *p,
-                       unsigned long long nlors, 
+                       long long nlors, 
                        unsigned int *img_dim,
-		       unsigned int n_tofbins,
-		       float tofbin_width,
-		       float *sigma_tof,
-		       float *tofcenter_offset,
-		       unsigned int n_sigmas)
+		                   int n_tofbins,
+		                   float tofbin_width,
+		                   float *sigma_tof,
+		                   float *tofcenter_offset,
+		                   unsigned int n_sigmas)
 {
-  unsigned long long i;
+  long long i;
 
   unsigned int n0 = img_dim[0];
   unsigned int n1 = img_dim[1];
@@ -143,27 +143,25 @@ void joseph3d_tof_sino(float *xstart,
         tmp_2 = (x_pr2 - (i2_floor*voxsize[2] + img_origin[2])) / voxsize[2];
 
 
-	//--------- TOF related quantities
+	      //--------- TOF related quantities
         // calculate the voxel center needed for TOF weights
         x_v0 = img_origin[0] + i0*voxsize[0];
         x_v1 = x_pr1;
         x_v2 = x_pr2;
 
-	it1 = -n_half;
-	it2 =  n_half;
+	      it1 = -n_half;
+	      it2 =  n_half;
 
         relevant_tof_bins(x_m0, x_m1, x_m2, x_v0, x_v1, x_v2, u0, u1, u2, 
-			  tofbin_width, tofcenter_offset[i], sigma_tof[i], n_sigmas, n_half,
-		          &it1, &it2);
+			                    tofbin_width, tofcenter_offset[i], sigma_tof[i], n_sigmas, n_half,
+		                      &it1, &it2);
         //---------
-
 
         for(it = it1; it <= it2; it++){
           // calculate the TOF weight
           tw = tof_weight(x_m0, x_m1, x_m2, x_v0, x_v1, x_v2, u0, u1, u2, it, 
-		   tofbin_width, tofcenter_offset[i], sigma_tof[i]);
+		                      tofbin_width, tofcenter_offset[i], sigma_tof[i]);
 	  
-          // do bilinear interpolation 
           if ((i1_floor >= 0) && (i1_floor < n1) && (i2_floor >= 0) && (i2_floor < n2))
           {
             p[i*n_tofbins + it + n_half] += tw*img[n1*n2*i0 + n2*i1_floor + i2_floor] * (1 - tmp_1) * (1 - tmp_2);
@@ -217,22 +215,22 @@ void joseph3d_tof_sino(float *xstart,
         x_v1 = img_origin[1] + i1*voxsize[1];
         x_v2 = x_pr2;
 
-	it1 = -n_half;
-	it2 =  n_half;
+	      it1 = -n_half;
+	      it2 =  n_half;
 
         relevant_tof_bins(x_m0, x_m1, x_m2, x_v0, x_v1, x_v2, u0, u1, u2, 
-			  tofbin_width, tofcenter_offset[i], sigma_tof[i], n_sigmas, n_half,
-		          &it1, &it2);
+			                    tofbin_width, tofcenter_offset[i], sigma_tof[i], n_sigmas, n_half,
+		                      &it1, &it2);
         //---------
 
         for(it = it1; it <= it2; it++){
           // calculate the TOF weight
           tw = tof_weight(x_m0, x_m1, x_m2, x_v0, x_v1, x_v2, u0, u1, u2, it, 
-		   tofbin_width, tofcenter_offset[i], sigma_tof[i]);
+		                      tofbin_width, tofcenter_offset[i], sigma_tof[i]);
 
           if ((i0_floor >= 0) && (i0_floor < n0) && (i2_floor >= 0) && (i2_floor < n2))
           {
-            p[i*n_tofbins + it + n_half] += tw*img[n1*n2*i0_floor +  n2*i1 + i2_floor] * (1 - tmp_0) * (1 - tmp_2);
+            p[i*n_tofbins + it + n_half] += tw*img[n1*n2*i0_floor + n2*i1 + i2_floor] * (1 - tmp_0) * (1 - tmp_2);
           }
           if ((i0_ceil >= 0) && (i0_ceil < n0) && (i2_floor >= 0) && (i2_floor < n2))
           {
@@ -282,18 +280,18 @@ void joseph3d_tof_sino(float *xstart,
         x_v1 = x_pr1;
         x_v2 = img_origin[2] + i0*voxsize[2];
 
-	it1 = -n_half;
-	it2 =  n_half;
+	      it1 = -n_half;
+	      it2 =  n_half;
 
         relevant_tof_bins(x_m0, x_m1, x_m2, x_v0, x_v1, x_v2, u0, u1, u2, 
-			  tofbin_width, tofcenter_offset[i], sigma_tof[i], n_sigmas, n_half,
-		          &it1, &it2);
+			                    tofbin_width, tofcenter_offset[i], sigma_tof[i], n_sigmas, n_half,
+		                      &it1, &it2);
         //---------
 
         for(it = it1; it <= it2; it++){
           // calculate the TOF weight
           tw = tof_weight(x_m0, x_m1, x_m2, x_v0, x_v1, x_v2, u0, u1, u2, it, 
-		   tofbin_width, tofcenter_offset[i], sigma_tof[i]);
+		                      tofbin_width, tofcenter_offset[i], sigma_tof[i]);
 
           if ((i0_floor >= 0) && (i0_floor < n0) && (i1_floor >= 0) && (i1_floor < n1))
           {
