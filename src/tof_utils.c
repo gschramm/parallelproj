@@ -22,8 +22,8 @@
  * @param tofbin_            width width of the TOF bins in spatial units
  * @param tofcenter_offset   offset of the central tofbin from the midpoint of the LOR in spatial units
  * @param sigma_tof          TOF resolution in spatial coordinates
- * @param erf_lut            look up table length 6001 for erf between -3 and 3. 
- *                           The i-th element contains erf(-3 + 0.001*i)
+ * @param half_erf_lut       look up table length 6001 for half the erf between -3 and 3. 
+ *                           The i-th element contains 0.5*erf(-3 + 0.001*i)
  */
 float tof_weight(float x_m0, 
 		             float x_m1, 
@@ -38,7 +38,7 @@ float tof_weight(float x_m0,
 		             float tofbin_width,
 		             float tofcenter_offset,
 		             float sigma_tof,
-                 float *erf_lut)
+                 float *half_erf_lut)
 {
   float x_c0, x_c1, x_c2;
   float dtof, dtof_far, dtof_near, tw;
@@ -66,7 +66,7 @@ float tof_weight(float x_m0,
   if(ilut_near > 6000){ilut_near = 6000;}
   if(ilut_far  > 6000){ilut_far  = 6000;}
 
-  tw = 0.5*(erf_lut[ilut_far] - erf_lut[ilut_near]);
+  tw = half_erf_lut[ilut_far] - half_erf_lut[ilut_near];
 
   return(tw);
 }
