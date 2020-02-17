@@ -58,8 +58,8 @@ float tof_weight(float x_m0,
   // calculate the TOF weight
   //tw = 0.5*(erff(dtof_far/(sqrt(2)*sigma_tof)) - erff(dtof_near/(sqrt(2)*sigma_tof)));
 
-  ilut_near = (int)(dtof_near/(sqrt(2)*sigma_tof) + 3)/0.001;
-  ilut_far  = (int)(dtof_far /(sqrt(2)*sigma_tof) + 3)/0.001;
+  ilut_near = (3 + (dtof_near/(sqrt(2)*sigma_tof)))/0.001;
+  ilut_far  = (3 + (dtof_far /(sqrt(2)*sigma_tof)))/0.001;
 
   if(ilut_near < 0){ilut_near = 0;}
   if(ilut_far  < 0){ilut_far  = 0;}
