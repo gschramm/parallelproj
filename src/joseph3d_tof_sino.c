@@ -278,7 +278,7 @@ void joseph3d_tof_sino(float *xstart,
         // calculate the voxel center needed for TOF weights
         x_v0 = x_pr0;
         x_v1 = x_pr1;
-        x_v2 = img_origin[2] + i0*voxsize[2];
+        x_v2 = img_origin[2] + i2*voxsize[2];
 
 	      it1 = -n_half;
 	      it2 =  n_half;
