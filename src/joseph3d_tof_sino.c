@@ -73,8 +73,8 @@ void joseph3d_tof_sino(float *xstart,
     int it, it1, it2;
     float tw;
 
-    // initialize projected value to 0 
-    p[i] = 0;
+    // correction factor for cos(theta) and voxsize
+    float cf;
 
     // test whether the ray between the two detectors is most parallel
     // with the 0, 1, or 2 axis
@@ -123,6 +123,8 @@ void joseph3d_tof_sino(float *xstart,
 
     if (direction == 0)
     {
+      cf = voxsize[direction] / sqrt(cos0_sq);
+
       // case where ray is most parallel to the 0 axis
       // we step through the volume along the 0 direction
       for(i0 = 0; i0 < n0; i0++)
@@ -158,37 +160,35 @@ void joseph3d_tof_sino(float *xstart,
         //---------
 
         for(it = it1; it <= it2; it++){
-          // calculate the TOF weight
+          //calculate the TOF weight
           tw = tof_weight(x_m0, x_m1, x_m2, x_v0, x_v1, x_v2, u0, u1, u2, it, 
-		                      tofbin_width, tofcenter_offset[i], sigma_tof[i]);
+		                     tofbin_width, tofcenter_offset[i], sigma_tof[i]);
 	  
           if ((i1_floor >= 0) && (i1_floor < n1) && (i2_floor >= 0) && (i2_floor < n2))
           {
-            p[i*n_tofbins + it + n_half] += tw*img[n1*n2*i0 + n2*i1_floor + i2_floor] * (1 - tmp_1) * (1 - tmp_2);
+            p[i*n_tofbins + it + n_half] += tw*img[n1*n2*i0 + n2*i1_floor + i2_floor] * (1 - tmp_1) * (1 - tmp_2) * cf;
           }
           if ((i1_ceil >= 0) && (i1_ceil < n1) && (i2_floor >= 0) && (i2_floor < n2))
           {
-            p[i*n_tofbins + it + n_half] += tw*img[n1*n2*i0 + n2*i1_ceil + i2_floor] * tmp_1 * (1 - tmp_2);
+            p[i*n_tofbins + it + n_half] += tw*img[n1*n2*i0 + n2*i1_ceil + i2_floor] * tmp_1 * (1 - tmp_2) * cf;
           }
           if ((i1_floor >= 0) && (i1_floor < n1) && (i2_ceil >= 0) && (i2_ceil < n2))
           {
-            p[i*n_tofbins + it + n_half] += tw*img[n1*n2*i0 + n2*i1_floor + i2_ceil] * (1 - tmp_1) * tmp_2;
+            p[i*n_tofbins + it + n_half] += tw*img[n1*n2*i0 + n2*i1_floor + i2_ceil] * (1 - tmp_1) * tmp_2 * cf;
           }
           if ((i1_ceil >= 0) && (i1_ceil < n1) && (i2_ceil >= 0) && (i2_ceil < n2))
           {
-            p[i*n_tofbins + it + n_half] += tw*img[n1*n2*i0 + n2*i1_ceil + i2_ceil] * tmp_1 * tmp_2;
+            p[i*n_tofbins + it + n_half] += tw*img[n1*n2*i0 + n2*i1_ceil + i2_ceil] * tmp_1 * tmp_2 * cf;
           }
         }
-
-
       }
-      // correct for |cos(theta)| 
-      p[i] /= sqrt(cos0_sq);
     }
 
     //--------------------------------------------------------------------------------- 
     if (direction == 1)
     {
+      cf = voxsize[direction] / sqrt(cos1_sq);
+
       // case where ray is most parallel to the 1 axis
       // we step through the volume along the 1 direction
       for (i1 = 0; i1 < n1; i1++)
@@ -230,29 +230,29 @@ void joseph3d_tof_sino(float *xstart,
 
           if ((i0_floor >= 0) && (i0_floor < n0) && (i2_floor >= 0) && (i2_floor < n2))
           {
-            p[i*n_tofbins + it + n_half] += tw*img[n1*n2*i0_floor + n2*i1 + i2_floor] * (1 - tmp_0) * (1 - tmp_2);
+            p[i*n_tofbins + it + n_half] += tw*img[n1*n2*i0_floor + n2*i1 + i2_floor] * (1 - tmp_0) * (1 - tmp_2) * cf;
           }
           if ((i0_ceil >= 0) && (i0_ceil < n0) && (i2_floor >= 0) && (i2_floor < n2))
           {
-            p[i*n_tofbins + it + n_half] += tw*img[n1*n2*i0_ceil + n2*i1 + i2_floor] * tmp_0 * (1 - tmp_2);
+            p[i*n_tofbins + it + n_half] += tw*img[n1*n2*i0_ceil + n2*i1 + i2_floor] * tmp_0 * (1 - tmp_2) * cf;
           }
           if ((i0_floor >= 0) && (i0_floor < n0) && (i2_ceil >= 0) && (i2_ceil < n2))
           {
-            p[i*n_tofbins + it + n_half] += tw*img[n1*n2*i0_floor + n2*i1 + i2_ceil] * (1 - tmp_0) * tmp_2;
+            p[i*n_tofbins + it + n_half] += tw*img[n1*n2*i0_floor + n2*i1 + i2_ceil] * (1 - tmp_0) * tmp_2 * cf;
           }
           if ((i0_ceil >= 0) && (i0_ceil < n0) && (i2_ceil >= 0) && (i2_ceil < n2))
           {
-            p[i*n_tofbins + it + n_half] += tw*img[n1*n2*i0_ceil + n2*i1 + i2_ceil] * tmp_0 * tmp_2;
+            p[i*n_tofbins + it + n_half] += tw*img[n1*n2*i0_ceil + n2*i1 + i2_ceil] * tmp_0 * tmp_2 * cf;
           }
-	}
+	      }
       }
-      // correct for |cos(theta)| 
-      p[i] /= sqrt(cos1_sq);
     }
 
     //--------------------------------------------------------------------------------- 
     if (direction == 2)
     {
+      cf = voxsize[direction] / sqrt(cos2_sq);
+
       // case where ray is most parallel to the 2 axis
       // we step through the volume along the 2 direction
 
@@ -295,26 +295,22 @@ void joseph3d_tof_sino(float *xstart,
 
           if ((i0_floor >= 0) && (i0_floor < n0) && (i1_floor >= 0) && (i1_floor < n1))
           {
-            p[i*n_tofbins + it + n_half] += tw*img[n1*n2*i0_floor + n2*i1_floor + i2] * (1 - tmp_0) * (1 - tmp_1);
+            p[i*n_tofbins + it + n_half] += tw*img[n1*n2*i0_floor + n2*i1_floor + i2] * (1 - tmp_0) * (1 - tmp_1) * cf;
           }
           if ((i0_ceil >= 0) && (i0_ceil < n0) && (i1_floor >= 0) && (i1_floor < n1))
           {
-            p[i*n_tofbins + it + n_half] += tw*img[n1*n2*i0_ceil + n2*i1_floor + i2] * tmp_0 * (1 - tmp_1);
+            p[i*n_tofbins + it + n_half] += tw*img[n1*n2*i0_ceil + n2*i1_floor + i2] * tmp_0 * (1 - tmp_1) * cf;
           }
           if ((i0_floor >= 0) && (i0_floor < n0) && (i1_ceil >= 0) & (i1_ceil < n1))
           {
-            p[i*n_tofbins + it + n_half] += tw*img[n1*n2*i0_floor + n2*i1_ceil + i2] * (1 - tmp_0) * tmp_1;
+            p[i*n_tofbins + it + n_half] += tw*img[n1*n2*i0_floor + n2*i1_ceil + i2] * (1 - tmp_0) * tmp_1 * cf;
           }
           if ((i0_ceil >= 0) && (i0_ceil < n0) && (i1_ceil >= 0) && (i1_ceil < n1))
           {
-            p[i*n_tofbins + it + n_half] += tw*img[n1*n2*i0_ceil + n2*i1_ceil + i2] * tmp_0 * tmp_1;
+            p[i*n_tofbins + it + n_half] += tw*img[n1*n2*i0_ceil + n2*i1_ceil + i2] * tmp_0 * tmp_1 * cf;
           }
-	}
+	      }
       }
-      // correct for |cos(theta)| 
-      p[i] /= sqrt(cos2_sq);
     }
-    // correct for the voxsize
-    p[i] *= voxsize[direction];
   }
 }

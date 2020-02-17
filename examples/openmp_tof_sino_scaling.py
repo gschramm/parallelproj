@@ -79,17 +79,17 @@ ok = lib_parallelproj.joseph3d_tof_sino(xstart.flatten(), xend.flatten(), img.fl
                                         img_origin, voxsize, img_fwd, nLORs, img_dim,
                                         n_tofbins, tofbin_width, sigma_tof, tofcenter_offset, n_sigmas)
 
-#fwd_tof_sino = img_fwd.reshape(sino_shape)
-#t1 = time()
-#t_fwd = t1 - t0
-#
-#nontof_sino = fwd_tof_sino.sum(3)
+fwd_tof_sino = img_fwd.reshape(sino_shape)
+t1 = time()
+t_fwd = t1 - t0
 
-##----
-## print results
-#print('openmp cpu','#views',nviews,'fwd',t_fwd)
+nontof_sino = fwd_tof_sino.sum(3)
 
-## show results
-#import pymirc.viewer as pv
-#vi = pv.ThreeAxisViewer(img_fwd_sino[:,:,:88])
+#----
+# print results
+print('openmp cpu','#views',nviews,'fwd',t_fwd)
+
+# show results
+import pymirc.viewer as pv
+vi = pv.ThreeAxisViewer(nontof_sino[:,:,:88])
 #vi = pv.ThreeAxisViewer(back_img)
