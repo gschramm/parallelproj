@@ -182,12 +182,14 @@ void joseph3d_tof_sino(float *xstart,
 			                    tofbin_width, tofcenter_offset[i], sigma_tof[i], n_sigmas, n_half,
 		                      &it1, &it2);
 
-        for(it = it1; it <= it2; it++){
-          //calculate the TOF weight
-          tw = tof_weight(x_m0, x_m1, x_m2, x_v0, x_v1, x_v2, u0, u1, u2, it, 
-		                     tofbin_width, tofcenter_offset[i], sigma_tof[i], erf_lut);
+        if(toAdd != 0){
+          for(it = it1; it <= it2; it++){
+            //calculate the TOF weight
+            tw = tof_weight(x_m0, x_m1, x_m2, x_v0, x_v1, x_v2, u0, u1, u2, it, 
+		                       tofbin_width, tofcenter_offset[i], sigma_tof[i], erf_lut);
 
-          p[i*n_tofbins + it + n_half] += (tw * cf * toAdd);
+            p[i*n_tofbins + it + n_half] += (tw * cf * toAdd);
+          }
         }
       }
     }
@@ -250,12 +252,14 @@ void joseph3d_tof_sino(float *xstart,
 			                    tofbin_width, tofcenter_offset[i], sigma_tof[i], n_sigmas, n_half,
 		                      &it1, &it2);
 
-        for(it = it1; it <= it2; it++){
-          // calculate the TOF weight
-          tw = tof_weight(x_m0, x_m1, x_m2, x_v0, x_v1, x_v2, u0, u1, u2, it, 
-		                      tofbin_width, tofcenter_offset[i], sigma_tof[i], erf_lut);
+        if(toAdd != 0){
+          for(it = it1; it <= it2; it++){
+            // calculate the TOF weight
+            tw = tof_weight(x_m0, x_m1, x_m2, x_v0, x_v1, x_v2, u0, u1, u2, it, 
+		                        tofbin_width, tofcenter_offset[i], sigma_tof[i], erf_lut);
 
-          p[i*n_tofbins + it + n_half] += (tw * cf * toAdd);
+            p[i*n_tofbins + it + n_half] += (tw * cf * toAdd);
+	        }
 	      }
       }
     }
@@ -318,12 +322,14 @@ void joseph3d_tof_sino(float *xstart,
 			                    tofbin_width, tofcenter_offset[i], sigma_tof[i], n_sigmas, n_half,
 		                      &it1, &it2);
 
-        for(it = it1; it <= it2; it++){
-          // calculate the TOF weight
-          tw = tof_weight(x_m0, x_m1, x_m2, x_v0, x_v1, x_v2, u0, u1, u2, it, 
-		                      tofbin_width, tofcenter_offset[i], sigma_tof[i], erf_lut);
+        if(toAdd != 0){
+          for(it = it1; it <= it2; it++){
+            // calculate the TOF weight
+            tw = tof_weight(x_m0, x_m1, x_m2, x_v0, x_v1, x_v2, u0, u1, u2, it, 
+		                        tofbin_width, tofcenter_offset[i], sigma_tof[i], erf_lut);
 
-          p[i*n_tofbins + it + n_half] += (tw * cf * toAdd);
+            p[i*n_tofbins + it + n_half] += (tw * cf * toAdd);
+	        }
 	      }
       }
     }
