@@ -13,7 +13,8 @@ float tof_weight(float x_m0,
 		 int it,
 		 float tofbin_width,
 		 float tofcenter_offset,
-		 float sigma_tof);
+		 float sigma_tof,
+     float *erf_lut);
 
 
 void relevant_tof_bins(float x_m0,

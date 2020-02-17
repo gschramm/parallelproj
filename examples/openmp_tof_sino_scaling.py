@@ -7,6 +7,8 @@ import ctypes
 from setup_testdata   import setup_testdata
 from time import time
 
+from scipy.special import erf
+
 #------------------------------------------------------------------------------------------------
 #---- parse the command line
 import argparse
@@ -37,7 +39,8 @@ lib_parallelproj.joseph3d_tof_sino.argtypes = [ar_1d_single,
                                                ctypes.c_float,    # tofbin_width 
                                                ar_1d_single,      # sigma tof
                                                ar_1d_single,      # tofcenter_offset
-                                               ctypes.c_uint]     # n_sigmas 
+                                               ctypes.c_uint,     # n_sigmas 
+                                               ar_1d_single]      # look up table for erf
 
 ###############################################################
 ###############################################################
@@ -47,6 +50,8 @@ n_tofbins    = 27
 sigma_tof    = (d_scanner/10)/2.35
 tofbin_width = (d_scanner + 2*sigma_tof) / n_tofbins
 n_sigmas     = 3
+
+erf_lut = erf(np.linspace(-3,3,6001), dtype = ctypes.c_float)
 
 #--------------------------------------------------------------------------------------
 #---- set up phantom and dector coordindates
@@ -77,7 +82,7 @@ tofcenter_offset = np.full(nLORs, 0, dtype = ctypes.c_float)
 t0 = time()
 ok = lib_parallelproj.joseph3d_tof_sino(xstart.flatten(), xend.flatten(), img.flatten(), 
                                         img_origin, voxsize, img_fwd, nLORs, img_dim,
-                                        n_tofbins, tofbin_width, sigma_tof, tofcenter_offset, n_sigmas)
+                                        n_tofbins, tofbin_width, sigma_tof, tofcenter_offset, n_sigmas, erf_lut)
 
 fwd_tof_sino = img_fwd.reshape(sino_shape)
 t1 = time()

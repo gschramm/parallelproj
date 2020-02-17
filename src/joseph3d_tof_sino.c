@@ -30,6 +30,8 @@
  *  @param tofcenter_offset array of length nlors with the offset of the central TOF bin from the 
  *                          midpoint of each LOR in spatial units (units of xstart and xend) 
  *  @param n_sigmas         number of sigmas to consider for calculation of TOF kernel
+ *  @param erf_lut          look up table length 6001 for erf between -3 and 3. 
+ *                          The i-th element contains erf(-3 + 0.001*i)
  */
 void joseph3d_tof_sino(float *xstart, 
                        float *xend, 
@@ -43,7 +45,8 @@ void joseph3d_tof_sino(float *xstart,
 		                   float tofbin_width,
 		                   float *sigma_tof,
 		                   float *tofcenter_offset,
-		                   unsigned int n_sigmas)
+		                   unsigned int n_sigmas,
+                       float *erf_lut)
 {
   long long i;
 
@@ -162,7 +165,7 @@ void joseph3d_tof_sino(float *xstart,
         for(it = it1; it <= it2; it++){
           //calculate the TOF weight
           tw = tof_weight(x_m0, x_m1, x_m2, x_v0, x_v1, x_v2, u0, u1, u2, it, 
-		                     tofbin_width, tofcenter_offset[i], sigma_tof[i]);
+		                     tofbin_width, tofcenter_offset[i], sigma_tof[i], erf_lut);
 	  
           if ((i1_floor >= 0) && (i1_floor < n1) && (i2_floor >= 0) && (i2_floor < n2))
           {
@@ -226,7 +229,7 @@ void joseph3d_tof_sino(float *xstart,
         for(it = it1; it <= it2; it++){
           // calculate the TOF weight
           tw = tof_weight(x_m0, x_m1, x_m2, x_v0, x_v1, x_v2, u0, u1, u2, it, 
-		                      tofbin_width, tofcenter_offset[i], sigma_tof[i]);
+		                      tofbin_width, tofcenter_offset[i], sigma_tof[i], erf_lut);
 
           if ((i0_floor >= 0) && (i0_floor < n0) && (i2_floor >= 0) && (i2_floor < n2))
           {
@@ -291,7 +294,7 @@ void joseph3d_tof_sino(float *xstart,
         for(it = it1; it <= it2; it++){
           // calculate the TOF weight
           tw = tof_weight(x_m0, x_m1, x_m2, x_v0, x_v1, x_v2, u0, u1, u2, it, 
-		                      tofbin_width, tofcenter_offset[i], sigma_tof[i]);
+		                      tofbin_width, tofcenter_offset[i], sigma_tof[i], erf_lut);
 
           if ((i0_floor >= 0) && (i0_floor < n0) && (i1_floor >= 0) && (i1_floor < n1))
           {

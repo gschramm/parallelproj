@@ -9,36 +9,41 @@
 /**
  * @brief Calculate the tof weight between a voxel and a TOF bin on an LOR 
  *
- * @param x_m0 0-component of center of LOR
- * @param x_m1 1-component of center of LOR
- * @param x_m2 2-component of center of LOR
- * @param x_v0 0-component of voxel
- * @param x_v1 1-component of voxel
- * @param x_v2 2-component of voxel
- * @param u0 0-component of unit vector that points from start to end of LOR 
- * @param u1 1-component of unit vector that points from start to end of LOR 
- * @param u2 2-component of unit vector that points from start to end of LOR 
- * @param it index of TOF bin (ranges from -n_tofbins//2 ... 0 ... n_tofbins//2)
- * @param tofbin_width width of the TOF bins in spatial units
- * @param tofcenter_offset offset of the central tofbin from the midpoint of the LOR in spatial units
- * @param sigma_tof TOF resolution in spatial coordinates
+ * @param x_m0   0-component of center of LOR
+ * @param x_m1   1-component of center of LOR
+ * @param x_m2   2-component of center of LOR
+ * @param x_v0   0-component of voxel
+ * @param x_v1   1-component of voxel
+ * @param x_v2   2-component of voxel
+ * @param u0     0-component of unit vector that points from start to end of LOR 
+ * @param u1     1-component of unit vector that points from start to end of LOR 
+ * @param u2     2-component of unit vector that points from start to end of LOR 
+ * @param it     index of TOF bin (ranges from -n_tofbins//2 ... 0 ... n_tofbins//2)
+ * @param tofbin_            width width of the TOF bins in spatial units
+ * @param tofcenter_offset   offset of the central tofbin from the midpoint of the LOR in spatial units
+ * @param sigma_tof          TOF resolution in spatial coordinates
+ * @param erf_lut            look up table length 6001 for erf between -3 and 3. 
+ *                           The i-th element contains erf(-3 + 0.001*i)
  */
 float tof_weight(float x_m0, 
-		 float x_m1, 
-		 float x_m2, 
-		 float x_v0, 
-		 float x_v1, 
-		 float x_v2, 
-		 float u0,
-		 float u1,
-		 float u2,
-		 int it,
-		 float tofbin_width,
-		 float tofcenter_offset,
-		 float sigma_tof)
+		             float x_m1, 
+		             float x_m2, 
+		             float x_v0, 
+		             float x_v1, 
+		             float x_v2, 
+		             float u0,
+		             float u1,
+		             float u2,
+		             int it,
+		             float tofbin_width,
+		             float tofcenter_offset,
+		             float sigma_tof,
+                 float *erf_lut)
 {
   float x_c0, x_c1, x_c2;
   float dtof, dtof_far, dtof_near, tw;
+
+  int ilut_near, ilut_far;
 
   // calculate center of the tofbin
   x_c0 = x_m0 + (it*tofbin_width + tofcenter_offset)*u0;
@@ -51,7 +56,17 @@ float tof_weight(float x_m0,
   dtof_near = dtof - 0.5*tofbin_width;
 
   // calculate the TOF weight
-  tw = 0.5*(erff(dtof_far/(sqrt(2)*sigma_tof)) - erff(dtof_near/(sqrt(2)*sigma_tof)));
+  //tw = 0.5*(erff(dtof_far/(sqrt(2)*sigma_tof)) - erff(dtof_near/(sqrt(2)*sigma_tof)));
+
+  ilut_near = (int)(dtof_near/(sqrt(2)*sigma_tof) + 3)/0.001;
+  ilut_far  = (int)(dtof_far /(sqrt(2)*sigma_tof) + 3)/0.001;
+
+  if(ilut_near < 0){ilut_near = 0;}
+  if(ilut_far  < 0){ilut_far  = 0;}
+  if(ilut_near > 6000){ilut_near = 6000;}
+  if(ilut_far  > 6000){ilut_far  = 6000;}
+
+  tw = 0.5*(erf_lut[ilut_far] - erf_lut[ilut_near]);
 
   return(tw);
 }
@@ -59,22 +74,22 @@ float tof_weight(float x_m0,
 /**
  * @brief Calculate the TOF bins along an LOR to which a voxel contributes
  *
- * @param x_m0 0-component of center of LOR
- * @param x_m1 1-component of center of LOR
- * @param x_m2 2-component of center of LOR
- * @param x_v0 0-component of voxel
- * @param x_v1 1-component of voxel
- * @param x_v2 2-component of voxel
- * @param u0 0-component of unit vector that points from start to end of LOR 
- * @param u1 1-component of unit vector that points from start to end of LOR 
- * @param u2 2-component of unit vector that points from start to end of LOR 
- * @param tofbin_width width of the TOF bins in spatial units
- * @param tofcenter_offset offset of the central tofbin from the midpoint of the LOR in spatial units
- * @param sigma_tof TOF resolution in spatial coordinates
- * @param n_sigmas number of sigmas considered to be relevant
- * @param n_half n_tofbins // 2
- * @param it1 (output) lower relevant tof bin
- * @param it2 (output) upper relevant tof bin
+ * @param x_m0   0-component of center of LOR
+ * @param x_m1   1-component of center of LOR
+ * @param x_m2   2-component of center of LOR
+ * @param x_v0   0-component of voxel
+ * @param x_v1   1-component of voxel
+ * @param x_v2   2-component of voxel
+ * @param u0     0-component of unit vector that points from start to end of LOR 
+ * @param u1     1-component of unit vector that points from start to end of LOR 
+ * @param u2     2-component of unit vector that points from start to end of LOR 
+ * @param tofbin_width      width of the TOF bins in spatial units
+ * @param tofcenter_offset  offset of the central tofbin from the midpoint of the LOR in spatial units
+ * @param sigma_tof         TOF resolution in spatial coordinates
+ * @param n_sigmas          number of sigmas considered to be relevant
+ * @param n_half            n_tofbins // 2
+ * @param it1 (output)      lower relevant tof bin
+ * @param it2 (output)      upper relevant tof bin
  */
 void relevant_tof_bins(float x_m0,
 		       float x_m1, 
