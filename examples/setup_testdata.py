@@ -1,7 +1,7 @@
 import numpy as np
 import h5py
 
-def setup_testdata(nviews = 8):
+def setup_testdata(nviews = 7):
   xstart = np.zeros((3,1981,357,nviews), dtype = np.float32)
   xend   = np.zeros((3,1981,357,nviews), dtype = np.float32)
   
@@ -13,12 +13,15 @@ def setup_testdata(nviews = 8):
       xstart[...,i] = data['start/' + str(view)][:]
       xend[...,i]   = data['end/' + str(view)][:]
 
-  scanner_center   = np.array([150.38,158.50,45.99], dtype = np.float32)
-  scanner_diameter = np.array([314.12,317.88,83.13], dtype = np.float32)
+  # shift LOR coordinates such that iso center is at 0
+  xstart[0,...] += (-158.943269 + 10.443268)
+  xstart[1,...] += (-158.943269 + 10.443268)
+  xstart[2,...] += (-41.5649262 + 0.4446602)
+  xend[0,...]   += (-158.943269 + 10.443268)
+  xend[1,...]   += (-158.943269 + 10.443268)
+  xend[2,...]   += (-41.5649262 + 0.4446602)
 
-  #voxsize    = np.array([0.75,0.75,0.93], dtype = np.float32)
-  voxsize    = np.array([0.7183755,0.7183755,0.9340433], dtype = np.float32)
-  #img_origin = (scanner_center - 0.5*np.array(img.shape)*voxsize).astype(np.float32)
-  img_origin = np.array([41.821224,41.821224,0.91168165], dtype = np.float32)
+  voxsize    = np.array([0.73,0.73,0.8], dtype = np.float32)
+  img_origin = (-np.array(img.shape, dtype = np.float32)/2 + 0.5) * voxsize
 
   return xstart, xend, img, img_origin, voxsize
