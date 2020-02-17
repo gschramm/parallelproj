@@ -45,12 +45,10 @@ __global__ void joseph3d_lm_cuda_kernel(float *xstart,
   float x_pr0, x_pr1, x_pr2;
   float tmp_0, tmp_1, tmp_2;
 
+  float toAdd, cf;
+
   if(i < nlors)
   {
-    
-    // initialize projected value to 0 
-    p[i] = 0;
-
     // test whether the ray between the two detectors is most parallel
     // with the 0, 1, or 2 axis
     d0 = xend[i*3 + 0] - xstart[i*3 + 0];
@@ -82,6 +80,8 @@ __global__ void joseph3d_lm_cuda_kernel(float *xstart,
  
     if (direction == 0)
     {
+      cf = voxsize[direction] / sqrt(cos0_sq);
+
       // case where ray is most parallel to the 0 axis
       // we step through the volume along the 0 direction
       for(i0 = 0; i0 < n0; i0++)
@@ -103,31 +103,34 @@ __global__ void joseph3d_lm_cuda_kernel(float *xstart,
         tmp_1 = (x_pr1 - (i1_floor*voxsize[1] + img_origin[1])) / voxsize[1];
         tmp_2 = (x_pr2 - (i2_floor*voxsize[2] + img_origin[2])) / voxsize[2];
 
-        // do bilinear interpolation 
+        toAdd = 0;
+
         if ((i1_floor >= 0) && (i1_floor < n1) && (i2_floor >= 0) && (i2_floor < n2))
         {
-          p[i] += img[n1*n2*i0 + n2*i1_floor + i2_floor] * (1 - tmp_1) * (1 - tmp_2);
+          toAdd += img[n1*n2*i0 + n2*i1_floor + i2_floor] * (1 - tmp_1) * (1 - tmp_2);
         }
         if ((i1_ceil >= 0) && (i1_ceil < n1) && (i2_floor >= 0) && (i2_floor < n2))
         {
-          p[i] += img[n1*n2*i0 + n2*i1_ceil + i2_floor] * tmp_1 * (1 - tmp_2);
+          toAdd += img[n1*n2*i0 + n2*i1_ceil + i2_floor] * tmp_1 * (1 - tmp_2);
         }
         if ((i1_floor >= 0) && (i1_floor < n1) && (i2_ceil >= 0) && (i2_ceil < n2))
         {
-          p[i] += img[n1*n2*i0 + n2*i1_floor + i2_ceil] * (1 - tmp_1) * tmp_2;
+          toAdd += img[n1*n2*i0 + n2*i1_floor + i2_ceil] * (1 - tmp_1) * tmp_2;
         }
         if ((i1_ceil >= 0) && (i1_ceil < n1) && (i2_ceil >= 0) && (i2_ceil < n2))
         {
-          p[i] += img[n1*n2*i0 + n2*i1_ceil + i2_ceil] * tmp_1 * tmp_2;
+          toAdd += img[n1*n2*i0 + n2*i1_ceil + i2_ceil] * tmp_1 * tmp_2;
         }
+
+        if(toAdd != 0){p[i] += (cf * toAdd);}
       }
-      // correct for |cos(theta)| 
-      p[i] /= sqrt(cos0_sq);
     }
 
     //--------------------------------------------------------------------------------- 
     if (direction == 1)
     {
+      cf = voxsize[direction] / sqrt(cos1_sq);
+
       // case where ray is most parallel to the 1 axis
       // we step through the volume along the 1 direction
       for (i1 = 0; i1 < n1; i1++)
@@ -148,31 +151,35 @@ __global__ void joseph3d_lm_cuda_kernel(float *xstart,
         // for the bilinear interpolation
         tmp_0 = (x_pr0 - (i0_floor*voxsize[0] + img_origin[0])) / voxsize[0];
         tmp_2 = (x_pr2 - (i2_floor*voxsize[2] + img_origin[2])) / voxsize[2];
-  
+
+        toAdd = 0;
+
         if ((i0_floor >= 0) && (i0_floor < n0) && (i2_floor >= 0) && (i2_floor < n2))
         {
-          p[i] += img[n1*n2*i0_floor +  n2*i1 + i2_floor] * (1 - tmp_0) * (1 - tmp_2);
+          toAdd += img[n1*n2*i0_floor + n2*i1 + i2_floor] * (1 - tmp_0) * (1 - tmp_2);
         }
         if ((i0_ceil >= 0) && (i0_ceil < n0) && (i2_floor >= 0) && (i2_floor < n2))
         {
-          p[i] += img[n1*n2*i0_ceil + n2*i1 + i2_floor] * tmp_0 * (1 - tmp_2);
+          toAdd += img[n1*n2*i0_ceil + n2*i1 + i2_floor] * tmp_0 * (1 - tmp_2);
         }
         if ((i0_floor >= 0) && (i0_floor < n0) && (i2_ceil >= 0) && (i2_ceil < n2))
         {
-          p[i] += img[n1*n2*i0_floor + n2*i1 + i2_ceil] * (1 - tmp_0) * tmp_2;
+          toAdd += img[n1*n2*i0_floor + n2*i1 + i2_ceil] * (1 - tmp_0) * tmp_2;
         }
         if ((i0_ceil >= 0) && (i0_ceil < n0) && (i2_ceil >= 0) && (i2_ceil < n2))
         {
-          p[i] += img[n1*n2*i0_ceil + n2*i1 + i2_ceil] * tmp_0 * tmp_2;
+          toAdd += img[n1*n2*i0_ceil + n2*i1 + i2_ceil] * tmp_0 * tmp_2;
         }
+
+        if(toAdd != 0){p[i] += (cf * toAdd);}
       }
-      // correct for |cos(theta)| 
-      p[i] /= sqrt(cos1_sq);
     }
 
     //--------------------------------------------------------------------------------- 
     if (direction == 2)
     {
+      cf = voxsize[direction] / sqrt(cos2_sq);
+
       // case where ray is most parallel to the 2 axis
       // we step through the volume along the 2 direction
 
@@ -194,29 +201,29 @@ __global__ void joseph3d_lm_cuda_kernel(float *xstart,
         // for the bilinear interpolation
         tmp_0 = (x_pr0 - (i0_floor*voxsize[0] + img_origin[0])) / voxsize[0];
         tmp_1 = (x_pr1 - (i1_floor*voxsize[1] + img_origin[1])) / voxsize[1];
-  
+
+        toAdd = 0;
+
         if ((i0_floor >= 0) && (i0_floor < n0) && (i1_floor >= 0) && (i1_floor < n1))
         {
-          p[i] += img[n1*n2*i0_floor + n2*i1_floor + i2] * (1 - tmp_0) * (1 - tmp_1);
+          toAdd += img[n1*n2*i0_floor + n2*i1_floor + i2] * (1 - tmp_0) * (1 - tmp_1);
         }
         if ((i0_ceil >= 0) && (i0_ceil < n0) && (i1_floor >= 0) && (i1_floor < n1))
         {
-          p[i] += img[n1*n2*i0_ceil + n2*i1_floor + i2] * tmp_0 * (1 - tmp_1);
+          toAdd += img[n1*n2*i0_ceil + n2*i1_floor + i2] * tmp_0 * (1 - tmp_1);
         }
         if ((i0_floor >= 0) && (i0_floor < n0) && (i1_ceil >= 0) & (i1_ceil < n1))
         {
-          p[i] += img[n1*n2*i0_floor + n2*i1_ceil + i2] * (1 - tmp_0) * tmp_1;
+          toAdd += img[n1*n2*i0_floor + n2*i1_ceil + i2] * (1 - tmp_0) * tmp_1;
         }
         if ((i0_ceil >= 0) && (i0_ceil < n0) && (i1_ceil >= 0) && (i1_ceil < n1))
         {
-          p[i] += img[n1*n2*i0_ceil + n2*i1_ceil + i2] * tmp_0 * tmp_1;
+          toAdd += img[n1*n2*i0_ceil + n2*i1_ceil + i2] * tmp_0 * tmp_1;
         }
+
+        if(toAdd != 0){p[i] += (cf * toAdd);}
       }
-      // correct for |cos(theta)| 
-      p[i] /= sqrt(cos2_sq);
     }
-    // correct for the voxsize
-    p[i] *= voxsize[direction];
   }
 }
 
