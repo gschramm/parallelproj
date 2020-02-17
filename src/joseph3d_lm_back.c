@@ -42,7 +42,7 @@ void joseph3d_lm_back(float *xstart,
     if(p[i] != 0)
     {
       float d0, d1, d2, d0_sq, d1_sq, d2_sq;
-      float cs0, cs1, cs2, corfac; 
+      float cs0, cs1, cs2, cf; 
       float lsq, cos0_sq, cos1_sq, cos2_sq;
       unsigned short direction; 
       unsigned int i0, i1, i2;
@@ -87,7 +87,7 @@ void joseph3d_lm_back(float *xstart,
         // we step through the volume along the 0 direction
 
         // factor for correctiong voxel size and |cos(theta)|
-        corfac = voxsize[direction]/cs0;
+        cf = voxsize[direction]/cs0;
 
         for(i0 = 0; i0 < n0; i0++)
         {
@@ -109,22 +109,22 @@ void joseph3d_lm_back(float *xstart,
           if ((i1_floor >= 0) && (i1_floor < n1) && (i2_floor >= 0) && (i2_floor < n2))
           {
             #pragma omp atomic
-            img[n1*n2*i0 + n2*i1_floor + i2_floor] += p[i] * (1 - tmp_1) * (1 - tmp_2) * corfac;
+            img[n1*n2*i0 + n2*i1_floor + i2_floor] += (p[i] * (1 - tmp_1) * (1 - tmp_2) * cf);
           }
           if ((i1_ceil >= 0) && (i1_ceil < n1) && (i2_floor >= 0) && (i2_floor < n2))
           {
             #pragma omp atomic
-            img[n1*n2*i0 + n2*i1_ceil + i2_floor] += p[i] * tmp_1 * (1 - tmp_2) * corfac;
+            img[n1*n2*i0 + n2*i1_ceil + i2_floor] += (p[i] * tmp_1 * (1 - tmp_2) * cf);
           }
           if ((i1_floor >= 0) && (i1_floor < n1) && (i2_ceil >= 0) && (i2_ceil < n2))
           {
             #pragma omp atomic
-            img[n1*n2*i0 + n2*i1_floor + i2_ceil] += p[i] * (1 - tmp_1) * tmp_2*corfac;
+            img[n1*n2*i0 + n2*i1_floor + i2_ceil] += (p[i] * (1 - tmp_1) * tmp_2 * cf);
           }
           if ((i1_ceil >= 0) && (i1_ceil < n1) && (i2_ceil >= 0) && (i2_ceil < n2))
           {
             #pragma omp atomic
-            img[n1*n2*i0 + n2*i1_ceil + i2_ceil] += p[i] * tmp_1 * tmp_2 * corfac;
+            img[n1*n2*i0 + n2*i1_ceil + i2_ceil] += (p[i] * tmp_1 * tmp_2 * cf);
           }
         }
       }  
@@ -135,7 +135,7 @@ void joseph3d_lm_back(float *xstart,
         // we step through the volume along the 1 direction
   
         // factor for correctiong voxel size and |cos(theta)|
-        corfac = voxsize[direction]/cs1;
+        cf = voxsize[direction]/cs1;
 
         for(i1 = 0; i1 < n1; i1++)
         {
@@ -157,22 +157,22 @@ void joseph3d_lm_back(float *xstart,
           if ((i0_floor >= 0) && (i0_floor < n0) && (i2_floor >= 0) && (i2_floor < n2)) 
           {
             #pragma omp atomic
-            img[n1*n2*i0_floor + n2*i1 + i2_floor] += p[i] * (1 - tmp_0) * (1 - tmp_2) * corfac;
+            img[n1*n2*i0_floor + n2*i1 + i2_floor] += (p[i] * (1 - tmp_0) * (1 - tmp_2) * cf);
           }
           if ((i0_ceil >= 0) && (i0_ceil < n0) && (i2_floor >= 0) && (i2_floor < n2))
           {
             #pragma omp atomic
-            img[n1*n2*i0_ceil + n2*i1 + i2_floor] += p[i] * tmp_0 * (1 - tmp_2) * corfac;
+            img[n1*n2*i0_ceil + n2*i1 + i2_floor] += (p[i] * tmp_0 * (1 - tmp_2) * cf);
           }
           if ((i0_floor >= 0) && (i0_floor < n0) && (i2_ceil >= 0) && (i2_ceil < n2))
           {
             #pragma omp atomic
-            img[n1*n2*i0_floor + n2*i1 + i2_ceil] += p[i] * (1 - tmp_0) * tmp_2 * corfac;
+            img[n1*n2*i0_floor + n2*i1 + i2_ceil] += (p[i] * (1 - tmp_0) * tmp_2 * cf);
           }
           if((i0_ceil >= 0) && (i0_ceil < n0) && (i2_ceil >= 0) && (i2_ceil < n2))
           {
             #pragma omp atomic
-            img[n1*n2*i0_ceil + n2*i1 + i2_ceil] += p[i] * tmp_0 * tmp_2 * corfac;
+            img[n1*n2*i0_ceil + n2*i1 + i2_ceil] += (p[i] * tmp_0 * tmp_2 * cf);
           }
         }
       }
@@ -183,7 +183,7 @@ void joseph3d_lm_back(float *xstart,
         // we step through the volume along the 2 direction
   
         // factor for correctiong voxel size and |cos(theta)|
-        corfac = voxsize[direction]/cs2;
+        cf = voxsize[direction]/cs2;
   
         for(i2 = 0; i2 < n2; i2++)
         {
@@ -205,22 +205,22 @@ void joseph3d_lm_back(float *xstart,
           if ((i0_floor >= 0) && (i0_floor < n0) && (i1_floor >= 0) && (i1_floor < n1))
           {
             #pragma omp atomic
-            img[n1*n2*i0_floor +  n2*i1_floor + i2] += p[i] * (1 - tmp_0) * (1 - tmp_1) * corfac;
+            img[n1*n2*i0_floor +  n2*i1_floor + i2] += (p[i] * (1 - tmp_0) * (1 - tmp_1) * cf);
           }
           if ((i0_ceil >= 0) && (i0_ceil < n0) && (i1_floor >= 0) && (i1_floor < n1))
           {
             #pragma omp atomic
-            img[n1*n2*i0_ceil + n2*i1_floor + i2] += p[i] * tmp_0 * (1 - tmp_1) * corfac;
+            img[n1*n2*i0_ceil + n2*i1_floor + i2] += (p[i] * tmp_0 * (1 - tmp_1) * cf);
           }
           if ((i0_floor >= 0) && (i0_floor < n0) && (i1_ceil >= 0) && (i1_ceil < n1))
           {
             #pragma omp atomic
-            img[n1*n2*i0_floor + n2*i1_ceil + i2] += p[i] * (1 - tmp_0) * tmp_1 * corfac;
+            img[n1*n2*i0_floor + n2*i1_ceil + i2] += (p[i] * (1 - tmp_0) * tmp_1 * cf);
           }
           if ((i0_ceil >= 0) && (i0_ceil < n0) && (i1_ceil >= 0) && (i1_ceil < n1))
           {
             #pragma omp atomic
-            img[n1*n2*i0_ceil + n2*i1_ceil + i2] += p[i] * tmp_0 * tmp_1 * corfac;
+            img[n1*n2*i0_ceil + n2*i1_ceil + i2] += (p[i] * tmp_0 * tmp_1 * cf);
           }
         }
       }

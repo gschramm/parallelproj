@@ -42,6 +42,24 @@ lib_parallelproj.joseph3d_tof_sino.argtypes = [ar_1d_single,
                                                ctypes.c_uint,     # n_sigmas 
                                                ar_1d_single]      # look up table for erf
 
+lib_parallelproj.joseph3d_tof_sino_back.restype  = None
+lib_parallelproj.joseph3d_tof_sino_back.argtypes = [ar_1d_single,
+                                                    ar_1d_single,
+                                                    ar_1d_single,
+                                                    ar_1d_single,
+                                                    ar_1d_single,
+                                                    ar_1d_single,
+                                                    ctypes.c_longlong,
+                                                    ar_1d_uint,        #
+                                                    ctypes.c_int,      # n_tofbins
+                                                    ctypes.c_float,    # tofbin_width 
+                                                    ar_1d_single,      # sigma tof
+                                                    ar_1d_single,      # tofcenter_offset
+                                                    ctypes.c_uint,     # n_sigmas 
+                                                    ar_1d_single]      # look up table for erf
+
+
+
 ###############################################################
 ###############################################################
 
@@ -72,29 +90,46 @@ print(sino_shape)
 xstart = xstart.reshape((3,nLORs)).transpose()
 xend   = xend.reshape((3,nLORs)).transpose()
 
-# forward projection
 img_dim = np.array(img.shape, dtype = ctypes.c_uint)
 
-img_fwd          = np.zeros(nLORs*n_tofbins, dtype = ctypes.c_float)  
 sigma_tof        = np.full(nLORs, sigma_tof, dtype = ctypes.c_float)
 tofcenter_offset = np.full(nLORs, 0, dtype = ctypes.c_float)
+
+#---- forward projection
+img_fwd = np.zeros(nLORs*n_tofbins, dtype = ctypes.c_float)  
 
 t0 = time()
 ok = lib_parallelproj.joseph3d_tof_sino(xstart.flatten(), xend.flatten(), img.flatten(), 
                                         img_origin, voxsize, img_fwd, nLORs, img_dim,
-                                        n_tofbins, tofbin_width, sigma_tof, tofcenter_offset, n_sigmas, half_erf_lut)
+                                        n_tofbins, tofbin_width, sigma_tof, tofcenter_offset, 
+                                        n_sigmas, half_erf_lut)
 
 fwd_tof_sino = img_fwd.reshape(sino_shape)
 t1 = time()
 t_fwd = t1 - t0
 
-nontof_sino = fwd_tof_sino.sum(3)
+fwd_nontof_sino = fwd_tof_sino.sum(3)
+
+#---- back projection
+ones     = np.ones(nLORs*n_tofbins, dtype = ctypes.c_float)  
+back_img = np.zeros(img_dim, dtype = ctypes.c_float).flatten()
+
+t2 = time()
+ok = lib_parallelproj.joseph3d_tof_sino_back(xstart.flatten(), xend.flatten(), back_img, 
+                                             img_origin, voxsize, ones, nLORs, img_dim,
+                                             n_tofbins, tofbin_width, sigma_tof, tofcenter_offset, 
+                                             n_sigmas, half_erf_lut)
+
+back_img = back_img.reshape(img.shape)
+t3 = time()
+t_back = t3 - t2
 
 #----
 # print results
 print('openmp cpu','#views',nviews,'fwd',t_fwd)
+print('openmp cpu','#views',nviews,'back',t_back)
 
 # show results
-import pymirc.viewer as pv
-vi = pv.ThreeAxisViewer(nontof_sino[:,:,:88])
+#import pymirc.viewer as pv
+#vi = pv.ThreeAxisViewer(nontof_sino[:,:,:88])
 #vi = pv.ThreeAxisViewer(back_img)
