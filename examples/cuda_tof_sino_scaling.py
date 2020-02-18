@@ -48,6 +48,25 @@ lib_parallelproj.joseph3d_tof_sino_cuda.argtypes = [ar_1d_single,
                                                     ctypes.c_uint,     # threads per block
                                                     ctypes.c_int]      # number of devices 
 
+lib_parallelproj.joseph3d_tof_sino_back_cuda.restype  = None
+lib_parallelproj.joseph3d_tof_sino_back_cuda.argtypes = [ar_1d_single,
+                                                         ar_1d_single,
+                                                         ar_1d_single,
+                                                         ar_1d_single,
+                                                         ar_1d_single,
+                                                         ar_1d_single,
+                                                         ctypes.c_longlong,
+                                                         ar_1d_uint,        #
+                                                         ctypes.c_int,      # n_tofbins
+                                                         ctypes.c_float,    # tofbin_width 
+                                                         ar_1d_single,      # sigma tof
+                                                         ar_1d_single,      # tofcenter_offset
+                                                         ctypes.c_uint,     # n_sigmas 
+                                                         ar_1d_single,      # look up table for erf
+                                                         ctypes.c_uint,     # threads per block
+                                                         ctypes.c_int]      # number of devices 
+
+
 ###############################################################
 ###############################################################
 
@@ -98,24 +117,24 @@ t_fwd = t1 - t0
 
 fwd_nontof_sino = fwd_tof_sino.sum(3)
 
-##---- back projection
-#ones     = np.ones(nLORs*n_tofbins, dtype = ctypes.c_float)  
-#back_img = np.zeros(img_dim, dtype = ctypes.c_float).flatten()
-#
-#t2 = time()
-#ok = lib_parallelproj.joseph3d_tof_sino_back(xstart.flatten(), xend.flatten(), back_img, 
-#                                             img_origin, voxsize, ones, nLORs, img_dim,
-#                                             n_tofbins, tofbin_width, sigma_tof, tofcenter_offset, 
-#                                             n_sigmas, half_erf_lut)
-#
-#back_img = back_img.reshape(img.shape)
-#t3 = time()
-#t_back = t3 - t2
+#---- back projection
+ones     = np.ones(nLORs*n_tofbins, dtype = ctypes.c_float)  
+back_img = np.zeros(img_dim, dtype = ctypes.c_float).flatten()
+
+t2 = time()
+ok = lib_parallelproj.joseph3d_tof_sino_back_cuda(xstart.flatten(), xend.flatten(), back_img, 
+                                                  img_origin, voxsize, ones, nLORs, img_dim,
+                                                  n_tofbins, tofbin_width, sigma_tof, tofcenter_offset, 
+                                                  n_sigmas, half_erf_lut, threadsperblock, ngpus)
+
+back_img = back_img.reshape(img.shape)
+t3 = time()
+t_back = t3 - t2
 
 #----
 # print results
 print('cuda #views',nviews,'fwd',t_fwd)
-#print('cuda #views',nviews,'back',t_back)
+print('cuda #views',nviews,'back',t_back)
 
 # show results
 #import pymirc.viewer as pv
