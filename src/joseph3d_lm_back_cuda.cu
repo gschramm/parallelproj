@@ -289,7 +289,7 @@ extern "C" void joseph3d_lm_back_cuda(float *h_xstart,
                                       unsigned int threadsperblock,
                                       int num_devices)
 {
-
+	cudaError_t error;	
   unsigned int blockspergrid;
 
   dim3 block(threadsperblock);
@@ -342,21 +342,33 @@ extern "C" void joseph3d_lm_back_cuda(float *h_xstart,
     dim3 grid(blockspergrid);
 
     // allocate the memory for the array containing the projection on the device
-    cudaMalloc(&d_p[i_dev], proj_bytes_dev);
+    error = cudaMalloc(&d_p[i_dev], proj_bytes_dev);
+	  if (error != cudaSuccess){
+        printf("cudaMalloc returned error %s (code %d), line(%d)\n", cudaGetErrorString(error), error, __LINE__);
+        exit(EXIT_FAILURE);}
     cudaMemcpyAsync(d_p[i_dev], h_p + dev_offset, proj_bytes_dev, cudaMemcpyHostToDevice);
 
-    cudaMalloc(&d_xstart[i_dev], 3*proj_bytes_dev);
+    error = cudaMalloc(&d_xstart[i_dev], 3*proj_bytes_dev);
+	  if (error != cudaSuccess){
+        printf("cudaMalloc returned error %s (code %d), line(%d)\n", cudaGetErrorString(error), error, __LINE__);
+        exit(EXIT_FAILURE);}
     cudaMemcpyAsync(d_xstart[i_dev], h_xstart + 3*dev_offset, 3*proj_bytes_dev, 
                     cudaMemcpyHostToDevice);
 
-    cudaMalloc(&d_xend[i_dev], 3*proj_bytes_dev);
+    error = cudaMalloc(&d_xend[i_dev], 3*proj_bytes_dev);
+	  if (error != cudaSuccess){
+        printf("cudaMalloc returned error %s (code %d), line(%d)\n", cudaGetErrorString(error), error, __LINE__);
+        exit(EXIT_FAILURE);}
     cudaMemcpyAsync(d_xend[i_dev], h_xend + 3*dev_offset, 3*proj_bytes_dev, 
                     cudaMemcpyHostToDevice);
   
     // initialize device image for back projection with 0s execpt for the last device 
     // we sent the input image to the last device to make sure that the back-projector
     // adds to it
-    cudaMalloc(&d_img[i_dev], img_bytes);
+    error = cudaMalloc(&d_img[i_dev], img_bytes);
+	  if (error != cudaSuccess){
+        printf("cudaMalloc returned error %s (code %d), line(%d)\n", cudaGetErrorString(error), error, __LINE__);
+        exit(EXIT_FAILURE);}
     if(i_dev == (num_devices - 1)){
       cudaMemcpyAsync(d_img[i_dev], h_img, img_bytes,cudaMemcpyHostToDevice);
     }
@@ -364,14 +376,23 @@ extern "C" void joseph3d_lm_back_cuda(float *h_xstart,
       cudaMemsetAsync(d_img[i_dev], 0, img_bytes);
     }
 
-    cudaMalloc(&d_img_origin[i_dev], 3*sizeof(float));
+    error = cudaMalloc(&d_img_origin[i_dev], 3*sizeof(float));
+	  if (error != cudaSuccess){
+        printf("cudaMalloc returned error %s (code %d), line(%d)\n", cudaGetErrorString(error), error, __LINE__);
+        exit(EXIT_FAILURE);}
     cudaMemcpyAsync(d_img_origin[i_dev], h_img_origin, 3*sizeof(float), 
                     cudaMemcpyHostToDevice);
 
-    cudaMalloc(&d_voxsize[i_dev], 3*sizeof(float));
+    error = cudaMalloc(&d_voxsize[i_dev], 3*sizeof(float));
+	  if (error != cudaSuccess){
+        printf("cudaMalloc returned error %s (code %d), line(%d)\n", cudaGetErrorString(error), error, __LINE__);
+        exit(EXIT_FAILURE);}
     cudaMemcpyAsync(d_voxsize[i_dev], h_voxsize, 3*sizeof(float), cudaMemcpyHostToDevice);
 
-    cudaMalloc(&d_img_dim[i_dev], 3*sizeof(unsigned int));
+    error = cudaMalloc(&d_img_dim[i_dev], 3*sizeof(unsigned int));
+	  if (error != cudaSuccess){
+        printf("cudaMalloc returned error %s (code %d), line(%d)\n", cudaGetErrorString(error), error, __LINE__);
+        exit(EXIT_FAILURE);}
     cudaMemcpyAsync(d_img_dim[i_dev], h_img_dim, 3*sizeof(unsigned int), cudaMemcpyHostToDevice);
 
     // call the kernel
@@ -391,7 +412,12 @@ extern "C" void joseph3d_lm_back_cuda(float *h_xstart,
     if(i_dev == 0){
       // allocate memory for aux array to sum back projections on device 0
       // in case we have multiple devices
-      if(num_devices > 1){cudaMalloc(&d_img2, img_bytes);}
+      if(num_devices > 1){
+        error = cudaMalloc(&d_img2, img_bytes);
+	      if (error != cudaSuccess){
+          printf("cudaMalloc returned error %s (code %d), line(%d)\n", cudaGetErrorString(error), error, __LINE__);
+          exit(EXIT_FAILURE);}
+      }
     }
     else{
       // copy backprojection image from device i_dev to device 0

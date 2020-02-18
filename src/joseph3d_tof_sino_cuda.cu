@@ -5,7 +5,6 @@
 #include<stdio.h>
 #include<stdlib.h>
 #include<math.h>
-#include<omp.h>
 
 #include "tof_utils_cuda.h"
 
@@ -378,6 +377,7 @@ extern "C" void joseph3d_tof_sino_cuda(float *h_xstart,
                                        unsigned int threadsperblock,
                                        int num_devices)
 {
+	cudaError_t error;	
   unsigned int blockspergrid;
 
   dim3 block(threadsperblock);
@@ -431,39 +431,70 @@ extern "C" void joseph3d_tof_sino_cuda(float *h_xstart,
     dim3 grid(blockspergrid);
 
     // allocate the memory for the array containing the projection on the device
-    cudaMalloc(&d_p[i_dev], n_tofbins*proj_bytes_dev);
+    error = cudaMalloc(&d_p[i_dev], n_tofbins*proj_bytes_dev);
+	  if (error != cudaSuccess){
+        printf("cudaMalloc returned error %s (code %d), line(%d)\n", cudaGetErrorString(error), error, __LINE__);
+        exit(EXIT_FAILURE);}
+
     cudaMemsetAsync(d_p[i_dev], 0, n_tofbins*proj_bytes_dev);
 
-    cudaMalloc(&d_xstart[i_dev], 3*proj_bytes_dev);
+    error = cudaMalloc(&d_xstart[i_dev], 3*proj_bytes_dev);
+	  if (error != cudaSuccess){
+        printf("cudaMalloc returned error %s (code %d), line(%d)\n", cudaGetErrorString(error), error, __LINE__);
+        exit(EXIT_FAILURE);}
     cudaMemcpyAsync(d_xstart[i_dev], h_xstart + 3*dev_offset, 3*proj_bytes_dev, 
                     cudaMemcpyHostToDevice);
 
-    cudaMalloc(&d_xend[i_dev], 3*proj_bytes_dev);
+    error = cudaMalloc(&d_xend[i_dev], 3*proj_bytes_dev);
+	  if (error != cudaSuccess){
+        printf("cudaMalloc returned error %s (code %d), line(%d)\n", cudaGetErrorString(error), error, __LINE__);
+        exit(EXIT_FAILURE);}
     cudaMemcpyAsync(d_xend[i_dev], h_xend + 3*dev_offset, 3*proj_bytes_dev, 
                     cudaMemcpyHostToDevice);
    
-    cudaMalloc(&d_img[i_dev], img_bytes);
+    error = cudaMalloc(&d_img[i_dev], img_bytes);
+	  if (error != cudaSuccess){
+        printf("cudaMalloc returned error %s (code %d), line(%d)\n", cudaGetErrorString(error), error, __LINE__);
+        exit(EXIT_FAILURE);}
     cudaMemcpyAsync(d_img[i_dev], h_img, img_bytes, cudaMemcpyHostToDevice);
 
-    cudaMalloc(&d_img_origin[i_dev], 3*sizeof(float));
+    error = cudaMalloc(&d_img_origin[i_dev], 3*sizeof(float));
+	  if (error != cudaSuccess){
+        printf("cudaMalloc returned error %s (code %d), line(%d)\n", cudaGetErrorString(error), error, __LINE__);
+        exit(EXIT_FAILURE);}
     cudaMemcpyAsync(d_img_origin[i_dev], h_img_origin, 3*sizeof(float), 
                     cudaMemcpyHostToDevice);
 
-    cudaMalloc(&d_voxsize[i_dev], 3*sizeof(float));
+    error = cudaMalloc(&d_voxsize[i_dev], 3*sizeof(float));
+	  if (error != cudaSuccess){
+        printf("cudaMalloc returned error %s (code %d), line(%d)\n", cudaGetErrorString(error), error, __LINE__);
+        exit(EXIT_FAILURE);}
     cudaMemcpyAsync(d_voxsize[i_dev], h_voxsize, 3*sizeof(float), cudaMemcpyHostToDevice);
 
-    cudaMalloc(&d_img_dim[i_dev], 3*sizeof(unsigned int));
+    error = cudaMalloc(&d_img_dim[i_dev], 3*sizeof(unsigned int));
+	  if (error != cudaSuccess){
+        printf("cudaMalloc returned error %s (code %d), line(%d)\n", cudaGetErrorString(error), error, __LINE__);
+        exit(EXIT_FAILURE);}
     cudaMemcpyAsync(d_img_dim[i_dev], h_img_dim, 3*sizeof(unsigned int), cudaMemcpyHostToDevice);
 
     // send TOF arrays to device
-    cudaMalloc(&d_sigma_tof[i_dev], proj_bytes_dev);
+    error = cudaMalloc(&d_sigma_tof[i_dev], proj_bytes_dev);
+	  if (error != cudaSuccess){
+        printf("cudaMalloc returned error %s (code %d), line(%d)\n", cudaGetErrorString(error), error, __LINE__);
+        exit(EXIT_FAILURE);}
     cudaMemcpyAsync(d_sigma_tof[i_dev], h_sigma_tof + dev_offset, proj_bytes_dev, cudaMemcpyHostToDevice);
 
-    cudaMalloc(&d_tofcenter_offset[i_dev], proj_bytes_dev);
+    error = cudaMalloc(&d_tofcenter_offset[i_dev], proj_bytes_dev);
+	  if (error != cudaSuccess){
+        printf("cudaMalloc returned error %s (code %d), line(%d)\n", cudaGetErrorString(error), error, __LINE__);
+        exit(EXIT_FAILURE);}
     cudaMemcpyAsync(d_tofcenter_offset[i_dev], h_tofcenter_offset + dev_offset, proj_bytes_dev, 
                     cudaMemcpyHostToDevice);
 
-    cudaMalloc(&d_half_erf_lut[i_dev], 6001*sizeof(float));
+    error = cudaMalloc(&d_half_erf_lut[i_dev], 6001*sizeof(float));
+	  if (error != cudaSuccess){
+        printf("cudaMalloc returned error %s (code %d), line(%d)\n", cudaGetErrorString(error), error, __LINE__);
+        exit(EXIT_FAILURE);}
     cudaMemcpyAsync(d_half_erf_lut[i_dev], h_half_erf_lut, 6001*sizeof(float), cudaMemcpyHostToDevice);
 
     // call the kernel
