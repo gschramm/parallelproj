@@ -19,7 +19,6 @@ target_link_libraries(parallelproj PRIVATE OpenMP::OpenMP_C)
 install(TARGETS parallelproj DESTINATION ${CMAKE_CURRENT_LIST_DIR}/lib)
 
 
-
 # (2) build the cuda lib
 include(CheckLanguage)
 check_language(CUDA)
@@ -28,11 +27,10 @@ check_language(CUDA)
 if(CMAKE_CUDA_COMPILER)
   enable_language(CUDA)
   # set cuda compiler flags
-  # --device-c is need to have __device__ functions defined in separate files (compilation units)
-  set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} --compiler-options '-fPIC' --device-c")
-  
+  #set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} --compiler-options '-fPIC'")
   file(GLOB CP_SOURCES src/*.cu)
   add_library(parallelproj_cuda SHARED ${CP_SOURCES})
+  set_target_properties(parallelproj_cuda PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
   target_include_directories(parallelproj_cuda PRIVATE include)
   install(TARGETS parallelproj_cuda DESTINATION ${CMAKE_CURRENT_LIST_DIR}/lib)
 else()

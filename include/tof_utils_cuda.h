@@ -1,7 +1,7 @@
-#ifndef TOF_UTILS_CUDA_H
-#define TOF_UTILS_CUDA_H
+#ifndef __TOF_UTILS_CUDA_H__
+#define __TOF_UTILS_CUDA_H__
 
-__device__ float tof_weight_cuda(float x_m0, 
+extern "C" __device__ float tof_weight_cuda(float x_m0, 
 		                             float x_m1, 
 		                             float x_m2, 
 		                             float x_v0, 
@@ -17,7 +17,7 @@ __device__ float tof_weight_cuda(float x_m0,
                                  float *erf_lut);
 
 
-__device__ void relevant_tof_bins_cuda(float x_m0,
+extern "C" __device__ void relevant_tof_bins_cuda(float x_m0,
 		                                   float x_m1, 
 		                                   float x_m2, 
 		                                   float x_v0, 

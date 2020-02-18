@@ -25,7 +25,7 @@
  * @param half_erf_lut       look up table length 6001 for half the erf between -3 and 3. 
  *                           The i-th element contains 0.5*erf(-3 + 0.001*i)
  */
-__device__ float tof_weight_cuda(float x_m0, 
+extern "C" __device__ float tof_weight_cuda(float x_m0, 
 		                             float x_m1, 
 		                             float x_m2, 
 		                             float x_v0, 
@@ -91,7 +91,7 @@ __device__ float tof_weight_cuda(float x_m0,
  * @param it1 (output)      lower relevant tof bin
  * @param it2 (output)      upper relevant tof bin
  */
-__device__ void relevant_tof_bins_cuda(float x_m0,
+extern "C" __device__ void relevant_tof_bins_cuda(float x_m0,
 		                                   float x_m1, 
 		                                   float x_m2, 
 		                                   float x_v0, 
