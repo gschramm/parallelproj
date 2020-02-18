@@ -1,0 +1,36 @@
+#ifndef TOF_UTILS_CUDA_H
+#define TOF_UTILS_CUDA_H
+
+__device__ float tof_weight_cuda(float x_m0, 
+		                             float x_m1, 
+		                             float x_m2, 
+		                             float x_v0, 
+		                             float x_v1, 
+		                             float x_v2, 
+		                             float u0,
+		                             float u1,
+		                             float u2,
+		                             int it,
+		                             float tofbin_width,
+		                             float tofcenter_offset,
+		                             float sigma_tof,
+                                 float *erf_lut);
+
+
+__device__ void relevant_tof_bins_cuda(float x_m0,
+		                                   float x_m1, 
+		                                   float x_m2, 
+		                                   float x_v0, 
+		                                   float x_v1, 
+		                                   float x_v2, 
+		                                   float u0,
+		                                   float u1,
+		                                   float u2,
+		                                   float tofbin_width,
+		                                   float tofcenter_offset,
+		                                   float sigma_tof,
+		                                   unsigned int n_sigmas,
+		                                   unsigned int n_half,
+		                                   int *it1,
+		                                   int *it2);
+#endif

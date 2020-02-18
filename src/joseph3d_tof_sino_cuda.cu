@@ -1,5 +1,5 @@
 /**
- * @file joseph3d_tof_sino.c
+ * @file joseph3d_tof_sino_cuda.cu
  */
 
 #include<stdio.h>
@@ -7,7 +7,7 @@
 #include<math.h>
 #include<omp.h>
 
-#include "tof_utils.h"
+#include "tof_utils_cuda.h"
 
 /** @brief 3D sinogram tof joseph forward projector
  *
@@ -32,22 +32,22 @@
  *  @param half_erf_lut     look up table length 6001 for half erf between -3 and 3. 
  *                          The i-th element contains 0.5*erf(-3 + 0.001*i)
  */
-void joseph3d_tof_sino(float *xstart, 
-                       float *xend, 
-                       float *img,
-                       float *img_origin, 
-                       float *voxsize, 
-                       float *p,
-                       long long nlors, 
-                       unsigned int *img_dim,
-		                   int n_tofbins,
-		                   float tofbin_width,
-		                   float *sigma_tof,
-		                   float *tofcenter_offset,
-		                   unsigned int n_sigmas,
-                       float *half_erf_lut)
+__global__ void joseph3d_tof_sino_cuda_kernel(float *xstart, 
+                                              float *xend, 
+                                              float *img,
+                                              float *img_origin, 
+                                              float *voxsize, 
+                                              float *p,
+                                              long long nlors, 
+                                              unsigned int *img_dim,
+		                                          int n_tofbins,
+		                                          float tofbin_width,
+		                                          float *sigma_tof,
+		                                          float *tofcenter_offset,
+		                                          unsigned int n_sigmas,
+                                              float *half_erf_lut)
 {
-  long long i;
+  long long i = blockDim.x * blockIdx.x + threadIdx.x;
 
   unsigned int n0 = img_dim[0];
   unsigned int n1 = img_dim[1];
@@ -55,8 +55,7 @@ void joseph3d_tof_sino(float *xstart,
 
   int n_half = n_tofbins/2;
 
-  # pragma omp parallel for schedule(static)
-  for(i = 0; i < nlors; i++)
+  if(i < nlors)
   {
     float d0, d1, d2, d0_sq, d1_sq, d2_sq; 
     float lsq, cos0_sq, cos1_sq, cos2_sq;
@@ -176,14 +175,14 @@ void joseph3d_tof_sino(float *xstart,
 	      it2 =  n_half;
 
         // get the relevant tof bins (the TOF bins where the TOF weight is not close to 0)
-        relevant_tof_bins(x_m0, x_m1, x_m2, x_v0, x_v1, x_v2, u0, u1, u2, 
+        relevant_tof_bins_cuda(x_m0, x_m1, x_m2, x_v0, x_v1, x_v2, u0, u1, u2, 
 			                    tofbin_width, tofcenter_offset[i], sigma_tof[i], n_sigmas, n_half,
 		                      &it1, &it2);
 
         if(toAdd != 0){
           for(it = it1; it <= it2; it++){
             //calculate the TOF weight
-            tw = tof_weight(x_m0, x_m1, x_m2, x_v0, x_v1, x_v2, u0, u1, u2, it, 
+            tw = tof_weight_cuda(x_m0, x_m1, x_m2, x_v0, x_v1, x_v2, u0, u1, u2, it, 
 		                       tofbin_width, tofcenter_offset[i], sigma_tof[i], half_erf_lut);
 
             p[i*n_tofbins + it + n_half] += (tw * cf * toAdd);
@@ -245,14 +244,14 @@ void joseph3d_tof_sino(float *xstart,
 	      it2 =  n_half;
 
         // get the relevant tof bins (the TOF bins where the TOF weight is not close to 0)
-        relevant_tof_bins(x_m0, x_m1, x_m2, x_v0, x_v1, x_v2, u0, u1, u2, 
+        relevant_tof_bins_cuda(x_m0, x_m1, x_m2, x_v0, x_v1, x_v2, u0, u1, u2, 
 			                    tofbin_width, tofcenter_offset[i], sigma_tof[i], n_sigmas, n_half,
 		                      &it1, &it2);
 
         if(toAdd != 0){
           for(it = it1; it <= it2; it++){
             // calculate the TOF weight
-            tw = tof_weight(x_m0, x_m1, x_m2, x_v0, x_v1, x_v2, u0, u1, u2, it, 
+            tw = tof_weight_cuda(x_m0, x_m1, x_m2, x_v0, x_v1, x_v2, u0, u1, u2, it, 
 		                        tofbin_width, tofcenter_offset[i], sigma_tof[i], half_erf_lut);
 
             p[i*n_tofbins + it + n_half] += (tw * cf * toAdd);
@@ -315,14 +314,14 @@ void joseph3d_tof_sino(float *xstart,
 	      it2 =  n_half;
 
         // get the relevant tof bins (the TOF bins where the TOF weight is not close to 0)
-        relevant_tof_bins(x_m0, x_m1, x_m2, x_v0, x_v1, x_v2, u0, u1, u2, 
+        relevant_tof_bins_cuda(x_m0, x_m1, x_m2, x_v0, x_v1, x_v2, u0, u1, u2, 
 			                    tofbin_width, tofcenter_offset[i], sigma_tof[i], n_sigmas, n_half,
 		                      &it1, &it2);
 
         if(toAdd != 0){
           for(it = it1; it <= it2; it++){
             // calculate the TOF weight
-            tw = tof_weight(x_m0, x_m1, x_m2, x_v0, x_v1, x_v2, u0, u1, u2, it, 
+            tw = tof_weight_cuda(x_m0, x_m1, x_m2, x_v0, x_v1, x_v2, u0, u1, u2, it, 
 		                        tofbin_width, tofcenter_offset[i], sigma_tof[i], half_erf_lut);
 
             p[i*n_tofbins + it + n_half] += (tw * cf * toAdd);
@@ -331,4 +330,166 @@ void joseph3d_tof_sino(float *xstart,
       }
     }
   }
+}
+
+//------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------
+
+/** @brief 3D sinogram tof joseph forward projector CUDA wrapper
+ *
+ *  @param h_xstart array of shape [3*nlors] with the coordinates of the start points of the LORs.
+ *                  The start coordinates of the n-th LOR are at xstart[n*3 + i] with i = 0,1,2 
+ *  @param h_xend   array of shape [3*nlors] with the coordinates of the end   points of the LORs.
+ *                  The start coordinates of the n-th LOR are at xstart[n*3 + i] with i = 0,1,2 
+ *  @param h_img    array of shape [n0*n1*n2] containing the 3D image to be projected.
+ *                  The pixel [i,j,k] ist stored at [n1*n2+i + n2*k + j].
+ *  @param h_img_origin  array [x0_0,x0_1,x0_2] of coordinates of the center of the [0,0,0] voxel
+ *  @param h_voxsize     array [vs0, vs1, vs2] of the voxel sizes
+ *  @param h_p           array of length nlors (output) used to store the projections
+ *  @param nlors         number of projections (length of p array)
+ *  @param h_img_dim     array with dimensions of image [n0,n1,n2]
+ *  @param n_tofbins        number of TOF bins
+ *  @param tofbin_width     width of the TOF bins in spatial units (units of xstart and xend)
+ *  @param sigma_tof        array of length nlors with the TOF resolution (sigma) for each LOR in
+ *                          spatial units (units of xstart and xend) 
+ *  @param tofcenter_offset array of length nlors with the offset of the central TOF bin from the 
+ *                          midpoint of each LOR in spatial units (units of xstart and xend) 
+ *  @param n_sigmas         number of sigmas to consider for calculation of TOF kernel
+ *  @param half_erf_lut     look up table length 6001 for half erf between -3 and 3. 
+ *                          The i-th element contains 0.5*erf(-3 + 0.001*i)
+ *  @param threadsperblock number of threads per block
+ *  @param num_devices     number of CUDA devices to use. if set to -1 cudaGetDeviceCount() is used
+ */
+extern "C" void joseph3d_tof_sino_cuda(float *h_xstart, 
+                                       float *h_xend, 
+                                       float *h_img,
+                                       float *h_img_origin, 
+                                       float *h_voxsize, 
+                                       float *h_p,
+                                       unsigned long long nlors, 
+                                       unsigned int *h_img_dim,
+		                                   int n_tofbins,
+		                                   float tofbin_width,
+		                                   float *h_sigma_tof,
+		                                   float *h_tofcenter_offset,
+		                                   unsigned int n_sigmas,
+                                       float *h_half_erf_lut,
+                                       unsigned int threadsperblock,
+                                       int num_devices)
+{
+  unsigned int blockspergrid;
+
+  dim3 block(threadsperblock);
+
+  // offset for chunk of projections passed to a device 
+  unsigned long long dev_offset;
+  // number of projections to be calculated on a device
+  unsigned long long dev_nlors;
+
+  unsigned int n0 = h_img_dim[0];
+  unsigned int n1 = h_img_dim[1];
+  unsigned int n2 = h_img_dim[2];
+
+  unsigned long long img_bytes = (n0*n1*n2)*sizeof(float);
+  unsigned long long proj_bytes_dev;
+
+  // get number of avilable CUDA devices specified as <=0 in input
+  if(num_devices <= 0){cudaGetDeviceCount(&num_devices);}  
+
+  // init the dynamic arrays of device arrays
+  float **d_p              = new float * [num_devices];
+  float **d_xstart         = new float * [num_devices];
+  float **d_xend           = new float * [num_devices];
+  float **d_img            = new float * [num_devices];
+  float **d_img_origin     = new float * [num_devices];
+  float **d_voxsize        = new float * [num_devices];
+  unsigned int **d_img_dim = new unsigned int * [num_devices];
+
+  // init the dynamic arrays of TOF device arrays
+  float **d_sigma_tof        = new float * [num_devices];
+  float **d_tofcenter_offset = new float * [num_devices];
+  float **d_half_erf_lut     = new float * [num_devices];
+
+  printf("\n # CUDA devices: %d \n", num_devices);
+
+  // we split the projections across all CUDA devices
+  for (unsigned int i_dev = 0; i_dev < num_devices; i_dev++) 
+  {
+    cudaSetDevice(i_dev);
+    // () are important in integer division!
+    dev_offset = i_dev*(nlors/num_devices);
+ 
+    // calculate the number of projections for a device (last chunck can be a bit bigger) 
+    dev_nlors = i_dev == (num_devices - 1) ? (nlors - dev_offset) : (nlors/num_devices);
+
+    // calculate the number of bytes for the projection array on the device
+    proj_bytes_dev = dev_nlors*sizeof(float);
+
+    // calculate the number of blocks needed for every device (chunk)
+    blockspergrid = (unsigned int)ceil((float)dev_nlors / threadsperblock);
+    dim3 grid(blockspergrid);
+
+    // allocate the memory for the array containing the projection on the device
+    cudaMalloc(&d_p[i_dev], n_tofbins*proj_bytes_dev);
+    cudaMemsetAsync(d_p[i_dev], 0, n_tofbins*proj_bytes_dev);
+
+    cudaMalloc(&d_xstart[i_dev], 3*proj_bytes_dev);
+    cudaMemcpyAsync(d_xstart[i_dev], h_xstart + 3*dev_offset, 3*proj_bytes_dev, 
+                    cudaMemcpyHostToDevice);
+
+    cudaMalloc(&d_xend[i_dev], 3*proj_bytes_dev);
+    cudaMemcpyAsync(d_xend[i_dev], h_xend + 3*dev_offset, 3*proj_bytes_dev, 
+                    cudaMemcpyHostToDevice);
+   
+    cudaMalloc(&d_img[i_dev], img_bytes);
+    cudaMemcpyAsync(d_img[i_dev], h_img, img_bytes, cudaMemcpyHostToDevice);
+
+    cudaMalloc(&d_img_origin[i_dev], 3*sizeof(float));
+    cudaMemcpyAsync(d_img_origin[i_dev], h_img_origin, 3*sizeof(float), 
+                    cudaMemcpyHostToDevice);
+
+    cudaMalloc(&d_voxsize[i_dev], 3*sizeof(float));
+    cudaMemcpyAsync(d_voxsize[i_dev], h_voxsize, 3*sizeof(float), cudaMemcpyHostToDevice);
+
+    cudaMalloc(&d_img_dim[i_dev], 3*sizeof(unsigned int));
+    cudaMemcpyAsync(d_img_dim[i_dev], h_img_dim, 3*sizeof(unsigned int), cudaMemcpyHostToDevice);
+
+    // send TOF arrays to device
+    cudaMalloc(&d_sigma_tof[i_dev], proj_bytes_dev);
+    cudaMemcpyAsync(d_sigma_tof[i_dev], h_sigma_tof + dev_offset, proj_bytes_dev, cudaMemcpyHostToDevice);
+
+    cudaMalloc(&d_tofcenter_offset[i_dev], proj_bytes_dev);
+    cudaMemcpyAsync(d_tofcenter_offset[i_dev], h_tofcenter_offset + dev_offset, proj_bytes_dev, 
+                    cudaMemcpyHostToDevice);
+
+    cudaMalloc(&d_half_erf_lut[i_dev], 6001*sizeof(float));
+    cudaMemcpyAsync(d_half_erf_lut[i_dev], h_half_erf_lut, 6001*sizeof(float), cudaMemcpyHostToDevice);
+
+    // call the kernel
+    joseph3d_tof_sino_cuda_kernel<<<grid,block>>>(d_xstart[i_dev], d_xend[i_dev], d_img[i_dev], 
+                                                  d_img_origin[i_dev], d_voxsize[i_dev], 
+                                                  d_p[i_dev], dev_nlors, d_img_dim[i_dev],
+		                                              n_tofbins, tofbin_width, d_sigma_tof[i_dev],
+		                                              d_tofcenter_offset[i_dev], n_sigmas, d_half_erf_lut[i_dev]);
+
+    // copy projection back from device to host
+    cudaMemcpyAsync(h_p + n_tofbins*dev_offset, d_p[i_dev], n_tofbins*proj_bytes_dev, cudaMemcpyDeviceToHost);
+
+    // deallocate memory on device
+    cudaFree(d_p[i_dev]);
+    cudaFree(d_xstart[i_dev]);
+    cudaFree(d_xend[i_dev]);
+    cudaFree(d_img);
+    cudaFree(d_img_origin);
+    cudaFree(d_voxsize);
+
+    // deallocate TOF memory on device
+    cudaFree(d_sigma_tof[i_dev]);
+    cudaFree(d_tofcenter_offset[i_dev]);
+    cudaFree(d_half_erf_lut);
+  }
+
+  // make sure that all devices are done before leaving
+  for (unsigned int i_dev = 0; i_dev < num_devices; i_dev++){cudaDeviceSynchronize();}
 }

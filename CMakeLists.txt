@@ -28,10 +28,12 @@ check_language(CUDA)
 if(CMAKE_CUDA_COMPILER)
   enable_language(CUDA)
   # set cuda compiler flags
-  set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} --compiler-options '-fPIC'")
+  # --device-c is need to have __device__ functions defined in separate files (compilation units)
+  set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} --compiler-options '-fPIC' --device-c")
   
   file(GLOB CP_SOURCES src/*.cu)
   add_library(parallelproj_cuda SHARED ${CP_SOURCES})
+  target_include_directories(parallelproj_cuda PRIVATE include)
   install(TARGETS parallelproj_cuda DESTINATION ${CMAKE_CURRENT_LIST_DIR}/lib)
 else()
   message("XXXX NO CUDA FOUND -> skipping CUDA lib")

@@ -1,5 +1,5 @@
 /**
- * @file tof_utils.c
+ * @file tof_utils_cuda.cu
  */
 
 #include<stdio.h>
@@ -25,20 +25,20 @@
  * @param half_erf_lut       look up table length 6001 for half the erf between -3 and 3. 
  *                           The i-th element contains 0.5*erf(-3 + 0.001*i)
  */
-float tof_weight(float x_m0, 
-		             float x_m1, 
-		             float x_m2, 
-		             float x_v0, 
-		             float x_v1, 
-		             float x_v2, 
-		             float u0,
-		             float u1,
-		             float u2,
-		             int it,
-		             float tofbin_width,
-		             float tofcenter_offset,
-		             float sigma_tof,
-                 float *half_erf_lut)
+__device__ float tof_weight_cuda(float x_m0, 
+		                             float x_m1, 
+		                             float x_m2, 
+		                             float x_v0, 
+		                             float x_v1, 
+		                             float x_v2, 
+		                             float u0,
+		                             float u1,
+		                             float u2,
+		                             int it,
+		                             float tofbin_width,
+		                             float tofcenter_offset,
+		                             float sigma_tof,
+                                 float *half_erf_lut)
 {
   float x_c0, x_c1, x_c2;
   float dtof, dtof_far, dtof_near, tw;
@@ -91,22 +91,22 @@ float tof_weight(float x_m0,
  * @param it1 (output)      lower relevant tof bin
  * @param it2 (output)      upper relevant tof bin
  */
-void relevant_tof_bins(float x_m0,
-		       float x_m1, 
-		       float x_m2, 
-		       float x_v0, 
-		       float x_v1, 
-		       float x_v2, 
-		       float u0,
-		       float u1,
-		       float u2,
-		       float tofbin_width,
-		       float tofcenter_offset,
-		       float sigma_tof,
-		       unsigned int n_sigmas,
-		       int n_half,
-		       int *it1,
-		       int *it2)
+__device__ void relevant_tof_bins_cuda(float x_m0,
+		                                   float x_m1, 
+		                                   float x_m2, 
+		                                   float x_v0, 
+		                                   float x_v1, 
+		                                   float x_v2, 
+		                                   float u0,
+		                                   float u1,
+		                                   float u2,
+		                                   float tofbin_width,
+		                                   float tofcenter_offset,
+		                                   float sigma_tof,
+		                                   unsigned int n_sigmas,
+		                                   int n_half,
+		                                   int *it1,
+		                                   int *it2)
 {
   float b1, b2;
 

@@ -71,7 +71,6 @@ void joseph3d_tof_sino_back(float *xstart,
     float u0, u1, u2, d_norm;
     float x_m0, x_m1, x_m2;    
     float x_v0, x_v1, x_v2;    
-    float x_c0, x_c1, x_c2;    
 
     int it, it1, it2;
     float tw;
