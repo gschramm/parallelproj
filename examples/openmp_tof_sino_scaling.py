@@ -58,6 +58,23 @@ lib_parallelproj.joseph3d_tof_sino_back.argtypes = [ar_1d_single,
                                                     ctypes.c_uint,     # n_sigmas 
                                                     ar_1d_single]      # look up table for erf
 
+lib_parallelproj.joseph3d_tof_sino_back2.restype  = None
+lib_parallelproj.joseph3d_tof_sino_back2.argtypes = [ar_1d_single,
+                                                    ar_1d_single,
+                                                    ar_1d_single,
+                                                    ar_1d_single,
+                                                    ar_1d_single,
+                                                    ar_1d_single,
+                                                    ctypes.c_longlong,
+                                                    ar_1d_uint,        #
+                                                    ctypes.c_int,      # n_tofbins
+                                                    ctypes.c_float,    # tofbin_width 
+                                                    ar_1d_single,      # sigma tof
+                                                    ar_1d_single,      # tofcenter_offset
+                                                    ctypes.c_uint,     # n_sigmas 
+                                                    ar_1d_single]      # look up table for erf
+
+
 
 
 ###############################################################
@@ -110,7 +127,7 @@ t_fwd = t1 - t0
 
 fwd_nontof_sino = fwd_tof_sino.sum(3)
 
-#---- back projection
+#---- back projection with atomic add
 ones     = np.ones(nLORs*n_tofbins, dtype = ctypes.c_float)  
 back_img = np.zeros(img_dim, dtype = ctypes.c_float).flatten()
 
@@ -122,12 +139,27 @@ ok = lib_parallelproj.joseph3d_tof_sino_back(xstart.flatten(), xend.flatten(), b
 
 back_img = back_img.reshape(img.shape)
 t3 = time()
-t_back = t3 - t2
+t_back1 = t3 - t2
+
+#---- back projection in separate images followed by summing
+back_img2 = np.zeros(img_dim, dtype = ctypes.c_float).flatten()
+
+t4 = time()
+ok = lib_parallelproj.joseph3d_tof_sino_back2(xstart.flatten(), xend.flatten(), back_img2, 
+                                              img_origin, voxsize, ones, nLORs, img_dim,
+                                              n_tofbins, tofbin_width, sigma_tof, tofcenter_offset, 
+                                              n_sigmas, half_erf_lut)
+
+back_img2 = back_img2.reshape(img.shape)
+t5 = time()
+t_back2 = t5 - t4
+
 
 #----
 # print results
 print('openmp cpu','#views',nviews,'fwd',t_fwd)
-print('openmp cpu','#views',nviews,'back',t_back)
+print('openmp cpu','#views',nviews,'back1',t_back1)
+print('openmp cpu','#views',nviews,'back2',t_back2)
 
 # show results
 #import pymirc.viewer as pv
