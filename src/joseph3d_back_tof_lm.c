@@ -1,5 +1,5 @@
 /**
- * @file joseph3d_back_tof_sino.c
+ * @file joseph3d_back_tof_lm.c
  */
 
 #include<stdio.h>
@@ -9,7 +9,7 @@
 
 #include "tof_utils.h"
 
-/** @brief 3D sinogram tof joseph back projector
+/** @brief 3D listmode tof joseph back projector
  *
  *  Each thread projects into a separate image. At the end all images are summed.
  *
@@ -21,7 +21,7 @@
  *                The pixel [i,j,k] ist stored at [n1*n2+i + n2*k + j].
  *  @param img_origin  array [x0_0,x0_1,x0_2] of coordinates of the center of the [0,0,0] voxel
  *  @param voxsize     array [vs0, vs1, vs2] of the voxel sizes
- *  @param p           array of length nlors*n_tofbins with the values to be back projected
+ *  @param p           array of length nlors with the values to be back projected
  *  @param nlors       number of geometrical LORs
  *  @param img_dim     array with dimensions of image [n0,n1,n2]
  *  @param n_tofbins        number of TOF bins
@@ -30,24 +30,24 @@
  *                          spatial units (units of xstart and xend) 
  *  @param tofcenter_offset array of length nlors with the offset of the central TOF bin from the 
  *                          midpoint of each LOR in spatial units (units of xstart and xend) 
- *  @param n_sigmas         number of sigmas to consider for calculation of TOF kernel
+ *  @param tof_bin          array containing the TOF bin of each event
  *  @param half_erf_lut     look up table length 6001 for half erf between -3 and 3. 
  *                          The i-th element contains 0.5*erf(-3 + 0.001*i)
  */
-void joseph3d_back_tof_sino(float *xstart, 
-                            float *xend, 
-                            float *img,
-                            float *img_origin, 
-                            float *voxsize,
-                            float *p, 
-                            long long nlors, 
-                            unsigned int *img_dim,
-		                        int n_tofbins,
-		                        float tofbin_width,
-		                        float *sigma_tof,
-		                        float *tofcenter_offset,
-		                        unsigned int n_sigmas,
-                            float *half_erf_lut)
+void joseph3d_back_tof_lm(float *xstart, 
+                          float *xend, 
+                          float *img,
+                          float *img_origin, 
+                          float *voxsize,
+                          float *p, 
+                          long long nlors, 
+                          unsigned int *img_dim,
+		                      int n_tofbins,
+		                      float tofbin_width,
+		                      float *sigma_tof,
+		                      float *tofcenter_offset,
+		                      int   *tof_bin,
+                          float *half_erf_lut)
 {
   long long i;
 
@@ -84,7 +84,6 @@ void joseph3d_back_tof_sino(float *xstart,
     float x_m0, x_m1, x_m2;    
     float x_v0, x_v1, x_v2;    
 
-    int it, it1, it2;
     float tw;
 
     // test whether the ray between the two detectors is most parallel
@@ -165,39 +164,29 @@ void joseph3d_back_tof_sino(float *xstart,
         x_v1 = x_pr1;
         x_v2 = x_pr2;
 
-	      it1 = -n_half;
-	      it2 =  n_half;
+        if(p[i] != 0){
+          tw = tof_weight(x_m0, x_m1, x_m2, x_v0, x_v1, x_v2, u0, u1, u2, tof_bin[i], 
+		                     tofbin_width, tofcenter_offset[i], sigma_tof[i], half_erf_lut);
 
-        // get the relevant tof bins (the TOF bins where the TOF weight is not close to 0)
-        relevant_tof_bins(x_m0, x_m1, x_m2, x_v0, x_v1, x_v2, u0, u1, u2, 
-			                    tofbin_width, tofcenter_offset[i], sigma_tof[i], n_sigmas, n_half,
-		                      &it1, &it2);
-        
-        for(it = it1; it <= it2; it++){
-          if(p[i*n_tofbins + it + n_half] != 0){
-            tw = tof_weight(x_m0, x_m1, x_m2, x_v0, x_v1, x_v2, u0, u1, u2, it, 
-		                       tofbin_width, tofcenter_offset[i], sigma_tof[i], half_erf_lut);
-
-            if ((i1_floor >= 0) && (i1_floor < n1) && (i2_floor >= 0) && (i2_floor < n2))
-            {
-              back_imgs[n1*n2*i0 + n2*i1_floor + i2_floor + tid*nvox] += (tw * p[i*n_tofbins + it + n_half] * (1 - tmp_1) * 
-                                                         (1 - tmp_2) * cf);
-            }
-            if ((i1_ceil >= 0) && (i1_ceil < n1) && (i2_floor >= 0) && (i2_floor < n2))
-            {
-              back_imgs[n1*n2*i0 + n2*i1_ceil + i2_floor + tid*nvox] += (tw * p[i*n_tofbins + it + n_half] * tmp_1 * 
-                                                        (1 - tmp_2) * cf);
-            }
-            if ((i1_floor >= 0) && (i1_floor < n1) && (i2_ceil >= 0) && (i2_ceil < n2))
-            {
-              back_imgs[n1*n2*i0 + n2*i1_floor + i2_ceil + tid*nvox] += (tw * p[i*n_tofbins + it + n_half] * (1 - tmp_1) * 
-                                                        tmp_2*cf);
-            }
-            if ((i1_ceil >= 0) && (i1_ceil < n1) && (i2_ceil >= 0) && (i2_ceil < n2))
-            {
-              back_imgs[n1*n2*i0 + n2*i1_ceil + i2_ceil + tid*nvox] += (tw * p[i*n_tofbins + it + n_half] * tmp_1 * 
-                                                       tmp_2 * cf);
-            }
+          if ((i1_floor >= 0) && (i1_floor < n1) && (i2_floor >= 0) && (i2_floor < n2))
+          {
+            back_imgs[n1*n2*i0 + n2*i1_floor + i2_floor + tid*nvox] += (tw * p[i] * (1 - tmp_1) * 
+                                                                        (1 - tmp_2) * cf);
+          }
+          if ((i1_ceil >= 0) && (i1_ceil < n1) && (i2_floor >= 0) && (i2_floor < n2))
+          {
+            back_imgs[n1*n2*i0 + n2*i1_ceil + i2_floor + tid*nvox] += (tw * p[i] * tmp_1 * 
+                                                                       (1 - tmp_2) * cf);
+          }
+          if ((i1_floor >= 0) && (i1_floor < n1) && (i2_ceil >= 0) && (i2_ceil < n2))
+          {
+            back_imgs[n1*n2*i0 + n2*i1_floor + i2_ceil + tid*nvox] += (tw * p[i] * (1 - tmp_1) * 
+                                                                       tmp_2 * cf);
+          }
+          if ((i1_ceil >= 0) && (i1_ceil < n1) && (i2_ceil >= 0) && (i2_ceil < n2))
+          {
+            back_imgs[n1*n2*i0 + n2*i1_ceil + i2_ceil + tid*nvox] += (tw * p[i] * tmp_1 * 
+                                                                      tmp_2 * cf);
           }
         }
       }
@@ -228,46 +217,35 @@ void joseph3d_back_tof_sino(float *xstart,
         tmp_0 = (x_pr0 - (i0_floor*voxsize[0] + img_origin[0])) / voxsize[0];
         tmp_2 = (x_pr2 - (i2_floor*voxsize[2] + img_origin[2])) / voxsize[2];
   
-
         //--------- TOF related quantities
         // calculate the voxel center needed for TOF weights
         x_v0 = x_pr0;
         x_v1 = img_origin[1] + i1*voxsize[1];
         x_v2 = x_pr2;
 
-	      it1 = -n_half;
-	      it2 =  n_half;
+        if(p[i] != 0){
+          tw = tof_weight(x_m0, x_m1, x_m2, x_v0, x_v1, x_v2, u0, u1, u2, tof_bin[i], 
+		                     tofbin_width, tofcenter_offset[i], sigma_tof[i], half_erf_lut);
 
-        // get the relevant tof bins (the TOF bins where the TOF weight is not close to 0)
-        relevant_tof_bins(x_m0, x_m1, x_m2, x_v0, x_v1, x_v2, u0, u1, u2, 
-			                    tofbin_width, tofcenter_offset[i], sigma_tof[i], n_sigmas, n_half,
-		                      &it1, &it2);
-
-        for(it = it1; it <= it2; it++){
-          if(p[i*n_tofbins + it + n_half] != 0){
-            tw = tof_weight(x_m0, x_m1, x_m2, x_v0, x_v1, x_v2, u0, u1, u2, it, 
-		                       tofbin_width, tofcenter_offset[i], sigma_tof[i], half_erf_lut);
-
-            if ((i0_floor >= 0) && (i0_floor < n0) && (i2_floor >= 0) && (i2_floor < n2)) 
-            {
-              back_imgs[n1*n2*i0_floor + n2*i1 + i2_floor + tid*nvox] += (tw * p[i*n_tofbins + it + n_half] * (1 - tmp_0) * 
-                                                         (1 - tmp_2) * cf);
-            }
-            if ((i0_ceil >= 0) && (i0_ceil < n0) && (i2_floor >= 0) && (i2_floor < n2))
-            {
-              back_imgs[n1*n2*i0_ceil + n2*i1 + i2_floor + tid*nvox] += (tw * p[i*n_tofbins + it + n_half] * tmp_0 * 
-                                                        (1 - tmp_2) * cf);
-            }
-            if ((i0_floor >= 0) && (i0_floor < n0) && (i2_ceil >= 0) && (i2_ceil < n2))
-            {
-              back_imgs[n1*n2*i0_floor + n2*i1 + i2_ceil + tid*nvox] += (tw * p[i*n_tofbins + it + n_half] * (1 - tmp_0) * 
-                                                        tmp_2 * cf);
-            }
-            if((i0_ceil >= 0) && (i0_ceil < n0) && (i2_ceil >= 0) && (i2_ceil < n2))
-            {
-              back_imgs[n1*n2*i0_ceil + n2*i1 + i2_ceil + tid*nvox] += (tw * p[i*n_tofbins + it + n_half] * tmp_0 * 
-                                                       tmp_2 * cf);
-            }
+          if ((i0_floor >= 0) && (i0_floor < n0) && (i2_floor >= 0) && (i2_floor < n2)) 
+          {
+            back_imgs[n1*n2*i0_floor + n2*i1 + i2_floor + tid*nvox] += (tw * p[i] * (1 - tmp_0) * 
+                                                                        (1 - tmp_2) * cf);
+          }
+          if ((i0_ceil >= 0) && (i0_ceil < n0) && (i2_floor >= 0) && (i2_floor < n2))
+          {
+            back_imgs[n1*n2*i0_ceil + n2*i1 + i2_floor + tid*nvox] += (tw * p[i] * tmp_0 * 
+                                                                       (1 - tmp_2) * cf);
+          }
+          if ((i0_floor >= 0) && (i0_floor < n0) && (i2_ceil >= 0) && (i2_ceil < n2))
+          {
+            back_imgs[n1*n2*i0_floor + n2*i1 + i2_ceil + tid*nvox] += (tw * p[i] * (1 - tmp_0) * 
+                                                                       tmp_2 * cf);
+          }
+          if((i0_ceil >= 0) && (i0_ceil < n0) && (i2_ceil >= 0) && (i2_ceil < n2))
+          {
+            back_imgs[n1*n2*i0_ceil + n2*i1 + i2_ceil + tid*nvox] += (tw * p[i] * tmp_0 * 
+                                                                      tmp_2 * cf);
           }
         }
       }
@@ -305,39 +283,29 @@ void joseph3d_back_tof_sino(float *xstart,
         x_v1 = x_pr1;
         x_v2 = img_origin[2] + i2*voxsize[2];
 
-	      it1 = -n_half;
-	      it2 =  n_half;
+        if(p[i] != 0){
+          tw = tof_weight(x_m0, x_m1, x_m2, x_v0, x_v1, x_v2, u0, u1, u2, tof_bin[i], 
+		                     tofbin_width, tofcenter_offset[i], sigma_tof[i], half_erf_lut);
 
-        // get the relevant tof bins (the TOF bins where the TOF weight is not close to 0)
-        relevant_tof_bins(x_m0, x_m1, x_m2, x_v0, x_v1, x_v2, u0, u1, u2, 
-			                    tofbin_width, tofcenter_offset[i], sigma_tof[i], n_sigmas, n_half,
-		                      &it1, &it2);
-
-        for(it = it1; it <= it2; it++){
-          if(p[i*n_tofbins + it + n_half] != 0){
-            tw = tof_weight(x_m0, x_m1, x_m2, x_v0, x_v1, x_v2, u0, u1, u2, it, 
-		                       tofbin_width, tofcenter_offset[i], sigma_tof[i], half_erf_lut);
-
-            if ((i0_floor >= 0) && (i0_floor < n0) && (i1_floor >= 0) && (i1_floor < n1))
-            {
-              back_imgs[n1*n2*i0_floor +  n2*i1_floor + i2 + tid*nvox] += (tw * p[i*n_tofbins + it + n_half] * (1 - tmp_0) * 
-                                                          (1 - tmp_1) * cf);
-            }
-            if ((i0_ceil >= 0) && (i0_ceil < n0) && (i1_floor >= 0) && (i1_floor < n1))
-            {
-              back_imgs[n1*n2*i0_ceil + n2*i1_floor + i2 + tid*nvox] += (tw * p[i*n_tofbins + it + n_half] * tmp_0 * 
-                                                        (1 - tmp_1) * cf);
-            }
-            if ((i0_floor >= 0) && (i0_floor < n0) && (i1_ceil >= 0) && (i1_ceil < n1))
-            {
-              back_imgs[n1*n2*i0_floor + n2*i1_ceil + i2 + tid*nvox] += (tw * p[i*n_tofbins + it + n_half] * (1 - tmp_0) * 
-                                                        tmp_1 * cf);
-            }
-            if ((i0_ceil >= 0) && (i0_ceil < n0) && (i1_ceil >= 0) && (i1_ceil < n1))
-            {
-              back_imgs[n1*n2*i0_ceil + n2*i1_ceil + i2 + tid*nvox] += (tw * p[i*n_tofbins + it + n_half] * tmp_0 * 
-                                                       tmp_1 * cf);
-            }
+          if ((i0_floor >= 0) && (i0_floor < n0) && (i1_floor >= 0) && (i1_floor < n1))
+          {
+            back_imgs[n1*n2*i0_floor +  n2*i1_floor + i2 + tid*nvox] += (tw * p[i] * (1 - tmp_0) * 
+                                                                         (1 - tmp_1) * cf);
+          }
+          if ((i0_ceil >= 0) && (i0_ceil < n0) && (i1_floor >= 0) && (i1_floor < n1))
+          {
+            back_imgs[n1*n2*i0_ceil + n2*i1_floor + i2 + tid*nvox] += (tw * p[i] * tmp_0 * 
+                                                                       (1 - tmp_1) * cf);
+          }
+          if ((i0_floor >= 0) && (i0_floor < n0) && (i1_ceil >= 0) && (i1_ceil < n1))
+          {
+            back_imgs[n1*n2*i0_floor + n2*i1_ceil + i2 + tid*nvox] += (tw * p[i] * (1 - tmp_0) * 
+                                                                       tmp_1 * cf);
+          }
+          if ((i0_ceil >= 0) && (i0_ceil < n0) && (i1_ceil >= 0) && (i1_ceil < n1))
+          {
+            back_imgs[n1*n2*i0_ceil + n2*i1_ceil + i2 + tid*nvox] += (tw * p[i] * tmp_0 * 
+                                                                      tmp_1 * cf);
           }
         }
       }
