@@ -30,26 +30,26 @@ ar_1d_uint   = npct.ndpointer(dtype = ctypes.c_uint,  ndim = 1, flags = 'C')
 
 lib_parallelproj = npct.load_library('libparallelproj_cuda.so','../lib')
 
-lib_parallelproj.joseph3d_tof_sino_cuda.restype  = None
-lib_parallelproj.joseph3d_tof_sino_cuda.argtypes = [ar_1d_single,
-                                                    ar_1d_single,
-                                                    ar_1d_single,
-                                                    ar_1d_single,
-                                                    ar_1d_single,
-                                                    ar_1d_single,
-                                                    ctypes.c_longlong,
-                                                    ar_1d_uint,        #
-                                                    ctypes.c_int,      # n_tofbins
-                                                    ctypes.c_float,    # tofbin_width 
-                                                    ar_1d_single,      # sigma tof
-                                                    ar_1d_single,      # tofcenter_offset
-                                                    ctypes.c_uint,     # n_sigmas 
-                                                    ar_1d_single,      # look up table for erf
-                                                    ctypes.c_uint,     # threads per block
-                                                    ctypes.c_int]      # number of devices 
+lib_parallelproj.joseph3d_fwd_tof_sino_cuda.restype  = None
+lib_parallelproj.joseph3d_fwd_tof_sino_cuda.argtypes = [ar_1d_single,
+                                                        ar_1d_single,
+                                                        ar_1d_single,
+                                                        ar_1d_single,
+                                                        ar_1d_single,
+                                                        ar_1d_single,
+                                                        ctypes.c_longlong,
+                                                        ar_1d_uint,        #
+                                                        ctypes.c_int,      # n_tofbins
+                                                        ctypes.c_float,    # tofbin_width 
+                                                        ar_1d_single,      # sigma tof
+                                                        ar_1d_single,      # tofcenter_offset
+                                                        ctypes.c_uint,     # n_sigmas 
+                                                        ar_1d_single,      # look up table for erf
+                                                        ctypes.c_uint,     # threads per block
+                                                        ctypes.c_int]      # number of devices 
 
-lib_parallelproj.joseph3d_tof_sino_back_cuda.restype  = None
-lib_parallelproj.joseph3d_tof_sino_back_cuda.argtypes = [ar_1d_single,
+lib_parallelproj.joseph3d_back_tof_sino_cuda.restype  = None
+lib_parallelproj.joseph3d_back_tof_sino_cuda.argtypes = [ar_1d_single,
                                                          ar_1d_single,
                                                          ar_1d_single,
                                                          ar_1d_single,
@@ -106,10 +106,10 @@ tofcenter_offset = np.full(nLORs, 0, dtype = ctypes.c_float)
 img_fwd = np.zeros(nLORs*n_tofbins, dtype = ctypes.c_float)  
 
 t0 = time()
-ok = lib_parallelproj.joseph3d_tof_sino_cuda(xstart.flatten(), xend.flatten(), img.flatten(), 
-                                             img_origin, voxsize, img_fwd, nLORs, img_dim,
-                                             n_tofbins, tofbin_width, sigma_tof, tofcenter_offset, 
-                                             n_sigmas, half_erf_lut, threadsperblock, ngpus)
+ok = lib_parallelproj.joseph3d_fwd_tof_sino_cuda(xstart.flatten(), xend.flatten(), img.flatten(), 
+                                                 img_origin, voxsize, img_fwd, nLORs, img_dim,
+                                                 n_tofbins, tofbin_width, sigma_tof, tofcenter_offset, 
+                                                 n_sigmas, half_erf_lut, threadsperblock, ngpus)
 
 fwd_tof_sino = img_fwd.reshape(sino_shape)
 t1 = time()
@@ -122,7 +122,7 @@ ones     = np.ones(nLORs*n_tofbins, dtype = ctypes.c_float)
 back_img = np.zeros(img_dim, dtype = ctypes.c_float).flatten()
 
 t2 = time()
-ok = lib_parallelproj.joseph3d_tof_sino_back_cuda(xstart.flatten(), xend.flatten(), back_img, 
+ok = lib_parallelproj.joseph3d_back_tof_sino_cuda(xstart.flatten(), xend.flatten(), back_img, 
                                                   img_origin, voxsize, ones, nLORs, img_dim,
                                                   n_tofbins, tofbin_width, sigma_tof, tofcenter_offset, 
                                                   n_sigmas, half_erf_lut, threadsperblock, ngpus)

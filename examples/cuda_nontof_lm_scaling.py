@@ -29,29 +29,29 @@ ar_1d_uint   = npct.ndpointer(dtype = ctypes.c_uint,  ndim = 1, flags = 'C')
 
 lib_cudaproj = npct.load_library('libparallelproj_cuda.so','../lib')
 
-lib_cudaproj.joseph3d_lm_cuda.restype  = None
-lib_cudaproj.joseph3d_lm_cuda.argtypes = [ar_1d_single,
-                                          ar_1d_single,
-                                          ar_1d_single,
-                                          ar_1d_single,
-                                          ar_1d_single,
-                                          ar_1d_single,
-                                          ctypes.c_ulonglong,
-                                          ar_1d_uint,
-                                          ctypes.c_uint,
-                                          ctypes.c_int]
+lib_cudaproj.joseph3d_fwd_cuda.restype  = None
+lib_cudaproj.joseph3d_fwd_cuda.argtypes = [ar_1d_single,
+                                           ar_1d_single,
+                                           ar_1d_single,
+                                           ar_1d_single,
+                                           ar_1d_single,
+                                           ar_1d_single,
+                                           ctypes.c_ulonglong,
+                                           ar_1d_uint,
+                                           ctypes.c_uint,
+                                           ctypes.c_int]
 
-lib_cudaproj.joseph3d_lm_back_cuda.restype  = None
-lib_cudaproj.joseph3d_lm_back_cuda.argtypes = [ar_1d_single,
-                                               ar_1d_single,
-                                               ar_1d_single,
-                                               ar_1d_single,
-                                               ar_1d_single,
-                                               ar_1d_single,
-                                               ctypes.c_ulonglong,
-                                               ar_1d_uint,
-                                               ctypes.c_uint,
-                                               ctypes.c_int]
+lib_cudaproj.joseph3d_back_cuda.restype  = None
+lib_cudaproj.joseph3d_back_cuda.argtypes = [ar_1d_single,
+                                            ar_1d_single,
+                                            ar_1d_single,
+                                            ar_1d_single,
+                                            ar_1d_single,
+                                            ar_1d_single,
+                                            ctypes.c_ulonglong,
+                                            ar_1d_uint,
+                                            ctypes.c_uint,
+                                            ctypes.c_int]
 
 ###############################################################
 ###############################################################
@@ -85,9 +85,9 @@ for nevents in ne:
   t0 = time()
   img_fwd = np.zeros(nLORs, np.float32)  
   
-  ok = lib_cudaproj.joseph3d_lm_cuda(xstart.flatten(), xend.flatten(), img.flatten(), 
-                                     img_origin, voxsize, img_fwd, nLORs, img_dim,
-                                     threadsperblock, ngpus)
+  ok = lib_cudaproj.joseph3d_fwd_cuda(xstart.flatten(), xend.flatten(), img.flatten(), 
+                                      img_origin, voxsize, img_fwd, nLORs, img_dim,
+                                      threadsperblock, ngpus)
   t1 = time()
   t_fwd = t1 - t0
   
@@ -96,13 +96,12 @@ for nevents in ne:
   back_img = np.zeros(np.prod(img.shape), np.float32)
   
   t2 = time()
-  ok = lib_cudaproj.joseph3d_lm_back_cuda(xstart.flatten(), xend.flatten(), back_img, 
-                                          img_origin, voxsize, ones, nLORs, img_dim,
-                                          threadsperblock, ngpus)
+  ok = lib_cudaproj.joseph3d_back_cuda(xstart.flatten(), xend.flatten(), back_img, 
+                                       img_origin, voxsize, ones, nLORs, img_dim,
+                                       threadsperblock, ngpus)
   back_img = back_img.reshape(img.shape)
   t3 = time()
   t_back = t3 - t2
-   
    
   #----
   # print results
