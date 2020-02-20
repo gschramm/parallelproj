@@ -27,25 +27,25 @@ ar_1d_uint   = npct.ndpointer(dtype = ctypes.c_uint,  ndim = 1, flags = 'C')
 
 lib_parallelproj = npct.load_library('libparallelproj.so','../lib')
 
-lib_parallelproj.joseph3d_lm.restype  = None
-lib_parallelproj.joseph3d_lm.argtypes = [ar_1d_single,
-                                         ar_1d_single,
-                                         ar_1d_single,
-                                         ar_1d_single,
-                                         ar_1d_single,
-                                         ar_1d_single,
-                                         ctypes.c_ulonglong,
-                                         ar_1d_uint]
+lib_parallelproj.joseph3d_fwd.restype  = None
+lib_parallelproj.joseph3d_fwd.argtypes = [ar_1d_single,
+                                          ar_1d_single,
+                                          ar_1d_single,
+                                          ar_1d_single,
+                                          ar_1d_single,
+                                          ar_1d_single,
+                                          ctypes.c_ulonglong,
+                                          ar_1d_uint]
 
-lib_parallelproj.joseph3d_lm_back.restype  = None
-lib_parallelproj.joseph3d_lm_back.argtypes = [ar_1d_single,
-                                              ar_1d_single,
-                                              ar_1d_single,
-                                              ar_1d_single,
-                                              ar_1d_single,
-                                              ar_1d_single,
-                                              ctypes.c_ulonglong,
-                                              ar_1d_uint]
+lib_parallelproj.joseph3d_back.restype  = None
+lib_parallelproj.joseph3d_back.argtypes = [ar_1d_single,
+                                           ar_1d_single,
+                                           ar_1d_single,
+                                           ar_1d_single,
+                                           ar_1d_single,
+                                           ar_1d_single,
+                                           ctypes.c_ulonglong,
+                                           ar_1d_uint]
 ###############################################################
 ###############################################################
 
@@ -79,8 +79,8 @@ for nevents in ne:
   img_fwd = np.zeros(nLORs, dtype = ctypes.c_float)  
   
   t0 = time()
-  ok = lib_parallelproj.joseph3d_lm(xstart.flatten(), xend.flatten(), img.flatten(), 
-                                    img_origin, voxsize, img_fwd, nLORs, img_dim)
+  ok = lib_parallelproj.joseph3d_fwd(xstart.flatten(), xend.flatten(), img.flatten(), 
+                                     img_origin, voxsize, img_fwd, nLORs, img_dim)
   
   t1 = time()
   t_fwd = t1 - t0
@@ -90,8 +90,8 @@ for nevents in ne:
   back_img = np.zeros(img.shape, dtype = ctypes.c_float).flatten()
   
   t2 = time()
-  ok = lib_parallelproj.joseph3d_lm_back(xstart.flatten(), xend.flatten(), back_img, 
-                                         img_origin, voxsize, ones, nLORs, img_dim)
+  ok = lib_parallelproj.joseph3d_back(xstart.flatten(), xend.flatten(), back_img, 
+                                      img_origin, voxsize, ones, nLORs, img_dim)
   back_img = back_img.reshape(img_dim)
   t3 = time()
   t_back = t3 - t2

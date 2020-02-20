@@ -26,24 +26,24 @@ ar_1d_uint   = npct.ndpointer(dtype = ctypes.c_uint,  ndim = 1, flags = 'C')
 
 lib_parallelproj = npct.load_library('libparallelproj.so','../lib')
 
-lib_parallelproj.joseph3d_tof_sino.restype  = None
-lib_parallelproj.joseph3d_tof_sino.argtypes = [ar_1d_single,
-                                               ar_1d_single,
-                                               ar_1d_single,
-                                               ar_1d_single,
-                                               ar_1d_single,
-                                               ar_1d_single,
-                                               ctypes.c_longlong,
-                                               ar_1d_uint,        #
-                                               ctypes.c_int,      # n_tofbins
-                                               ctypes.c_float,    # tofbin_width 
-                                               ar_1d_single,      # sigma tof
-                                               ar_1d_single,      # tofcenter_offset
-                                               ctypes.c_uint,     # n_sigmas 
-                                               ar_1d_single]      # look up table for erf
+lib_parallelproj.joseph3d_fwd_tof_sino.restype  = None
+lib_parallelproj.joseph3d_fwd_tof_sino.argtypes = [ar_1d_single,
+                                                   ar_1d_single,
+                                                   ar_1d_single,
+                                                   ar_1d_single,
+                                                   ar_1d_single,
+                                                   ar_1d_single,
+                                                   ctypes.c_longlong,
+                                                   ar_1d_uint,        #
+                                                   ctypes.c_int,      # n_tofbins
+                                                   ctypes.c_float,    # tofbin_width 
+                                                   ar_1d_single,      # sigma tof
+                                                   ar_1d_single,      # tofcenter_offset
+                                                   ctypes.c_uint,     # n_sigmas 
+                                                   ar_1d_single]      # look up table for erf
 
-lib_parallelproj.joseph3d_tof_sino_back.restype  = None
-lib_parallelproj.joseph3d_tof_sino_back.argtypes = [ar_1d_single,
+lib_parallelproj.joseph3d_back_tof_sino.restype  = None
+lib_parallelproj.joseph3d_back_tof_sino.argtypes = [ar_1d_single,
                                                     ar_1d_single,
                                                     ar_1d_single,
                                                     ar_1d_single,
@@ -58,21 +58,21 @@ lib_parallelproj.joseph3d_tof_sino_back.argtypes = [ar_1d_single,
                                                     ctypes.c_uint,     # n_sigmas 
                                                     ar_1d_single]      # look up table for erf
 
-lib_parallelproj.joseph3d_tof_sino_back2.restype  = None
-lib_parallelproj.joseph3d_tof_sino_back2.argtypes = [ar_1d_single,
-                                                    ar_1d_single,
-                                                    ar_1d_single,
-                                                    ar_1d_single,
-                                                    ar_1d_single,
-                                                    ar_1d_single,
-                                                    ctypes.c_longlong,
-                                                    ar_1d_uint,        #
-                                                    ctypes.c_int,      # n_tofbins
-                                                    ctypes.c_float,    # tofbin_width 
-                                                    ar_1d_single,      # sigma tof
-                                                    ar_1d_single,      # tofcenter_offset
-                                                    ctypes.c_uint,     # n_sigmas 
-                                                    ar_1d_single]      # look up table for erf
+lib_parallelproj.joseph3d_back_tof_sino_2.restype  = None
+lib_parallelproj.joseph3d_back_tof_sino_2.argtypes = [ar_1d_single,
+                                                      ar_1d_single,
+                                                      ar_1d_single,
+                                                      ar_1d_single,
+                                                      ar_1d_single,
+                                                      ar_1d_single,
+                                                      ctypes.c_longlong,
+                                                      ar_1d_uint,        #
+                                                      ctypes.c_int,      # n_tofbins
+                                                      ctypes.c_float,    # tofbin_width 
+                                                      ar_1d_single,      # sigma tof
+                                                      ar_1d_single,      # tofcenter_offset
+                                                      ctypes.c_uint,     # n_sigmas 
+                                                      ar_1d_single]      # look up table for erf
 
 
 
@@ -116,10 +116,10 @@ tofcenter_offset = np.full(nLORs, 0, dtype = ctypes.c_float)
 img_fwd = np.zeros(nLORs*n_tofbins, dtype = ctypes.c_float)  
 
 t0 = time()
-ok = lib_parallelproj.joseph3d_tof_sino(xstart.flatten(), xend.flatten(), img.flatten(), 
-                                        img_origin, voxsize, img_fwd, nLORs, img_dim,
-                                        n_tofbins, tofbin_width, sigma_tof, tofcenter_offset, 
-                                        n_sigmas, half_erf_lut)
+ok = lib_parallelproj.joseph3d_fwd_tof_sino(xstart.flatten(), xend.flatten(), img.flatten(), 
+                                            img_origin, voxsize, img_fwd, nLORs, img_dim,
+                                            n_tofbins, tofbin_width, sigma_tof, tofcenter_offset, 
+                                            n_sigmas, half_erf_lut)
 
 fwd_tof_sino = img_fwd.reshape(sino_shape)
 t1 = time()
@@ -132,7 +132,7 @@ ones     = np.ones(nLORs*n_tofbins, dtype = ctypes.c_float)
 back_img = np.zeros(img_dim, dtype = ctypes.c_float).flatten()
 
 t2 = time()
-ok = lib_parallelproj.joseph3d_tof_sino_back(xstart.flatten(), xend.flatten(), back_img, 
+ok = lib_parallelproj.joseph3d_back_tof_sino(xstart.flatten(), xend.flatten(), back_img, 
                                              img_origin, voxsize, ones, nLORs, img_dim,
                                              n_tofbins, tofbin_width, sigma_tof, tofcenter_offset, 
                                              n_sigmas, half_erf_lut)
@@ -145,10 +145,10 @@ t_back1 = t3 - t2
 back_img2 = np.zeros(img_dim, dtype = ctypes.c_float).flatten()
 
 t4 = time()
-ok = lib_parallelproj.joseph3d_tof_sino_back2(xstart.flatten(), xend.flatten(), back_img2, 
-                                              img_origin, voxsize, ones, nLORs, img_dim,
-                                              n_tofbins, tofbin_width, sigma_tof, tofcenter_offset, 
-                                              n_sigmas, half_erf_lut)
+ok = lib_parallelproj.joseph3d_back_tof_sino_2(xstart.flatten(), xend.flatten(), back_img2, 
+                                               img_origin, voxsize, ones, nLORs, img_dim,
+                                               n_tofbins, tofbin_width, sigma_tof, tofcenter_offset, 
+                                               n_sigmas, half_erf_lut)
 
 back_img2 = back_img2.reshape(img.shape)
 t5 = time()
