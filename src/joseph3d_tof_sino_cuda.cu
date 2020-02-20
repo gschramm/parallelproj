@@ -8,7 +8,7 @@
 
 #include "tof_utils_cuda.h"
 
-/** @brief 3D sinogram tof joseph forward projector
+/** @brief 3D sinogram tof joseph forward projector kernel
  *
  *  @param xstart array of shape [3*nlors] with the coordinates of the start points of the LORs.
  *                The start coordinates of the n-th LOR are at xstart[n*3 + i] with i = 0,1,2 

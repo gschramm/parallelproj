@@ -6,7 +6,7 @@
 #include<stdlib.h>
 #include "utils_cuda.h"
 
-/** @brief 3D listmode non-tof joseph back projector CUDA kernel
+/** @brief 3D non-tof joseph back projector CUDA kernel
  *
  *  @param xstart array of shape [3*nlors] with the coordinates of the start points of the LORs.
  *                The start coordinates of the n-th LOR are at xstart[n*3 + i] with i = 0,1,2 
@@ -236,7 +236,7 @@ __global__ void joseph3d_lm_back_cuda_kernel(float *xstart,
 //------------------------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
-/** @brief 3D listmode non-tof joseph back projector CUDA wrapper
+/** @brief 3D non-tof joseph back projector CUDA wrapper
  *
  *  The array to be back projected is split accross all CUDA devices.
  *  Each device backprojects in its own image. At the end all images are

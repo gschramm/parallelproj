@@ -7,7 +7,7 @@
 #include<math.h>
 #include<omp.h>
 
-/** @brief 3D listmode non-tof joseph back projector
+/** @brief 3D non-tof joseph back projector
  *
  *  @param xstart array of shape [3*nlors] with the coordinates of the start points of the LORs.
  *                The start coordinates of the n-th LOR are at xstart[n*3 + i] with i = 0,1,2 

@@ -11,6 +11,8 @@
 
 /** @brief 3D sinogram tof joseph back projector
  *
+ *  All threads back project in one image using openmp's atomic add.
+ *
  *  @param xstart array of shape [3*nlors] with the coordinates of the start points of the LORs.
  *                The start coordinates of the n-th LOR are at xstart[n*3 + i] with i = 0,1,2 
  *  @param xend   array of shape [3*nlors] with the coordinates of the end   points of the LORs.

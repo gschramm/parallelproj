@@ -5,7 +5,7 @@
 #include<stdio.h>
 #include<stdlib.h>
 
-/** @brief 3D listmode non-tof joseph forward projector CUDA kernel
+/** @brief 3D non-tof joseph forward projector CUDA kernel
  *
  *  @param xstart array of shape [3*nlors] with the coordinates of the start points of the LORs.
  *                The start coordinates of the n-th LOR are at xstart[n*3 + i] with i = 0,1,2 
@@ -230,7 +230,7 @@ __global__ void joseph3d_lm_cuda_kernel(float *xstart,
 //------------------------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
-/** @brief 3D listmode non-tof joseph forward projector CUDA wrapper
+/** @brief 3D non-tof joseph forward projector CUDA wrapper
  *
  *  @param h_xstart array of shape [3*nlors] with the coordinates of the start points of the LORs.
  *                  The start coordinates of the n-th LOR are at xstart[n*3 + i] with i = 0,1,2 
