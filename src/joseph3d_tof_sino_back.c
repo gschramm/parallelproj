@@ -53,11 +53,21 @@ void joseph3d_tof_sino_back(float *xstart,
   unsigned int n1 = img_dim[1];
   unsigned int n2 = img_dim[2];
 
+  long nvox = n0*n1*n2;
+
   int n_half = n_tofbins/2;
+
+  int num_threads = omp_get_max_threads();
+
+  // create a separate image for the backprojection
+  // for each thread to avoid race conditions
+  float* back_imgs = calloc(nvox*num_threads, sizeof(float)); 
 
   # pragma omp parallel for schedule(static)
   for(i = 0; i < nlors; i++)
   {
+    int tid = omp_get_thread_num();
+
     float d0, d1, d2, d0_sq, d1_sq, d2_sq;
     float cs0, cs1, cs2, cf; 
     float lsq, cos0_sq, cos1_sq, cos2_sq;
@@ -168,26 +178,22 @@ void joseph3d_tof_sino_back(float *xstart,
 
             if ((i1_floor >= 0) && (i1_floor < n1) && (i2_floor >= 0) && (i2_floor < n2))
             {
-              #pragma omp atomic
-              img[n1*n2*i0 + n2*i1_floor + i2_floor] += (tw * p[i*n_tofbins + it + n_half] * (1 - tmp_1) * 
+              back_imgs[n1*n2*i0 + n2*i1_floor + i2_floor + tid*nvox] += (tw * p[i*n_tofbins + it + n_half] * (1 - tmp_1) * 
                                                          (1 - tmp_2) * cf);
             }
             if ((i1_ceil >= 0) && (i1_ceil < n1) && (i2_floor >= 0) && (i2_floor < n2))
             {
-              #pragma omp atomic
-              img[n1*n2*i0 + n2*i1_ceil + i2_floor] += (tw * p[i*n_tofbins + it + n_half] * tmp_1 * 
+              back_imgs[n1*n2*i0 + n2*i1_ceil + i2_floor + tid*nvox] += (tw * p[i*n_tofbins + it + n_half] * tmp_1 * 
                                                         (1 - tmp_2) * cf);
             }
             if ((i1_floor >= 0) && (i1_floor < n1) && (i2_ceil >= 0) && (i2_ceil < n2))
             {
-              #pragma omp atomic
-              img[n1*n2*i0 + n2*i1_floor + i2_ceil] += (tw * p[i*n_tofbins + it + n_half] * (1 - tmp_1) * 
+              back_imgs[n1*n2*i0 + n2*i1_floor + i2_ceil + tid*nvox] += (tw * p[i*n_tofbins + it + n_half] * (1 - tmp_1) * 
                                                         tmp_2*cf);
             }
             if ((i1_ceil >= 0) && (i1_ceil < n1) && (i2_ceil >= 0) && (i2_ceil < n2))
             {
-              #pragma omp atomic
-              img[n1*n2*i0 + n2*i1_ceil + i2_ceil] += (tw * p[i*n_tofbins + it + n_half] * tmp_1 * 
+              back_imgs[n1*n2*i0 + n2*i1_ceil + i2_ceil + tid*nvox] += (tw * p[i*n_tofbins + it + n_half] * tmp_1 * 
                                                        tmp_2 * cf);
             }
           }
@@ -242,26 +248,22 @@ void joseph3d_tof_sino_back(float *xstart,
 
             if ((i0_floor >= 0) && (i0_floor < n0) && (i2_floor >= 0) && (i2_floor < n2)) 
             {
-              #pragma omp atomic
-              img[n1*n2*i0_floor + n2*i1 + i2_floor] += (tw * p[i*n_tofbins + it + n_half] * (1 - tmp_0) * 
+              back_imgs[n1*n2*i0_floor + n2*i1 + i2_floor + tid*nvox] += (tw * p[i*n_tofbins + it + n_half] * (1 - tmp_0) * 
                                                          (1 - tmp_2) * cf);
             }
             if ((i0_ceil >= 0) && (i0_ceil < n0) && (i2_floor >= 0) && (i2_floor < n2))
             {
-              #pragma omp atomic
-              img[n1*n2*i0_ceil + n2*i1 + i2_floor] += (tw * p[i*n_tofbins + it + n_half] * tmp_0 * 
+              back_imgs[n1*n2*i0_ceil + n2*i1 + i2_floor + tid*nvox] += (tw * p[i*n_tofbins + it + n_half] * tmp_0 * 
                                                         (1 - tmp_2) * cf);
             }
             if ((i0_floor >= 0) && (i0_floor < n0) && (i2_ceil >= 0) && (i2_ceil < n2))
             {
-              #pragma omp atomic
-              img[n1*n2*i0_floor + n2*i1 + i2_ceil] += (tw * p[i*n_tofbins + it + n_half] * (1 - tmp_0) * 
+              back_imgs[n1*n2*i0_floor + n2*i1 + i2_ceil + tid*nvox] += (tw * p[i*n_tofbins + it + n_half] * (1 - tmp_0) * 
                                                         tmp_2 * cf);
             }
             if((i0_ceil >= 0) && (i0_ceil < n0) && (i2_ceil >= 0) && (i2_ceil < n2))
             {
-              #pragma omp atomic
-              img[n1*n2*i0_ceil + n2*i1 + i2_ceil] += (tw * p[i*n_tofbins + it + n_half] * tmp_0 * 
+              back_imgs[n1*n2*i0_ceil + n2*i1 + i2_ceil + tid*nvox] += (tw * p[i*n_tofbins + it + n_half] * tmp_0 * 
                                                        tmp_2 * cf);
             }
           }
@@ -316,26 +318,22 @@ void joseph3d_tof_sino_back(float *xstart,
 
             if ((i0_floor >= 0) && (i0_floor < n0) && (i1_floor >= 0) && (i1_floor < n1))
             {
-              #pragma omp atomic
-              img[n1*n2*i0_floor +  n2*i1_floor + i2] += (tw * p[i*n_tofbins + it + n_half] * (1 - tmp_0) * 
+              back_imgs[n1*n2*i0_floor +  n2*i1_floor + i2 + tid*nvox] += (tw * p[i*n_tofbins + it + n_half] * (1 - tmp_0) * 
                                                           (1 - tmp_1) * cf);
             }
             if ((i0_ceil >= 0) && (i0_ceil < n0) && (i1_floor >= 0) && (i1_floor < n1))
             {
-              #pragma omp atomic
-              img[n1*n2*i0_ceil + n2*i1_floor + i2] += (tw * p[i*n_tofbins + it + n_half] * tmp_0 * 
+              back_imgs[n1*n2*i0_ceil + n2*i1_floor + i2 + tid*nvox] += (tw * p[i*n_tofbins + it + n_half] * tmp_0 * 
                                                         (1 - tmp_1) * cf);
             }
             if ((i0_floor >= 0) && (i0_floor < n0) && (i1_ceil >= 0) && (i1_ceil < n1))
             {
-              #pragma omp atomic
-              img[n1*n2*i0_floor + n2*i1_ceil + i2] += (tw * p[i*n_tofbins + it + n_half] * (1 - tmp_0) * 
+              back_imgs[n1*n2*i0_floor + n2*i1_ceil + i2 + tid*nvox] += (tw * p[i*n_tofbins + it + n_half] * (1 - tmp_0) * 
                                                         tmp_1 * cf);
             }
             if ((i0_ceil >= 0) && (i0_ceil < n0) && (i1_ceil >= 0) && (i1_ceil < n1))
             {
-              #pragma omp atomic
-              img[n1*n2*i0_ceil + n2*i1_ceil + i2] += (tw * p[i*n_tofbins + it + n_half] * tmp_0 * 
+              back_imgs[n1*n2*i0_ceil + n2*i1_ceil + i2 + tid*nvox] += (tw * p[i*n_tofbins + it + n_half] * tmp_0 * 
                                                        tmp_1 * cf);
             }
           }
@@ -343,4 +341,15 @@ void joseph3d_tof_sino_back(float *xstart,
       }
     }
   }
+
+  // sum all images back together
+  # pragma omp parallel for schedule(static)
+  for(i = 0; i < nvox; i++){
+    int id;
+    for(id = 0; id < num_threads; id++){
+      img[i] += back_imgs[i + id*nvox];
+    }
+  }
+
+  free(back_imgs);
 }
