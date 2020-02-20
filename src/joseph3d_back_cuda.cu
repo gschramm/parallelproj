@@ -1,5 +1,5 @@
 /**
- * @file joseph3d_lm_back_cuda.cu
+ * @file joseph3d_back_cuda.cu
  */
 
 #include<stdio.h>
@@ -20,14 +20,14 @@
  *  @param nlors       number of projections (length of p array)
  *  @param img_dim     array with dimensions of image [n0,n1,n2]
  */
-__global__ void joseph3d_lm_back_cuda_kernel(float *xstart, 
-                                             float *xend, 
-                                             float *img,
-                                             float *img_origin, 
-                                             float *voxsize, 
-                                             float *p,              
-                                             unsigned long long nlors,
-                                             unsigned int *img_dim)
+__global__ void joseph3d_back_cuda_kernel(float *xstart, 
+                                          float *xend, 
+                                          float *img,
+                                          float *img_origin, 
+                                          float *voxsize, 
+                                          float *p,              
+                                          unsigned long long nlors,
+                                          unsigned int *img_dim)
 {
   unsigned long long i = blockDim.x * blockIdx.x + threadIdx.x;
 
@@ -257,16 +257,16 @@ __global__ void joseph3d_lm_back_cuda_kernel(float *xstart,
  *  @param threadsperblock number of threads per block
  *  @param num_devices     number of CUDA devices to use. if set to -1 cudaGetDeviceCount() is used
  */
-extern "C" void joseph3d_lm_back_cuda(float *h_xstart, 
-                                      float *h_xend, 
-                                      float *h_img,
-                                      float *h_img_origin, 
-                                      float *h_voxsize, 
-                                      float *h_p,
-                                      unsigned long long nlors, 
-                                      unsigned int *h_img_dim, 
-                                      unsigned int threadsperblock,
-                                      int num_devices)
+extern "C" void joseph3d_back_cuda(float *h_xstart, 
+                                   float *h_xend, 
+                                   float *h_img,
+                                   float *h_img_origin, 
+                                   float *h_voxsize, 
+                                   float *h_p,
+                                   unsigned long long nlors, 
+                                   unsigned int *h_img_dim, 
+                                   unsigned int threadsperblock,
+                                   int num_devices)
 {
 	cudaError_t error;	
   unsigned int blockspergrid;
@@ -375,10 +375,10 @@ extern "C" void joseph3d_lm_back_cuda(float *h_xstart,
     cudaMemcpyAsync(d_img_dim[i_dev], h_img_dim, 3*sizeof(unsigned int), cudaMemcpyHostToDevice);
 
     // call the kernel
-    joseph3d_lm_back_cuda_kernel<<<grid,block>>>(d_xstart[i_dev], d_xend[i_dev], 
-                                                 d_img[i_dev], d_img_origin[i_dev], 
-                                                 d_voxsize[i_dev], d_p[i_dev], 
-                                                 dev_nlors, d_img_dim[i_dev]); 
+    joseph3d_back_cuda_kernel<<<grid,block>>>(d_xstart[i_dev], d_xend[i_dev], 
+                                              d_img[i_dev], d_img_origin[i_dev], 
+                                              d_voxsize[i_dev], d_p[i_dev], 
+                                              dev_nlors, d_img_dim[i_dev]); 
 
   }
 

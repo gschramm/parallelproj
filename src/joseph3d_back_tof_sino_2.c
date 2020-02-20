@@ -1,5 +1,5 @@
 /**
- * @file joseph3d_tof_sino_back2.c
+ * @file joseph3d_back_tof_sino_2.c
  */
 
 #include<stdio.h>
@@ -34,20 +34,20 @@
  *  @param half_erf_lut     look up table length 6001 for half erf between -3 and 3. 
  *                          The i-th element contains 0.5*erf(-3 + 0.001*i)
  */
-void joseph3d_tof_sino_back2(float *xstart, 
-                             float *xend, 
-                             float *img,
-                             float *img_origin, 
-                             float *voxsize,
-                             float *p, 
-                             long long nlors, 
-                             unsigned int *img_dim,
-		                         int n_tofbins,
-		                         float tofbin_width,
-		                         float *sigma_tof,
-		                         float *tofcenter_offset,
-		                         unsigned int n_sigmas,
-                             float *half_erf_lut)
+void joseph3d_back_tof_sino_2(float *xstart, 
+                              float *xend, 
+                              float *img,
+                              float *img_origin, 
+                              float *voxsize,
+                              float *p, 
+                              long long nlors, 
+                              unsigned int *img_dim,
+		                          int n_tofbins,
+		                          float tofbin_width,
+		                          float *sigma_tof,
+		                          float *tofcenter_offset,
+		                          unsigned int n_sigmas,
+                              float *half_erf_lut)
 {
   long long i;
 

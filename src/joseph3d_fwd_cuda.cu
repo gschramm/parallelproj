@@ -1,5 +1,5 @@
 /**
- * @file joseph3d_lm_cuda.cu
+ * @file joseph3d_fwd_cuda.cu
  */
 
 #include<stdio.h>
@@ -19,14 +19,14 @@
  *  @param nlors       number of projections (length of p array)
  *  @param img_dim     array with dimensions of image [n0,n1,n2]
  */
-__global__ void joseph3d_lm_cuda_kernel(float *xstart, 
-                                        float *xend, 
-                                        float *img,
-                                        float *img_origin, 
-                                        float *voxsize, 
-                                        float *p,
-                                        unsigned long long nlors, 
-                                        unsigned int *img_dim)
+__global__ void joseph3d_fwd_cuda_kernel(float *xstart, 
+                                         float *xend, 
+                                         float *img,
+                                         float *img_origin, 
+                                         float *voxsize, 
+                                         float *p,
+                                         unsigned long long nlors, 
+                                         unsigned int *img_dim)
 {
   unsigned long long i = blockDim.x * blockIdx.x + threadIdx.x;
 
@@ -246,7 +246,7 @@ __global__ void joseph3d_lm_cuda_kernel(float *xstart,
  *  @param threadsperblock number of threads per block
  *  @param num_devices     number of CUDA devices to use. if set to -1 cudaGetDeviceCount() is used
  */
-extern "C" void joseph3d_lm_cuda(float *h_xstart, 
+extern "C" void joseph3d_fwd_cuda(float *h_xstart, 
                                  float *h_xend, 
                                  float *h_img,
                                  float *h_img_origin, 
@@ -353,9 +353,9 @@ extern "C" void joseph3d_lm_cuda(float *h_xstart,
 
 
     // call the kernel
-    joseph3d_lm_cuda_kernel<<<grid,block>>>(d_xstart[i_dev], d_xend[i_dev], d_img[i_dev], 
-                                            d_img_origin[i_dev], d_voxsize[i_dev], 
-                                            d_p[i_dev], dev_nlors, d_img_dim[i_dev]); 
+    joseph3d_fwd_cuda_kernel<<<grid,block>>>(d_xstart[i_dev], d_xend[i_dev], d_img[i_dev], 
+                                             d_img_origin[i_dev], d_voxsize[i_dev], 
+                                             d_p[i_dev], dev_nlors, d_img_dim[i_dev]); 
 
     // copy projection back from device to host
     cudaMemcpyAsync(h_p + dev_offset, d_p[i_dev], proj_bytes_dev, cudaMemcpyDeviceToHost);

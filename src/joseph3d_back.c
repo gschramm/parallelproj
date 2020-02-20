@@ -1,5 +1,5 @@
 /**
- * @file joseph3d_lm_back.c
+ * @file joseph3d_back.c
  */
 
 #include<stdio.h>
@@ -21,14 +21,14 @@
  *  @param nlors       number of geometrical LORs
  *  @param img_dim     array with dimensions of image [n0,n1,n2]
  */
-void joseph3d_lm_back(float *xstart, 
-                      float *xend, 
-                      float *img,
-                      float *img_origin, 
-                      float *voxsize,
-                      float *p, 
-                      unsigned long long nlors, 
-                      unsigned int *img_dim)
+void joseph3d_back(float *xstart, 
+                   float *xend, 
+                   float *img,
+                   float *img_origin, 
+                   float *voxsize,
+                   float *p, 
+                   unsigned long long nlors, 
+                   unsigned int *img_dim)
 {
   unsigned long long i;
 
