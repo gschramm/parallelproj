@@ -345,7 +345,7 @@ __global__ void joseph3d_fwd_tof_sino_cuda_kernel(float *xstart,
  *                  The pixel [i,j,k] ist stored at [n1*n2+i + n2*k + j].
  *  @param h_img_origin  array [x0_0,x0_1,x0_2] of coordinates of the center of the [0,0,0] voxel
  *  @param h_voxsize     array [vs0, vs1, vs2] of the voxel sizes
- *  @param h_p           array of length nlors (output) used to store the projections
+ *  @param h_p           array of length nlors*n_tofbins (output) used to store the projections
  *  @param nlors         number of projections (length of p array)
  *  @param h_img_dim     array with dimensions of image [n0,n1,n2]
  *  @param n_tofbins        number of TOF bins
@@ -517,7 +517,7 @@ extern "C" void joseph3d_fwd_tof_sino_cuda(float *h_xstart,
     // deallocate TOF memory on device
     cudaFree(d_sigma_tof[i_dev]);
     cudaFree(d_tofcenter_offset[i_dev]);
-    cudaFree(d_half_erf_lut);
+    cudaFree(d_half_erf_lut[i_dev]);
   }
 
   // make sure that all devices are done before leaving

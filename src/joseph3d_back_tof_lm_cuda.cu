@@ -1,5 +1,5 @@
 /**
- * @file joseph3d_back_tof_sino_cuda.cu
+ * @file joseph3d_back_tof_lm_cuda.cu
  */
 
 #include<stdio.h>
@@ -28,11 +28,11 @@
  *                          spatial units (units of xstart and xend) 
  *  @param tofcenter_offset array of length nlors with the offset of the central TOF bin from the 
  *                          midpoint of each LOR in spatial units (units of xstart and xend) 
- *  @param n_sigmas         number of sigmas to consider for calculation of TOF kernel
+ *  @param tof_bin          array containing the TOF bin of each event
  *  @param half_erf_lut     look up table length 6001 for half erf between -3 and 3. 
  *                          The i-th element contains 0.5*erf(-3 + 0.001*i)
  */
-__global__ void joseph3d_back_tof_sino_cuda_kernel(float *xstart, 
+__global__ void joseph3d_back_tof_lm_cuda_kernel(float *xstart, 
                                                    float *xend, 
                                                    float *img,
                                                    float *img_origin, 
@@ -44,7 +44,7 @@ __global__ void joseph3d_back_tof_sino_cuda_kernel(float *xstart,
 		                                               float tofbin_width,
 		                                               float *sigma_tof,
 		                                               float *tofcenter_offset,
-		                                               unsigned int n_sigmas,
+		                                               int *tof_bin,
                                                    float *half_erf_lut)
 {
   long long i = blockDim.x * blockIdx.x + threadIdx.x;
@@ -52,8 +52,6 @@ __global__ void joseph3d_back_tof_sino_cuda_kernel(float *xstart,
   unsigned int n0 = img_dim[0];
   unsigned int n1 = img_dim[1];
   unsigned int n2 = img_dim[2];
-
-  int n_half = n_tofbins/2;
 
   if(i < nlors)
   {
@@ -71,7 +69,6 @@ __global__ void joseph3d_back_tof_sino_cuda_kernel(float *xstart,
     float x_m0, x_m1, x_m2;    
     float x_v0, x_v1, x_v2;    
 
-    int it, it1, it2;
     float tw;
 
     // test whether the ray between the two detectors is most parallel
@@ -152,39 +149,29 @@ __global__ void joseph3d_back_tof_sino_cuda_kernel(float *xstart,
         x_v1 = x_pr1;
         x_v2 = x_pr2;
 
-	      it1 = -n_half;
-	      it2 =  n_half;
+        if(p[i] != 0){
+          tw = tof_weight_cuda(x_m0, x_m1, x_m2, x_v0, x_v1, x_v2, u0, u1, u2, tof_bin[i], 
+		                     tofbin_width, tofcenter_offset[i], sigma_tof[i], half_erf_lut);
 
-        // get the relevant tof bins (the TOF bins where the TOF weight is not close to 0)
-        relevant_tof_bins_cuda(x_m0, x_m1, x_m2, x_v0, x_v1, x_v2, u0, u1, u2, 
-			                    tofbin_width, tofcenter_offset[i], sigma_tof[i], n_sigmas, n_half,
-		                      &it1, &it2);
-        
-        for(it = it1; it <= it2; it++){
-          if(p[i*n_tofbins + it + n_half] != 0){
-            tw = tof_weight_cuda(x_m0, x_m1, x_m2, x_v0, x_v1, x_v2, u0, u1, u2, it, 
-		                       tofbin_width, tofcenter_offset[i], sigma_tof[i], half_erf_lut);
-
-            if ((i1_floor >= 0) && (i1_floor < n1) && (i2_floor >= 0) && (i2_floor < n2))
-            {
-              atomicAdd(img + n1*n2*i0 + n2*i1_floor + i2_floor, 
-                        (tw * p[i*n_tofbins + it + n_half] * (1 - tmp_1) * (1 - tmp_2) * cf));
-            }
-            if ((i1_ceil >= 0) && (i1_ceil < n1) && (i2_floor >= 0) && (i2_floor < n2))
-            {
-              atomicAdd(img + n1*n2*i0 + n2*i1_ceil + i2_floor, 
-                        (tw * p[i*n_tofbins + it + n_half] * tmp_1 * (1 - tmp_2) * cf));
-            }
-            if ((i1_floor >= 0) && (i1_floor < n1) && (i2_ceil >= 0) && (i2_ceil < n2))
-            {
-              atomicAdd(img + n1*n2*i0 + n2*i1_floor + i2_ceil, 
-                        (tw * p[i*n_tofbins + it + n_half] * (1 - tmp_1) * tmp_2*cf));
-            }
-            if ((i1_ceil >= 0) && (i1_ceil < n1) && (i2_ceil >= 0) && (i2_ceil < n2))
-            {
-              atomicAdd(img + n1*n2*i0 + n2*i1_ceil + i2_ceil, 
-                        (tw * p[i*n_tofbins + it + n_half] * tmp_1 * tmp_2 * cf));
-            }
+          if ((i1_floor >= 0) && (i1_floor < n1) && (i2_floor >= 0) && (i2_floor < n2))
+          {
+            atomicAdd(img + n1*n2*i0 + n2*i1_floor + i2_floor, 
+                      (tw * p[i] * (1 - tmp_1) * (1 - tmp_2) * cf));
+          }
+          if ((i1_ceil >= 0) && (i1_ceil < n1) && (i2_floor >= 0) && (i2_floor < n2))
+          {
+            atomicAdd(img + n1*n2*i0 + n2*i1_ceil + i2_floor, 
+                      (tw * p[i] * tmp_1 * (1 - tmp_2) * cf));
+          }
+          if ((i1_floor >= 0) && (i1_floor < n1) && (i2_ceil >= 0) && (i2_ceil < n2))
+          {
+            atomicAdd(img + n1*n2*i0 + n2*i1_floor + i2_ceil, 
+                      (tw * p[i] * (1 - tmp_1) * tmp_2*cf));
+          }
+          if ((i1_ceil >= 0) && (i1_ceil < n1) && (i2_ceil >= 0) && (i2_ceil < n2))
+          {
+            atomicAdd(img + n1*n2*i0 + n2*i1_ceil + i2_ceil, 
+                      (tw * p[i] * tmp_1 * tmp_2 * cf));
           }
         }
       }
@@ -222,39 +209,29 @@ __global__ void joseph3d_back_tof_sino_cuda_kernel(float *xstart,
         x_v1 = img_origin[1] + i1*voxsize[1];
         x_v2 = x_pr2;
 
-	      it1 = -n_half;
-	      it2 =  n_half;
+        if(p[i] != 0){
+          tw = tof_weight_cuda(x_m0, x_m1, x_m2, x_v0, x_v1, x_v2, u0, u1, u2, tof_bin[i], 
+		                     tofbin_width, tofcenter_offset[i], sigma_tof[i], half_erf_lut);
 
-        // get the relevant tof bins (the TOF bins where the TOF weight is not close to 0)
-        relevant_tof_bins_cuda(x_m0, x_m1, x_m2, x_v0, x_v1, x_v2, u0, u1, u2, 
-			                    tofbin_width, tofcenter_offset[i], sigma_tof[i], n_sigmas, n_half,
-		                      &it1, &it2);
-
-        for(it = it1; it <= it2; it++){
-          if(p[i*n_tofbins + it + n_half] != 0){
-            tw = tof_weight_cuda(x_m0, x_m1, x_m2, x_v0, x_v1, x_v2, u0, u1, u2, it, 
-		                       tofbin_width, tofcenter_offset[i], sigma_tof[i], half_erf_lut);
-
-            if ((i0_floor >= 0) && (i0_floor < n0) && (i2_floor >= 0) && (i2_floor < n2)) 
-            {
-              atomicAdd(img + n1*n2*i0_floor + n2*i1 + i2_floor, 
-                        (tw * p[i*n_tofbins + it + n_half] * (1 - tmp_0) * (1 - tmp_2) * cf));
-            }
-            if ((i0_ceil >= 0) && (i0_ceil < n0) && (i2_floor >= 0) && (i2_floor < n2))
-            {
-              atomicAdd(img + n1*n2*i0_ceil + n2*i1 + i2_floor, 
-                        (tw * p[i*n_tofbins + it + n_half] * tmp_0 * (1 - tmp_2) * cf));
-            }
-            if ((i0_floor >= 0) && (i0_floor < n0) && (i2_ceil >= 0) && (i2_ceil < n2))
-            {
-              atomicAdd(img + n1*n2*i0_floor + n2*i1 + i2_ceil, 
-                        (tw * p[i*n_tofbins + it + n_half] * (1 - tmp_0) * tmp_2 * cf));
-            }
-            if((i0_ceil >= 0) && (i0_ceil < n0) && (i2_ceil >= 0) && (i2_ceil < n2))
-            {
-              atomicAdd(img + n1*n2*i0_ceil + n2*i1 + i2_ceil, 
-                        (tw * p[i*n_tofbins + it + n_half] * tmp_0 * tmp_2 * cf));
-            }
+          if ((i0_floor >= 0) && (i0_floor < n0) && (i2_floor >= 0) && (i2_floor < n2)) 
+          {
+            atomicAdd(img + n1*n2*i0_floor + n2*i1 + i2_floor, 
+                      (tw * p[i] * (1 - tmp_0) * (1 - tmp_2) * cf));
+          }
+          if ((i0_ceil >= 0) && (i0_ceil < n0) && (i2_floor >= 0) && (i2_floor < n2))
+          {
+            atomicAdd(img + n1*n2*i0_ceil + n2*i1 + i2_floor, 
+                      (tw * p[i] * tmp_0 * (1 - tmp_2) * cf));
+          }
+          if ((i0_floor >= 0) && (i0_floor < n0) && (i2_ceil >= 0) && (i2_ceil < n2))
+          {
+            atomicAdd(img + n1*n2*i0_floor + n2*i1 + i2_ceil, 
+                      (tw * p[i] * (1 - tmp_0) * tmp_2 * cf));
+          }
+          if((i0_ceil >= 0) && (i0_ceil < n0) && (i2_ceil >= 0) && (i2_ceil < n2))
+          {
+            atomicAdd(img + n1*n2*i0_ceil + n2*i1 + i2_ceil, 
+                      (tw * p[i] * tmp_0 * tmp_2 * cf));
           }
         }
       }
@@ -292,39 +269,29 @@ __global__ void joseph3d_back_tof_sino_cuda_kernel(float *xstart,
         x_v1 = x_pr1;
         x_v2 = img_origin[2] + i2*voxsize[2];
 
-	      it1 = -n_half;
-	      it2 =  n_half;
+        if(p[i] != 0){
+          tw = tof_weight_cuda(x_m0, x_m1, x_m2, x_v0, x_v1, x_v2, u0, u1, u2, tof_bin[i], 
+		                     tofbin_width, tofcenter_offset[i], sigma_tof[i], half_erf_lut);
 
-        // get the relevant tof bins (the TOF bins where the TOF weight is not close to 0)
-        relevant_tof_bins_cuda(x_m0, x_m1, x_m2, x_v0, x_v1, x_v2, u0, u1, u2, 
-			                    tofbin_width, tofcenter_offset[i], sigma_tof[i], n_sigmas, n_half,
-		                      &it1, &it2);
-
-        for(it = it1; it <= it2; it++){
-          if(p[i*n_tofbins + it + n_half] != 0){
-            tw = tof_weight_cuda(x_m0, x_m1, x_m2, x_v0, x_v1, x_v2, u0, u1, u2, it, 
-		                       tofbin_width, tofcenter_offset[i], sigma_tof[i], half_erf_lut);
-
-            if ((i0_floor >= 0) && (i0_floor < n0) && (i1_floor >= 0) && (i1_floor < n1))
-            {
-              atomicAdd(img + n1*n2*i0_floor +  n2*i1_floor + i2, 
-                        (tw * p[i*n_tofbins + it + n_half] * (1 - tmp_0) * (1 - tmp_1) * cf));
-            }
-            if ((i0_ceil >= 0) && (i0_ceil < n0) && (i1_floor >= 0) && (i1_floor < n1))
-            {
-              atomicAdd(img + n1*n2*i0_ceil + n2*i1_floor + i2, 
-                        (tw * p[i*n_tofbins + it + n_half] * tmp_0 * (1 - tmp_1) * cf));
-            }
-            if ((i0_floor >= 0) && (i0_floor < n0) && (i1_ceil >= 0) && (i1_ceil < n1))
-            {
-              atomicAdd(img + n1*n2*i0_floor + n2*i1_ceil + i2, 
-                        (tw * p[i*n_tofbins + it + n_half] * (1 - tmp_0) * tmp_1 * cf));
-            }
-            if ((i0_ceil >= 0) && (i0_ceil < n0) && (i1_ceil >= 0) && (i1_ceil < n1))
-            {
-              atomicAdd(img + n1*n2*i0_ceil + n2*i1_ceil + i2, 
-                        (tw * p[i*n_tofbins + it + n_half] * tmp_0 * tmp_1 * cf));
-            }
+          if ((i0_floor >= 0) && (i0_floor < n0) && (i1_floor >= 0) && (i1_floor < n1))
+          {
+            atomicAdd(img + n1*n2*i0_floor +  n2*i1_floor + i2, 
+                      (tw * p[i] * (1 - tmp_0) * (1 - tmp_1) * cf));
+          }
+          if ((i0_ceil >= 0) && (i0_ceil < n0) && (i1_floor >= 0) && (i1_floor < n1))
+          {
+            atomicAdd(img + n1*n2*i0_ceil + n2*i1_floor + i2, 
+                      (tw * p[i] * tmp_0 * (1 - tmp_1) * cf));
+          }
+          if ((i0_floor >= 0) && (i0_floor < n0) && (i1_ceil >= 0) && (i1_ceil < n1))
+          {
+            atomicAdd(img + n1*n2*i0_floor + n2*i1_ceil + i2, 
+                      (tw * p[i] * (1 - tmp_0) * tmp_1 * cf));
+          }
+          if ((i0_ceil >= 0) && (i0_ceil < n0) && (i1_ceil >= 0) && (i1_ceil < n1))
+          {
+            atomicAdd(img + n1*n2*i0_ceil + n2*i1_ceil + i2, 
+                      (tw * p[i] * tmp_0 * tmp_1 * cf));
           }
         }
       }
@@ -353,12 +320,21 @@ __global__ void joseph3d_back_tof_sino_cuda_kernel(float *xstart,
  *  @param h_img_origin  array [x0_0,x0_1,x0_2] of coordinates of the center of the [0,0,0] voxel
  *  @param h_voxsize     array [vs0, vs1, vs2] of the voxel sizes
  *  @param h_p           array of length nlors containg the values to be back projected
- *  @param nlors          number of projections (length of p array)
+ *  @param nlors         number of projections (length of p array)
  *  @param h_img_dim     array with dimensions of image [n0,n1,n2]
+ *  @param n_tofbins        number of TOF bins
+ *  @param tofbin_width     width of the TOF bins in spatial units (units of xstart and xend)
+ *  @param h_sigma_tof      array of length nlors with the TOF resolution (sigma) for each LOR in
+ *                          spatial units (units of xstart and xend) 
+ *  @param h_tofcenter_offset  array of length nlors with the offset of the central TOF bin from the 
+ *                             midpoint of each LOR in spatial units (units of xstart and xend) 
+ *  @param h_tof_bin           array containing the TOF bin of each event
+ *  @param h_half_erf_lut      look up table length 6001 for half erf between -3 and 3. 
+ *                             The i-th element contains 0.5*erf(-3 + 0.001*i)
  *  @param threadsperblock number of threads per block
  *  @param num_devices     number of CUDA devices to use. if set to -1 cudaGetDeviceCount() is used
  */
-extern "C" void joseph3d_back_tof_sino_cuda(float *h_xstart, 
+extern "C" void joseph3d_back_tof_lm_cuda(float *h_xstart, 
                                             float *h_xend, 
                                             float *h_img,
                                             float *h_img_origin, 
@@ -370,7 +346,7 @@ extern "C" void joseph3d_back_tof_sino_cuda(float *h_xstart,
 		                                        float tofbin_width,
 		                                        float *h_sigma_tof,
 		                                        float *h_tofcenter_offset,
-		                                        unsigned int n_sigmas,
+		                                        int *h_tof_bin,
                                             float *h_half_erf_lut,
                                             unsigned int threadsperblock,
                                             int num_devices)
@@ -409,6 +385,7 @@ extern "C" void joseph3d_back_tof_sino_cuda(float *h_xstart,
   float **d_sigma_tof        = new float * [num_devices];
   float **d_tofcenter_offset = new float * [num_devices];
   float **d_half_erf_lut     = new float * [num_devices];
+  int **d_tof_bin            = new int * [num_devices];
 
   // auxiallary image array needed to sum all back projections on device 0
   float *d_img2;
@@ -433,11 +410,11 @@ extern "C" void joseph3d_back_tof_sino_cuda(float *h_xstart,
     dim3 grid(blockspergrid);
 
     // allocate the memory for the array containing the projection on the device
-    error = cudaMalloc(&d_p[i_dev], n_tofbins*proj_bytes_dev);
+    error = cudaMalloc(&d_p[i_dev], proj_bytes_dev);
 	  if (error != cudaSuccess){
         printf("cudaMalloc returned error %s (code %d), line(%d)\n", cudaGetErrorString(error), error, __LINE__);
         exit(EXIT_FAILURE);}
-    cudaMemcpyAsync(d_p[i_dev], h_p + n_tofbins*dev_offset, n_tofbins*proj_bytes_dev, cudaMemcpyHostToDevice);
+    cudaMemcpyAsync(d_p[i_dev], h_p + dev_offset, proj_bytes_dev, cudaMemcpyHostToDevice);
 
     error = cudaMalloc(&d_xstart[i_dev], 3*proj_bytes_dev);
 	  if (error != cudaSuccess){
@@ -507,12 +484,18 @@ extern "C" void joseph3d_back_tof_sino_cuda(float *h_xstart,
         exit(EXIT_FAILURE);}
     cudaMemcpyAsync(d_half_erf_lut[i_dev], h_half_erf_lut, 6001*sizeof(float), cudaMemcpyHostToDevice);
 
+    error = cudaMalloc(&d_tof_bin[i_dev], dev_nlors*sizeof(int));
+	  if (error != cudaSuccess){
+        printf("cudaMalloc returned error %s (code %d), line(%d)\n", cudaGetErrorString(error), error, __LINE__);
+        exit(EXIT_FAILURE);}
+    cudaMemcpyAsync(d_tof_bin[i_dev], h_tof_bin + dev_offset, proj_bytes_dev, cudaMemcpyHostToDevice);
     // call the kernel
-    joseph3d_back_tof_sino_cuda_kernel<<<grid,block>>>(d_xstart[i_dev], d_xend[i_dev], d_img[i_dev],
-                                                       d_img_origin[i_dev], d_voxsize[i_dev], 
-                                                       d_p[i_dev], dev_nlors, d_img_dim[i_dev],
-		                                                   n_tofbins, tofbin_width, d_sigma_tof[i_dev],
-		                                                   d_tofcenter_offset[i_dev], n_sigmas, d_half_erf_lut[i_dev]);
+    joseph3d_back_tof_lm_cuda_kernel<<<grid,block>>>(d_xstart[i_dev], d_xend[i_dev], d_img[i_dev],
+                                                     d_img_origin[i_dev], d_voxsize[i_dev], 
+                                                     d_p[i_dev], dev_nlors, d_img_dim[i_dev],
+		                                                 n_tofbins, tofbin_width, d_sigma_tof[i_dev],
+		                                                 d_tofcenter_offset[i_dev], 
+                                                     d_tof_bin[i_dev], d_half_erf_lut[i_dev]);
 
   }
 
@@ -557,6 +540,7 @@ extern "C" void joseph3d_back_tof_sino_cuda(float *h_xstart,
     cudaFree(d_sigma_tof[i_dev]);
     cudaFree(d_tofcenter_offset[i_dev]);
     cudaFree(d_half_erf_lut[i_dev]);
+    cudaFree(d_tof_bin[i_dev]);
   }
 
   // copy everything back to host 
