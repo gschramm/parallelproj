@@ -43,6 +43,16 @@ lib_parallelproj.joseph3d_back.argtypes = [ar_1d_single,
                                            ar_1d_single,
                                            ctypes.c_ulonglong,
                                            ar_1d_uint]
+
+lib_parallelproj.joseph3d_back_2.restype  = None
+lib_parallelproj.joseph3d_back_2.argtypes = [ar_1d_single,
+                                             ar_1d_single,
+                                             ar_1d_single,
+                                             ar_1d_single,
+                                             ar_1d_single,
+                                             ar_1d_single,
+                                             ctypes.c_ulonglong,
+                                             ar_1d_uint]
 ###############################################################
 ###############################################################
 
@@ -89,11 +99,22 @@ ok = lib_parallelproj.joseph3d_back(xstart.flatten(), xend.flatten(), back_img,
 back_img = back_img.reshape((img_dim))
 t3 = time()
 t_back = t3 - t2
+
+#---
+back_img2 = np.zeros(img.shape, dtype = ctypes.c_float).flatten()
+
+t4 = time()
+ok = lib_parallelproj.joseph3d_back_2(xstart.flatten(), xend.flatten(), back_img2, 
+                                    img_origin, voxsize, ones, nLORs, img_dim) 
+back_img2 = back_img2.reshape((img_dim))
+t5 = time()
+t_back2 = t5 - t4
   
 #----
 # print results
 print('openmp cpu','#views',nviews,'fwd',t_fwd)
 print('openmp cpu','#views',nviews,'back',t_back)
+print('openmp cpu','#views',nviews,'back2',t_back2)
 
 ## show results
 #import pymirc.viewer as pv
