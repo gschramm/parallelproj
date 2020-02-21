@@ -70,12 +70,14 @@ __global__ void joseph3d_fwd_tof_sino_cuda_kernel(float *xstart,
     float x_v0, x_v1, x_v2;    
 
     int it, it1, it2;
-    float tw;
+    float dtof, tw;
 
     // correction factor for cos(theta) and voxsize
     float cf;
-
     float toAdd;
+
+    float sig_tof   = sigma_tof[i];
+    float tc_offset = tofcenter_offset[i];
 
     // test whether the ray between the two detectors is most parallel
     // with the 0, 1, or 2 axis
@@ -175,14 +177,19 @@ __global__ void joseph3d_fwd_tof_sino_cuda_kernel(float *xstart,
 
         // get the relevant tof bins (the TOF bins where the TOF weight is not close to 0)
         relevant_tof_bins_cuda(x_m0, x_m1, x_m2, x_v0, x_v1, x_v2, u0, u1, u2, 
-			                    tofbin_width, tofcenter_offset[i], sigma_tof[i], n_sigmas, n_half,
+			                    tofbin_width, tc_offset, sig_tof, n_sigmas, n_half,
 		                      &it1, &it2);
 
         if(toAdd != 0){
           for(it = it1; it <= it2; it++){
+            // calculate distance of voxel to tof bin center
+            dtof = sqrtf(powf((x_m0 + (it*tofbin_width + tc_offset)*u0 - x_v0), 2) + 
+                         powf((x_m1 + (it*tofbin_width + tc_offset)*u1 - x_v1), 2) + 
+                         powf((x_m2 + (it*tofbin_width + tc_offset)*u2 - x_v2), 2));
+
             //calculate the TOF weight
-            tw = tof_weight_cuda(x_m0, x_m1, x_m2, x_v0, x_v1, x_v2, u0, u1, u2, it, 
-		                       tofbin_width, tofcenter_offset[i], sigma_tof[i], half_erf_lut);
+            tw = 0.5*(erff((dtof + 0.5*tofbin_width)/(sqrtf(2)*sig_tof)) - 
+                      erff((dtof - 0.5*tofbin_width)/(sqrtf(2)*sig_tof)));
 
             p[i*n_tofbins + it + n_half] += (tw * cf * toAdd);
           }
@@ -244,14 +251,20 @@ __global__ void joseph3d_fwd_tof_sino_cuda_kernel(float *xstart,
 
         // get the relevant tof bins (the TOF bins where the TOF weight is not close to 0)
         relevant_tof_bins_cuda(x_m0, x_m1, x_m2, x_v0, x_v1, x_v2, u0, u1, u2, 
-			                    tofbin_width, tofcenter_offset[i], sigma_tof[i], n_sigmas, n_half,
+			                    tofbin_width, tc_offset, sig_tof, n_sigmas, n_half,
 		                      &it1, &it2);
 
         if(toAdd != 0){
           for(it = it1; it <= it2; it++){
-            // calculate the TOF weight
-            tw = tof_weight_cuda(x_m0, x_m1, x_m2, x_v0, x_v1, x_v2, u0, u1, u2, it, 
-		                        tofbin_width, tofcenter_offset[i], sigma_tof[i], half_erf_lut);
+            // calculate distance of voxel to tof bin center
+            dtof = sqrtf(powf((x_m0 + (it*tofbin_width + tc_offset)*u0 - x_v0), 2) + 
+                         powf((x_m1 + (it*tofbin_width + tc_offset)*u1 - x_v1), 2) + 
+                         powf((x_m2 + (it*tofbin_width + tc_offset)*u2 - x_v2), 2));
+
+            //calculate the TOF weight
+            tw = 0.5*(erff((dtof + 0.5*tofbin_width)/(sqrtf(2)*sig_tof)) - 
+                      erff((dtof - 0.5*tofbin_width)/(sqrtf(2)*sig_tof)));
+
 
             p[i*n_tofbins + it + n_half] += (tw * cf * toAdd);
 	        }
@@ -314,14 +327,19 @@ __global__ void joseph3d_fwd_tof_sino_cuda_kernel(float *xstart,
 
         // get the relevant tof bins (the TOF bins where the TOF weight is not close to 0)
         relevant_tof_bins_cuda(x_m0, x_m1, x_m2, x_v0, x_v1, x_v2, u0, u1, u2, 
-			                    tofbin_width, tofcenter_offset[i], sigma_tof[i], n_sigmas, n_half,
+			                    tofbin_width, tc_offset, sig_tof, n_sigmas, n_half,
 		                      &it1, &it2);
 
         if(toAdd != 0){
           for(it = it1; it <= it2; it++){
-            // calculate the TOF weight
-            tw = tof_weight_cuda(x_m0, x_m1, x_m2, x_v0, x_v1, x_v2, u0, u1, u2, it, 
-		                        tofbin_width, tofcenter_offset[i], sigma_tof[i], half_erf_lut);
+            // calculate distance of voxel to tof bin center
+            dtof = sqrtf(powf((x_m0 + (it*tofbin_width + tc_offset)*u0 - x_v0), 2) + 
+                         powf((x_m1 + (it*tofbin_width + tc_offset)*u1 - x_v1), 2) + 
+                         powf((x_m2 + (it*tofbin_width + tc_offset)*u2 - x_v2), 2));
+
+            //calculate the TOF weight
+            tw = 0.5*(erff((dtof + 0.5*tofbin_width)/(sqrtf(2)*sig_tof)) - 
+                      erff((dtof - 0.5*tofbin_width)/(sqrtf(2)*sig_tof)));
 
             p[i*n_tofbins + it + n_half] += (tw * cf * toAdd);
 	        }
