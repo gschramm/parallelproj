@@ -39,12 +39,10 @@ lib_parallelproj.joseph3d_fwd_tof_lm.argtypes = [ar_1d_single,
                                                  ar_1d_single,
                                                  ctypes.c_longlong,
                                                  ar_1d_uint,        #
-                                                 ctypes.c_int,      # n_tofbins
                                                  ctypes.c_float,    # tofbin_width 
                                                  ar_1d_single,      # sigma tof
                                                  ar_1d_single,      # tofcenter_offset
-                                                 ar_1d_int,         # tof bin 
-                                                 ar_1d_single]      # look up table for erf
+                                                 ar_1d_int]         # tof bin 
 
 lib_parallelproj.joseph3d_back_tof_lm.restype  = None
 lib_parallelproj.joseph3d_back_tof_lm.argtypes = [ar_1d_single,
@@ -55,12 +53,10 @@ lib_parallelproj.joseph3d_back_tof_lm.argtypes = [ar_1d_single,
                                                   ar_1d_single,
                                                   ctypes.c_longlong,
                                                   ar_1d_uint,        #
-                                                  ctypes.c_int,      # n_tofbins
                                                   ctypes.c_float,    # tofbin_width 
                                                   ar_1d_single,      # sigma tof
                                                   ar_1d_single,      # tofcenter_offset
-                                                  ar_1d_int,         # tof bin 
-                                                  ar_1d_single]      # look up table for erf
+                                                  ar_1d_int]         # tof bin 
 
 lib_parallelproj.joseph3d_back_tof_lm_2.restype  = None
 lib_parallelproj.joseph3d_back_tof_lm_2.argtypes = [ar_1d_single,
@@ -71,12 +67,11 @@ lib_parallelproj.joseph3d_back_tof_lm_2.argtypes = [ar_1d_single,
                                                     ar_1d_single,
                                                     ctypes.c_longlong,
                                                     ar_1d_uint,        #
-                                                    ctypes.c_int,      # n_tofbins
                                                     ctypes.c_float,    # tofbin_width 
                                                     ar_1d_single,      # sigma tof
                                                     ar_1d_single,      # tofcenter_offset
-                                                    ar_1d_int,         # tof bin 
-                                                    ar_1d_single]      # look up table for erf
+                                                    ar_1d_int]         # tof bin 
+
 
 ###############################################################
 ###############################################################
@@ -126,8 +121,8 @@ for nevents in ne:
   t0 = time()
   ok = lib_parallelproj.joseph3d_fwd_tof_lm(xstart.flatten(), xend.flatten(), img.flatten(), 
                                             img_origin, voxsize, img_fwd, nLORs, img_dim,
-                                            n_tofbins, tofbin_width, sigma_tof, tofcenter_offset, 
-                                            tof_bin, half_erf_lut)
+                                            tofbin_width, sigma_tof, tofcenter_offset, 
+                                            tof_bin)
   t1 = time()
   t_fwd = t1 - t0
   
@@ -137,8 +132,8 @@ for nevents in ne:
   t2 = time()
   ok = lib_parallelproj.joseph3d_back_tof_lm(xstart.flatten(), xend.flatten(), back_img, 
                                              img_origin, voxsize, ones, nLORs, img_dim,
-                                             n_tofbins, tofbin_width, sigma_tof, tofcenter_offset, 
-                                             tof_bin, half_erf_lut)
+                                             tofbin_width, sigma_tof, tofcenter_offset, 
+                                             tof_bin)
   back_img = back_img.reshape(img_dim)
   t3 = time()
   t_back = t3 - t2
@@ -148,8 +143,8 @@ for nevents in ne:
   t4 = time()
   ok = lib_parallelproj.joseph3d_back_tof_lm_2(xstart.flatten(), xend.flatten(), back_img2, 
                                                img_origin, voxsize, ones, nLORs, img_dim,
-                                               n_tofbins, tofbin_width, sigma_tof, tofcenter_offset, 
-                                               tof_bin, half_erf_lut)
+                                               tofbin_width, sigma_tof, tofcenter_offset, 
+                                               tof_bin)
   back_img2 = back_img2.reshape(img_dim)
   t5 = time()
   t_back2 = t5 - t4
