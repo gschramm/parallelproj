@@ -39,8 +39,7 @@ lib_parallelproj.joseph3d_fwd_tof_sino.argtypes = [ar_1d_single,
                                                    ctypes.c_float,    # tofbin_width 
                                                    ar_1d_single,      # sigma tof
                                                    ar_1d_single,      # tofcenter_offset
-                                                   ctypes.c_uint,     # n_sigmas 
-                                                   ar_1d_single]      # look up table for erf
+                                                   ctypes.c_uint]     # n_sigmas 
 
 lib_parallelproj.joseph3d_back_tof_sino.restype  = None
 lib_parallelproj.joseph3d_back_tof_sino.argtypes = [ar_1d_single,
@@ -55,8 +54,7 @@ lib_parallelproj.joseph3d_back_tof_sino.argtypes = [ar_1d_single,
                                                     ctypes.c_float,    # tofbin_width 
                                                     ar_1d_single,      # sigma tof
                                                     ar_1d_single,      # tofcenter_offset
-                                                    ctypes.c_uint,     # n_sigmas 
-                                                    ar_1d_single]      # look up table for erf
+                                                    ctypes.c_uint]     # n_sigmas 
 
 lib_parallelproj.joseph3d_back_tof_sino_2.restype  = None
 lib_parallelproj.joseph3d_back_tof_sino_2.argtypes = [ar_1d_single,
@@ -71,8 +69,7 @@ lib_parallelproj.joseph3d_back_tof_sino_2.argtypes = [ar_1d_single,
                                                       ctypes.c_float,    # tofbin_width 
                                                       ar_1d_single,      # sigma tof
                                                       ar_1d_single,      # tofcenter_offset
-                                                      ctypes.c_uint,     # n_sigmas 
-                                                      ar_1d_single]      # look up table for erf
+                                                      ctypes.c_uint]     # n_sigmas 
 
 
 
@@ -85,8 +82,6 @@ n_tofbins    = 27
 sigma_tof    = (d_scanner/10)/2.35
 tofbin_width = (d_scanner + 2*sigma_tof) / n_tofbins
 n_sigmas     = 3
-
-half_erf_lut = 0.5*erf(np.linspace(-3,3,6001), dtype = ctypes.c_float)
 
 #--------------------------------------------------------------------------------------
 #---- set up phantom and dector coordindates
@@ -119,7 +114,7 @@ t0 = time()
 ok = lib_parallelproj.joseph3d_fwd_tof_sino(xstart.flatten(), xend.flatten(), img.flatten(), 
                                             img_origin, voxsize, img_fwd, nLORs, img_dim,
                                             n_tofbins, tofbin_width, sigma_tof, tofcenter_offset, 
-                                            n_sigmas, half_erf_lut)
+                                            n_sigmas)
 
 fwd_tof_sino = img_fwd.reshape(sino_shape)
 t1 = time()
@@ -135,7 +130,7 @@ t2 = time()
 ok = lib_parallelproj.joseph3d_back_tof_sino(xstart.flatten(), xend.flatten(), back_img, 
                                              img_origin, voxsize, ones, nLORs, img_dim,
                                              n_tofbins, tofbin_width, sigma_tof, tofcenter_offset, 
-                                             n_sigmas, half_erf_lut)
+                                             n_sigmas)
 
 back_img = back_img.reshape(img.shape)
 t3 = time()
@@ -146,9 +141,9 @@ back_img2 = np.zeros(img_dim, dtype = ctypes.c_float).flatten()
 
 t4 = time()
 ok = lib_parallelproj.joseph3d_back_tof_sino_2(xstart.flatten(), xend.flatten(), back_img2, 
-                                               img_origin, voxsize, ones, nLORs, img_dim,
-                                               n_tofbins, tofbin_width, sigma_tof, tofcenter_offset, 
-                                               n_sigmas, half_erf_lut)
+                                            img_origin, voxsize, ones, nLORs, img_dim,
+                                            n_tofbins, tofbin_width, sigma_tof, tofcenter_offset, 
+                                            n_sigmas)
 
 back_img2 = back_img2.reshape(img.shape)
 t5 = time()

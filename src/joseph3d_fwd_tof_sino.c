@@ -29,8 +29,6 @@
  *  @param tofcenter_offset array of length nlors with the offset of the central TOF bin from the 
  *                          midpoint of each LOR in spatial units (units of xstart and xend) 
  *  @param n_sigmas         number of sigmas to consider for calculation of TOF kernel
- *  @param half_erf_lut     look up table length 6001 for half erf between -3 and 3. 
- *                          The i-th element contains 0.5*erf(-3 + 0.001*i)
  */
 void joseph3d_fwd_tof_sino(float *xstart, 
                            float *xend, 
@@ -44,8 +42,7 @@ void joseph3d_fwd_tof_sino(float *xstart,
 		                       float tofbin_width,
 		                       float *sigma_tof,
 		                       float *tofcenter_offset,
-		                       unsigned int n_sigmas,
-                           float *half_erf_lut)
+		                       unsigned int n_sigmas)
 {
   long long i;
 
@@ -72,18 +69,36 @@ void joseph3d_fwd_tof_sino(float *xstart,
     float x_v0, x_v1, x_v2;    
 
     int it, it1, it2;
-    float tw;
+    float dtof, tw;
 
     // correction factor for cos(theta) and voxsize
     float cf;
-
     float toAdd;
+
+    float sig_tof   = sigma_tof[i];
+    float tc_offset = tofcenter_offset[i];
+
+    float xstart0 = xstart[i*3 + 0];
+    float xstart1 = xstart[i*3 + 1];
+    float xstart2 = xstart[i*3 + 2];
+
+    float xend0 = xend[i*3 + 0];
+    float xend1 = xend[i*3 + 1];
+    float xend2 = xend[i*3 + 2];
+
+    float voxsize0 = voxsize[0];
+    float voxsize1 = voxsize[1];
+    float voxsize2 = voxsize[2];
+
+    float img_origin0 = img_origin[0];
+    float img_origin1 = img_origin[1];
+    float img_origin2 = img_origin[2];
 
     // test whether the ray between the two detectors is most parallel
     // with the 0, 1, or 2 axis
-    d0 = xend[i*3 + 0] - xstart[i*3 + 0];
-    d1 = xend[i*3 + 1] - xstart[i*3 + 1];
-    d2 = xend[i*3 + 2] - xstart[i*3 + 2];
+    d0 = xend0 - xstart0;
+    d1 = xend1 - xstart1;
+    d2 = xend2 - xstart2;
 
     d0_sq = d0*d0;
     d1_sq = d1*d1;
@@ -118,34 +133,34 @@ void joseph3d_fwd_tof_sino(float *xstart,
     u2 = d2 / d_norm; 
 
     // calculate mid point of LOR
-    x_m0 = 0.5*(xstart[i*3 + 0] + xend[i*3 + 0]);
-    x_m1 = 0.5*(xstart[i*3 + 1] + xend[i*3 + 1]);
-    x_m2 = 0.5*(xstart[i*3 + 2] + xend[i*3 + 2]);
+    x_m0 = 0.5*(xstart0 + xend0);
+    x_m1 = 0.5*(xstart1 + xend1);
+    x_m2 = 0.5*(xstart2 + xend2);
 
     //---------------------------------------------------------
 
     if (direction == 0)
     {
-      cf = voxsize[direction] / sqrt(cos0_sq);
+      cf = voxsize0 / sqrt(cos0_sq);
 
       // case where ray is most parallel to the 0 axis
       // we step through the volume along the 0 direction
       for(i0 = 0; i0 < n0; i0++)
       {
         // get the indices where the ray intersects the image plane
-        x_pr1 = xstart[i*3 + 1] + (img_origin[direction] + i0*voxsize[direction] - xstart[i*3 + direction])*d1 / d0;
-        x_pr2 = xstart[i*3 + 2] + (img_origin[direction] + i0*voxsize[direction] - xstart[i*3 + direction])*d2 / d0;
+        x_pr1 = xstart1 + (img_origin0 + i0*voxsize0 - xstart0)*d1 / d0;
+        x_pr2 = xstart2 + (img_origin1 + i0*voxsize1 - xstart0)*d2 / d0;
   
-        i1_floor = (int)floor((x_pr1 - img_origin[1])/voxsize[1]);
+        i1_floor = (int)floor((x_pr1 - img_origin1)/voxsize1);
         i1_ceil  = i1_floor + 1;
   
-        i2_floor = (int)floor((x_pr2 - img_origin[2])/voxsize[2]);
+        i2_floor = (int)floor((x_pr2 - img_origin2)/voxsize2);
         i2_ceil  = i2_floor + 1; 
  
         // calculate the distances to the floor normalized to [0,1]
         // for the bilinear interpolation
-        tmp_1 = (x_pr1 - (i1_floor*voxsize[1] + img_origin[1])) / voxsize[1];
-        tmp_2 = (x_pr2 - (i2_floor*voxsize[2] + img_origin[2])) / voxsize[2];
+        tmp_1 = (x_pr1 - (i1_floor*voxsize1 + img_origin1)) / voxsize1;
+        tmp_2 = (x_pr2 - (i2_floor*voxsize2 + img_origin2)) / voxsize2;
 
 	      toAdd = 0;
 
@@ -168,7 +183,7 @@ void joseph3d_fwd_tof_sino(float *xstart,
 
         //--------- TOF related quantities
         // calculate the voxel center needed for TOF weights
-        x_v0 = img_origin[0] + i0*voxsize[0];
+        x_v0 = img_origin0 + i0*voxsize0;
         x_v1 = x_pr1;
         x_v2 = x_pr2;
 
@@ -177,14 +192,19 @@ void joseph3d_fwd_tof_sino(float *xstart,
 
         // get the relevant tof bins (the TOF bins where the TOF weight is not close to 0)
         relevant_tof_bins(x_m0, x_m1, x_m2, x_v0, x_v1, x_v2, u0, u1, u2, 
-			                    tofbin_width, tofcenter_offset[i], sigma_tof[i], n_sigmas, n_half,
+			                    tofbin_width, tc_offset, sig_tof, n_sigmas, n_half,
 		                      &it1, &it2);
 
         if(toAdd != 0){
           for(it = it1; it <= it2; it++){
+            // calculate distance of voxel to tof bin center
+            dtof = sqrtf(powf((x_m0 + (it*tofbin_width + tc_offset)*u0 - x_v0), 2) + 
+                         powf((x_m1 + (it*tofbin_width + tc_offset)*u1 - x_v1), 2) + 
+                         powf((x_m2 + (it*tofbin_width + tc_offset)*u2 - x_v2), 2));
+
             //calculate the TOF weight
-            tw = tof_weight(x_m0, x_m1, x_m2, x_v0, x_v1, x_v2, u0, u1, u2, it, 
-		                       tofbin_width, tofcenter_offset[i], sigma_tof[i], half_erf_lut);
+            tw = 0.5*(erff((dtof + 0.5*tofbin_width)/(sqrtf(2)*sig_tof)) - 
+                      erff((dtof - 0.5*tofbin_width)/(sqrtf(2)*sig_tof)));
 
             p[i*n_tofbins + it + n_half] += (tw * cf * toAdd);
           }
@@ -195,26 +215,26 @@ void joseph3d_fwd_tof_sino(float *xstart,
     //--------------------------------------------------------------------------------- 
     if (direction == 1)
     {
-      cf = voxsize[direction] / sqrt(cos1_sq);
+      cf = voxsize1 / sqrt(cos1_sq);
 
       // case where ray is most parallel to the 1 axis
       // we step through the volume along the 1 direction
       for (i1 = 0; i1 < n1; i1++)
       {
         // get the indices where the ray intersects the image plane
-        x_pr0 = xstart[i*3 + 0] + (img_origin[direction] + i1*voxsize[direction] - xstart[i*3 + direction])*d0 / d1;
-        x_pr2 = xstart[i*3 + 2] + (img_origin[direction] + i1*voxsize[direction] - xstart[i*3 + direction])*d2 / d1;
+        x_pr0 = xstart0 + (img_origin1 + i1*voxsize1 - xstart1)*d0 / d1;
+        x_pr2 = xstart2 + (img_origin1 + i1*voxsize1 - xstart1)*d2 / d1;
   
-        i0_floor = (int)floor((x_pr0 - img_origin[0])/voxsize[0]);
+        i0_floor = (int)floor((x_pr0 - img_origin0)/voxsize0);
         i0_ceil  = i0_floor + 1; 
   
-        i2_floor = (int)floor((x_pr2 - img_origin[2])/voxsize[2]);
+        i2_floor = (int)floor((x_pr2 - img_origin2)/voxsize2);
         i2_ceil  = i2_floor + 1;
   
         // calculate the distances to the floor normalized to [0,1]
         // for the bilinear interpolation
-        tmp_0 = (x_pr0 - (i0_floor*voxsize[0] + img_origin[0])) / voxsize[0];
-        tmp_2 = (x_pr2 - (i2_floor*voxsize[2] + img_origin[2])) / voxsize[2];
+        tmp_0 = (x_pr0 - (i0_floor*voxsize0 + img_origin0)) / voxsize0;
+        tmp_2 = (x_pr2 - (i2_floor*voxsize2 + img_origin2)) / voxsize2;
  
         toAdd = 0;
 
@@ -238,7 +258,7 @@ void joseph3d_fwd_tof_sino(float *xstart,
         //--------- TOF related quantities
         // calculate the voxel center needed for TOF weights
         x_v0 = x_pr0;
-        x_v1 = img_origin[1] + i1*voxsize[1];
+        x_v1 = img_origin1 + i1*voxsize1;
         x_v2 = x_pr2;
 
 	      it1 = -n_half;
@@ -246,14 +266,20 @@ void joseph3d_fwd_tof_sino(float *xstart,
 
         // get the relevant tof bins (the TOF bins where the TOF weight is not close to 0)
         relevant_tof_bins(x_m0, x_m1, x_m2, x_v0, x_v1, x_v2, u0, u1, u2, 
-			                    tofbin_width, tofcenter_offset[i], sigma_tof[i], n_sigmas, n_half,
+			                    tofbin_width, tc_offset, sig_tof, n_sigmas, n_half,
 		                      &it1, &it2);
 
         if(toAdd != 0){
           for(it = it1; it <= it2; it++){
-            // calculate the TOF weight
-            tw = tof_weight(x_m0, x_m1, x_m2, x_v0, x_v1, x_v2, u0, u1, u2, it, 
-		                        tofbin_width, tofcenter_offset[i], sigma_tof[i], half_erf_lut);
+            // calculate distance of voxel to tof bin center
+            dtof = sqrtf(powf((x_m0 + (it*tofbin_width + tc_offset)*u0 - x_v0), 2) + 
+                         powf((x_m1 + (it*tofbin_width + tc_offset)*u1 - x_v1), 2) + 
+                         powf((x_m2 + (it*tofbin_width + tc_offset)*u2 - x_v2), 2));
+
+            //calculate the TOF weight
+            tw = 0.5*(erff((dtof + 0.5*tofbin_width)/(sqrtf(2)*sig_tof)) - 
+                      erff((dtof - 0.5*tofbin_width)/(sqrtf(2)*sig_tof)));
+
 
             p[i*n_tofbins + it + n_half] += (tw * cf * toAdd);
 	        }
@@ -272,19 +298,19 @@ void joseph3d_fwd_tof_sino(float *xstart,
       for(i2 = 0; i2 < n2; i2++)
       {
         // get the indices where the ray intersects the image plane
-        x_pr0 = xstart[i*3 + 0] + (img_origin[direction] + i2*voxsize[direction] - xstart[i*3 + direction])*d0 / d2;
-        x_pr1 = xstart[i*3 + 1] + (img_origin[direction] + i2*voxsize[direction] - xstart[i*3 + direction])*d1 / d2;
+        x_pr0 = xstart0 + (img_origin2 + i2*voxsize2 - xstart2)*d0 / d2;
+        x_pr1 = xstart1 + (img_origin2 + i2*voxsize2 - xstart2)*d1 / d2;
   
-        i0_floor = (int)floor((x_pr0 - img_origin[0])/voxsize[0]);
+        i0_floor = (int)floor((x_pr0 - img_origin0)/voxsize0);
         i0_ceil  = i0_floor + 1;
   
-        i1_floor = (int)floor((x_pr1 - img_origin[1])/voxsize[1]);
+        i1_floor = (int)floor((x_pr1 - img_origin1)/voxsize1);
         i1_ceil  = i1_floor + 1; 
   
         // calculate the distances to the floor normalized to [0,1]
         // for the bilinear interpolation
-        tmp_0 = (x_pr0 - (i0_floor*voxsize[0] + img_origin[0])) / voxsize[0];
-        tmp_1 = (x_pr1 - (i1_floor*voxsize[1] + img_origin[1])) / voxsize[1];
+        tmp_0 = (x_pr0 - (i0_floor*voxsize0 + img_origin0)) / voxsize0;
+        tmp_1 = (x_pr1 - (i1_floor*voxsize1 + img_origin1)) / voxsize1;
 
         toAdd = 0;
 
@@ -309,21 +335,26 @@ void joseph3d_fwd_tof_sino(float *xstart,
         // calculate the voxel center needed for TOF weights
         x_v0 = x_pr0;
         x_v1 = x_pr1;
-        x_v2 = img_origin[2] + i2*voxsize[2];
+        x_v2 = img_origin2 + i2*voxsize2;
 
 	      it1 = -n_half;
 	      it2 =  n_half;
 
         // get the relevant tof bins (the TOF bins where the TOF weight is not close to 0)
         relevant_tof_bins(x_m0, x_m1, x_m2, x_v0, x_v1, x_v2, u0, u1, u2, 
-			                    tofbin_width, tofcenter_offset[i], sigma_tof[i], n_sigmas, n_half,
+			                    tofbin_width, tc_offset, sig_tof, n_sigmas, n_half,
 		                      &it1, &it2);
 
         if(toAdd != 0){
           for(it = it1; it <= it2; it++){
-            // calculate the TOF weight
-            tw = tof_weight(x_m0, x_m1, x_m2, x_v0, x_v1, x_v2, u0, u1, u2, it, 
-		                        tofbin_width, tofcenter_offset[i], sigma_tof[i], half_erf_lut);
+            // calculate distance of voxel to tof bin center
+            dtof = sqrtf(powf((x_m0 + (it*tofbin_width + tc_offset)*u0 - x_v0), 2) + 
+                         powf((x_m1 + (it*tofbin_width + tc_offset)*u1 - x_v1), 2) + 
+                         powf((x_m2 + (it*tofbin_width + tc_offset)*u2 - x_v2), 2));
+
+            //calculate the TOF weight
+            tw = 0.5*(erff((dtof + 0.5*tofbin_width)/(sqrtf(2)*sig_tof)) - 
+                      erff((dtof - 0.5*tofbin_width)/(sqrtf(2)*sig_tof)));
 
             p[i*n_tofbins + it + n_half] += (tw * cf * toAdd);
 	        }
