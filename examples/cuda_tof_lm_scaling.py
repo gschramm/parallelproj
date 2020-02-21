@@ -43,12 +43,10 @@ lib_parallelproj.joseph3d_fwd_tof_lm_cuda.argtypes = [ar_1d_single,
                                                       ar_1d_single,
                                                       ctypes.c_longlong,
                                                       ar_1d_uint,        #
-                                                      ctypes.c_int,      # n_tofbins
                                                       ctypes.c_float,    # tofbin_width 
                                                       ar_1d_single,      # sigma tof
                                                       ar_1d_single,      # tofcenter_offset
                                                       ar_1d_int,         # tof bin 
-                                                      ar_1d_single,      # look up table for erf
                                                       ctypes.c_uint,
                                                       ctypes.c_int]
 
@@ -61,12 +59,10 @@ lib_parallelproj.joseph3d_back_tof_lm_cuda.argtypes = [ar_1d_single,
                                                        ar_1d_single,
                                                        ctypes.c_longlong,
                                                        ar_1d_uint,        #
-                                                       ctypes.c_int,      # n_tofbins
                                                        ctypes.c_float,    # tofbin_width 
                                                        ar_1d_single,      # sigma tof
                                                        ar_1d_single,      # tofcenter_offset
                                                        ar_1d_int,         # tof bin 
-                                                       ar_1d_single,      # look up table for erf
                                                        ctypes.c_uint,
                                                        ctypes.c_int]
 
@@ -78,9 +74,6 @@ n_tofbins    = 351
 sigma_tof    = (d_scanner/10)/2.35
 tofbin_width = (d_scanner + 2*sigma_tof) / n_tofbins
 n_sigmas     = 3
-
-half_erf_lut = 0.5*erf(np.linspace(-3,3,6001), dtype = ctypes.c_float)
-
 
 #------------------------------------------------------------------------------------
 #---- set up phantom and dector coordindates
@@ -118,8 +111,8 @@ for nevents in ne:
   t0 = time()
   ok = lib_parallelproj.joseph3d_fwd_tof_lm_cuda(xstart.flatten(), xend.flatten(), img.flatten(), 
                                             img_origin, voxsize, img_fwd, nLORs, img_dim,
-                                            n_tofbins, tofbin_width, sigma_tof, tofcenter_offset, 
-                                            tof_bin, half_erf_lut, threadsperblock, ngpus)
+                                            tofbin_width, sigma_tof, tofcenter_offset, 
+                                            tof_bin, threadsperblock, ngpus)
   t1 = time()
   t_fwd = t1 - t0
   
@@ -129,8 +122,8 @@ for nevents in ne:
   t2 = time()
   ok = lib_parallelproj.joseph3d_back_tof_lm_cuda(xstart.flatten(), xend.flatten(), back_img, 
                                                   img_origin, voxsize, ones, nLORs, img_dim,
-                                                  n_tofbins, tofbin_width, sigma_tof, tofcenter_offset, 
-                                                  tof_bin, half_erf_lut, threadsperblock, ngpus)
+                                                  tofbin_width, sigma_tof, tofcenter_offset, 
+                                                  tof_bin, threadsperblock, ngpus)
   back_img = back_img.reshape(img_dim)
   t3 = time()
   t_back = t3 - t2
