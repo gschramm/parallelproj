@@ -82,7 +82,7 @@ lib_parallelproj.joseph3d_back_tof_lm_2.argtypes = [ar_1d_single,
 ###############################################################
 
 d_scanner    = 300.
-n_tofbins    = 27
+n_tofbins    = 351
 sigma_tof    = (d_scanner/10)/2.35
 tofbin_width = (d_scanner + 2*sigma_tof) / n_tofbins
 n_sigmas     = 3
@@ -118,7 +118,7 @@ for nevents in ne:
   xstart  = xstart_sino[inds,:]
   xend    = xend_sino[inds,:]
   nLORs   = xstart.shape[0]
-  tof_bin = np.random.randint(-n_tofbins//2, n_tofbins//2, size = nLORs, dtype = ctypes.c_int) 
+  tof_bin = np.random.randint(-n_tofbins//4, n_tofbins//4, size = nLORs, dtype = ctypes.c_int) 
  
   # forward projection
   img_fwd = np.zeros(nLORs, dtype = ctypes.c_float)  

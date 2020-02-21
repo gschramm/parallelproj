@@ -9,6 +9,8 @@ def setup_testdata(nviews = 7):
   with h5py.File('../data/proj_coords.h5', 'r') as data:
     img = np.swapaxes(data['images/cylinder'][:],0,2).astype(np.float32)
 
+    img[img == 0] = 1e-6
+
     for i, view in enumerate((np.arange(nviews)*224/nviews).astype(int)):
       xstart[...,i] = data['start/' + str(view)][:]
       xend[...,i]   = data['end/' + str(view)][:]
