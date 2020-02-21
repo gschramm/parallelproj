@@ -44,7 +44,6 @@ lib_parallelproj.joseph3d_fwd_tof_sino_cuda.argtypes = [ar_1d_single,
                                                         ar_1d_single,      # sigma tof
                                                         ar_1d_single,      # tofcenter_offset
                                                         ctypes.c_uint,     # n_sigmas 
-                                                        ar_1d_single,      # look up table for erf
                                                         ctypes.c_uint,     # threads per block
                                                         ctypes.c_int]      # number of devices 
 
@@ -62,10 +61,8 @@ lib_parallelproj.joseph3d_back_tof_sino_cuda.argtypes = [ar_1d_single,
                                                          ar_1d_single,      # sigma tof
                                                          ar_1d_single,      # tofcenter_offset
                                                          ctypes.c_uint,     # n_sigmas 
-                                                         ar_1d_single,      # look up table for erf
                                                          ctypes.c_uint,     # threads per block
                                                          ctypes.c_int]      # number of devices 
-
 
 ###############################################################
 ###############################################################
@@ -75,8 +72,6 @@ n_tofbins    = 27
 sigma_tof    = (d_scanner/10)/2.35
 tofbin_width = (d_scanner + 2*sigma_tof) / n_tofbins
 n_sigmas     = 3
-
-half_erf_lut = 0.5*erf(np.linspace(-3,3,6001), dtype = ctypes.c_float)
 
 #--------------------------------------------------------------------------------------
 #---- set up phantom and dector coordindates
@@ -109,7 +104,7 @@ t0 = time()
 ok = lib_parallelproj.joseph3d_fwd_tof_sino_cuda(xstart.flatten(), xend.flatten(), img.flatten(), 
                                                  img_origin, voxsize, img_fwd, nLORs, img_dim,
                                                  n_tofbins, tofbin_width, sigma_tof, tofcenter_offset, 
-                                                 n_sigmas, half_erf_lut, threadsperblock, ngpus)
+                                                 n_sigmas, threadsperblock, ngpus)
 
 fwd_tof_sino = img_fwd.reshape(sino_shape)
 t1 = time()
@@ -125,7 +120,7 @@ t2 = time()
 ok = lib_parallelproj.joseph3d_back_tof_sino_cuda(xstart.flatten(), xend.flatten(), back_img, 
                                                   img_origin, voxsize, ones, nLORs, img_dim,
                                                   n_tofbins, tofbin_width, sigma_tof, tofcenter_offset, 
-                                                  n_sigmas, half_erf_lut, threadsperblock, ngpus)
+                                                  n_sigmas, threadsperblock, ngpus)
 
 back_img = back_img.reshape(img.shape)
 t3 = time()
@@ -133,8 +128,8 @@ t_back = t3 - t2
 
 #----
 # print results
-print('cuda #views',nviews,'fwd',t_fwd)
-print('cuda #views',nviews,'back',t_back)
+print(str(ngpus) + '-P100 nv',nviews,'fwd',t_fwd)
+print(str(ngpus) + '-P100 nv',nviews,'back',t_back)
 
 # show results
 #import pymirc.viewer as pv

@@ -29,8 +29,6 @@
  *  @param tofcenter_offset array of length nlors with the offset of the central TOF bin from the 
  *                          midpoint of each LOR in spatial units (units of xstart and xend) 
  *  @param n_sigmas         number of sigmas to consider for calculation of TOF kernel
- *  @param half_erf_lut     look up table length 6001 for half erf between -3 and 3. 
- *                          The i-th element contains 0.5*erf(-3 + 0.001*i)
  */
 __global__ void joseph3d_back_tof_sino_cuda_kernel(float *xstart, 
                                                    float *xend, 
@@ -44,8 +42,7 @@ __global__ void joseph3d_back_tof_sino_cuda_kernel(float *xstart,
 		                                               float tofbin_width,
 		                                               float *sigma_tof,
 		                                               float *tofcenter_offset,
-		                                               unsigned int n_sigmas,
-                                                   float *half_erf_lut)
+		                                               unsigned int n_sigmas)
 {
   long long i = blockDim.x * blockIdx.x + threadIdx.x;
 
@@ -392,6 +389,13 @@ __global__ void joseph3d_back_tof_sino_cuda_kernel(float *xstart,
  *  @param h_p           array of length nlors containg the values to be back projected
  *  @param nlors          number of projections (length of p array)
  *  @param h_img_dim     array with dimensions of image [n0,n1,n2]
+ *  @param n_tofbins        number of TOF bins
+ *  @param tofbin_width     width of the TOF bins in spatial units (units of xstart and xend)
+ *  @param h_sigma_tof        array of length nlors with the TOF resolution (sigma) for each LOR in
+ *                          spatial units (units of xstart and xend) 
+ *  @param h_tofcenter_offset array of length nlors with the offset of the central TOF bin from the 
+ *                          midpoint of each LOR in spatial units (units of xstart and xend) 
+ *  @param n_sigmas         number of sigmas to consider for calculation of TOF kernel
  *  @param threadsperblock number of threads per block
  *  @param num_devices     number of CUDA devices to use. if set to -1 cudaGetDeviceCount() is used
  */
@@ -408,7 +412,6 @@ extern "C" void joseph3d_back_tof_sino_cuda(float *h_xstart,
 		                                        float *h_sigma_tof,
 		                                        float *h_tofcenter_offset,
 		                                        unsigned int n_sigmas,
-                                            float *h_half_erf_lut,
                                             unsigned int threadsperblock,
                                             int num_devices)
 {
@@ -445,7 +448,6 @@ extern "C" void joseph3d_back_tof_sino_cuda(float *h_xstart,
   // init the dynamic arrays of TOF device arrays
   float **d_sigma_tof        = new float * [num_devices];
   float **d_tofcenter_offset = new float * [num_devices];
-  float **d_half_erf_lut     = new float * [num_devices];
 
   // auxiallary image array needed to sum all back projections on device 0
   float *d_img2;
@@ -538,18 +540,12 @@ extern "C" void joseph3d_back_tof_sino_cuda(float *h_xstart,
     cudaMemcpyAsync(d_tofcenter_offset[i_dev], h_tofcenter_offset + dev_offset, proj_bytes_dev, 
                     cudaMemcpyHostToDevice);
 
-    error = cudaMalloc(&d_half_erf_lut[i_dev], 6001*sizeof(float));
-	  if (error != cudaSuccess){
-        printf("cudaMalloc returned error %s (code %d), line(%d)\n", cudaGetErrorString(error), error, __LINE__);
-        exit(EXIT_FAILURE);}
-    cudaMemcpyAsync(d_half_erf_lut[i_dev], h_half_erf_lut, 6001*sizeof(float), cudaMemcpyHostToDevice);
-
     // call the kernel
     joseph3d_back_tof_sino_cuda_kernel<<<grid,block>>>(d_xstart[i_dev], d_xend[i_dev], d_img[i_dev],
                                                        d_img_origin[i_dev], d_voxsize[i_dev], 
                                                        d_p[i_dev], dev_nlors, d_img_dim[i_dev],
 		                                                   n_tofbins, tofbin_width, d_sigma_tof[i_dev],
-		                                                   d_tofcenter_offset[i_dev], n_sigmas, d_half_erf_lut[i_dev]);
+		                                                   d_tofcenter_offset[i_dev], n_sigmas);
 
   }
 
@@ -593,7 +589,6 @@ extern "C" void joseph3d_back_tof_sino_cuda(float *h_xstart,
 
     cudaFree(d_sigma_tof[i_dev]);
     cudaFree(d_tofcenter_offset[i_dev]);
-    cudaFree(d_half_erf_lut[i_dev]);
   }
 
   // copy everything back to host 
