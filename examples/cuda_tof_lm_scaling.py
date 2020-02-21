@@ -138,5 +138,5 @@ for nevents in ne:
   #----
   # print results
   print('')
-  print('openmp cpu','#nevents',f'{xstart.shape[0]:.1E}','fwd',t_fwd)
-  print('openmp cpu','#nevents',f'{xstart.shape[0]:.1E}','back',t_back)
+  print('cuda','#nevents',f'{xstart.shape[0]:.1E}','fwd',t_fwd)
+  print('cuda','#nevents',f'{xstart.shape[0]:.1E}','back',t_back)
