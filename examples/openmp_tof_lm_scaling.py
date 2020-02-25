@@ -4,6 +4,9 @@ import math
 import numpy.ctypeslib as npct
 import ctypes
 
+import os
+import multiprocessing
+
 from setup_testdata   import setup_testdata
 from time import time
 
@@ -150,8 +153,14 @@ for nevents in ne:
   t_back2 = t5 - t4
 
   #----
+  # get the number of available CPUs for OPENMP
+  if os.getenv('OMP_NUM_THREADS') is None:
+    ncpus = multiprocessing.cpu_count()
+  else:
+    ncpus = int(os.getenv('OMP_NUM_THREADS'))
+
   # print results
   print('')
-  print('openmp cpu','#nevents',f'{xstart.shape[0]:.1E}','fwd',t_fwd)
-  print('openmp cpu','#nevents',f'{xstart.shape[0]:.1E}','back',t_back)
-  print('openmp cpu','#nevents',f'{xstart.shape[0]:.1E}','back2',t_back2)
+  print(str(ncpus) + '-CPUs',f'{xstart.shape[0]:.1E}','fwd',t_fwd)
+  print(str(ncpus) + '-CPUs',f'{xstart.shape[0]:.1E}','back',t_back)
+  print(str(ncpus) + '-CPUs',f'{xstart.shape[0]:.1E}','back2',t_back2)

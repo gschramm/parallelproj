@@ -131,5 +131,5 @@ for nevents in ne:
   #----
   # print results
   print('')
-  print('cuda','#nevents',f'{xstart.shape[0]:.1E}','fwd',t_fwd)
-  print('cuda','#nevents',f'{xstart.shape[0]:.1E}','back',t_back)
+  print(str(ngpus) + '-P100',f'{xstart.shape[0]:.1E}','fwd',t_fwd)
+  print(str(ngpus) + '-P100',f'{xstart.shape[0]:.1E}','back',t_back)
