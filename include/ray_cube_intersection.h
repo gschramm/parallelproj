@@ -1,16 +1,35 @@
-// demo script that checks whether a ray intersects a cube
-// the ray is given by origin + t*rdir (vector notation)
-// if the ray intersects the cube, the two t values t1 and t2
-// for the intersection points are computed
-// algorithm is taken from 
-// https://www.scratchapixel.com/lessons/3d-basic-rendering/minimal-ray-tracer-rendering-simple-shapes/ray-box-intersection
-//
-// this algorithm assume that the IEEE floating point arith standard 754 is followed which handles
-// divions by 0 correctly
-
+/**
+ * @file ray_cube_intersection.h
+ */
 
 #include <stdio.h> 
 
+/** @brief Calculate whether a ray and a cube intersect and the possible intersection points
+ *
+ *  The ray is given by origin + t*rdir (vector notation)
+ *  if the ray intersects the cube, the two t values t1 and t2
+ *  for the intersection points are computed.
+ *
+ *  This algorithm assumes that the IEEE floating point arithmetic standard 754 is followed 
+ *  which handles divions by 0 and -0 correctly.
+ *
+ *  @param origin0     ...  0 cordinate of the ray origin
+ *  @param origin1     ...  1 cordinate of the ray origin
+ *  @param origin2     ...  2 cordinate of the ray origin
+ *  @param bounds0_min ...  0 cordinate of the start of the cube bounding box
+ *  @param bounds1_min ...  1 cordinate of the start of the cube bounding box
+ *  @param bounds2_min ...  2 cordinate of the start of the cube bounding box
+ *  @param bounds0_max ...  0 cordinate of the end   of the cube bounding box
+ *  @param bounds1_max ...  1 cordinate of the end   of the cube bounding box
+ *  @param bounds2_max ...  2 cordinate of the end   of the cube bounding box
+ *  @param rdir0       ...  0 cordinate of the ray directional vector
+ *  @param rdir1       ...  1 cordinate of the ray directional vector
+ *  @param rdir2       ...  2 cordinate of the ray directional vector
+ *  @param t1          ...  (output) ray parameter of 1st intersection point
+ *  @param t2          ...  (output) ray parameter of 2nd intersection point
+ *
+ *  @return            ...  unsigned char (0 or 1) whether ray intersects cube 
+ */
 unsigned char ray_cube_intersection(float orig0,
                                     float orig1,
                                     float orig2,

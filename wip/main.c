@@ -38,7 +38,7 @@
   if (t11 > t1){t1 = t11;} \
   if (t12 < t2){t2 = t12;} \
                              \
-  if (invdir1 >= 0){ \
+  if (invdir2 >= 0){ \
     t21 = (bounds2_min - orig2) * invdir2; \
     t22 = (bounds2_max - orig2) * invdir2; \
   } \
@@ -63,24 +63,24 @@ int main(int argc, char **argv){
   if(argc > 1){method = 1;}
 
   // the origin of the ray
-  float orig0 = -25;
-  float orig1 = -25;
-  float orig2 = 80;
+  float orig0 = 126.3;
+  float orig1 = -96.7;
+  float orig2 = 4.8;
 
   // bounding box values of the cube in all three dimension
-  float bounds0_min = -40;
-  float bounds1_min = -42;
-  float bounds2_min = -44;
+  float bounds0_min = -109.13;
+  float bounds1_min = -109.13;
+  float bounds2_min = -36;
 
-  float bounds0_max = 70;
-  float bounds1_max = 72;
-  float bounds2_max = 74;
+  float bounds0_max = 109.13;
+  float bounds1_max = 109.13;
+  float bounds2_max = 36;
 
   // the three components of the directional vector of the ray
   // in vector notation the ray would by orign + t*rdir
-  float rdir0 = 0;
-  float rdir1 = 0;
-  float rdir2 = 1;
+  float rdir0 = -233;
+  float rdir1 = 214;
+  float rdir2 = -3.9;
 
   unsigned char intersec = 1;
   float t1, t2;
@@ -114,6 +114,7 @@ int main(int argc, char **argv){
     end = clock();
   }
 
+  printf("%d\n",intersec);
   double dt = ((double) (end - start)) / CLOCKS_PER_SEC;
   printf("dt: %f s\n", dt);
 
