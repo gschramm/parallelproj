@@ -288,7 +288,7 @@ __global__ void joseph3d_fwd_tof_sino_cuda_kernel(float *xstart,
     //--------------------------------------------------------------------------------- 
     if (direction == 2)
     {
-      cf = voxsize[direction] / sqrt(cos2_sq);
+      cf = voxsize2 / sqrt(cos2_sq);
 
       // case where ray is most parallel to the 2 axis
       // we step through the volume along the 2 direction
