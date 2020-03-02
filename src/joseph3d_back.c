@@ -87,9 +87,9 @@ void joseph3d_back(float *xstart,
 
       // test whether the ray between the two detectors is most parallel
       // with the 0, 1, or 2 axis
-      d0    = xstart0 - xstart0;
-      d1    = xstart1 - xstart1;
-      d2    = xstart2 - xstart2;
+      d0    = xend0 - xstart0;
+      d1    = xend1 - xstart1;
+      d2    = xend2 - xstart2;
   
       //-----------
       //--- test whether ray and cube intersect
@@ -97,7 +97,6 @@ void joseph3d_back(float *xstart,
                                      img_origin0 - 1*voxsize0, img_origin1 - 1*voxsize1, img_origin2 - 1*voxsize2,
                                      img_origin0 + n0*voxsize0, img_origin1 + n1*voxsize1, img_origin2 + n2*voxsize2,
                                      d0, d1, d2, &t1, &t2);
-
       if (intersec == 1)
       {
         d0_sq = d0*d0; 
