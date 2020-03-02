@@ -177,7 +177,7 @@ void joseph3d_fwd(float *xstart,
       //--------------------------------------------------------------------------------- 
       if (direction == 1)
       {
-        cf = voxsize[1] / sqrt(cos1_sq);
+        cf = voxsize1 / sqrt(cos1_sq);
 
         // case where ray is most parallel to the 1 axis
         // we step through the volume along the 1 direction
