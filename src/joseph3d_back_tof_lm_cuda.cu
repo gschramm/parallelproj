@@ -91,6 +91,9 @@ __global__ void joseph3d_back_tof_lm_cuda_kernel(float *xstart,
     float istart_f, iend_f, tmp;
     int   istart, iend;
 
+    float istart_tof_f, iend_tof_f;
+    int   istart_tof, iend_tof;
+
     // test whether the ray between the two detectors is most parallel
     // with the 0, 1, or 2 axis
     d0    = xend0 - xstart0;
@@ -167,6 +170,26 @@ __global__ void joseph3d_back_tof_lm_cuda_kernel(float *xstart,
     
         istart = (int)floor(istart_f);
         iend   = (int)ceil(iend_f);
+
+        //-- check where we should start and stop according to the TOF kernel
+        //-- the tof weights outside +- 3 sigma will be close to 0 so we can
+        //-- ignore them         
+        istart_tof_f = (x_m0 + (it*tofbin_width - 3*sig_tof)*u0 - img_origin0) / voxsize0;
+        iend_tof_f   = (x_m0 + (it*tofbin_width + 3*sig_tof)*u0 - img_origin0) / voxsize0;
+        
+        if (istart_tof_f > iend_tof_f){
+          tmp        = iend_tof_f;
+          iend_tof_f = istart_tof_f;
+          istart_tof_f = tmp;
+        }
+
+        istart_tof = (int)floor(istart_tof_f);
+        iend_tof   = (int)ceil(iend_tof_f);
+
+        if(istart_tof > istart){istart = istart_tof;}
+        if(iend_tof   < iend){iend = iend_tof;}
+        //-----------
+
         if (istart < 0){istart = 0;}
         if (iend >= n0){iend = n0;}
         //---
@@ -248,6 +271,27 @@ __global__ void joseph3d_back_tof_lm_cuda_kernel(float *xstart,
     
         istart = (int)floor(istart_f);
         iend   = (int)ceil(iend_f);
+
+        //-- check where we should start and stop according to the TOF kernel
+        //-- the tof weights outside +- 3 sigma will be close to 0 so we can
+        //-- ignore them         
+        istart_tof_f = (x_m1 + (it*tofbin_width - 3*sig_tof)*u1 - img_origin1) / voxsize1;
+        iend_tof_f   = (x_m1 + (it*tofbin_width + 3*sig_tof)*u1 - img_origin1) / voxsize1;
+        
+        if (istart_tof_f > iend_tof_f){
+          tmp        = iend_tof_f;
+          iend_tof_f = istart_tof_f;
+          istart_tof_f = tmp;
+        }
+
+        istart_tof = (int)floor(istart_tof_f);
+        iend_tof   = (int)ceil(iend_tof_f);
+
+        if(istart_tof > istart){istart = istart_tof;}
+        if(iend_tof   < iend){iend = iend_tof;}
+        //-----------
+
+
         if (istart < 0){istart = 0;}
         if (iend >= n1){iend = n1;}
         //---
@@ -330,6 +374,26 @@ __global__ void joseph3d_back_tof_lm_cuda_kernel(float *xstart,
     
         istart = (int)floor(istart_f);
         iend   = (int)ceil(iend_f);
+
+        //-- check where we should start and stop according to the TOF kernel
+        //-- the tof weights outside +- 3 sigma will be close to 0 so we can
+        //-- ignore them         
+        istart_tof_f = (x_m2 + (it*tofbin_width - 3*sig_tof)*u2 - img_origin2) / voxsize2;
+        iend_tof_f   = (x_m2 + (it*tofbin_width + 3*sig_tof)*u2 - img_origin2) / voxsize2;
+        
+        if (istart_tof_f > iend_tof_f){
+          tmp        = iend_tof_f;
+          iend_tof_f = istart_tof_f;
+          istart_tof_f = tmp;
+        }
+
+        istart_tof = (int)floor(istart_tof_f);
+        iend_tof   = (int)ceil(iend_tof_f);
+
+        if(istart_tof > istart){istart = istart_tof;}
+        if(iend_tof   < iend){iend = iend_tof;}
+        //-----------
+
         if (istart < 0){istart = 0;}
         if (iend >= n2){iend = n2;}
         //---
