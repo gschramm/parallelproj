@@ -110,7 +110,7 @@ __global__ void joseph3d_fwd_cuda_kernel(float *xstart,
  
       if (direction == 0)
       {
-        cf = voxsize0 / sqrt(cos0_sq);
+        cf = voxsize0 / sqrtf(cos0_sq);
 
         // case where ray is most parallel to the 0 axis
         // we step through the volume along the 0 direction
@@ -174,7 +174,7 @@ __global__ void joseph3d_fwd_cuda_kernel(float *xstart,
       //--------------------------------------------------------------------------------- 
       if (direction == 1)
       {
-        cf = voxsize1 / sqrt(cos1_sq);
+        cf = voxsize1 / sqrtf(cos1_sq);
 
         // case where ray is most parallel to the 1 axis
         // we step through the volume along the 1 direction
@@ -238,7 +238,7 @@ __global__ void joseph3d_fwd_cuda_kernel(float *xstart,
       //--------------------------------------------------------------------------------- 
       if (direction == 2)
       {
-        cf = voxsize2 / sqrt(cos2_sq);
+        cf = voxsize2 / sqrtf(cos2_sq);
 
         // case where ray is most parallel to the 2 axis
         // we step through the volume along the 2 direction

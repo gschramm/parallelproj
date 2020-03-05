@@ -123,9 +123,9 @@ void joseph3d_back_tof_lm_2(float *xstart,
       cos1_sq = d1_sq / lsq;
       cos2_sq = d2_sq / lsq;
 
-      cs0 = sqrt(cos0_sq); 
-      cs1 = sqrt(cos1_sq); 
-      cs2 = sqrt(cos2_sq); 
+      cs0 = sqrtf(cos0_sq); 
+      cs1 = sqrtf(cos1_sq); 
+      cs2 = sqrtf(cos2_sq); 
       
       direction = 0;
       if ((cos1_sq >= cos0_sq) && (cos1_sq >= cos2_sq))
@@ -141,7 +141,7 @@ void joseph3d_back_tof_lm_2(float *xstart,
       //--- calculate TOF related quantities
       
       // unit vector (u0,u1,u2) that points from xstart to end
-      d_norm = sqrt(lsq);
+      d_norm = sqrtf(lsq);
       u0 = d0 / d_norm; 
       u1 = d1 / d_norm; 
       u2 = d2 / d_norm; 

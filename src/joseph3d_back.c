@@ -109,9 +109,9 @@ void joseph3d_back(float *xstart,
         cos1_sq = d1_sq / lsq;
         cos2_sq = d2_sq / lsq;
 
-        cs0 = sqrt(cos0_sq); 
-        cs1 = sqrt(cos1_sq); 
-        cs2 = sqrt(cos2_sq); 
+        cs0 = sqrtf(cos0_sq); 
+        cs1 = sqrtf(cos1_sq); 
+        cs2 = sqrtf(cos2_sq); 
         
         direction = 0;
         if ((cos1_sq >= cos0_sq) && (cos1_sq >= cos2_sq))
