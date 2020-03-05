@@ -50,8 +50,6 @@ void joseph3d_back_tof_lm_2(float *xstart,
   int n1 = img_dim[1];
   int n2 = img_dim[2];
 
-  long nvox = n0*n1*n2;
-
   # pragma omp parallel for schedule(static)
   for(i = 0; i < nlors; i++)
   {
