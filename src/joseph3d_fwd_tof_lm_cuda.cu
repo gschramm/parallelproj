@@ -35,7 +35,7 @@ __global__ void joseph3d_fwd_tof_lm_cuda_kernel(float *xstart,
                                                 float *voxsize, 
                                                 float *p,
                                                 long long nlors, 
-                                                unsigned int *img_dim,
+                                                int *img_dim,
 		                                            float tofbin_width,
 		                                            float *sigma_tof,
 		                                            float *tofcenter_offset,
@@ -43,16 +43,16 @@ __global__ void joseph3d_fwd_tof_lm_cuda_kernel(float *xstart,
 {
   long long i = blockDim.x * blockIdx.x + threadIdx.x;
 
-  unsigned int n0 = img_dim[0];
-  unsigned int n1 = img_dim[1];
-  unsigned int n2 = img_dim[2];
+  int n0 = img_dim[0];
+  int n1 = img_dim[1];
+  int n2 = img_dim[2];
 
   if(i < nlors)
   {
     float d0, d1, d2, d0_sq, d1_sq, d2_sq; 
     float lsq, cos0_sq, cos1_sq, cos2_sq;
     unsigned short direction; 
-    unsigned int i0, i1, i2;
+    int i0, i1, i2;
     int i0_floor, i1_floor, i2_floor;
     int i0_ceil, i1_ceil, i2_ceil;
     float x_pr0, x_pr1, x_pr2;
@@ -143,9 +143,9 @@ __global__ void joseph3d_fwd_tof_lm_cuda_kernel(float *xstart,
       u2 = d2 / d_norm; 
 
       // calculate mid point of LOR
-      x_m0 = 0.5*(xstart0 + xend0);
-      x_m1 = 0.5*(xstart1 + xend1);
-      x_m2 = 0.5*(xstart2 + xend2);
+      x_m0 = 0.5f*(xstart0 + xend0);
+      x_m1 = 0.5f*(xstart1 + xend1);
+      x_m2 = 0.5f*(xstart2 + xend2);
 
       //---------------------------------------------------------
 
@@ -240,8 +240,8 @@ __global__ void joseph3d_fwd_tof_lm_cuda_kernel(float *xstart,
                          powf((x_m2 + (it*tofbin_width + tc_offset)*u2 - x_v2), 2));
 
             //calculate the TOF weight
-            tw = 0.5*(erff((dtof + 0.5*tofbin_width)/(sqrtf(2)*sig_tof)) - 
-                      erff((dtof - 0.5*tofbin_width)/(sqrtf(2)*sig_tof)));
+            tw = 0.5f*(erff((dtof + 0.5f*tofbin_width)/(sqrtf(2)*sig_tof)) - 
+                      erff((dtof - 0.5f*tofbin_width)/(sqrtf(2)*sig_tof)));
 
             p[i] += (tw * cf * toAdd);
           }
@@ -341,8 +341,8 @@ __global__ void joseph3d_fwd_tof_lm_cuda_kernel(float *xstart,
                          powf((x_m2 + (it*tofbin_width + tc_offset)*u2 - x_v2), 2));
 
             //calculate the TOF weight
-            tw = 0.5*(erff((dtof + 0.5*tofbin_width)/(sqrtf(2)*sig_tof)) - 
-                      erff((dtof - 0.5*tofbin_width)/(sqrtf(2)*sig_tof)));
+            tw = 0.5f*(erff((dtof + 0.5f*tofbin_width)/(sqrtf(2)*sig_tof)) - 
+                      erff((dtof - 0.5f*tofbin_width)/(sqrtf(2)*sig_tof)));
 
 
             p[i] += (tw * cf * toAdd);
@@ -443,8 +443,8 @@ __global__ void joseph3d_fwd_tof_lm_cuda_kernel(float *xstart,
                          powf((x_m2 + (it*tofbin_width + tc_offset)*u2 - x_v2), 2));
 
             //calculate the TOF weight
-            tw = 0.5*(erff((dtof + 0.5*tofbin_width)/(sqrtf(2)*sig_tof)) - 
-                      erff((dtof - 0.5*tofbin_width)/(sqrtf(2)*sig_tof)));
+            tw = 0.5f*(erff((dtof + 0.5f*tofbin_width)/(sqrtf(2)*sig_tof)) - 
+                      erff((dtof - 0.5f*tofbin_width)/(sqrtf(2)*sig_tof)));
 
             p[i] += (tw * cf * toAdd);
 	        }
@@ -486,31 +486,31 @@ extern "C" void joseph3d_fwd_tof_lm_cuda(float *h_xstart,
                                            float *h_img_origin, 
                                            float *h_voxsize, 
                                            float *h_p,
-                                           unsigned long long nlors, 
-                                           unsigned int *h_img_dim,
+                                           long long nlors, 
+                                           int *h_img_dim,
 		                                       float tofbin_width,
 		                                       float *h_sigma_tof,
 		                                       float *h_tofcenter_offset,
 		                                       int *h_tof_bin,
-                                           unsigned int threadsperblock,
+                                           int threadsperblock,
                                            int num_devices)
 {
 	cudaError_t error;	
-  unsigned int blockspergrid;
+  int blockspergrid;
 
   dim3 block(threadsperblock);
 
   // offset for chunk of projections passed to a device 
-  unsigned long long dev_offset;
+  long long dev_offset;
   // number of projections to be calculated on a device
-  unsigned long long dev_nlors;
+  long long dev_nlors;
 
-  unsigned int n0 = h_img_dim[0];
-  unsigned int n1 = h_img_dim[1];
-  unsigned int n2 = h_img_dim[2];
+  int n0 = h_img_dim[0];
+  int n1 = h_img_dim[1];
+  int n2 = h_img_dim[2];
 
-  unsigned long long img_bytes = (n0*n1*n2)*sizeof(float);
-  unsigned long long proj_bytes_dev;
+  long long img_bytes = (n0*n1*n2)*sizeof(float);
+  long long proj_bytes_dev;
 
   // get number of avilable CUDA devices specified as <=0 in input
   if(num_devices <= 0){cudaGetDeviceCount(&num_devices);}  
@@ -522,7 +522,7 @@ extern "C" void joseph3d_fwd_tof_lm_cuda(float *h_xstart,
   float **d_img            = new float * [num_devices];
   float **d_img_origin     = new float * [num_devices];
   float **d_voxsize        = new float * [num_devices];
-  unsigned int **d_img_dim = new unsigned int * [num_devices];
+  int   **d_img_dim        = new int * [num_devices];
 
   // init the dynamic arrays of TOF device arrays
   float **d_sigma_tof        = new float * [num_devices];
@@ -532,7 +532,7 @@ extern "C" void joseph3d_fwd_tof_lm_cuda(float *h_xstart,
   printf("\n # CUDA devices: %d \n", num_devices);
 
   // we split the projections across all CUDA devices
-  for (unsigned int i_dev = 0; i_dev < num_devices; i_dev++) 
+  for (int i_dev = 0; i_dev < num_devices; i_dev++) 
   {
     cudaSetDevice(i_dev);
     // () are important in integer division!
@@ -545,7 +545,7 @@ extern "C" void joseph3d_fwd_tof_lm_cuda(float *h_xstart,
     proj_bytes_dev = dev_nlors*sizeof(float);
 
     // calculate the number of blocks needed for every device (chunk)
-    blockspergrid = (unsigned int)ceil((float)dev_nlors / threadsperblock);
+    blockspergrid = (int)ceil((float)dev_nlors / threadsperblock);
     dim3 grid(blockspergrid);
 
     // allocate the memory for the array containing the projection on the device
@@ -588,11 +588,11 @@ extern "C" void joseph3d_fwd_tof_lm_cuda(float *h_xstart,
         exit(EXIT_FAILURE);}
     cudaMemcpyAsync(d_voxsize[i_dev], h_voxsize, 3*sizeof(float), cudaMemcpyHostToDevice);
 
-    error = cudaMalloc(&d_img_dim[i_dev], 3*sizeof(unsigned int));
+    error = cudaMalloc(&d_img_dim[i_dev], 3*sizeof(int));
 	  if (error != cudaSuccess){
         printf("cudaMalloc returned error %s (code %d), line(%d)\n", cudaGetErrorString(error), error, __LINE__);
         exit(EXIT_FAILURE);}
-    cudaMemcpyAsync(d_img_dim[i_dev], h_img_dim, 3*sizeof(unsigned int), cudaMemcpyHostToDevice);
+    cudaMemcpyAsync(d_img_dim[i_dev], h_img_dim, 3*sizeof(int), cudaMemcpyHostToDevice);
 
     // send TOF arrays to device
     error = cudaMalloc(&d_sigma_tof[i_dev], proj_bytes_dev);
@@ -639,5 +639,5 @@ extern "C" void joseph3d_fwd_tof_lm_cuda(float *h_xstart,
   }
 
   // make sure that all devices are done before leaving
-  for (unsigned int i_dev = 0; i_dev < num_devices; i_dev++){cudaDeviceSynchronize();}
+  for (int i_dev = 0; i_dev < num_devices; i_dev++){cudaDeviceSynchronize();}
 }

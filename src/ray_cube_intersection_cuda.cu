@@ -47,9 +47,9 @@ extern "C" __device__ unsigned char ray_cube_intersection_cuda(float orig0,
   // the inverse of the directional vector
   // using the inverse of the directional vector and IEEE floating point arith standard 754
   // makes sure that 0's in the directional vector are handled correctly 
-  float invdir0 = 1./rdir0;
-  float invdir1 = 1./rdir1;
-  float invdir2 = 1./rdir2;
+  float invdir0 = 1.f/rdir0;
+  float invdir1 = 1.f/rdir1;
+  float invdir2 = 1.f/rdir2;
   
   unsigned char intersec = 1;
   

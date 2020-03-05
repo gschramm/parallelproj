@@ -24,7 +24,7 @@ threadsperblock = args.tpb
 # wrappers to call functions from compiled libs ###############
 
 ar_1d_single = npct.ndpointer(dtype = ctypes.c_float, ndim = 1, flags = 'C')
-ar_1d_uint   = npct.ndpointer(dtype = ctypes.c_uint,  ndim = 1, flags = 'C')
+ar_1d_int    = npct.ndpointer(dtype = ctypes.c_int,   ndim = 1, flags = 'C')
 
 lib_cudaproj = npct.load_library('libparallelproj_cuda.so','../lib')
 
@@ -35,9 +35,9 @@ lib_cudaproj.joseph3d_fwd_cuda.argtypes = [ar_1d_single,
                                            ar_1d_single,
                                            ar_1d_single,
                                            ar_1d_single,
-                                           ctypes.c_ulonglong,
-                                           ar_1d_uint,
-                                           ctypes.c_uint,
+                                           ctypes.c_longlong,
+                                           ar_1d_int,
+                                           ctypes.c_int,
                                            ctypes.c_int]
 
 lib_cudaproj.joseph3d_back_cuda.restype  = None
@@ -47,9 +47,9 @@ lib_cudaproj.joseph3d_back_cuda.argtypes = [ar_1d_single,
                                             ar_1d_single,
                                             ar_1d_single,
                                             ar_1d_single,
-                                            ctypes.c_ulonglong,
-                                            ar_1d_uint,
-                                            ctypes.c_uint,
+                                            ctypes.c_longlong,
+                                            ar_1d_int,
+                                            ctypes.c_int,
                                             ctypes.c_int]
 
 
@@ -73,7 +73,7 @@ print(sino_shape)
 xstart = xstart.reshape((3,) + (np.prod(sino_shape),)).transpose()
 xend   = xend.reshape((3,) + (np.prod(sino_shape),)).transpose()
 
-img_dim    = np.array(img.shape, dtype = ctypes.c_uint)
+img_dim    = np.array(img.shape, dtype = ctypes.c_int)
 nLORs      = xstart.shape[0]
 
 # forward projection

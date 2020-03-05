@@ -29,7 +29,6 @@ threadsperblock = args.tpb
 # wrappers to call functions from compiled libs ###############
 
 ar_1d_single = npct.ndpointer(dtype = ctypes.c_float, ndim = 1, flags = 'C')
-ar_1d_uint   = npct.ndpointer(dtype = ctypes.c_uint,  ndim = 1, flags = 'C')
 ar_1d_int    = npct.ndpointer(dtype = ctypes.c_int,   ndim = 1, flags = 'C')
 
 lib_parallelproj = npct.load_library('libparallelproj_cuda.so','../lib')
@@ -42,12 +41,12 @@ lib_parallelproj.joseph3d_fwd_tof_lm_cuda.argtypes = [ar_1d_single,
                                                       ar_1d_single,
                                                       ar_1d_single,
                                                       ctypes.c_longlong,
-                                                      ar_1d_uint,        #
+                                                      ar_1d_int,        #
                                                       ctypes.c_float,    # tofbin_width 
                                                       ar_1d_single,      # sigma tof
                                                       ar_1d_single,      # tofcenter_offset
                                                       ar_1d_int,         # tof bin 
-                                                      ctypes.c_uint,
+                                                      ctypes.c_int,
                                                       ctypes.c_int]
 
 lib_parallelproj.joseph3d_back_tof_lm_cuda.restype  = None
@@ -58,12 +57,12 @@ lib_parallelproj.joseph3d_back_tof_lm_cuda.argtypes = [ar_1d_single,
                                                        ar_1d_single,
                                                        ar_1d_single,
                                                        ctypes.c_longlong,
-                                                       ar_1d_uint,        #
+                                                       ar_1d_int,        #
                                                        ctypes.c_float,    # tofbin_width 
                                                        ar_1d_single,      # sigma tof
                                                        ar_1d_single,      # tofcenter_offset
                                                        ar_1d_int,         # tof bin 
-                                                       ctypes.c_uint,
+                                                       ctypes.c_int,
                                                        ctypes.c_int]
 
 ###############################################################
@@ -93,7 +92,7 @@ xend_sino   = xend.reshape((3,nLORs)).transpose()
 
 r_inds = np.random.permutation(nLORs)
 
-img_dim = np.array(img.shape, dtype = ctypes.c_uint)
+img_dim = np.array(img.shape, dtype = ctypes.c_int)
 
 sigma_tof        = np.full(nLORs, sigma_tof, dtype = ctypes.c_float)
 tofcenter_offset = np.full(nLORs, 0, dtype = ctypes.c_float)
