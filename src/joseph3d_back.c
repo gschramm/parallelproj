@@ -31,14 +31,14 @@ void joseph3d_back(float *xstart,
                    float *img_origin, 
                    float *voxsize,
                    float *p, 
-                   unsigned long long nlors, 
-                   unsigned int *img_dim)
+                   long long nlors, 
+                   int *img_dim)
 {
-  unsigned long long i;
+  long long i;
 
-  unsigned int n0 = img_dim[0];
-  unsigned int n1 = img_dim[1];
-  unsigned int n2 = img_dim[2];
+  int n0 = img_dim[0];
+  int n1 = img_dim[1];
+  int n2 = img_dim[2];
 
   long nvox = n0*n1*n2;
 
@@ -57,7 +57,7 @@ void joseph3d_back(float *xstart,
       float cs0, cs1, cs2, cf; 
       float lsq, cos0_sq, cos1_sq, cos2_sq;
       unsigned short direction; 
-      unsigned int i0, i1, i2;
+      int i0, i1, i2;
       int i0_floor, i1_floor, i2_floor;
       int i0_ceil, i1_ceil, i2_ceil;
       float x_pr0, x_pr1, x_pr2;

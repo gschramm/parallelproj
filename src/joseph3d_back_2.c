@@ -31,14 +31,14 @@ void joseph3d_back_2(float *xstart,
                      float *img_origin, 
                      float *voxsize,
                      float *p, 
-                     unsigned long long nlors, 
-                     unsigned int *img_dim)
+                     long long nlors, 
+                     int *img_dim)
 {
-  unsigned long long i;
+  long long i;
 
-  unsigned int n0 = img_dim[0];
-  unsigned int n1 = img_dim[1];
-  unsigned int n2 = img_dim[2];
+  int n0 = img_dim[0];
+  int n1 = img_dim[1];
+  int n2 = img_dim[2];
 
   # pragma omp parallel for schedule(static)
   for(i = 0; i < nlors; i++)
@@ -50,7 +50,7 @@ void joseph3d_back_2(float *xstart,
       float cs0, cs1, cs2, cf; 
       float lsq, cos0_sq, cos1_sq, cos2_sq;
       unsigned short direction; 
-      unsigned int i0, i1, i2;
+      int i0, i1, i2;
       int i0_floor, i1_floor, i2_floor;
       int i0_ceil, i1_ceil, i2_ceil;
       float x_pr0, x_pr1, x_pr2;
@@ -159,22 +159,22 @@ void joseph3d_back_2(float *xstart,
   
             if ((i1_floor >= 0) && (i1_floor < n1) && (i2_floor >= 0) && (i2_floor < n2))
             {
-              #pragma openmp atomic
+              #pragma omp atomic
               img[n1*n2*i0 + n2*i1_floor + i2_floor] += (p[i] * (1 - tmp_1) * (1 - tmp_2) * cf);
             }
             if ((i1_ceil >= 0) && (i1_ceil < n1) && (i2_floor >= 0) && (i2_floor < n2))
             {
-              #pragma openmp atomic
+              #pragma omp atomic
               img[n1*n2*i0 + n2*i1_ceil + i2_floor] += (p[i] * tmp_1 * (1 - tmp_2) * cf);
             }
             if ((i1_floor >= 0) && (i1_floor < n1) && (i2_ceil >= 0) && (i2_ceil < n2))
             {
-              #pragma openmp atomic
+              #pragma omp atomic
               img[n1*n2*i0 + n2*i1_floor + i2_ceil] += (p[i] * (1 - tmp_1) * tmp_2 * cf);
             }
             if ((i1_ceil >= 0) && (i1_ceil < n1) && (i2_ceil >= 0) && (i2_ceil < n2))
             {
-              #pragma openmp atomic
+              #pragma omp atomic
               img[n1*n2*i0 + n2*i1_ceil + i2_ceil] += (p[i] * tmp_1 * tmp_2 * cf);
             }
           }
@@ -223,22 +223,22 @@ void joseph3d_back_2(float *xstart,
   
             if ((i0_floor >= 0) && (i0_floor < n0) && (i2_floor >= 0) && (i2_floor < n2)) 
             {
-              #pragma openmp atomic
+              #pragma omp atomic
               img[n1*n2*i0_floor + n2*i1 + i2_floor] += (p[i] * (1 - tmp_0) * (1 - tmp_2) * cf);
             }
             if ((i0_ceil >= 0) && (i0_ceil < n0) && (i2_floor >= 0) && (i2_floor < n2))
             {
-              #pragma openmp atomic
+              #pragma omp atomic
               img[n1*n2*i0_ceil + n2*i1 + i2_floor] += (p[i] * tmp_0 * (1 - tmp_2) * cf);
             }
             if ((i0_floor >= 0) && (i0_floor < n0) && (i2_ceil >= 0) && (i2_ceil < n2))
             {
-              #pragma openmp atomic
+              #pragma omp atomic
               img[n1*n2*i0_floor + n2*i1 + i2_ceil] += (p[i] * (1 - tmp_0) * tmp_2 * cf);
             }
             if((i0_ceil >= 0) && (i0_ceil < n0) && (i2_ceil >= 0) && (i2_ceil < n2))
             {
-              #pragma openmp atomic
+              #pragma omp atomic
               img[n1*n2*i0_ceil + n2*i1 + i2_ceil] += (p[i] * tmp_0 * tmp_2 * cf);
             }
           }
@@ -287,22 +287,22 @@ void joseph3d_back_2(float *xstart,
   
             if ((i0_floor >= 0) && (i0_floor < n0) && (i1_floor >= 0) && (i1_floor < n1))
             {
-              #pragma openmp atomic
+              #pragma omp atomic
               img[n1*n2*i0_floor +  n2*i1_floor + i2] += (p[i] * (1 - tmp_0) * (1 - tmp_1) * cf);
             }
             if ((i0_ceil >= 0) && (i0_ceil < n0) && (i1_floor >= 0) && (i1_floor < n1))
             {
-              #pragma openmp atomic
+              #pragma omp atomic
               img[n1*n2*i0_ceil + n2*i1_floor + i2] += (p[i] * tmp_0 * (1 - tmp_1) * cf);
             }
             if ((i0_floor >= 0) && (i0_floor < n0) && (i1_ceil >= 0) && (i1_ceil < n1))
             {
-              #pragma openmp atomic
+              #pragma omp atomic
               img[n1*n2*i0_floor + n2*i1_ceil + i2] += (p[i] * (1 - tmp_0) * tmp_1 * cf);
             }
             if ((i0_ceil >= 0) && (i0_ceil < n0) && (i1_ceil >= 0) && (i1_ceil < n1))
             {
-              #pragma openmp atomic
+              #pragma omp atomic
               img[n1*n2*i0_ceil + n2*i1_ceil + i2] += (p[i] * tmp_0 * tmp_1 * cf);
             }
           }

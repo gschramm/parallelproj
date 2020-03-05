@@ -28,7 +28,7 @@ else:
 # wrappers to call functions from compiled libs ###############
 
 ar_1d_single = npct.ndpointer(dtype = ctypes.c_float, ndim = 1, flags = 'C')
-ar_1d_uint   = npct.ndpointer(dtype = ctypes.c_uint,  ndim = 1, flags = 'C')
+ar_1d_int    = npct.ndpointer(dtype = ctypes.c_int,   ndim = 1, flags = 'C')
 
 lib_parallelproj = npct.load_library('libparallelproj.so','../lib')
 
@@ -40,12 +40,12 @@ lib_parallelproj.joseph3d_fwd_tof_sino.argtypes = [ar_1d_single,
                                                    ar_1d_single,
                                                    ar_1d_single,
                                                    ctypes.c_longlong,
-                                                   ar_1d_uint,        #
+                                                   ar_1d_int,        #
                                                    ctypes.c_int,      # n_tofbins
                                                    ctypes.c_float,    # tofbin_width 
                                                    ar_1d_single,      # sigma tof
                                                    ar_1d_single,      # tofcenter_offset
-                                                   ctypes.c_uint]     # n_sigmas 
+                                                   ctypes.c_int]     # n_sigmas 
 
 lib_parallelproj.joseph3d_back_tof_sino.restype  = None
 lib_parallelproj.joseph3d_back_tof_sino.argtypes = [ar_1d_single,
@@ -55,12 +55,12 @@ lib_parallelproj.joseph3d_back_tof_sino.argtypes = [ar_1d_single,
                                                     ar_1d_single,
                                                     ar_1d_single,
                                                     ctypes.c_longlong,
-                                                    ar_1d_uint,        #
+                                                    ar_1d_int,        #
                                                     ctypes.c_int,      # n_tofbins
                                                     ctypes.c_float,    # tofbin_width 
                                                     ar_1d_single,      # sigma tof
                                                     ar_1d_single,      # tofcenter_offset
-                                                    ctypes.c_uint]     # n_sigmas 
+                                                    ctypes.c_int]     # n_sigmas 
 
 lib_parallelproj.joseph3d_back_tof_sino_2.restype  = None
 lib_parallelproj.joseph3d_back_tof_sino_2.argtypes = [ar_1d_single,
@@ -70,12 +70,12 @@ lib_parallelproj.joseph3d_back_tof_sino_2.argtypes = [ar_1d_single,
                                                       ar_1d_single,
                                                       ar_1d_single,
                                                       ctypes.c_longlong,
-                                                      ar_1d_uint,        #
+                                                      ar_1d_int,        #
                                                       ctypes.c_int,      # n_tofbins
                                                       ctypes.c_float,    # tofbin_width 
                                                       ar_1d_single,      # sigma tof
                                                       ar_1d_single,      # tofcenter_offset
-                                                      ctypes.c_uint]     # n_sigmas 
+                                                      ctypes.c_int]     # n_sigmas 
 
 
 
@@ -109,7 +109,7 @@ for nv in nviews:
   xstart = xstart.reshape((3,nLORs)).transpose()
   xend   = xend.reshape((3,nLORs)).transpose()
   
-  img_dim = np.array(img.shape, dtype = ctypes.c_uint)
+  img_dim = np.array(img.shape, dtype = ctypes.c_int)
   
   sigma_tof        = np.full(nLORs, sig_tof, dtype = ctypes.c_float)
   tofcenter_offset = np.full(nLORs, 0, dtype = ctypes.c_float)

@@ -20,7 +20,7 @@ nviews = args.nv
 # wrappers to call functions from compiled libs ###############
 
 ar_1d_single = npct.ndpointer(dtype = ctypes.c_float, ndim = 1, flags = 'C')
-ar_1d_uint   = npct.ndpointer(dtype = ctypes.c_uint,  ndim = 1, flags = 'C')
+ar_1d_int    = npct.ndpointer(dtype = ctypes.c_int,   ndim = 1, flags = 'C')
 
 lib_parallelproj = npct.load_library('libparallelproj.so','../lib')
 
@@ -32,7 +32,7 @@ lib_parallelproj.joseph3d_fwd.argtypes = [ar_1d_single,
                                           ar_1d_single,
                                           ar_1d_single,
                                           ctypes.c_ulonglong,
-                                          ar_1d_uint]
+                                          ar_1d_int]
 
 lib_parallelproj.joseph3d_back.restype  = None
 lib_parallelproj.joseph3d_back.argtypes = [ar_1d_single,
@@ -42,7 +42,7 @@ lib_parallelproj.joseph3d_back.argtypes = [ar_1d_single,
                                            ar_1d_single,
                                            ar_1d_single,
                                            ctypes.c_ulonglong,
-                                           ar_1d_uint]
+                                           ar_1d_int]
 
 lib_parallelproj.joseph3d_back_2.restype  = None
 lib_parallelproj.joseph3d_back_2.argtypes = [ar_1d_single,
@@ -52,7 +52,7 @@ lib_parallelproj.joseph3d_back_2.argtypes = [ar_1d_single,
                                              ar_1d_single,
                                              ar_1d_single,
                                              ctypes.c_ulonglong,
-                                             ar_1d_uint]
+                                             ar_1d_int]
 ###############################################################
 ###############################################################
 
@@ -79,7 +79,7 @@ xend   = xend.reshape((3,) + (np.prod(sino_shape),)).transpose()
 nLORs   = xstart.shape[0]
 img_fwd = np.zeros(nLORs, dtype = ctypes.c_float)  
 
-img_dim = np.array(img.shape, dtype = ctypes.c_uint)
+img_dim = np.array(img.shape, dtype = ctypes.c_int)
 
 t0 = time()
 ok = lib_parallelproj.joseph3d_fwd(xstart.flatten(), xend.flatten(), img.flatten(), 

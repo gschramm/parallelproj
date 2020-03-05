@@ -38,18 +38,18 @@ void joseph3d_fwd_tof_sino(float *xstart,
                            float *voxsize, 
                            float *p,
                            long long nlors, 
-                           unsigned int *img_dim,
+                           int *img_dim,
 		                       int n_tofbins,
 		                       float tofbin_width,
 		                       float *sigma_tof,
 		                       float *tofcenter_offset,
-		                       unsigned int n_sigmas)
+		                       int n_sigmas)
 {
   long long i;
 
-  unsigned int n0 = img_dim[0];
-  unsigned int n1 = img_dim[1];
-  unsigned int n2 = img_dim[2];
+  int n0 = img_dim[0];
+  int n1 = img_dim[1];
+  int n2 = img_dim[2];
 
   int n_half = n_tofbins/2;
 
@@ -59,7 +59,7 @@ void joseph3d_fwd_tof_sino(float *xstart,
     float d0, d1, d2, d0_sq, d1_sq, d2_sq; 
     float lsq, cos0_sq, cos1_sq, cos2_sq;
     unsigned short direction; 
-    unsigned int i0, i1, i2;
+    int i0, i1, i2;
     int i0_floor, i1_floor, i2_floor;
     int i0_ceil, i1_ceil, i2_ceil;
     float x_pr0, x_pr1, x_pr2;
@@ -148,9 +148,9 @@ void joseph3d_fwd_tof_sino(float *xstart,
       u2 = d2 / d_norm; 
 
       // calculate mid point of LOR
-      x_m0 = 0.5*(xstart0 + xend0);
-      x_m1 = 0.5*(xstart1 + xend1);
-      x_m2 = 0.5*(xstart2 + xend2);
+      x_m0 = 0.5f*(xstart0 + xend0);
+      x_m1 = 0.5f*(xstart1 + xend1);
+      x_m2 = 0.5f*(xstart2 + xend2);
 
       //---------------------------------------------------------
 
@@ -235,8 +235,8 @@ void joseph3d_fwd_tof_sino(float *xstart,
                            powf((x_m2 + (it*tofbin_width + tc_offset)*u2 - x_v2), 2));
 
               //calculate the TOF weight
-              tw = 0.5*(erff((dtof + 0.5*tofbin_width)/(sqrtf(2)*sig_tof)) - 
-                        erff((dtof - 0.5*tofbin_width)/(sqrtf(2)*sig_tof)));
+              tw = 0.5f*(erff((dtof + 0.5f*tofbin_width)/(sqrtf(2)*sig_tof)) - 
+                        erff((dtof - 0.5f*tofbin_width)/(sqrtf(2)*sig_tof)));
 
               p[i*n_tofbins + it + n_half] += (tw * cf * toAdd);
             }
@@ -326,8 +326,8 @@ void joseph3d_fwd_tof_sino(float *xstart,
                            powf((x_m2 + (it*tofbin_width + tc_offset)*u2 - x_v2), 2));
 
               //calculate the TOF weight
-              tw = 0.5*(erff((dtof + 0.5*tofbin_width)/(sqrtf(2)*sig_tof)) - 
-                        erff((dtof - 0.5*tofbin_width)/(sqrtf(2)*sig_tof)));
+              tw = 0.5f*(erff((dtof + 0.5f*tofbin_width)/(sqrtf(2)*sig_tof)) - 
+                        erff((dtof - 0.5f*tofbin_width)/(sqrtf(2)*sig_tof)));
 
 
               p[i*n_tofbins + it + n_half] += (tw * cf * toAdd);
@@ -418,8 +418,8 @@ void joseph3d_fwd_tof_sino(float *xstart,
                            powf((x_m2 + (it*tofbin_width + tc_offset)*u2 - x_v2), 2));
 
               //calculate the TOF weight
-              tw = 0.5*(erff((dtof + 0.5*tofbin_width)/(sqrtf(2)*sig_tof)) - 
-                        erff((dtof - 0.5*tofbin_width)/(sqrtf(2)*sig_tof)));
+              tw = 0.5f*(erff((dtof + 0.5f*tofbin_width)/(sqrtf(2)*sig_tof)) - 
+                        erff((dtof - 0.5f*tofbin_width)/(sqrtf(2)*sig_tof)));
 
               p[i*n_tofbins + it + n_half] += (tw * cf * toAdd);
 	          }
