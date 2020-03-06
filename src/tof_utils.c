@@ -5,6 +5,28 @@
 #include<stdio.h>
 #include<stdlib.h>
 #include<math.h>
+/**
+ * @brief approximation of error function with 4 order polynomial (max error 5e-4) according to
+ * Abramowitz and Stegun "Handbook of Mathematical Functions with Formulas, Graphs, and Mathematical Tables"
+ * supposed to be faster than the standard erff implementation
+ *
+ * @param x   argument of error function
+ * @return    approxmiation of erf(x)
+ */ 
+float erff_as(float x)
+{
+  float res;
+  float xa = fabsf(x);
+
+  float d = 1.f + 0.278393f*xa + 0.230389f*(xa*xa) + 0.000972f*(xa*xa*xa) + 0.078108f*(xa*xa*xa*xa);
+
+  res = (1.f - (1.f/(d*d*d*d)));
+
+  if (x < 0){res *= -1;}
+
+  return(res);
+}
+
 
 /**
  * @brief Calculate the TOF bins along an LOR to which a voxel contributes
