@@ -7,6 +7,7 @@
 #include<math.h>
 #include<omp.h>
 
+#include "tof_utils.h"
 #include "ray_cube_intersection.h"
 
 /** @brief 3D listmode tof joseph back projector
@@ -227,8 +228,8 @@ void joseph3d_back_tof_lm_2(float *xstart,
                          powf((x_m2 + (it*tofbin_width + tc_offset)*u2 - x_v2), 2));
 
             //calculate the TOF weight
-            tw = 0.5f*(erff((dtof + 0.5f*tofbin_width)/(sqrtf(2)*sig_tof)) - 
-                      erff((dtof - 0.5f*tofbin_width)/(sqrtf(2)*sig_tof)));
+            tw = 0.5f*(erff_as((dtof + 0.5f*tofbin_width)/(sqrtf(2)*sig_tof)) - 
+                      erff_as((dtof - 0.5f*tofbin_width)/(sqrtf(2)*sig_tof)));
 
             if ((i1_floor >= 0) && (i1_floor < n1) && (i2_floor >= 0) && (i2_floor < n2))
             {
@@ -333,8 +334,8 @@ void joseph3d_back_tof_lm_2(float *xstart,
                          powf((x_m2 + (it*tofbin_width + tc_offset)*u2 - x_v2), 2));
 
             //calculate the TOF weight
-            tw = 0.5f*(erff((dtof + 0.5f*tofbin_width)/(sqrtf(2)*sig_tof)) - 
-                      erff((dtof - 0.5f*tofbin_width)/(sqrtf(2)*sig_tof)));
+            tw = 0.5f*(erff_as((dtof + 0.5f*tofbin_width)/(sqrtf(2)*sig_tof)) - 
+                      erff_as((dtof - 0.5f*tofbin_width)/(sqrtf(2)*sig_tof)));
 
             if ((i0_floor >= 0) && (i0_floor < n0) && (i2_floor >= 0) && (i2_floor < n2)) 
             {
@@ -439,8 +440,8 @@ void joseph3d_back_tof_lm_2(float *xstart,
                          powf((x_m2 + (it*tofbin_width + tc_offset)*u2 - x_v2), 2));
 
             //calculate the TOF weight
-            tw = 0.5f*(erff((dtof + 0.5f*tofbin_width)/(sqrtf(2)*sig_tof)) - 
-                      erff((dtof - 0.5f*tofbin_width)/(sqrtf(2)*sig_tof)));
+            tw = 0.5f*(erff_as((dtof + 0.5f*tofbin_width)/(sqrtf(2)*sig_tof)) - 
+                      erff_as((dtof - 0.5f*tofbin_width)/(sqrtf(2)*sig_tof)));
 
             if ((i0_floor >= 0) && (i0_floor < n0) && (i1_floor >= 0) && (i1_floor < n1))
             {
