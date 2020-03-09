@@ -11,8 +11,6 @@ import platform
 from setup_testdata   import setup_testdata
 from time import time
 
-from scipy.special import erf
-
 #------------------------------------------------------------------------------------------------
 #---- parse the command line
 import argparse
@@ -92,9 +90,6 @@ sigma_tof    = (d_scanner/10)/2.35
 tofbin_width = (d_scanner + 2*sigma_tof) / n_tofbins
 n_sigmas     = 3
 
-half_erf_lut = 0.5*erf(np.linspace(-3,3,6001), dtype = ctypes.c_float)
-
-
 #------------------------------------------------------------------------------------
 #---- set up phantom and dector coordindates
 
@@ -136,7 +131,7 @@ for nevents in ne:
                                               tof_bin)
     t1 = time()
     t_fwd = t1 - t0
-    print(str(ncpus) + '-th' + platform.node(), f'{xstart.shape[0]:.1E}','fwd',t_fwd)
+    print(str(ncpus) + 'th-' + platform.node(), f'{xstart.shape[0]:.1E}','fwd',t_fwd)
   
   # back projection
   ones = np.ones(nLORs, dtype = ctypes.c_float)  
@@ -150,7 +145,7 @@ for nevents in ne:
     back_img = back_img.reshape(img_dim)
     t3 = time()
     t_back = t3 - t2
-    print(str(ncpus) + '-th' + platform.node(),f'{xstart.shape[0]:.1E}','back',t_back)
+    print(str(ncpus) + 'th-' + platform.node(),f'{xstart.shape[0]:.1E}','back',t_back)
 
   #-----
   for i in range(nrep):  
@@ -163,4 +158,4 @@ for nevents in ne:
     back_img2 = back_img2.reshape(img_dim)
     t5 = time()
     t_back2 = t5 - t4
-    print(str(ncpus) + '-th' + platform.node(),f'{xstart.shape[0]:.1E}','back2',t_back2)
+    print(str(ncpus) + 'th-' + platform.node(),f'{xstart.shape[0]:.1E}','back2',t_back2)

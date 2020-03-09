@@ -11,8 +11,6 @@ import platform
 from setup_testdata   import setup_testdata
 from time import time
 
-from scipy.special import erf
-
 #------------------------------------------------------------------------------------------------
 #---- parse the command line
 import argparse

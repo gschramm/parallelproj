@@ -3,6 +3,7 @@ import math
 
 import numpy.ctypeslib as npct
 import ctypes
+import platform
 
 from setup_testdata   import setup_testdata
 from time import time
@@ -16,6 +17,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument('--ne' , type=float, default = 1e8, help='number of events', nargs='+')
 parser.add_argument('--ngpus', type = int,   default = -1,    help = 'number of GPUs to use')
 parser.add_argument('--tpb',   type = int,   default = 64,    help = 'threads per block')
+parser.add_argument('--nrep', type=int, default = 1, help='number of repetitions')
 args = parser.parse_args()
 
 if isinstance(args.ne,float):
@@ -25,6 +27,7 @@ else:
 ngpus           = args.ngpus
 threadsperblock = args.tpb
 
+nrep = args.nrep
 ###############################################################
 # wrappers to call functions from compiled libs ###############
 
@@ -107,28 +110,26 @@ for nevents in ne:
   # forward projection
   img_fwd = np.zeros(nLORs, dtype = ctypes.c_float)  
   
-  t0 = time()
-  ok = lib_parallelproj.joseph3d_fwd_tof_lm_cuda(xstart.flatten(), xend.flatten(), img.flatten(), 
-                                            img_origin, voxsize, img_fwd, nLORs, img_dim,
-                                            tofbin_width, sigma_tof, tofcenter_offset, 
-                                            tof_bin, threadsperblock, ngpus)
-  t1 = time()
-  t_fwd = t1 - t0
+  for i in range(nrep):  
+    t0 = time()
+    ok = lib_parallelproj.joseph3d_fwd_tof_lm_cuda(xstart.flatten(), xend.flatten(), img.flatten(), 
+                                              img_origin, voxsize, img_fwd, nLORs, img_dim,
+                                              tofbin_width, sigma_tof, tofcenter_offset, 
+                                              tof_bin, threadsperblock, ngpus)
+    t1 = time()
+    t_fwd = t1 - t0
+    print(str(ngpus) + '-P100',f'{xstart.shape[0]:.1E}','fwd',t_fwd)
   
   # back projection
   ones = np.ones(nLORs, dtype = ctypes.c_float)  
-  back_img = np.zeros(img.shape, dtype = ctypes.c_float).flatten()
-  t2 = time()
-  ok = lib_parallelproj.joseph3d_back_tof_lm_cuda(xstart.flatten(), xend.flatten(), back_img, 
-                                                  img_origin, voxsize, ones, nLORs, img_dim,
-                                                  tofbin_width, sigma_tof, tofcenter_offset, 
-                                                  tof_bin, threadsperblock, ngpus)
-  back_img = back_img.reshape(img_dim)
-  t3 = time()
-  t_back = t3 - t2
-
-  #----
-  # print results
-  print('')
-  print(str(ngpus) + '-P100',f'{xstart.shape[0]:.1E}','fwd',t_fwd)
-  print(str(ngpus) + '-P100',f'{xstart.shape[0]:.1E}','back',t_back)
+  for i in range(nrep):  
+    back_img = np.zeros(img.shape, dtype = ctypes.c_float).flatten()
+    t2 = time()
+    ok = lib_parallelproj.joseph3d_back_tof_lm_cuda(xstart.flatten(), xend.flatten(), back_img, 
+                                                    img_origin, voxsize, ones, nLORs, img_dim,
+                                                    tofbin_width, sigma_tof, tofcenter_offset, 
+                                                    tof_bin, threadsperblock, ngpus)
+    back_img = back_img.reshape(img_dim)
+    t3 = time()
+    t_back = t3 - t2
+    print(str(ngpus) + '-P100',f'{xstart.shape[0]:.1E}','back',t_back)
