@@ -544,8 +544,6 @@ extern "C" void joseph3d_back_tof_lm_cuda(float *h_xstart,
   // auxiallary image array needed to sum all back projections on device 0
   float *d_img2;
 
-  printf("\n # CUDA devices: %d \n", num_devices);
-
   // we split the projections across all CUDA devices
   for (int i_dev = 0; i_dev < num_devices; i_dev++) 
   {

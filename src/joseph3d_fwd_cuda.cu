@@ -363,8 +363,6 @@ extern "C" void joseph3d_fwd_cuda(float *h_xstart,
   float **d_voxsize        = new float * [num_devices];
   int   **d_img_dim        = new int * [num_devices];
 
-  printf("\n # CUDA devices: %d \n", num_devices);
-
   // we split the projections across all CUDA devices
   for (int i_dev = 0; i_dev < num_devices; i_dev++) 
   {

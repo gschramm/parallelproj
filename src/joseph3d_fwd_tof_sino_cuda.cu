@@ -504,8 +504,6 @@ extern "C" void joseph3d_fwd_tof_sino_cuda(float *h_xstart,
   float **d_sigma_tof        = new float * [num_devices];
   float **d_tofcenter_offset = new float * [num_devices];
 
-  printf("\n # CUDA devices: %d \n", num_devices);
-
   // we split the projections across all CUDA devices
   for (int i_dev = 0; i_dev < num_devices; i_dev++) 
   {
