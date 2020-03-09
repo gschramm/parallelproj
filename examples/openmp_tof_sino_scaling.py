@@ -6,6 +6,7 @@ import ctypes
 
 import os
 import multiprocessing
+import platform
 
 from setup_testdata   import setup_testdata
 from time import time
@@ -16,13 +17,16 @@ from scipy.special import erf
 #---- parse the command line
 import argparse
 parser = argparse.ArgumentParser()
-parser.add_argument('--nv', type=int, default = 7, help='number of view to project', nargs='+')
+parser.add_argument('--nv',   type=int, default = 7, help='number of view to project', nargs='+')
+parser.add_argument('--nrep', type=int, default = 1, help='number of repetitions')
 args = parser.parse_args()
 
 if isinstance(args.nv,int):
   nviews = [int(args.nv)]
 else:
   nviews = [int(x) for x in args.nv]
+
+nrep = args.nrep
 
 ###############################################################
 # wrappers to call functions from compiled libs ###############
@@ -78,7 +82,11 @@ lib_parallelproj.joseph3d_back_tof_sino_2.argtypes = [ar_1d_single,
                                                       ctypes.c_int]     # n_sigmas 
 
 
-
+# get the number of available CPUs for OPENMP
+if os.getenv('OMP_NUM_THREADS') is None:
+  ncpus = multiprocessing.cpu_count()
+else:
+  ncpus = int(os.getenv('OMP_NUM_THREADS'))
 
 ###############################################################
 ###############################################################
@@ -103,7 +111,7 @@ for nv in nviews:
   nLORs   = np.prod(xstart.shape[1:])
   
   sino_shape = (xstart.shape[1:] + (n_tofbins,))
-  print(sino_shape)
+  #print(sino_shape)
   
   # flatten the sinogram coordinates
   xstart = xstart.reshape((3,nLORs)).transpose()
@@ -116,59 +124,48 @@ for nv in nviews:
   
   #---- forward projection
   img_fwd = np.zeros(nLORs*n_tofbins, dtype = ctypes.c_float)  
-  
-  t0 = time()
-  ok = lib_parallelproj.joseph3d_fwd_tof_sino(xstart.flatten(), xend.flatten(), img.flatten(), 
-                                              img_origin, voxsize, img_fwd, nLORs, img_dim,
-                                              n_tofbins, tofbin_width, sigma_tof, tofcenter_offset, 
-                                              n_sigmas)
-  
-  fwd_tof_sino = img_fwd.reshape(sino_shape)
-  t1 = time()
-  t_fwd = t1 - t0
-  
-  fwd_nontof_sino = fwd_tof_sino.sum(3)
+
+  for i in range(nrep):  
+    t0 = time()
+    ok = lib_parallelproj.joseph3d_fwd_tof_sino(xstart.flatten(), xend.flatten(), img.flatten(), 
+                                                img_origin, voxsize, img_fwd, nLORs, img_dim,
+                                                n_tofbins, tofbin_width, sigma_tof, tofcenter_offset, 
+                                                n_sigmas)
+    fwd_tof_sino = img_fwd.reshape(sino_shape)
+    t1 = time()
+    t_fwd = t1 - t0
+    print(str(ncpus) + 'th-' + platform.node(),nv,'fwd',t_fwd)
   
   #---- back projection with atomic add
   ones     = np.ones(nLORs*n_tofbins, dtype = ctypes.c_float)  
-  back_img = np.zeros(img_dim, dtype = ctypes.c_float).flatten()
-  
-  t2 = time()
-  ok = lib_parallelproj.joseph3d_back_tof_sino(xstart.flatten(), xend.flatten(), back_img, 
-                                               img_origin, voxsize, ones, nLORs, img_dim,
-                                               n_tofbins, tofbin_width, sigma_tof, tofcenter_offset, 
-                                               n_sigmas)
-  
-  back_img = back_img.reshape(img.shape)
-  t3 = time()
-  t_back1 = t3 - t2
+  for i in range(nrep):  
+    back_img = np.zeros(img_dim, dtype = ctypes.c_float).flatten()
+    t2 = time()
+    ok = lib_parallelproj.joseph3d_back_tof_sino(xstart.flatten(), xend.flatten(), back_img, 
+                                                 img_origin, voxsize, ones, nLORs, img_dim,
+                                                 n_tofbins, tofbin_width, sigma_tof, tofcenter_offset, 
+                                                 n_sigmas)
+    
+    t3 = time()
+    t_back1 = t3 - t2
+    print(str(ncpus) + 'th-' + platform.node(),nv,'back',t_back1)
+    back_img = back_img.reshape(img.shape)
   
   #---- back projection in separate images followed by summing
-  back_img2 = np.zeros(img_dim, dtype = ctypes.c_float).flatten()
-  
-  t4 = time()
-  ok = lib_parallelproj.joseph3d_back_tof_sino_2(xstart.flatten(), xend.flatten(), back_img2, 
-                                              img_origin, voxsize, ones, nLORs, img_dim,
-                                              n_tofbins, tofbin_width, sigma_tof, tofcenter_offset, 
-                                              n_sigmas)
-  
-  back_img2 = back_img2.reshape(img.shape)
-  t5 = time()
-  t_back2 = t5 - t4
-  
-  
-  #----
-  # get the number of available CPUs for OPENMP
-  if os.getenv('OMP_NUM_THREADS') is None:
-    ncpus = multiprocessing.cpu_count()
-  else:
-    ncpus = int(os.getenv('OMP_NUM_THREADS'))
-  
-  # print results
-  print(str(ncpus) + '-CPUs',nv,'fwd',t_fwd)
-  print(str(ncpus) + '-CPUs',nv,'back',t_back1)
-  print(str(ncpus) + '-CPUs',nv,'back2',t_back2)
+  for i in range(nrep):  
+    back_img2 = np.zeros(img_dim, dtype = ctypes.c_float).flatten()
+    t4 = time()
+    ok = lib_parallelproj.joseph3d_back_tof_sino_2(xstart.flatten(), xend.flatten(), back_img2, 
+                                                img_origin, voxsize, ones, nLORs, img_dim,
+                                                n_tofbins, tofbin_width, sigma_tof, tofcenter_offset, 
+                                                n_sigmas)
+    
+    t5 = time()
+    t_back2 = t5 - t4
+    print(str(ncpus) + 'th-' + platform.node(),nv,'back2',t_back2)
+    back_img2 = back_img2.reshape(img.shape)
 
+  
 # show results
 #import pymirc.viewer as pv
 #vi = pv.ThreeAxisViewer(nontof_sino[:,:,:88])

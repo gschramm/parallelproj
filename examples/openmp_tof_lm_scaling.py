@@ -6,6 +6,7 @@ import ctypes
 
 import os
 import multiprocessing
+import platform
 
 from setup_testdata   import setup_testdata
 from time import time
@@ -17,6 +18,7 @@ from scipy.special import erf
 import argparse
 parser = argparse.ArgumentParser()
 parser.add_argument('--ne' , type=float, default = 1e8, help='number of events', nargs='+')
+parser.add_argument('--nrep', type=int, default = 1, help='number of repetitions')
 args = parser.parse_args()
 
 if isinstance(args.ne,float):
@@ -24,6 +26,7 @@ if isinstance(args.ne,float):
 else:
   ne = [int(x) for x in args.ne]
 
+nrep = args.nrep
 ###############################################################
 # wrappers to call functions from compiled libs ###############
 
@@ -74,6 +77,11 @@ lib_parallelproj.joseph3d_back_tof_lm_2.argtypes = [ar_1d_single,
                                                     ar_1d_single,      # tofcenter_offset
                                                     ar_1d_int]         # tof bin 
 
+# get the number of available CPUs for OPENMP
+if os.getenv('OMP_NUM_THREADS') is None:
+  ncpus = multiprocessing.cpu_count()
+else:
+  ncpus = int(os.getenv('OMP_NUM_THREADS'))
 
 ###############################################################
 ###############################################################
@@ -120,46 +128,39 @@ for nevents in ne:
   # forward projection
   img_fwd = np.zeros(nLORs, dtype = ctypes.c_float)  
   
-  t0 = time()
-  ok = lib_parallelproj.joseph3d_fwd_tof_lm(xstart.flatten(), xend.flatten(), img.flatten(), 
-                                            img_origin, voxsize, img_fwd, nLORs, img_dim,
-                                            tofbin_width, sigma_tof, tofcenter_offset, 
-                                            tof_bin)
-  t1 = time()
-  t_fwd = t1 - t0
+  for i in range(nrep):  
+    t0 = time()
+    ok = lib_parallelproj.joseph3d_fwd_tof_lm(xstart.flatten(), xend.flatten(), img.flatten(), 
+                                              img_origin, voxsize, img_fwd, nLORs, img_dim,
+                                              tofbin_width, sigma_tof, tofcenter_offset, 
+                                              tof_bin)
+    t1 = time()
+    t_fwd = t1 - t0
+    print(str(ncpus) + '-th' + platform.node(), f'{xstart.shape[0]:.1E}','fwd',t_fwd)
   
   # back projection
   ones = np.ones(nLORs, dtype = ctypes.c_float)  
-  back_img = np.zeros(img.shape, dtype = ctypes.c_float).flatten()
-  t2 = time()
-  ok = lib_parallelproj.joseph3d_back_tof_lm(xstart.flatten(), xend.flatten(), back_img, 
-                                             img_origin, voxsize, ones, nLORs, img_dim,
-                                             tofbin_width, sigma_tof, tofcenter_offset, 
-                                             tof_bin)
-  back_img = back_img.reshape(img_dim)
-  t3 = time()
-  t_back = t3 - t2
-
-  #-----
-  back_img2 = np.zeros(img.shape, dtype = ctypes.c_float).flatten()
-  t4 = time()
-  ok = lib_parallelproj.joseph3d_back_tof_lm_2(xstart.flatten(), xend.flatten(), back_img2, 
+  for i in range(nrep):  
+    back_img = np.zeros(img.shape, dtype = ctypes.c_float).flatten()
+    t2 = time()
+    ok = lib_parallelproj.joseph3d_back_tof_lm(xstart.flatten(), xend.flatten(), back_img, 
                                                img_origin, voxsize, ones, nLORs, img_dim,
                                                tofbin_width, sigma_tof, tofcenter_offset, 
                                                tof_bin)
-  back_img2 = back_img2.reshape(img_dim)
-  t5 = time()
-  t_back2 = t5 - t4
+    back_img = back_img.reshape(img_dim)
+    t3 = time()
+    t_back = t3 - t2
+    print(str(ncpus) + '-th' + platform.node(),f'{xstart.shape[0]:.1E}','back',t_back)
 
-  #----
-  # get the number of available CPUs for OPENMP
-  if os.getenv('OMP_NUM_THREADS') is None:
-    ncpus = multiprocessing.cpu_count()
-  else:
-    ncpus = int(os.getenv('OMP_NUM_THREADS'))
-
-  # print results
-  print('')
-  print(str(ncpus) + '-CPUs',f'{xstart.shape[0]:.1E}','fwd',t_fwd)
-  print(str(ncpus) + '-CPUs',f'{xstart.shape[0]:.1E}','back',t_back)
-  print(str(ncpus) + '-CPUs',f'{xstart.shape[0]:.1E}','back2',t_back2)
+  #-----
+  for i in range(nrep):  
+    back_img2 = np.zeros(img.shape, dtype = ctypes.c_float).flatten()
+    t4 = time()
+    ok = lib_parallelproj.joseph3d_back_tof_lm_2(xstart.flatten(), xend.flatten(), back_img2, 
+                                                 img_origin, voxsize, ones, nLORs, img_dim,
+                                                 tofbin_width, sigma_tof, tofcenter_offset, 
+                                                 tof_bin)
+    back_img2 = back_img2.reshape(img_dim)
+    t5 = time()
+    t_back2 = t5 - t4
+    print(str(ncpus) + '-th' + platform.node(),f'{xstart.shape[0]:.1E}','back2',t_back2)
