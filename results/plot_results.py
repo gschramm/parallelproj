@@ -2,13 +2,13 @@ import seaborn as sns
 import pandas as pd
 import matplotlib.pyplot as py
 
-ymax = 1.8
+ymax = 1e-6
 
-df = pd.read_csv('genius_sino.txt', delim_whitespace = True)
+df = pd.read_csv('fermi_lm.txt', delim_whitespace = True)
 df['time/size'] = df['time']/df['size']
 
 df_fwd  = df.loc[df.dir == 'fwd']
-df_back = df.loc[df.dir == 'back']
+df_back = df.loc[df.dir == 'back2']
 
 fig, ax = py.subplots(2,1, figsize = (10,6), dpi = 70)
 sns.swarmplot('size', 'time/size', hue='processor',data=df_fwd,  ax = ax[0], dodge = True)
