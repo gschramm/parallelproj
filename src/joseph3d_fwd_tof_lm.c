@@ -38,10 +38,10 @@ void joseph3d_fwd_tof_lm(float *xstart,
                          float *p,
                          long long nlors, 
                          int *img_dim,
-		                     float tofbin_width,
-		                     float *sigma_tof,
-		                     float *tofcenter_offset,
-		                     int   *tof_bin)
+                         float tofbin_width,
+                         float *sigma_tof,
+                         float *tofcenter_offset,
+                         int   *tof_bin)
 {
   long long i;
 
@@ -212,7 +212,7 @@ void joseph3d_fwd_tof_lm(float *xstart,
           tmp_1 = (x_pr1 - (i1_floor*voxsize1 + img_origin1)) / voxsize1;
           tmp_2 = (x_pr2 - (i2_floor*voxsize2 + img_origin2)) / voxsize2;
 
-	        toAdd = 0;
+          toAdd = 0;
 
           if ((i1_floor >= 0) && (i1_floor < n1) && (i2_floor >= 0) && (i2_floor < n2))
           {
@@ -350,7 +350,7 @@ void joseph3d_fwd_tof_lm(float *xstart,
 
 
             p[i] += (tw * cf * toAdd);
-	        }
+          }
         }
       }
 
@@ -451,7 +451,7 @@ void joseph3d_fwd_tof_lm(float *xstart,
                       erff_as((dtof - 0.5f*tofbin_width)/(sqrtf(2)*sig_tof)));
 
             p[i] += (tw * cf * toAdd);
-	        }
+          }
         }
       } 
     } 

@@ -40,10 +40,10 @@ void joseph3d_back_tof_lm_2(float *xstart,
                             float *p, 
                             long long nlors, 
                             int *img_dim,
-		                        float tofbin_width,
-		                        float *sigma_tof,
-		                        float *tofcenter_offset,
-		                        int   *tof_bin)
+                            float tofbin_width,
+                            float *sigma_tof,
+                            float *tofcenter_offset,
+                            int   *tof_bin)
 {
   long long i;
 

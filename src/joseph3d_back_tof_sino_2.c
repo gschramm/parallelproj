@@ -41,11 +41,11 @@ void joseph3d_back_tof_sino_2(float *xstart,
                               float *p, 
                               long long nlors, 
                               int *img_dim,
-		                          int n_tofbins,
-		                          float tofbin_width,
-		                          float *sigma_tof,
-		                          float *tofcenter_offset,
-		                          int n_sigmas)
+                              int n_tofbins,
+                              float tofbin_width,
+                              float *sigma_tof,
+                              float *tofcenter_offset,
+                              int n_sigmas)
 {
   long long i;
 
@@ -202,13 +202,13 @@ void joseph3d_back_tof_sino_2(float *xstart,
           x_v1 = x_pr1;
           x_v2 = x_pr2;
 
-	        it1 = -n_half;
-	        it2 =  n_half;
+          it1 = -n_half;
+          it2 =  n_half;
 
           // get the relevant tof bins (the TOF bins where the TOF weight is not close to 0)
           relevant_tof_bins(x_m0, x_m1, x_m2, x_v0, x_v1, x_v2, u0, u1, u2, 
-		  	                    tofbin_width, tc_offset, sig_tof, n_sigmas, n_half,
-		                        &it1, &it2);
+                            tofbin_width, tc_offset, sig_tof, n_sigmas, n_half,
+                            &it1, &it2);
           
           for(it = it1; it <= it2; it++){
             if(p[i*n_tofbins + it + n_half] != 0){
@@ -298,13 +298,13 @@ void joseph3d_back_tof_sino_2(float *xstart,
           x_v1 = img_origin1 + i1*voxsize1;
           x_v2 = x_pr2;
 
-	        it1 = -n_half;
-	        it2 =  n_half;
+          it1 = -n_half;
+          it2 =  n_half;
 
           // get the relevant tof bins (the TOF bins where the TOF weight is not close to 0)
           relevant_tof_bins(x_m0, x_m1, x_m2, x_v0, x_v1, x_v2, u0, u1, u2, 
-		  	                    tofbin_width, tc_offset, sig_tof, n_sigmas, n_half,
-		                        &it1, &it2);
+                            tofbin_width, tc_offset, sig_tof, n_sigmas, n_half,
+                            &it1, &it2);
 
           for(it = it1; it <= it2; it++){
             if(p[i*n_tofbins + it + n_half] != 0){
@@ -394,13 +394,13 @@ void joseph3d_back_tof_sino_2(float *xstart,
           x_v1 = x_pr1;
           x_v2 = img_origin2 + i2*voxsize2;
 
-	        it1 = -n_half;
-	        it2 =  n_half;
+          it1 = -n_half;
+          it2 =  n_half;
 
           // get the relevant tof bins (the TOF bins where the TOF weight is not close to 0)
           relevant_tof_bins(x_m0, x_m1, x_m2, x_v0, x_v1, x_v2, u0, u1, u2, 
-		  	                    tofbin_width, tc_offset, sig_tof, n_sigmas, n_half,
-		                        &it1, &it2);
+                            tofbin_width, tc_offset, sig_tof, n_sigmas, n_half,
+                            &it1, &it2);
 
           for(it = it1; it <= it2; it++){
             if(p[i*n_tofbins + it + n_half] != 0){
