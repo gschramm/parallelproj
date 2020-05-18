@@ -2,28 +2,48 @@ import numpy as np
 import matplotlib.pyplot as py
 
 class RegularPolygonPETScanner:
+  """Geometry defition of a cylindical PET scanner with pixelized detectors aranged in module
+     that form a regular polygon in the trans-axial plane
+
+  Parameters
+  ----------
+  R : float
+    the radium of the scanner (in mm)
+
+  ncrystals_per_module : numpy array of two ints
+    number of crystals per module in the trans-axial and axial direction
+
+  crystal_size : numpy array of two floats
+    the crystal diameter in trans-axial and axial direction (in mm)
+
+  nmodules : numpy array of two ints
+    the number of modules in the angular and axial direction
+
+  module_gap_axial : float
+    the gap between two modules in axial direction (in mm)
+  """
 
   def __init__(self,
-               R                   = 325,
-               crystals_per_module = np.array([16,9]),
-               crystal_size        = np.array([4.,5.]),
-               nmodules            = np.array([28,5]),
-               module_gap_axial    = 5.):
+               R                    = 325.,
+               ncrystals_per_module = np.array([16,9]),
+               crystal_size         = np.array([4.,5.]),
+               nmodules             = np.array([28,5]),
+               module_gap_axial     = 5.):
 
     self.R = R
-    self.crystals_per_module = crystals_per_module
+    self.ncrystals_per_module = ncrystals_per_module
     self.crystal_size = crystal_size
     self.nmodules = nmodules
     self.module_gap_axial = module_gap_axial
 
-    self.ncrystals_per_plane = nmodules[0]*crystals_per_module[0]
-    self.ncrystals_axial     = nmodules[1]*crystals_per_module[1]
+    self.ncrystals_per_plane = nmodules[0]*ncrystals_per_module[0]
+    self.ncrystals_axial     = nmodules[1]*ncrystals_per_module[1]
 
     self.calculate_crystal_coordinates()
 
   def calculate_crystal_coordinates(self):
     # the distance of a crystal to the center of the module
-    d = (np.arange(self.crystals_per_module[0]) - self.crystals_per_module[0]/2 + 0.5)*self.crystal_size[0]
+    d = (np.arange(self.ncrystals_per_module[0]) - self.ncrystals_per_module[0]/2 + 0.5)*self.crystal_size[0]
     
     # x0 and x1 crystal coordinates of one ring (single layer of crystals)
     self.xc0 = np.zeros(self.ncrystals_per_plane, dtype = np.float32)
@@ -32,15 +52,15 @@ class RegularPolygonPETScanner:
     self.alpha_module = np.linspace(0,2*np.pi, self.nmodules[0]+1)[:-1]
 
     for i,alpha in enumerate(self.alpha_module):
-      self.xc0[i*self.crystals_per_module[0]:(i+1)*self.crystals_per_module[0]] = self.R*np.cos(alpha) - d*np.sin(alpha)
-      self.xc1[i*self.crystals_per_module[0]:(i+1)*self.crystals_per_module[0]] = self.R*np.sin(alpha) + d*np.cos(alpha)
+      self.xc0[i*self.ncrystals_per_module[0]:(i+1)*self.ncrystals_per_module[0]] = self.R*np.cos(alpha) - d*np.sin(alpha)
+      self.xc1[i*self.ncrystals_per_module[0]:(i+1)*self.ncrystals_per_module[0]] = self.R*np.sin(alpha) + d*np.cos(alpha)
     
     self.xc2 = np.zeros(self.ncrystals_axial, dtype = np.float32)
     
     for i in range(self.nmodules[1]):
-      self.xc2[i*self.crystals_per_module[1]:(i+1)*self.crystals_per_module[1]] = (
-          np.arange(self.crystals_per_module[1])*self.crystal_size[1] + 
-          i*(self.crystals_per_module[1]*self.crystal_size[1] + self.module_gap_axial))
+      self.xc2[i*self.ncrystals_per_module[1]:(i+1)*self.ncrystals_per_module[1]] = (
+          np.arange(self.ncrystals_per_module[1])*self.crystal_size[1] + 
+          i*(self.ncrystals_per_module[1]*self.crystal_size[1] + self.module_gap_axial))
     
     # shift center in x2 direction to 0
     self.xc2 -= 0.5*self.xc2.max()
@@ -75,45 +95,21 @@ class RegularPolygonPETScanner:
     return fig, ax
 
   def get_crystal_coordinates(self, crystal_inds):
+    """ get the world coordinates for a number of crystals specified with a (transaxial, axial) 
+        crystal ID
+
+        Parameters
+        ----------
+        crystal_inds : 2D numpy int array of shape (n,2)
+          containing the trans-axial and axial crystal ID of n detectors for which to calculate
+          the world coordinates
+
+        Returns
+        -------
+        2D numpy array of shape (n,3) containing the three world coordinates of the detectors
+    """
     return np.dstack((self.xc0[crystal_inds[:,0]], self.xc1[crystal_inds[:,0]], self.xc2[crystal_inds[:,1]])).squeeze()
 
 #-----------------------------------------------------------------------------------------------
 
-if __name__ == '__main__':
-  scanner = RegularPolygonPETScanner()
-  fig, ax = scanner.show_crystal_config(show_crystal_numbers = True)
 
-  ci = np.array([[5,0],[15,1],[189,17],[312,37]])
-  coords = scanner.get_crystal_coordinates(ci)
-
-## michelogram test
-#from michelogram import get_michelogram_index
-#naxial      = crystals_per_module[1]*nmodules[1]
-#n0, n1, seg = get_michelogram_index(naxial,0)
-#
-#m = np.zeros((naxial,naxial), dtype = np.int)
-#s = np.zeros((naxial,naxial), dtype = np.int)
-#for i in range(naxial**2):
-#  m[n0[i],n1[i]] = i
-#  s[n0[i],n1[i]] = seg[i]
-
-
-#-----------------------------------------------------------------------------------------------
-#fig,ax = py.subplots(3,5, figsize = (15,9))
-#
-#for k, view in enumerate(np.arange(15)*(224//15)):
-#  istart = np.concatenate((np.repeat(np.arange(ncrystals_per_plane//2 - 1),2), 
-#                           [ncrystals_per_plane//2 -1])) - view
-#  iend   = np.concatenate(([-1],np.repeat(-np.arange(ncrystals_per_plane//2 - 1) - 2,2))) - view
-#  
-#  xstart0 = xc0[istart[45:-45]]
-#  xstart1 = xc1[istart[45:-45]]
-#  xend0   = xc0[iend[45:-45]]
-#  xend1   = xc1[iend[45:-45]]
-#  
-#  for i in range(xstart0.shape[0]):
-#    ax.flatten()[k].plot([xstart0[i], xend0[i]], [xstart1[i], xend1[i]], color = 'b', lw = 0.1)
-#    ax.flatten()[k].set_aspect('equal')
-#
-#fig.tight_layout()
-#fig.show()
