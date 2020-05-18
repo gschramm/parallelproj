@@ -26,8 +26,8 @@ class RegularPolygonPETScanner:
     d = (np.arange(self.crystals_per_module[0]) - self.crystals_per_module[0]/2 + 0.5)*self.crystal_size[0]
     
     # x0 and x1 crystal coordinates of one ring (single layer of crystals)
-    self.xc0 = np.zeros(self.ncrystals_per_plane)
-    self.xc1 = np.zeros(self.ncrystals_per_plane)
+    self.xc0 = np.zeros(self.ncrystals_per_plane, dtype = np.float32)
+    self.xc1 = np.zeros(self.ncrystals_per_plane, dtype = np.float32)
    
     self.alpha_module = np.linspace(0,2*np.pi, self.nmodules[0]+1)[:-1]
 
@@ -35,7 +35,7 @@ class RegularPolygonPETScanner:
       self.xc0[i*self.crystals_per_module[0]:(i+1)*self.crystals_per_module[0]] = self.R*np.cos(alpha) - d*np.sin(alpha)
       self.xc1[i*self.crystals_per_module[0]:(i+1)*self.crystals_per_module[0]] = self.R*np.sin(alpha) + d*np.cos(alpha)
     
-    self.xc2 = np.zeros(self.ncrystals_axial)
+    self.xc2 = np.zeros(self.ncrystals_axial, dtype = np.float32)
     
     for i in range(self.nmodules[1]):
       self.xc2[i*self.crystals_per_module[1]:(i+1)*self.crystals_per_module[1]] = (
@@ -74,11 +74,17 @@ class RegularPolygonPETScanner:
 
     return fig, ax
 
+  def get_crystal_coordinates(self, crystal_inds):
+    return np.dstack((self.xc0[crystal_inds[:,0]], self.xc1[crystal_inds[:,0]], self.xc2[crystal_inds[:,1]])).squeeze()
+
 #-----------------------------------------------------------------------------------------------
 
 if __name__ == '__main__':
   scanner = RegularPolygonPETScanner()
   fig, ax = scanner.show_crystal_config(show_crystal_numbers = True)
+
+  ci = np.array([[5,0],[15,1],[189,17],[312,37]])
+  coords = scanner.get_crystal_coordinates(ci)
 
 ## michelogram test
 #from michelogram import get_michelogram_index
