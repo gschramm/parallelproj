@@ -32,6 +32,7 @@ class SinogramProjector:
     if not isinstance(self.img_dim, np.ndarray):
       self.img_dim = np.array(img_dim)
 
+    self.nvox    = np.prod(self.img_dim)
     self.voxsize = voxsize
 
     if img_origin is None:
@@ -78,7 +79,7 @@ class SinogramProjector:
 
       self.subset_sino_shapes.append(subset_shape)
 
-
+  #-----------------------------------------------------------------------------------------------
   def fwd_project(self, img, subset = 0):
 
     if not isinstance(img, ctypes.c_float):
@@ -115,4 +116,41 @@ class SinogramProjector:
 
     return img_fwd.reshape(self.subset_sino_shapes[subset])
 
+  #-----------------------------------------------------------------------------------------------
+  def back_project(self, sino, subset = 0):
 
+    if not isinstance(sino, ctypes.c_float):
+      sino = sino.astype(ctypes.c_float)
+
+    subset_slice = self.subset_slices[subset]
+
+    back_img = np.zeros(self.nvox, dtype = ctypes.c_float)  
+
+    if self.tof == False:
+      ####### NONTOF back projection 
+      ok = joseph3d_back(self.xstart[subset_slice].flatten(), 
+                         self.xend[subset_slice].flatten(), 
+                         back_img, self.img_origin, self.voxsize, 
+                         sino.flatten(), self.nLORs[subset], self.img_dim) 
+
+    else:
+      ####### TOF back projection 
+      if not isinstance(self.sigma_tof, np.ndarray):
+        sigma_tof = np.full(self.nLORs[subset], self.sigma_tof, dtype = ctypes.c_float)
+      else:
+        sigma_tof = self.sigma_tof[subset_slice[:-1]].flatten().astype(ctypes.c_float)
+
+      if not isinstance(self.tofcenter_offset, np.ndarray):
+        tofcenter_offset = np.full(self.nLORs[subset], self.tofcenter_offset, dtype = ctypes.c_float)
+      else:
+        tofcenter_offset = self.tofcenter_offset[subset_slice[:-1]].flatten().astype(ctypes.c_float)
+
+        ok = joseph3d_back_tof_sino(self.xstart[subset_slice].flatten(), 
+                                    self.xend[subset_slice].flatten(), 
+                                    back_img, self.img_origin, self.voxsize, 
+                                    sino.flatten(), self.nLORs[subset], self.img_dim,
+                                    self.sino.ntofbins, self.sino.tofbin_width, 
+                                    sigma_tof, tofcenter_offset, self.nsigmas)
+
+
+    return back_img.reshape(self.img_dim)
