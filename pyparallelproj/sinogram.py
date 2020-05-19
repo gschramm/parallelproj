@@ -3,6 +3,10 @@ import numpy as np
 class PETSinogram:
 
   def __init__(self, scanner, data = None, span = 1, rtrim = 46):
+
+    if (scanner.ncrystals_per_plane % 2) != 0:
+      raise ValueError(f'Scanners with odd number of crystals per plan not supported yet.')
+
     if span != 1:
       raise ValueError(f'Span {span} not supported yet')
     else:
@@ -44,6 +48,16 @@ class PETSinogram:
     i_tr_end   = np.zeros((self.nrad, views.shape[0]), dtype = int)
 
     n = self.scanner.ncrystals_per_plane
+
+    # the radial sampling is done in a zig zag pattern like
+    # this is handy since then the number of "radial" bins per view is constant
+    # for a scanner with an even number of detectors per plane
+    # 0 -> -1
+    # 0 -> -2
+    # 1 -> -2
+    # 1 -> -3
+    # 2 -> -3
+    # 2 -> -4
 
     for i, view in enumerate(views):
       i_tr_start[:,i] = (np.concatenate((np.repeat(np.arange(n//2),2),[n//2])) - view)[self.rtrim:-self.rtrim]
