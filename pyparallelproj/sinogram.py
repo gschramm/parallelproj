@@ -67,10 +67,11 @@ class PETSinogram:
       i_tr_start[:,i] = (np.concatenate((np.repeat(np.arange(n//2),2),[n//2])) - view)[self.rtrim:-self.rtrim]
       i_tr_end[:,i]   = (np.concatenate(([-1],np.repeat(-np.arange(n//2) - 2,2))) - view)[self.rtrim:-self.rtrim]
 
-      crystal_id_start = np.array(np.meshgrid(i_tr_start.flatten(), self.istart_plane)).T.reshape(-1,2) 
-      crystal_id_end   = np.array(np.meshgrid(i_tr_end.flatten(),   self.iend_plane)).T.reshape(-1,2) 
+    crystal_id_start = np.array(np.meshgrid(i_tr_start.flatten(), self.istart_plane)).T.reshape(-1,2) 
+    crystal_id_end   = np.array(np.meshgrid(i_tr_end.flatten(),   self.iend_plane)).T.reshape(-1,2) 
 
-    return crystal_id_start, crystal_id_end
+    return (crystal_id_start.reshape((self.nrad, views.shape[0],self.nplanes,2)), 
+            crystal_id_end.reshape((self.nrad, views.shape[0],self.nplanes,2)))
 
 
 #----------------------------------------------------------------------
@@ -78,15 +79,16 @@ if __name__ == '__main__':
  
   import matplotlib.pyplot as py
   from pet_scanners import RegularPolygonPETScanner
-  scanner = RegularPolygonPETScanner(ncrystals_per_module = np.array([16,1]),
+  scanner = RegularPolygonPETScanner(ncrystals_per_module = np.array([16,2]),
                                      nmodules             = np.array([28,1]))
   sino    = PETSinogram(scanner)
 
   views = np.arange(15) * sino.nviews // 15
 
   istart, iend = sino.get_view_crystal_indices(views)
-  xstart = scanner.get_crystal_coordinates(istart).reshape((sino.nrad,views.shape[0],sino.nplanes,3))
-  xend   = scanner.get_crystal_coordinates(iend).reshape((sino.nrad,views.shape[0],sino.nplanes,3))
+
+  xstart = scanner.get_crystal_coordinates(istart.reshape(-1,2)).reshape((sino.nrad,views.shape[0],sino.nplanes,3))
+  xend   = scanner.get_crystal_coordinates(iend.reshape(-1,2)).reshape((sino.nrad,views.shape[0],sino.nplanes,3))
 
   fig,ax = py.subplots(3,5, figsize = (15,9))
 
@@ -97,7 +99,6 @@ if __name__ == '__main__':
     ax.flatten()[k].set_xlim(-350,350)
     ax.flatten()[k].set_ylim(-350,350)
     ax.flatten()[k].set_title(f'view {view}')
-    #ax.flatten()[k].set_aspect('equal')
   
   fig.tight_layout()
   fig.show()
