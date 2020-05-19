@@ -2,7 +2,7 @@ import numpy as np
 
 class PETSinogram:
 
-  def __init__(self, scanner, data = None, span = 1, rtrim = 46):
+  def __init__(self, scanner, data = None, span = 1, rtrim = 46, ntofbins = 1, tofbin_width = None):
 
     if (scanner.ncrystals_per_plane % 2) != 0:
       raise ValueError(f'Scanners with odd number of crystals per plan not supported yet.')
@@ -15,13 +15,17 @@ class PETSinogram:
       self.span    = span
       self.rtrim   = rtrim
  
-      self.nrad    = (scanner.ncrystals_per_plane + 1) - 2*self.rtrim
-      self.nviews  = scanner.ncrystals_per_plane//2
-      self.nplanes = scanner.ncrystals_axial**2
+      self.nrad     = (scanner.ncrystals_per_plane + 1) - 2*self.rtrim
+      self.nviews   = scanner.ncrystals_per_plane//2
+      self.nplanes  = scanner.ncrystals_axial**2
+
+      # TOF parameters
+      self.ntofbins     = ntofbins
+      self.tofbin_width = tofbin_width
 
       self.nLORs_per_view = self.nrad*self.nplanes 
 
-      self.shape = (self.nrad, self.nviews, self.nplanes)
+      self.shape = (self.nrad, self.nviews, self.nplanes, self.ntofbins)
 
       self.istart_plane, self.iend_plane = self.get_plane_det_index()
 
