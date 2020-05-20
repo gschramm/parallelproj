@@ -3,7 +3,7 @@ import numpy.ctypeslib as npct
 import ctypes
 import os
 
-from config import joseph3d_fwd, joseph3d_fwd_tof_sino, joseph3d_back, joseph3d_back_tof_sino
+from wrapper import joseph3d_fwd, joseph3d_fwd_tof_sino, joseph3d_back, joseph3d_back_tof_sino
 
 class SinogramProjector:
 
