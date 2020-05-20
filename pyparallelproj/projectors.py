@@ -9,7 +9,8 @@ class SinogramProjector:
 
   def __init__(self, scanner, sino, img_dim, nsubsets = 1, use_gpu = False, tof = False,
                      img_origin = None, voxsize = np.ones(3),
-                     sigma_tof = 60., tofcenter_offset = 0, n_sigmas = 3):
+                     sigma_tof = 60., tofcenter_offset = 0, n_sigmas = 3,
+                     threadsperblock = 64, ngpus = 0):
     
     self.scanner = scanner
     self.sino    = sino
@@ -20,8 +21,12 @@ class SinogramProjector:
     self.istart, self.iend = self.sino.get_view_crystal_indices(self.all_views)
 
     # get the world coordiates for all view
-    self.xstart = self.scanner.get_crystal_coordinates(self.istart.reshape(-1,2)).reshape((self.sino.nrad,self.sino.nviews,self.sino.nplanes,3))
-    self.xend = self.scanner.get_crystal_coordinates(self.iend.reshape(-1,2)).reshape((self.sino.nrad,self.sino.nviews,self.sino.nplanes,3))
+    self.xstart = self.scanner.get_crystal_coordinates(
+                    self.istart.reshape(-1,2)).reshape((self.sino.nrad, self.sino.nviews, 
+                                                        self.sino.nplanes,3))
+    self.xend = self.scanner.get_crystal_coordinates(
+                  self.iend.reshape(-1,2)).reshape((self.sino.nrad, self.sino.nviews, 
+                                                    self.sino.nplanes,3))
 
     self.init_subsets(nsubsets)
    
@@ -40,10 +45,14 @@ class SinogramProjector:
     else:
       self.img_origin = img_origin
 
+    # tof parameters
     self.sigma_tof = sigma_tof
     self.tofcenter_offset = tofcenter_offset
-
     self.nsigmas = n_sigmas
+
+    # gpu parameters (not relevant when not run on gpu)
+    self.threadsperblock = threadsperblock
+    self.ngpus           = ngpus
 
     # check and cast data type to match libparallel proj
     if not isinstance(self.voxsize, ctypes.c_float):
@@ -94,7 +103,8 @@ class SinogramProjector:
       ok = joseph3d_fwd(self.xstart[subset_slice].flatten(), 
                         self.xend[subset_slice].flatten(), 
                         img.flatten(), self.img_origin, self.voxsize, 
-                        img_fwd, self.nLORs[subset], self.img_dim) 
+                        img_fwd, self.nLORs[subset], self.img_dim,
+                        threadsperblock = self.threadsperblock, ngpus = self.ngpus) 
     else:
       ####### TOF fwd projection 
       if not isinstance(self.sigma_tof, np.ndarray):
@@ -112,7 +122,8 @@ class SinogramProjector:
                                  img.flatten(), self.img_origin, self.voxsize, 
                                  img_fwd, self.nLORs[subset], self.img_dim,
                                  self.sino.ntofbins, self.sino.tofbin_width, 
-                                 sigma_tof, tofcenter_offset, self.nsigmas)
+                                 sigma_tof, tofcenter_offset, self.nsigmas,
+                                 threadsperblock = self.threadsperblock, ngpus = self.ngpus) 
 
     return img_fwd.reshape(self.subset_sino_shapes[subset])
 
@@ -131,7 +142,8 @@ class SinogramProjector:
       ok = joseph3d_back(self.xstart[subset_slice].flatten(), 
                          self.xend[subset_slice].flatten(), 
                          back_img, self.img_origin, self.voxsize, 
-                         sino.flatten(), self.nLORs[subset], self.img_dim) 
+                         sino.flatten(), self.nLORs[subset], self.img_dim,
+                         threadsperblock = self.threadsperblock, ngpus = self.ngpus) 
 
     else:
       ####### TOF back projection 
@@ -150,7 +162,7 @@ class SinogramProjector:
                                     back_img, self.img_origin, self.voxsize, 
                                     sino.flatten(), self.nLORs[subset], self.img_dim,
                                     self.sino.ntofbins, self.sino.tofbin_width, 
-                                    sigma_tof, tofcenter_offset, self.nsigmas)
-
+                                    sigma_tof, tofcenter_offset, self.nsigmas,
+                                    threadsperblock = self.threadsperblock, ngpus = self.ngpus) 
 
     return back_img.reshape(self.img_dim)
