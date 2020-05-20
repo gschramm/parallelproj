@@ -41,7 +41,7 @@ lib_parallelproj.joseph3d_fwd_tof_lm.argtypes = [ar_1d_single,
                                                  ar_1d_single,
                                                  ar_1d_single,
                                                  ctypes.c_longlong,
-                                                 ar_1d_int,        #
+                                                 ar_1d_int,         #
                                                  ctypes.c_float,    # tofbin_width 
                                                  ar_1d_single,      # sigma tof
                                                  ar_1d_single,      # tofcenter_offset
@@ -55,7 +55,7 @@ lib_parallelproj.joseph3d_back_tof_lm.argtypes = [ar_1d_single,
                                                   ar_1d_single,
                                                   ar_1d_single,
                                                   ctypes.c_longlong,
-                                                  ar_1d_int,        #
+                                                  ar_1d_int,         #
                                                   ctypes.c_float,    # tofbin_width 
                                                   ar_1d_single,      # sigma tof
                                                   ar_1d_single,      # tofcenter_offset

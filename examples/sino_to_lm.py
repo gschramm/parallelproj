@@ -31,9 +31,14 @@ img[(n0//8):(7*n0//8),(n1//8):(7*n1//8),:] = 0.04
 img_origin = (-(np.array(img.shape) / 2) +  0.5) * voxsize
 
 ########  projection
-sino_params = ppp.PETSinogram(scanner)
+#sino_params = ppp.PETSinogram(scanner)
+#proj        = ppp.SinogramProjector(scanner, sino_params, img.shape, nsubsets = nsubsets, 
+#                                    voxsize = voxsize, img_origin = img_origin, ngpus = ngpus)
+
+sino_params = ppp.PETSinogram(scanner, ntofbins = 27, tofbin_width = 28.)
 proj        = ppp.SinogramProjector(scanner, sino_params, img.shape, nsubsets = nsubsets, 
-                                       voxsize = voxsize, img_origin = img_origin, ngpus = ngpus)
+                                    voxsize = voxsize, img_origin = img_origin, ngpus = ngpus,
+                                    tof = True, sigma_tof = 60./2.35, n_sigmas = 3)
 
 img_fwd  = proj.fwd_project(img, subset = subset)
 
@@ -68,8 +73,10 @@ np.random.shuffle(tmp)
 events = events[tmp,:]
 
 ### create LM projector
-lmproj = ppp.LMProjector(scanner, img.shape, voxsize = voxsize, img_origin = img_origin, ngpus = ngpus)
+lmproj = ppp.LMProjector(scanner, img.shape, voxsize = voxsize, img_origin = img_origin, ngpus = ngpus,
+                         tof = True, sigma_tof = proj.sigma_tof, tofbin_width = proj.tofbin_width)
 
-fwd_img_lm  = lmproj.fwd_project(img, events)
-back_img_lm = lmproj.back_project(np.ones(events.shape[0]), events)
+events2 = events[:,:]
 
+fwd_img_lm  = lmproj.fwd_project(img, events2)
+back_img_lm = lmproj.back_project(np.ones(events2.shape[0]), events2)

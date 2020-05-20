@@ -61,6 +61,35 @@ if os.path.exists(lib_parallelproj_fname):
                                                       ctypes.c_int,      # n_sigmas 
                                                       ctypes.c_int]      # n_tofbins
 
+  lib_parallelproj.joseph3d_fwd_tof_lm.restype  = None
+  lib_parallelproj.joseph3d_fwd_tof_lm.argtypes = [ar_1d_single,
+                                                   ar_1d_single,
+                                                   ar_1d_single,
+                                                   ar_1d_single,
+                                                   ar_1d_single,
+                                                   ar_1d_single,
+                                                   ctypes.c_longlong,
+                                                   ar_1d_int,         #
+                                                   ctypes.c_float,    # tofbin_width 
+                                                   ar_1d_single,      # sigma tof
+                                                   ar_1d_single,      # tofcenter_offset
+                                                   ar_1d_int]         # tof bin 
+  
+  lib_parallelproj.joseph3d_back_tof_lm.restype  = None
+  lib_parallelproj.joseph3d_back_tof_lm.argtypes = [ar_1d_single,
+                                                    ar_1d_single,
+                                                    ar_1d_single,
+                                                    ar_1d_single,
+                                                    ar_1d_single,
+                                                    ar_1d_single,
+                                                    ctypes.c_longlong,
+                                                    ar_1d_int,         #
+                                                    ctypes.c_float,    # tofbin_width 
+                                                    ar_1d_single,      # sigma tof
+                                                    ar_1d_single,      # tofcenter_offset
+                                                    ar_1d_int]         # tof bin 
+  
+
 if os.path.exists(lib_parallelproj_cuda_fname):
   lib_parallelproj_cuda = npct.load_library(os.path.basename(lib_parallelproj_cuda_fname),
                                             os.path.dirname(lib_parallelproj_cuda_fname))
@@ -136,14 +165,23 @@ def joseph3d_fwd(*args,**kwargs):
     return lib_parallelproj_cuda.joseph3d_fwd_cuda(*args, 
              kwargs.setdefault('threadsperblock',64), kwargs.setdefault('ngpus',-1))
 
+#------------------
+
 def joseph3d_fwd_tof(*args,**kwargs):
   if 'ntofbins' in kwargs:
     # TOF sinogram case
     if kwargs.setdefault('ngpus', 0) == 0:
-      return lib_parallelproj.joseph3d_fwd_tof_sino(*args, kwargs['ntofbins'])
+      return lib_parallelproj.joseph3d_fwd_tof_sino(*args, kwargs['nsigmas'], kwargs['ntofbins'])
     else:
-      return lib_parallelproj_cuda.joseph3d_fwd_tof_sino_cuda(*args, kwargs['ntofbins'],
-               kwargs.setdefault('threadsperblock',64), kwargs.setdefault('ngpus',-1))
+      return lib_parallelproj_cuda.joseph3d_fwd_tof_sino_cuda(*args, kwargs['nsigmas'], 
+               kwargs['ntofbins'], kwargs.setdefault('threadsperblock',64), 
+               kwargs.setdefault('ngpus',-1))
+  else:
+    # TOF LM case
+    if kwargs.setdefault('ngpus', 0) == 0:
+      return lib_parallelproj.joseph3d_fwd_tof_lm(*args, kwargs['tofbin'])
+
+#------------------
 
 def joseph3d_back(*args,**kwargs):
   if kwargs.setdefault('ngpus', 0) == 0:
@@ -152,11 +190,18 @@ def joseph3d_back(*args,**kwargs):
     return lib_parallelproj_cuda.joseph3d_back_cuda(*args, 
              kwargs.setdefault('threadsperblock',64), kwargs.setdefault('ngpus',-1))
 
+#------------------
+
 def joseph3d_back_tof(*args,**kwargs): 
   if 'ntofbins' in kwargs:
     # TOF sinogram case
     if kwargs.setdefault('ngpus', 0) == 0:
-      return lib_parallelproj.joseph3d_back_tof_sino(*args, kwargs['ntofbins'])
+      return lib_parallelproj.joseph3d_back_tof_sino(*args, kwargs['nsigmas'], kwargs['ntofbins'])
     else:
-      return lib_parallelproj_cuda.joseph3d_back_tof_sino_cuda(*args, kwargs['ntofbins'], 
-               kwargs.setdefault('threadsperblock',64), kwargs.setdefault('ngpus',-1))
+      return lib_parallelproj_cuda.joseph3d_back_tof_sino_cuda(*args, kwargs['nsigmas'], 
+               kwargs['ntofbins'], kwargs.setdefault('threadsperblock',64), 
+               kwargs.setdefault('ngpus',-1))
+  else:
+    # TOF LM case
+    if kwargs.setdefault('ngpus', 0) == 0:
+      return lib_parallelproj.joseph3d_back_tof_lm(*args, kwargs['tofbin'])

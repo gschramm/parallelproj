@@ -46,7 +46,7 @@ print((img_fwd*rsino).sum())
 tofsino_params = ppp.PETSinogram(scanner, ntofbins = 27, tofbin_width = 28.)
 tofproj        = ppp.SinogramProjector(scanner, tofsino_params, img.shape, nsubsets = nsubsets, 
                                        voxsize = voxsize, img_origin = img_origin, ngpus = ngpus,
-                                       tof = True, sigma_tof = 60., n_sigmas = 3)
+                                       tof = True, sigma_tof = 60./2.35, n_sigmas = 3)
 
 # setup a random sinogram
 tsino = np.random.rand(*tofproj.subset_sino_shapes[subset])
