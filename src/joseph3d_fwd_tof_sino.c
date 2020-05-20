@@ -23,13 +23,13 @@
  *  @param p           array of length nlors*n_tofbins (output) used to store the projections
  *  @param nlors       number of geomtrical LORs
  *  @param img_dim     array with dimensions of image [n0,n1,n2]
- *  @param n_tofbins        number of TOF bins
  *  @param tofbin_width     width of the TOF bins in spatial units (units of xstart and xend)
  *  @param sigma_tof        array of length nlors with the TOF resolution (sigma) for each LOR in
  *                          spatial units (units of xstart and xend) 
  *  @param tofcenter_offset array of length nlors with the offset of the central TOF bin from the 
  *                          midpoint of each LOR in spatial units (units of xstart and xend) 
  *  @param n_sigmas         number of sigmas to consider for calculation of TOF kernel
+ *  @param n_tofbins        number of TOF bins
  */
 void joseph3d_fwd_tof_sino(float *xstart, 
                            float *xend, 
@@ -39,11 +39,11 @@ void joseph3d_fwd_tof_sino(float *xstart,
                            float *p,
                            long long nlors, 
                            int *img_dim,
-                           int n_tofbins,
                            float tofbin_width,
                            float *sigma_tof,
                            float *tofcenter_offset,
-                           int n_sigmas)
+                           int n_sigmas,
+                           int n_tofbins)
 {
   long long i;
 

@@ -445,13 +445,13 @@ __global__ void joseph3d_fwd_tof_sino_cuda_kernel(float *xstart,
  *  @param h_p           array of length nlors*n_tofbins (output) used to store the projections
  *  @param nlors         number of projections (length of p array)
  *  @param h_img_dim     array with dimensions of image [n0,n1,n2]
- *  @param n_tofbins        number of TOF bins
  *  @param tofbin_width     width of the TOF bins in spatial units (units of xstart and xend)
  *  @param sigma_tof        array of length nlors with the TOF resolution (sigma) for each LOR in
  *                          spatial units (units of xstart and xend) 
  *  @param tofcenter_offset array of length nlors with the offset of the central TOF bin from the 
  *                          midpoint of each LOR in spatial units (units of xstart and xend) 
  *  @param n_sigmas         number of sigmas to consider for calculation of TOF kernel
+ *  @param n_tofbins        number of TOF bins
  *  @param threadsperblock number of threads per block
  *  @param num_devices     number of CUDA devices to use. if set to -1 cudaGetDeviceCount() is used
  */
@@ -463,11 +463,11 @@ extern "C" void joseph3d_fwd_tof_sino_cuda(float *h_xstart,
                                            float *h_p,
                                            long long nlors, 
                                            int *h_img_dim,
-                                           int n_tofbins,
                                            float tofbin_width,
                                            float *h_sigma_tof,
                                            float *h_tofcenter_offset,
                                            int n_sigmas,
+                                           int n_tofbins,
                                            int threadsperblock,
                                            int num_devices)
 {

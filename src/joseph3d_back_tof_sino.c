@@ -25,15 +25,13 @@
  *  @param p           array of length nlors*n_tofbins with the values to be back projected
  *  @param nlors       number of geometrical LORs
  *  @param img_dim     array with dimensions of image [n0,n1,n2]
- *  @param n_tofbins        number of TOF bins
  *  @param tofbin_width     width of the TOF bins in spatial units (units of xstart and xend)
  *  @param sigma_tof        array of length nlors with the TOF resolution (sigma) for each LOR in
  *                          spatial units (units of xstart and xend) 
  *  @param tofcenter_offset array of length nlors with the offset of the central TOF bin from the 
  *                          midpoint of each LOR in spatial units (units of xstart and xend) 
  *  @param n_sigmas         number of sigmas to consider for calculation of TOF kernel
- *  @param half_erf_lut     look up table length 6001 for half erf between -3 and 3. 
- *                          The i-th element contains 0.5*erf(-3 + 0.001*i)
+ *  @param n_tofbins        number of TOF bins
  */
 void joseph3d_back_tof_sino(float *xstart, 
                             float *xend, 
@@ -43,12 +41,11 @@ void joseph3d_back_tof_sino(float *xstart,
                             float *p, 
                             long long nlors, 
                             int *img_dim,
-                            int n_tofbins,
                             float tofbin_width,
                             float *sigma_tof,
                             float *tofcenter_offset,
                             int n_sigmas,
-                            float *half_erf_lut)
+                            int n_tofbins)
 {
   long long i;
 

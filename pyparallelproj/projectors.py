@@ -3,7 +3,7 @@ import numpy.ctypeslib as npct
 import ctypes
 import os
 
-from .wrapper import joseph3d_fwd, joseph3d_fwd_tof_sino, joseph3d_back, joseph3d_back_tof_sino
+from .wrapper import joseph3d_fwd, joseph3d_fwd_tof, joseph3d_back, joseph3d_back_tof
 
 class LMProjector:
   def __init__(self, scanner, img_dim, tof = False,
@@ -175,13 +175,13 @@ class SinogramProjector(LMProjector):
       else:
         tofcenter_offset = self.tofcenter_offset[subset_slice[:-1]].flatten().astype(ctypes.c_float)
 
-      ok = joseph3d_fwd_tof_sino(self.xstart[subset_slice].flatten(), 
-                                 self.xend[subset_slice].flatten(), 
-                                 img.flatten(), self.img_origin, self.voxsize, 
-                                 img_fwd, self.nLORs[subset], self.img_dim,
-                                 self.sino.ntofbins, self.sino.tofbin_width, 
-                                 sigma_tof, tofcenter_offset, self.nsigmas,
-                                 threadsperblock = self.threadsperblock, ngpus = self.ngpus) 
+      ok = joseph3d_fwd_tof(self.xstart[subset_slice].flatten(), 
+                            self.xend[subset_slice].flatten(), 
+                            img.flatten(), self.img_origin, self.voxsize, 
+                            img_fwd, self.nLORs[subset], self.img_dim,
+                            self.sino.tofbin_width, sigma_tof, tofcenter_offset, 
+                            self.nsigmas, ntofbins = self.sino.ntofbins, 
+                            threadsperblock = self.threadsperblock, ngpus = self.ngpus) 
 
     return img_fwd.reshape(self.subset_sino_shapes[subset])
 
@@ -215,12 +215,12 @@ class SinogramProjector(LMProjector):
       else:
         tofcenter_offset = self.tofcenter_offset[subset_slice[:-1]].flatten().astype(ctypes.c_float)
 
-      ok = joseph3d_back_tof_sino(self.xstart[subset_slice].flatten(), 
-                                  self.xend[subset_slice].flatten(), 
-                                  back_img, self.img_origin, self.voxsize, 
-                                  sino.flatten(), self.nLORs[subset], self.img_dim,
-                                  self.sino.ntofbins, self.sino.tofbin_width, 
-                                  sigma_tof, tofcenter_offset, self.nsigmas,
-                                  threadsperblock = self.threadsperblock, ngpus = self.ngpus) 
+      ok = joseph3d_back_tof(self.xstart[subset_slice].flatten(), 
+                             self.xend[subset_slice].flatten(), 
+                             back_img, self.img_origin, self.voxsize, 
+                             sino.flatten(), self.nLORs[subset], self.img_dim,
+                             self.sino.tofbin_width, sigma_tof, tofcenter_offset, 
+                             self.nsigmas, ntofbins = self.sino.ntofbins, 
+                             threadsperblock = self.threadsperblock, ngpus = self.ngpus) 
 
     return back_img.reshape(self.img_dim)
