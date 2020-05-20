@@ -157,12 +157,12 @@ class SinogramProjector:
       else:
         tofcenter_offset = self.tofcenter_offset[subset_slice[:-1]].flatten().astype(ctypes.c_float)
 
-        ok = joseph3d_back_tof_sino(self.xstart[subset_slice].flatten(), 
-                                    self.xend[subset_slice].flatten(), 
-                                    back_img, self.img_origin, self.voxsize, 
-                                    sino.flatten(), self.nLORs[subset], self.img_dim,
-                                    self.sino.ntofbins, self.sino.tofbin_width, 
-                                    sigma_tof, tofcenter_offset, self.nsigmas,
-                                    threadsperblock = self.threadsperblock, ngpus = self.ngpus) 
+      ok = joseph3d_back_tof_sino(self.xstart[subset_slice].flatten(), 
+                                  self.xend[subset_slice].flatten(), 
+                                  back_img, self.img_origin, self.voxsize, 
+                                  sino.flatten(), self.nLORs[subset], self.img_dim,
+                                  self.sino.ntofbins, self.sino.tofbin_width, 
+                                  sigma_tof, tofcenter_offset, self.nsigmas,
+                                  threadsperblock = self.threadsperblock, ngpus = self.ngpus) 
 
     return back_img.reshape(self.img_dim)
