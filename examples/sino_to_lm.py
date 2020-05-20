@@ -15,14 +15,14 @@ subset      = 0
 np.random.seed(1)
 
 # setup a scanner
-scanner = ppp.RegularPolygonPETScanner(ncrystals_per_module = np.array([16,3]),
+scanner = ppp.RegularPolygonPETScanner(ncrystals_per_module = np.array([16,1]),
                                        nmodules             = np.array([28,1]))
 
 # setup a test image
 voxsize = np.array([2.,2.,2.])
 n0      = 120
 n1      = 120
-n2      = int((scanner.xc2.max() - scanner.xc2.min()) / voxsize[2])
+n2      = max(1,int((scanner.xc2.max() - scanner.xc2.min()) / voxsize[2]))
 
 
 # setup a random image
@@ -30,17 +30,18 @@ img = np.zeros((n0,n1,n2))
 img[(n0//8):(7*n0//8),(n1//8):(7*n1//8),:] = 0.04
 img_origin = (-(np.array(img.shape) / 2) +  0.5) * voxsize
 
-######## tof projection
-tofsino_params = ppp.PETSinogram(scanner, ntofbins = 27, tofbin_width = 28.)
-tofproj        = ppp.SinogramProjector(scanner, tofsino_params, img.shape, nsubsets = nsubsets, 
-                                       voxsize = voxsize, img_origin = img_origin, ngpus = ngpus,
-                                       tof = True, sigma_tof = 60., n_sigmas = 3)
+########  projection
+sino_params = ppp.PETSinogram(scanner)
+proj        = ppp.SinogramProjector(scanner, sino_params, img.shape, nsubsets = nsubsets, 
+                                       voxsize = voxsize, img_origin = img_origin, ngpus = ngpus)
 
-img_fwd_tof = tofproj.fwd_project(img, subset = subset)
-
+img_fwd  = proj.fwd_project(img, subset = subset)
 
 # generate a noise realization
-noisy_sino_tof = np.random.poisson(img_fwd_tof)
+noisy_sino = np.random.poisson(img_fwd)
+
+# back project noisy sinogram as reference for listmode backprojection of events
+back_img = proj.back_project(noisy_sino, subset = subset) 
 
 # events is a list of all events
 # each event if characterize by 5 integers: 
@@ -48,12 +49,12 @@ noisy_sino_tof = np.random.poisson(img_fwd_tof)
 
 events = []
 
-it = np.nditer(noisy_sino_tof, flags=['multi_index'])
+it = np.nditer(noisy_sino, flags=['multi_index'])
 for x in it:
   if x > 0:
     event      = np.zeros(5, dtype = np.int16)
-    event[0:2] = tofproj.istart[it.multi_index[:-1]]
-    event[2:4] = tofproj.iend[it.multi_index[:-1]]
+    event[0:2] = proj.istart[it.multi_index[:-1]]
+    event[2:4] = proj.iend[it.multi_index[:-1]]
     event[4]   = it.multi_index[-1]
 
     t = int(x)*[event]
@@ -65,3 +66,10 @@ events = np.array(events)
 tmp = np.arange(events.shape[0])
 np.random.shuffle(tmp)
 events = events[tmp,:]
+
+### create LM projector
+lmproj = ppp.LMProjector(scanner, img.shape, voxsize = voxsize, img_origin = img_origin, ngpus = ngpus)
+
+fwd_img_lm  = lmproj.fwd_project(img, events)
+back_img_lm = lmproj.back_project(np.ones(events.shape[0]), events)
+

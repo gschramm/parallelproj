@@ -8,19 +8,19 @@ import numpy as np
 
 #---------------------------------------------------------------------------------
 
-ngpus       = -1
+ngpus       = 0
 nsubsets    = 1
 subset      = 0 
 
 # setup a scanner
-scanner = ppp.RegularPolygonPETScanner(ncrystals_per_module = np.array([16,9]),
+scanner = ppp.RegularPolygonPETScanner(ncrystals_per_module = np.array([16,1]),
                                        nmodules             = np.array([28,1]))
 
 # setup a test image
 voxsize = np.array([2.,2.,2.])
 n0      = 120
 n1      = 120
-n2      = int((scanner.xc2.max() - scanner.xc2.min()) / voxsize[2])
+n2      = max(1,int((scanner.xc2.max() - scanner.xc2.min()) / voxsize[2]))
 
 
 # setup a random image
@@ -58,6 +58,3 @@ back_tof    = tofproj.back_project(tsino, subset = subset)
 # check if fwd and back projection are adjoint
 print((img*back_tof).sum())
 print((img_fwd_tof*tsino).sum())
-
-
-
