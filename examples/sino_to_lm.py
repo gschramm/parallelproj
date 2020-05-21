@@ -27,7 +27,7 @@ n2      = max(1,int((scanner.xc2.max() - scanner.xc2.min()) / voxsize[2]))
 
 # setup a random image
 img = np.zeros((n0,n1,n2))
-img[(n0//8):(7*n0//8),(n1//8):(7*n1//8),:] = 0.04
+img[(n0//4):(3*n0//4),(n1//4):(3*n1//4),:] = 0.04
 img_origin = (-(np.array(img.shape) / 2) +  0.5) * voxsize
 
 ########  projection
@@ -60,7 +60,9 @@ for x in it:
     event      = np.zeros(5, dtype = np.int16)
     event[0:2] = proj.istart[it.multi_index[:-1]]
     event[2:4] = proj.iend[it.multi_index[:-1]]
-    event[4]   = it.multi_index[-1]
+    # for the LM projector, the central tofbin is 0, so we have to shift
+    # the tof index of the sinogram bu ntofbins // 2
+    event[4]   = it.multi_index[-1] - sino_params.ntofbins // 2
 
     t = int(x)*[event]
     events += t
@@ -76,7 +78,5 @@ events = events[tmp,:]
 lmproj = ppp.LMProjector(scanner, img.shape, voxsize = voxsize, img_origin = img_origin, ngpus = ngpus,
                          tof = True, sigma_tof = proj.sigma_tof, tofbin_width = proj.tofbin_width)
 
-events2 = events[:,:]
-
-fwd_img_lm  = lmproj.fwd_project(img, events2)
-back_img_lm = lmproj.back_project(np.ones(events2.shape[0]), events2)
+fwd_img_lm  = lmproj.fwd_project(img, events)
+back_img_lm = lmproj.back_project(np.ones(events.shape[0]), events)
