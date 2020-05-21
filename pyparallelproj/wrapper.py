@@ -152,7 +152,42 @@ if os.path.exists(lib_parallelproj_cuda_fname):
                                                                 ctypes.c_int,      # n_tofbins
                                                                 ctypes.c_int,      # threads per block
                                                                 ctypes.c_int]      # number of devices 
+
+  lib_parallelproj_cuda.joseph3d_fwd_tof_lm_cuda.restype  = None
+  lib_parallelproj_cuda.joseph3d_fwd_tof_lm_cuda.argtypes = [ar_1d_single,
+                                                             ar_1d_single,
+                                                             ar_1d_single,
+                                                             ar_1d_single,
+                                                             ar_1d_single,
+                                                             ar_1d_single,
+                                                             ctypes.c_longlong,
+                                                             ar_1d_int,         #
+                                                             ctypes.c_float,    # tofbin_width 
+                                                             ar_1d_single,      # sigma tof
+                                                             ar_1d_single,      # tofcenter_offset
+                                                             ctypes.c_int,      # n_sigmas 
+                                                             ar_1d_int,         # tof bin 
+                                                             ctypes.c_int,
+                                                             ctypes.c_int]
   
+  lib_parallelproj_cuda.joseph3d_back_tof_lm_cuda.restype  = None
+  lib_parallelproj_cuda.joseph3d_back_tof_lm_cuda.argtypes = [ar_1d_single,
+                                                              ar_1d_single,
+                                                              ar_1d_single,
+                                                              ar_1d_single,
+                                                              ar_1d_single,
+                                                              ar_1d_single,
+                                                              ctypes.c_longlong,
+                                                              ar_1d_int,         #
+                                                              ctypes.c_float,    # tofbin_width 
+                                                              ar_1d_single,      # sigma tof
+                                                              ar_1d_single,      # tofcenter_offset
+                                                              ctypes.c_int,      # n_sigmas 
+                                                              ar_1d_int,         # tof bin 
+                                                              ctypes.c_int,
+                                                              ctypes.c_int]
+
+ 
 #--------------------------------------------------------------------------------------------------
 
 # wrapper python function to allow same call for gpu and non-gpu projector functions
@@ -174,6 +209,9 @@ def joseph3d_fwd_tof(*args, lm = True, **kwargs):
     # TOF LM case
     if kwargs.setdefault('ngpus', 0) == 0:
       return lib_parallelproj.joseph3d_fwd_tof_lm(*args)
+    else:
+      return lib_parallelproj_cuda.joseph3d_fwd_tof_lm_cuda(*args,
+               kwargs.setdefault('threadsperblock',64), kwargs.setdefault('ngpus',-1))
   else:
     # TOF sinogram case
     if kwargs.setdefault('ngpus', 0) == 0:
@@ -198,6 +236,9 @@ def joseph3d_back_tof(*args, lm = True, **kwargs):
     # TOF LM case
     if kwargs.setdefault('ngpus', 0) == 0:
       return lib_parallelproj.joseph3d_back_tof_lm(*args)
+    else:
+      return lib_parallelproj_cuda.joseph3d_back_tof_lm_cuda(*args,
+               kwargs.setdefault('threadsperblock',64), kwargs.setdefault('ngpus',-1))
   else:
     # TOF sinogram case
     if kwargs.setdefault('ngpus', 0) == 0:
