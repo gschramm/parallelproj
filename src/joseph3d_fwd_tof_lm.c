@@ -28,6 +28,7 @@
  *                          spatial units (units of xstart and xend) 
  *  @param tofcenter_offset array of length nlors with the offset of the central TOF bin from the 
  *                          midpoint of each LOR in spatial units (units of xstart and xend) 
+ *  @param n_sigmas         number of sigmas to consider for calculation of TOF kernel
  *  @param tof_bin          array containing the TOF bin of each event
  */
 void joseph3d_fwd_tof_lm(float *xstart, 
@@ -41,6 +42,7 @@ void joseph3d_fwd_tof_lm(float *xstart,
                          float tofbin_width,
                          float *sigma_tof,
                          float *tofcenter_offset,
+                         int n_sigmas,
                          int   *tof_bin)
 {
   long long i;
@@ -175,8 +177,8 @@ void joseph3d_fwd_tof_lm(float *xstart,
         //-- check where we should start and stop according to the TOF kernel
         //-- the tof weights outside +- 3 sigma will be close to 0 so we can
         //-- ignore them         
-        istart_tof_f = (x_m0 + (it*tofbin_width - 3*sig_tof)*u0 - img_origin0) / voxsize0;
-        iend_tof_f   = (x_m0 + (it*tofbin_width + 3*sig_tof)*u0 - img_origin0) / voxsize0;
+        istart_tof_f = (x_m0 + (it*tofbin_width - n_sigmas*sig_tof)*u0 - img_origin0) / voxsize0;
+        iend_tof_f   = (x_m0 + (it*tofbin_width + n_sigmas*sig_tof)*u0 - img_origin0) / voxsize0;
         
         if (istart_tof_f > iend_tof_f){
           tmp        = iend_tof_f;
@@ -276,8 +278,8 @@ void joseph3d_fwd_tof_lm(float *xstart,
         //-- check where we should start and stop according to the TOF kernel
         //-- the tof weights outside +- 3 sigma will be close to 0 so we can
         //-- ignore them         
-        istart_tof_f = (x_m1 + (it*tofbin_width - 3*sig_tof)*u1 - img_origin1) / voxsize1;
-        iend_tof_f   = (x_m1 + (it*tofbin_width + 3*sig_tof)*u1 - img_origin1) / voxsize1;
+        istart_tof_f = (x_m1 + (it*tofbin_width - n_sigmas*sig_tof)*u1 - img_origin1) / voxsize1;
+        iend_tof_f   = (x_m1 + (it*tofbin_width + n_sigmas*sig_tof)*u1 - img_origin1) / voxsize1;
         
         if (istart_tof_f > iend_tof_f){
           tmp        = iend_tof_f;
@@ -378,8 +380,8 @@ void joseph3d_fwd_tof_lm(float *xstart,
         //-- check where we should start and stop according to the TOF kernel
         //-- the tof weights outside +- 3 sigma will be close to 0 so we can
         //-- ignore them         
-        istart_tof_f = (x_m2 + (it*tofbin_width - 3*sig_tof)*u2 - img_origin2) / voxsize2;
-        iend_tof_f   = (x_m2 + (it*tofbin_width + 3*sig_tof)*u2 - img_origin2) / voxsize2;
+        istart_tof_f = (x_m2 + (it*tofbin_width - n_sigmas*sig_tof)*u2 - img_origin2) / voxsize2;
+        iend_tof_f   = (x_m2 + (it*tofbin_width + n_sigmas*sig_tof)*u2 - img_origin2) / voxsize2;
         
         if (istart_tof_f > iend_tof_f){
           tmp        = iend_tof_f;

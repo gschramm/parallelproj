@@ -27,6 +27,7 @@
  *                          spatial units (units of xstart and xend) 
  *  @param tofcenter_offset array of length nlors with the offset of the central TOF bin from the 
  *                          midpoint of each LOR in spatial units (units of xstart and xend) 
+ *  @param n_sigmas         number of sigmas to consider for calculation of TOF kernel
  *  @param tof_bin          array containing the TOF bin of each event
  */
 __global__ void joseph3d_back_tof_lm_cuda_kernel(float *xstart, 
@@ -40,6 +41,7 @@ __global__ void joseph3d_back_tof_lm_cuda_kernel(float *xstart,
                                                  float tofbin_width,
                                                  float *sigma_tof,
                                                  float *tofcenter_offset,
+                                                 int n_sigmas,
                                                  int *tof_bin)
 {
   long long i = blockDim.x * blockIdx.x + threadIdx.x;
@@ -174,8 +176,8 @@ __global__ void joseph3d_back_tof_lm_cuda_kernel(float *xstart,
         //-- check where we should start and stop according to the TOF kernel
         //-- the tof weights outside +- 3 sigma will be close to 0 so we can
         //-- ignore them         
-        istart_tof_f = (x_m0 + (it*tofbin_width - 3*sig_tof)*u0 - img_origin0) / voxsize0;
-        iend_tof_f   = (x_m0 + (it*tofbin_width + 3*sig_tof)*u0 - img_origin0) / voxsize0;
+        istart_tof_f = (x_m0 + (it*tofbin_width - n_sigmas*sig_tof)*u0 - img_origin0) / voxsize0;
+        iend_tof_f   = (x_m0 + (it*tofbin_width + n_sigmas*sig_tof)*u0 - img_origin0) / voxsize0;
         
         if (istart_tof_f > iend_tof_f){
           tmp        = iend_tof_f;
@@ -275,8 +277,8 @@ __global__ void joseph3d_back_tof_lm_cuda_kernel(float *xstart,
         //-- check where we should start and stop according to the TOF kernel
         //-- the tof weights outside +- 3 sigma will be close to 0 so we can
         //-- ignore them         
-        istart_tof_f = (x_m1 + (it*tofbin_width - 3*sig_tof)*u1 - img_origin1) / voxsize1;
-        iend_tof_f   = (x_m1 + (it*tofbin_width + 3*sig_tof)*u1 - img_origin1) / voxsize1;
+        istart_tof_f = (x_m1 + (it*tofbin_width - n_sigmas*sig_tof)*u1 - img_origin1) / voxsize1;
+        iend_tof_f   = (x_m1 + (it*tofbin_width + n_sigmas*sig_tof)*u1 - img_origin1) / voxsize1;
         
         if (istart_tof_f > iend_tof_f){
           tmp        = iend_tof_f;
@@ -378,8 +380,8 @@ __global__ void joseph3d_back_tof_lm_cuda_kernel(float *xstart,
         //-- check where we should start and stop according to the TOF kernel
         //-- the tof weights outside +- 3 sigma will be close to 0 so we can
         //-- ignore them         
-        istart_tof_f = (x_m2 + (it*tofbin_width - 3*sig_tof)*u2 - img_origin2) / voxsize2;
-        iend_tof_f   = (x_m2 + (it*tofbin_width + 3*sig_tof)*u2 - img_origin2) / voxsize2;
+        istart_tof_f = (x_m2 + (it*tofbin_width - n_sigmas*sig_tof)*u2 - img_origin2) / voxsize2;
+        iend_tof_f   = (x_m2 + (it*tofbin_width + n_sigmas*sig_tof)*u2 - img_origin2) / voxsize2;
         
         if (istart_tof_f > iend_tof_f){
           tmp        = iend_tof_f;
@@ -487,7 +489,8 @@ __global__ void joseph3d_back_tof_lm_cuda_kernel(float *xstart,
  *                          spatial units (units of xstart and xend) 
  *  @param h_tofcenter_offset  array of length nlors with the offset of the central TOF bin from the 
  *                             midpoint of each LOR in spatial units (units of xstart and xend) 
- *  @param h_tof_bin           array containing the TOF bin of each event
+ *  @param n_sigmas        number of sigmas to consider for calculation of TOF kernel
+ *  @param h_tof_bin       array containing the TOF bin of each event
  *  @param threadsperblock number of threads per block
  *  @param num_devices     number of CUDA devices to use. if set to -1 cudaGetDeviceCount() is used
  */
@@ -502,6 +505,7 @@ extern "C" void joseph3d_back_tof_lm_cuda(float *h_xstart,
                                             float tofbin_width,
                                             float *h_sigma_tof,
                                             float *h_tofcenter_offset,
+                                            int n_sigmas,
                                             int *h_tof_bin,
                                             int threadsperblock,
                                             int num_devices)
@@ -640,7 +644,7 @@ extern "C" void joseph3d_back_tof_lm_cuda(float *h_xstart,
                                                      d_img_origin[i_dev], d_voxsize[i_dev], 
                                                      d_p[i_dev], dev_nlors, d_img_dim[i_dev],
                                                      tofbin_width, d_sigma_tof[i_dev],
-                                                     d_tofcenter_offset[i_dev], 
+                                                     d_tofcenter_offset[i_dev], n_sigmas,
                                                      d_tof_bin[i_dev]);
 
   }

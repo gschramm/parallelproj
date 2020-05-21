@@ -9,7 +9,7 @@ class LMProjector:
   def __init__(self, scanner, img_dim, tof = False,
                      img_origin = None, voxsize = np.ones(3),
                      tofbin_width = None, sigma_tof = 60./2.35, tofcenter_offset = 0,
-                     threadsperblock = 64, ngpus = 0):
+                     n_sigmas = 3, threadsperblock = 64, ngpus = 0):
 
     self.scanner = scanner
     
@@ -31,6 +31,7 @@ class LMProjector:
     self.sigma_tof = sigma_tof
     self.tofcenter_offset = tofcenter_offset
     self.tofbin_width = tofbin_width
+    self.nsigmas = n_sigmas
 
     # gpu parameters (not relevant when not run on gpu)
     self.threadsperblock = threadsperblock
@@ -82,9 +83,9 @@ class LMProjector:
       ok = joseph3d_fwd_tof(xstart.flatten(), xend.flatten(), 
                             img.flatten(), self.img_origin, self.voxsize, 
                             img_fwd, nevents, self.img_dim,
-                            self.tofbin_width, sigma_tof, tofcenter_offset, 
-                            tofbin = tofbin, threadsperblock = self.threadsperblock, 
-                            ngpus = self.ngpus) 
+                            self.tofbin_width, sigma_tof, tofcenter_offset, self.nsigmas,
+                            tofbin, threadsperblock = self.threadsperblock, 
+                            ngpus = self.ngpus, lm = True) 
 
     return img_fwd  
 
@@ -124,9 +125,9 @@ class LMProjector:
       ok = joseph3d_back_tof(xstart.flatten(), xend.flatten(), 
                              back_img, self.img_origin, self.voxsize, 
                              values.flatten(), nevents, self.img_dim,
-                             self.tofbin_width, sigma_tof, tofcenter_offset, 
-                             tofbin = tofbin, threadsperblock = self.threadsperblock, 
-                             ngpus = self.ngpus) 
+                             self.tofbin_width, sigma_tof, tofcenter_offset, self.nsigmas, 
+                             tofbin, threadsperblock = self.threadsperblock, 
+                             ngpus = self.ngpus, lm = True) 
 
 
     return back_img.reshape(self.img_dim)
@@ -148,7 +149,7 @@ class SinogramProjector(LMProjector):
                          img_origin = img_origin, voxsize = voxsize,
                          tofbin_width = sino.tofbin_width,
                          sigma_tof = sigma_tof, tofcenter_offset = tofcenter_offset, 
-                         threadsperblock = threadsperblock, ngpus = ngpus)
+                         n_sigmas = n_sigmas, threadsperblock = threadsperblock, ngpus = ngpus)
 
     self.sino    = sino
 
@@ -164,9 +165,6 @@ class SinogramProjector(LMProjector):
     self.xend = self.scanner.get_crystal_coordinates(
                   self.iend.reshape(-1,2)).reshape((self.sino.nrad, self.sino.nviews, 
                                                     self.sino.nplanes,3))
-
-    # n sigmas for TOF projections
-    self.nsigmas = n_sigmas
 
     self.init_subsets(nsubsets)
 
@@ -229,8 +227,8 @@ class SinogramProjector(LMProjector):
                             img.flatten(), self.img_origin, self.voxsize, 
                             img_fwd, self.nLORs[subset], self.img_dim,
                             self.tofbin_width, sigma_tof, tofcenter_offset, 
-                            nsigmas = self.nsigmas, ntofbins = self.sino.ntofbins, 
-                            threadsperblock = self.threadsperblock, ngpus = self.ngpus) 
+                            self.nsigmas, self.sino.ntofbins, 
+                            threadsperblock = self.threadsperblock, ngpus = self.ngpus, lm = False) 
 
     return img_fwd.reshape(self.subset_sino_shapes[subset])
 
@@ -269,7 +267,7 @@ class SinogramProjector(LMProjector):
                              back_img, self.img_origin, self.voxsize, 
                              sino.flatten(), self.nLORs[subset], self.img_dim,
                              self.tofbin_width, sigma_tof, tofcenter_offset, 
-                             nsigmas = self.nsigmas, ntofbins = self.sino.ntofbins, 
-                             threadsperblock = self.threadsperblock, ngpus = self.ngpus) 
+                             self.nsigmas, self.sino.ntofbins, 
+                             threadsperblock = self.threadsperblock, ngpus = self.ngpus, lm = False) 
 
     return back_img.reshape(self.img_dim)
