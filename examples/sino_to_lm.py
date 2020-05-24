@@ -29,7 +29,7 @@ n2      = max(1,int((scanner.xc2.max() - scanner.xc2.min()) / voxsize[2]))
 
 # setup a random image
 img = np.zeros((n0,n1,n2))
-img[(n0//4):(3*n0//4),(n1//4):(3*n1//4),:] = 0.04
+img[(n0//4):(3*n0//4),(n1//4):(3*n1//4),:] = 0.4
 img_origin = (-(np.array(img.shape) / 2) +  0.5) * voxsize
 
 # generate sinogram parameters and the projector
@@ -45,7 +45,7 @@ noisy_sino = np.random.poisson(img_fwd)
 
 ########################
 #noisy_sino *= 0
-#noisy_sino[178,0,0,13] = 1
+#noisy_sino[178 + 10,1,0,13-1] = 1
 
 # back project noisy sinogram as reference for listmode backprojection of events
 back_img = proj.back_project(noisy_sino, subset = subset) 
@@ -85,6 +85,11 @@ back_img_lm = lmproj.back_project(np.ones(events.shape[0]), events)
 
 ### debug plots
 r = ((back_img_lm - back_img)/back_img).squeeze()
+r[back_img.squeeze() == 0] = 0
+
+print(r.min())
+print(r.max())
+
 import matplotlib.pyplot as py
-py.imshow(r, vmin = -1e-3, vmax = 1e-3, cmap = py.cm.bwr)
+py.imshow(back_img.squeeze())
 py.show()

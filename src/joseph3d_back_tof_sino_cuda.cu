@@ -96,6 +96,9 @@ __global__ void joseph3d_back_tof_sino_cuda_kernel(float *xstart,
     float istart_f, iend_f, tmp;
     int   istart, iend;
 
+    float istart_tof_f, iend_tof_f;
+    int istart_tof, iend_tof;
+
     // test whether the ray between the two detectors is most parallel
     // with the 0, 1, or 2 axis
     d0    = xend0 - xstart0;
@@ -208,35 +211,51 @@ __global__ void joseph3d_back_tof_sino_cuda_kernel(float *xstart,
                                  &it1, &it2);
           
           for(it = it1; it <= it2; it++){
-            if(p[i*n_tofbins + it + n_half] != 0){
-              // calculate distance of voxel to tof bin center
-              dtof = sqrtf(powf((x_m0 + (it*tofbin_width + tc_offset)*u0 - x_v0), 2) + 
-                           powf((x_m1 + (it*tofbin_width + tc_offset)*u1 - x_v1), 2) + 
-                           powf((x_m2 + (it*tofbin_width + tc_offset)*u2 - x_v2), 2));
+            //--- add extra check to be compatible with behavior of LM projector
+            istart_tof_f = (x_m0 + (it*tofbin_width - n_sigmas*sig_tof)*u0 - img_origin0) / voxsize0;
+            iend_tof_f   = (x_m0 + (it*tofbin_width + n_sigmas*sig_tof)*u0 - img_origin0) / voxsize0;
+        
+            if (istart_tof_f > iend_tof_f){
+              tmp        = iend_tof_f;
+              iend_tof_f = istart_tof_f;
+              istart_tof_f = tmp;
+            }
 
-              //calculate the TOF weight
-              tw = 0.5f*(erff((dtof + 0.5f*tofbin_width)/(sqrtf(2)*sig_tof)) - 
-                        erff((dtof - 0.5f*tofbin_width)/(sqrtf(2)*sig_tof)));
+            istart_tof = (int)floor(istart_tof_f);
+            iend_tof   = (int)ceil(iend_tof_f);
+            //---
 
-              if ((i1_floor >= 0) && (i1_floor < n1) && (i2_floor >= 0) && (i2_floor < n2))
-              {
-                atomicAdd(img + n1*n2*i0 + n2*i1_floor + i2_floor, 
-                          (tw * p[i*n_tofbins + it + n_half] * (1 - tmp_1) * (1 - tmp_2) * cf));
-              }
-              if ((i1_ceil >= 0) && (i1_ceil < n1) && (i2_floor >= 0) && (i2_floor < n2))
-              {
-                atomicAdd(img + n1*n2*i0 + n2*i1_ceil + i2_floor, 
-                          (tw * p[i*n_tofbins + it + n_half] * tmp_1 * (1 - tmp_2) * cf));
-              }
-              if ((i1_floor >= 0) && (i1_floor < n1) && (i2_ceil >= 0) && (i2_ceil < n2))
-              {
-                atomicAdd(img + n1*n2*i0 + n2*i1_floor + i2_ceil, 
-                          (tw * p[i*n_tofbins + it + n_half] * (1 - tmp_1) * tmp_2*cf));
-              }
-              if ((i1_ceil >= 0) && (i1_ceil < n1) && (i2_ceil >= 0) && (i2_ceil < n2))
-              {
-                atomicAdd(img + n1*n2*i0 + n2*i1_ceil + i2_ceil, 
-                          (tw * p[i*n_tofbins + it + n_half] * tmp_1 * tmp_2 * cf));
+            if ((i0 >= istart_tof) && (i0 < iend_tof)){
+              if(p[i*n_tofbins + it + n_half] != 0){
+                // calculate distance of voxel to tof bin center
+                dtof = sqrtf(powf((x_m0 + (it*tofbin_width + tc_offset)*u0 - x_v0), 2) + 
+                             powf((x_m1 + (it*tofbin_width + tc_offset)*u1 - x_v1), 2) + 
+                             powf((x_m2 + (it*tofbin_width + tc_offset)*u2 - x_v2), 2));
+
+                //calculate the TOF weight
+                tw = 0.5f*(erff((dtof + 0.5f*tofbin_width)/(sqrtf(2)*sig_tof)) - 
+                          erff((dtof - 0.5f*tofbin_width)/(sqrtf(2)*sig_tof)));
+
+                if ((i1_floor >= 0) && (i1_floor < n1) && (i2_floor >= 0) && (i2_floor < n2))
+                {
+                  atomicAdd(img + n1*n2*i0 + n2*i1_floor + i2_floor, 
+                            (tw * p[i*n_tofbins + it + n_half] * (1 - tmp_1) * (1 - tmp_2) * cf));
+                }
+                if ((i1_ceil >= 0) && (i1_ceil < n1) && (i2_floor >= 0) && (i2_floor < n2))
+                {
+                  atomicAdd(img + n1*n2*i0 + n2*i1_ceil + i2_floor, 
+                            (tw * p[i*n_tofbins + it + n_half] * tmp_1 * (1 - tmp_2) * cf));
+                }
+                if ((i1_floor >= 0) && (i1_floor < n1) && (i2_ceil >= 0) && (i2_ceil < n2))
+                {
+                  atomicAdd(img + n1*n2*i0 + n2*i1_floor + i2_ceil, 
+                            (tw * p[i*n_tofbins + it + n_half] * (1 - tmp_1) * tmp_2*cf));
+                }
+                if ((i1_ceil >= 0) && (i1_ceil < n1) && (i2_ceil >= 0) && (i2_ceil < n2))
+                {
+                  atomicAdd(img + n1*n2*i0 + n2*i1_ceil + i2_ceil, 
+                            (tw * p[i*n_tofbins + it + n_half] * tmp_1 * tmp_2 * cf));
+                }
               }
             }
           }
@@ -299,35 +318,51 @@ __global__ void joseph3d_back_tof_sino_cuda_kernel(float *xstart,
                                  &it1, &it2);
 
           for(it = it1; it <= it2; it++){
-            if(p[i*n_tofbins + it + n_half] != 0){
-              // calculate distance of voxel to tof bin center
-              dtof = sqrtf(powf((x_m0 + (it*tofbin_width + tc_offset)*u0 - x_v0), 2) + 
-                           powf((x_m1 + (it*tofbin_width + tc_offset)*u1 - x_v1), 2) + 
-                           powf((x_m2 + (it*tofbin_width + tc_offset)*u2 - x_v2), 2));
+            //--- add extra check to be compatible with behavior of LM projector
+            istart_tof_f = (x_m1 + (it*tofbin_width - n_sigmas*sig_tof)*u1 - img_origin1) / voxsize1;
+            iend_tof_f   = (x_m1 + (it*tofbin_width + n_sigmas*sig_tof)*u1 - img_origin1) / voxsize1;
+        
+            if (istart_tof_f > iend_tof_f){
+              tmp        = iend_tof_f;
+              iend_tof_f = istart_tof_f;
+              istart_tof_f = tmp;
+            }
 
-              //calculate the TOF weight
-              tw = 0.5f*(erff((dtof + 0.5f*tofbin_width)/(sqrtf(2)*sig_tof)) - 
-                        erff((dtof - 0.5f*tofbin_width)/(sqrtf(2)*sig_tof)));
+            istart_tof = (int)floor(istart_tof_f);
+            iend_tof   = (int)ceil(iend_tof_f);
+            //---
 
-              if ((i0_floor >= 0) && (i0_floor < n0) && (i2_floor >= 0) && (i2_floor < n2)) 
-              {
-                atomicAdd(img + n1*n2*i0_floor + n2*i1 + i2_floor, 
-                          (tw * p[i*n_tofbins + it + n_half] * (1 - tmp_0) * (1 - tmp_2) * cf));
-              }
-              if ((i0_ceil >= 0) && (i0_ceil < n0) && (i2_floor >= 0) && (i2_floor < n2))
-              {
-                atomicAdd(img + n1*n2*i0_ceil + n2*i1 + i2_floor, 
-                          (tw * p[i*n_tofbins + it + n_half] * tmp_0 * (1 - tmp_2) * cf));
-              }
-              if ((i0_floor >= 0) && (i0_floor < n0) && (i2_ceil >= 0) && (i2_ceil < n2))
-              {
-                atomicAdd(img + n1*n2*i0_floor + n2*i1 + i2_ceil, 
-                          (tw * p[i*n_tofbins + it + n_half] * (1 - tmp_0) * tmp_2 * cf));
-              }
-              if((i0_ceil >= 0) && (i0_ceil < n0) && (i2_ceil >= 0) && (i2_ceil < n2))
-              {
-                atomicAdd(img + n1*n2*i0_ceil + n2*i1 + i2_ceil, 
-                          (tw * p[i*n_tofbins + it + n_half] * tmp_0 * tmp_2 * cf));
+            if ((i1 >= istart_tof) && (i1 < iend_tof)){
+              if(p[i*n_tofbins + it + n_half] != 0){
+                // calculate distance of voxel to tof bin center
+                dtof = sqrtf(powf((x_m0 + (it*tofbin_width + tc_offset)*u0 - x_v0), 2) + 
+                             powf((x_m1 + (it*tofbin_width + tc_offset)*u1 - x_v1), 2) + 
+                             powf((x_m2 + (it*tofbin_width + tc_offset)*u2 - x_v2), 2));
+
+                //calculate the TOF weight
+                tw = 0.5f*(erff((dtof + 0.5f*tofbin_width)/(sqrtf(2)*sig_tof)) - 
+                          erff((dtof - 0.5f*tofbin_width)/(sqrtf(2)*sig_tof)));
+
+                if ((i0_floor >= 0) && (i0_floor < n0) && (i2_floor >= 0) && (i2_floor < n2)) 
+                {
+                  atomicAdd(img + n1*n2*i0_floor + n2*i1 + i2_floor, 
+                            (tw * p[i*n_tofbins + it + n_half] * (1 - tmp_0) * (1 - tmp_2) * cf));
+                }
+                if ((i0_ceil >= 0) && (i0_ceil < n0) && (i2_floor >= 0) && (i2_floor < n2))
+                {
+                  atomicAdd(img + n1*n2*i0_ceil + n2*i1 + i2_floor, 
+                            (tw * p[i*n_tofbins + it + n_half] * tmp_0 * (1 - tmp_2) * cf));
+                }
+                if ((i0_floor >= 0) && (i0_floor < n0) && (i2_ceil >= 0) && (i2_ceil < n2))
+                {
+                  atomicAdd(img + n1*n2*i0_floor + n2*i1 + i2_ceil, 
+                            (tw * p[i*n_tofbins + it + n_half] * (1 - tmp_0) * tmp_2 * cf));
+                }
+                if((i0_ceil >= 0) && (i0_ceil < n0) && (i2_ceil >= 0) && (i2_ceil < n2))
+                {
+                  atomicAdd(img + n1*n2*i0_ceil + n2*i1 + i2_ceil, 
+                            (tw * p[i*n_tofbins + it + n_half] * tmp_0 * tmp_2 * cf));
+                }
               }
             }
           }
@@ -390,35 +425,51 @@ __global__ void joseph3d_back_tof_sino_cuda_kernel(float *xstart,
                                  &it1, &it2);
 
           for(it = it1; it <= it2; it++){
-            if(p[i*n_tofbins + it + n_half] != 0){
-              // calculate distance of voxel to tof bin center
-              dtof = sqrtf(powf((x_m0 + (it*tofbin_width + tc_offset)*u0 - x_v0), 2) + 
-                           powf((x_m1 + (it*tofbin_width + tc_offset)*u1 - x_v1), 2) + 
-                           powf((x_m2 + (it*tofbin_width + tc_offset)*u2 - x_v2), 2));
+            //--- add extra check to be compatible with behavior of LM projector
+            istart_tof_f = (x_m2 + (it*tofbin_width - n_sigmas*sig_tof)*u2 - img_origin2) / voxsize2;
+            iend_tof_f   = (x_m2 + (it*tofbin_width + n_sigmas*sig_tof)*u2 - img_origin2) / voxsize2;
+        
+            if (istart_tof_f > iend_tof_f){
+              tmp        = iend_tof_f;
+              iend_tof_f = istart_tof_f;
+              istart_tof_f = tmp;
+            }
 
-              //calculate the TOF weight
-              tw = 0.5f*(erff((dtof + 0.5f*tofbin_width)/(sqrtf(2)*sig_tof)) - 
-                        erff((dtof - 0.5f*tofbin_width)/(sqrtf(2)*sig_tof)));
+            istart_tof = (int)floor(istart_tof_f);
+            iend_tof   = (int)ceil(iend_tof_f);
+            //---
 
-              if ((i0_floor >= 0) && (i0_floor < n0) && (i1_floor >= 0) && (i1_floor < n1))
-              {
-                atomicAdd(img + n1*n2*i0_floor +  n2*i1_floor + i2, 
-                          (tw * p[i*n_tofbins + it + n_half] * (1 - tmp_0) * (1 - tmp_1) * cf));
-              }
-              if ((i0_ceil >= 0) && (i0_ceil < n0) && (i1_floor >= 0) && (i1_floor < n1))
-              {
-                atomicAdd(img + n1*n2*i0_ceil + n2*i1_floor + i2, 
-                          (tw * p[i*n_tofbins + it + n_half] * tmp_0 * (1 - tmp_1) * cf));
-              }
-              if ((i0_floor >= 0) && (i0_floor < n0) && (i1_ceil >= 0) && (i1_ceil < n1))
-              {
-                atomicAdd(img + n1*n2*i0_floor + n2*i1_ceil + i2, 
-                          (tw * p[i*n_tofbins + it + n_half] * (1 - tmp_0) * tmp_1 * cf));
-              }
-              if ((i0_ceil >= 0) && (i0_ceil < n0) && (i1_ceil >= 0) && (i1_ceil < n1))
-              {
-                atomicAdd(img + n1*n2*i0_ceil + n2*i1_ceil + i2, 
-                          (tw * p[i*n_tofbins + it + n_half] * tmp_0 * tmp_1 * cf));
+            if ((i2 >= istart_tof) && (i2 < iend_tof)){
+              if(p[i*n_tofbins + it + n_half] != 0){
+                // calculate distance of voxel to tof bin center
+                dtof = sqrtf(powf((x_m0 + (it*tofbin_width + tc_offset)*u0 - x_v0), 2) + 
+                             powf((x_m1 + (it*tofbin_width + tc_offset)*u1 - x_v1), 2) + 
+                             powf((x_m2 + (it*tofbin_width + tc_offset)*u2 - x_v2), 2));
+
+                //calculate the TOF weight
+                tw = 0.5f*(erff((dtof + 0.5f*tofbin_width)/(sqrtf(2)*sig_tof)) - 
+                          erff((dtof - 0.5f*tofbin_width)/(sqrtf(2)*sig_tof)));
+
+                if ((i0_floor >= 0) && (i0_floor < n0) && (i1_floor >= 0) && (i1_floor < n1))
+                {
+                  atomicAdd(img + n1*n2*i0_floor +  n2*i1_floor + i2, 
+                            (tw * p[i*n_tofbins + it + n_half] * (1 - tmp_0) * (1 - tmp_1) * cf));
+                }
+                if ((i0_ceil >= 0) && (i0_ceil < n0) && (i1_floor >= 0) && (i1_floor < n1))
+                {
+                  atomicAdd(img + n1*n2*i0_ceil + n2*i1_floor + i2, 
+                            (tw * p[i*n_tofbins + it + n_half] * tmp_0 * (1 - tmp_1) * cf));
+                }
+                if ((i0_floor >= 0) && (i0_floor < n0) && (i1_ceil >= 0) && (i1_ceil < n1))
+                {
+                  atomicAdd(img + n1*n2*i0_floor + n2*i1_ceil + i2, 
+                            (tw * p[i*n_tofbins + it + n_half] * (1 - tmp_0) * tmp_1 * cf));
+                }
+                if ((i0_ceil >= 0) && (i0_ceil < n0) && (i1_ceil >= 0) && (i1_ceil < n1))
+                {
+                  atomicAdd(img + n1*n2*i0_ceil + n2*i1_ceil + i2, 
+                            (tw * p[i*n_tofbins + it + n_half] * tmp_0 * tmp_1 * cf));
+                }
               }
             }
           }
