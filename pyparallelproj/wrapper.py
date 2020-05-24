@@ -43,7 +43,7 @@ if os.path.exists(lib_parallelproj_fname):
                                                      ctypes.c_float,    # tofbin_width 
                                                      ar_1d_single,      # sigma tof
                                                      ar_1d_single,      # tofcenter_offset
-                                                     ctypes.c_int,      # n_sigmas 
+                                                     ctypes.c_float,    # n_sigmas 
                                                      ctypes.c_int]      # n_tofbins
   
   lib_parallelproj.joseph3d_back_tof_sino.restype  = None
@@ -58,7 +58,7 @@ if os.path.exists(lib_parallelproj_fname):
                                                       ctypes.c_float,    # tofbin_width 
                                                       ar_1d_single,      # sigma tof
                                                       ar_1d_single,      # tofcenter_offset
-                                                      ctypes.c_int,      # n_sigmas 
+                                                      ctypes.c_float,    # n_sigmas 
                                                       ctypes.c_int]      # n_tofbins
 
   lib_parallelproj.joseph3d_fwd_tof_lm.restype  = None
@@ -73,7 +73,7 @@ if os.path.exists(lib_parallelproj_fname):
                                                    ctypes.c_float,    # tofbin_width 
                                                    ar_1d_single,      # sigma tof
                                                    ar_1d_single,      # tofcenter_offset
-                                                   ctypes.c_int,      # n_sigmas 
+                                                   ctypes.c_float,    # n_sigmas 
                                                    ar_1d_int]         # tof bin 
   
   lib_parallelproj.joseph3d_back_tof_lm.restype  = None
@@ -88,7 +88,7 @@ if os.path.exists(lib_parallelproj_fname):
                                                     ctypes.c_float,    # tofbin_width 
                                                     ar_1d_single,      # sigma tof
                                                     ar_1d_single,      # tofcenter_offset
-                                                    ctypes.c_int,      # n_sigmas 
+                                                    ctypes.c_float,    # n_sigmas 
                                                     ar_1d_int]         # tof bin 
   
 
@@ -131,7 +131,7 @@ if os.path.exists(lib_parallelproj_cuda_fname):
                                                                ctypes.c_float,    # tofbin_width 
                                                                ar_1d_single,      # sigma tof
                                                                ar_1d_single,      # tofcenter_offset
-                                                               ctypes.c_int,      # n_sigmas 
+                                                               ctypes.c_float,    # n_sigmas 
                                                                ctypes.c_int,      # n_tofbins
                                                                ctypes.c_int,      # threads per block
                                                                ctypes.c_int]      # number of devices 
@@ -148,7 +148,7 @@ if os.path.exists(lib_parallelproj_cuda_fname):
                                                                 ctypes.c_float,    # tofbin_width 
                                                                 ar_1d_single,      # sigma tof
                                                                 ar_1d_single,      # tofcenter_offset
-                                                                ctypes.c_int,      # n_sigmas 
+                                                                ctypes.c_float,    # n_sigmas 
                                                                 ctypes.c_int,      # n_tofbins
                                                                 ctypes.c_int,      # threads per block
                                                                 ctypes.c_int]      # number of devices 
@@ -165,7 +165,7 @@ if os.path.exists(lib_parallelproj_cuda_fname):
                                                              ctypes.c_float,    # tofbin_width 
                                                              ar_1d_single,      # sigma tof
                                                              ar_1d_single,      # tofcenter_offset
-                                                             ctypes.c_int,      # n_sigmas 
+                                                             ctypes.c_float,    # n_sigmas 
                                                              ar_1d_int,         # tof bin 
                                                              ctypes.c_int,
                                                              ctypes.c_int]
@@ -182,7 +182,7 @@ if os.path.exists(lib_parallelproj_cuda_fname):
                                                               ctypes.c_float,    # tofbin_width 
                                                               ar_1d_single,      # sigma tof
                                                               ar_1d_single,      # tofcenter_offset
-                                                              ctypes.c_int,      # n_sigmas 
+                                                              ctypes.c_float,    # n_sigmas 
                                                               ar_1d_int,         # tof bin 
                                                               ctypes.c_int,
                                                               ctypes.c_int]

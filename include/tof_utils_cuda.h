@@ -15,7 +15,7 @@ extern "C" __device__ void relevant_tof_bins_cuda(float x_m0,
 		                                   float tofbin_width,
 		                                   float tofcenter_offset,
 		                                   float sigma_tof,
-		                                   unsigned int n_sigmas,
+		                                   float n_sigmas,
 		                                   unsigned int n_half,
 		                                   int *it1,
 		                                   int *it2);

@@ -9,7 +9,7 @@ class LMProjector:
   def __init__(self, scanner, img_dim, tof = False,
                      img_origin = None, voxsize = np.ones(3),
                      tofbin_width = None, sigma_tof = 60./2.35, tofcenter_offset = 0,
-                     n_sigmas = 3, threadsperblock = 64, ngpus = 0):
+                     n_sigmas = 3., threadsperblock = 64, ngpus = 0):
 
     self.scanner = scanner
     
@@ -31,7 +31,7 @@ class LMProjector:
     self.sigma_tof = sigma_tof
     self.tofcenter_offset = tofcenter_offset
     self.tofbin_width = tofbin_width
-    self.nsigmas = n_sigmas
+    self.nsigmas = ctypes.c_float(n_sigmas)
 
     # gpu parameters (not relevant when not run on gpu)
     self.threadsperblock = threadsperblock

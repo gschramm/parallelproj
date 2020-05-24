@@ -42,7 +42,7 @@ void joseph3d_fwd_tof_lm(float *xstart,
                          float tofbin_width,
                          float *sigma_tof,
                          float *tofcenter_offset,
-                         int n_sigmas,
+                         float n_sigmas,
                          int   *tof_bin)
 {
   long long i;

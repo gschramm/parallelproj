@@ -44,7 +44,7 @@ void joseph3d_back_tof_sino(float *xstart,
                             float tofbin_width,
                             float *sigma_tof,
                             float *tofcenter_offset,
-                            int n_sigmas,
+                            float n_sigmas,
                             int n_tofbins)
 {
   long long i;

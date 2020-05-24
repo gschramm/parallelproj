@@ -42,7 +42,7 @@ __global__ void joseph3d_fwd_tof_sino_cuda_kernel(float *xstart,
                                                   float tofbin_width,
                                                   float *sigma_tof,
                                                   float *tofcenter_offset,
-                                                  int n_sigmas)
+                                                  float n_sigmas)
 {
   long long i = blockDim.x * blockIdx.x + threadIdx.x;
 
@@ -466,7 +466,7 @@ extern "C" void joseph3d_fwd_tof_sino_cuda(float *h_xstart,
                                            float tofbin_width,
                                            float *h_sigma_tof,
                                            float *h_tofcenter_offset,
-                                           int n_sigmas,
+                                           float n_sigmas,
                                            int n_tofbins,
                                            int threadsperblock,
                                            int num_devices)
