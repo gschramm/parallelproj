@@ -78,7 +78,7 @@ class LMProjector:
       else:
         raise ValueError('per event tof offset not supported yet')
 
-      tofbin = events[:,4].astype(ctypes.c_int)
+      tofbin = events[:,4].astype(ctypes.c_int16)
 
       ok = joseph3d_fwd_tof(xstart.flatten(), xend.flatten(), 
                             img.flatten(), self.img_origin, self.voxsize, 
@@ -120,7 +120,7 @@ class LMProjector:
       else:
         raise ValueError('per event tofcenter offset not supported yet')
 
-      tofbin = events[:,4].astype(ctypes.c_int)
+      tofbin = events[:,4].astype(ctypes.c_int16)
 
       ok = joseph3d_back_tof(xstart.flatten(), xend.flatten(), 
                              back_img, self.img_origin, self.voxsize, 
@@ -152,6 +152,7 @@ class SinogramProjector(LMProjector):
                          n_sigmas = n_sigmas, threadsperblock = threadsperblock, ngpus = ngpus)
 
     self.sino    = sino
+    self.ntofbins = ctypes.c_int16(self.sino.ntofbins)
 
     self.all_views = np.arange(self.sino.nviews)
 
@@ -201,7 +202,7 @@ class SinogramProjector(LMProjector):
 
     subset_slice = self.subset_slices[subset]
 
-    img_fwd = np.zeros(self.nLORs[subset]*self.sino.ntofbins, dtype = ctypes.c_float)  
+    img_fwd = np.zeros(self.nLORs[subset]*self.ntofbins, dtype = ctypes.c_float)  
 
     if self.tof == False:
       ####### NONTOF fwd projection 
@@ -227,7 +228,7 @@ class SinogramProjector(LMProjector):
                             img.flatten(), self.img_origin, self.voxsize, 
                             img_fwd, self.nLORs[subset], self.img_dim,
                             self.tofbin_width, sigma_tof, tofcenter_offset, 
-                            self.nsigmas, self.sino.ntofbins, 
+                            self.nsigmas, self.ntofbins, 
                             threadsperblock = self.threadsperblock, ngpus = self.ngpus, lm = False) 
 
     return img_fwd.reshape(self.subset_sino_shapes[subset])
@@ -267,7 +268,7 @@ class SinogramProjector(LMProjector):
                              back_img, self.img_origin, self.voxsize, 
                              sino.flatten(), self.nLORs[subset], self.img_dim,
                              self.tofbin_width, sigma_tof, tofcenter_offset, 
-                             self.nsigmas, self.sino.ntofbins, 
+                             self.nsigmas, self.ntofbins, 
                              threadsperblock = self.threadsperblock, ngpus = self.ngpus, lm = False) 
 
     return back_img.reshape(self.img_dim)

@@ -11,6 +11,7 @@ import numpy as np
 ngpus       = 0
 nsubsets    = 1
 subset      = 0 
+counts      = 1e5
 
 np.random.seed(1)
 
@@ -28,8 +29,8 @@ n2      = max(1,int((scanner.xc2.max() - scanner.xc2.min()) / voxsize[2]))
 
 
 # setup a random image
-img = np.zeros((n0,n1,n2))
-img[(n0//4):(3*n0//4),(n1//4):(3*n1//4),:] = 0.4
+img = np.zeros((n0,n1,n2), dtype = np.float32)
+img[(n0//4):(3*n0//4),(n1//4):(3*n1//4),:] = 1
 img_origin = (-(np.array(img.shape) / 2) +  0.5) * voxsize
 
 # generate sinogram parameters and the projector
@@ -39,6 +40,11 @@ proj        = ppp.SinogramProjector(scanner, sino_params, img.shape, nsubsets = 
                                     tof = True, sigma_tof = 60./2.35, n_sigmas = n_sigmas)
 
 img_fwd  = proj.fwd_project(img, subset = subset)
+
+# scale sum of fwd image to counts
+scale_fac = (counts / img_fwd.sum())
+img_fwd  *= scale_fac 
+img      *= scale_fac 
 
 # generate a noise realization
 noisy_sino = np.random.poisson(img_fwd)
@@ -91,5 +97,5 @@ print(r.min())
 print(r.max())
 
 import matplotlib.pyplot as py
-py.imshow(back_img.squeeze())
+py.imshow(back_img[...,n2//2].squeeze())
 py.show()

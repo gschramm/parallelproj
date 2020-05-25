@@ -4,6 +4,7 @@ import ctypes
 
 ar_1d_single = npct.ndpointer(dtype = ctypes.c_float, ndim = 1, flags = 'C')
 ar_1d_int    = npct.ndpointer(dtype = ctypes.c_int,   ndim = 1, flags = 'C')
+ar_1d_int16  = npct.ndpointer(dtype = ctypes.c_int16, ndim = 1, flags = 'C')
 
 lib_parallelproj_fname = os.path.join('..','lib','libparallelproj.so')
 lib_parallelproj_cuda_fname = os.path.join('..','lib','libparallelproj_cuda.so')
@@ -44,7 +45,7 @@ if os.path.exists(lib_parallelproj_fname):
                                                      ar_1d_single,      # sigma tof
                                                      ar_1d_single,      # tofcenter_offset
                                                      ctypes.c_float,    # n_sigmas 
-                                                     ctypes.c_int]      # n_tofbins
+                                                     ctypes.c_int16]    # n_tofbins
   
   lib_parallelproj.joseph3d_back_tof_sino.restype  = None
   lib_parallelproj.joseph3d_back_tof_sino.argtypes = [ar_1d_single,
@@ -59,7 +60,7 @@ if os.path.exists(lib_parallelproj_fname):
                                                       ar_1d_single,      # sigma tof
                                                       ar_1d_single,      # tofcenter_offset
                                                       ctypes.c_float,    # n_sigmas 
-                                                      ctypes.c_int]      # n_tofbins
+                                                      ctypes.c_int16]    # n_tofbins
 
   lib_parallelproj.joseph3d_fwd_tof_lm.restype  = None
   lib_parallelproj.joseph3d_fwd_tof_lm.argtypes = [ar_1d_single,
@@ -74,7 +75,7 @@ if os.path.exists(lib_parallelproj_fname):
                                                    ar_1d_single,      # sigma tof
                                                    ar_1d_single,      # tofcenter_offset
                                                    ctypes.c_float,    # n_sigmas 
-                                                   ar_1d_int]         # tof bin 
+                                                   ar_1d_int16]       # tof bin 
   
   lib_parallelproj.joseph3d_back_tof_lm.restype  = None
   lib_parallelproj.joseph3d_back_tof_lm.argtypes = [ar_1d_single,
@@ -89,7 +90,7 @@ if os.path.exists(lib_parallelproj_fname):
                                                     ar_1d_single,      # sigma tof
                                                     ar_1d_single,      # tofcenter_offset
                                                     ctypes.c_float,    # n_sigmas 
-                                                    ar_1d_int]         # tof bin 
+                                                    ar_1d_int16]       # tof bin 
   
 
 if os.path.exists(lib_parallelproj_cuda_fname):

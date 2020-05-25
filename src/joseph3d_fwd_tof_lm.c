@@ -43,7 +43,7 @@ void joseph3d_fwd_tof_lm(float *xstart,
                          float *sigma_tof,
                          float *tofcenter_offset,
                          float n_sigmas,
-                         int   *tof_bin)
+                         int16_t *tof_bin)
 {
   long long i;
 
@@ -67,7 +67,7 @@ void joseph3d_fwd_tof_lm(float *xstart,
     float x_m0, x_m1, x_m2;    
     float x_v0, x_v1, x_v2;    
 
-    int it = tof_bin[i];
+    int16_t it = tof_bin[i];
     float dtof, tw;
 
     // correction factor for cos(theta) and voxsize
@@ -102,6 +102,7 @@ void joseph3d_fwd_tof_lm(float *xstart,
 
     // test whether the ray between the two detectors is most parallel
     // with the 0, 1, or 2 axis
+
     d0 = xend0 - xstart0;
     d1 = xend1 - xstart1;
     d2 = xend2 - xstart2;
