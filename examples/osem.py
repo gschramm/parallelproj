@@ -52,7 +52,7 @@ for i in range(nsubsets):
 # generate sensitity sinogram (product from attenuation and normalization sinogram)
 # this sinogram is usually non TOF!
 # to keep it simple we just generate a TOF sinogram
-sens_sino = 3.4*np.ones(img_fwd.shape, dtype = np.float32)
+sens_sino = 3.4*np.ones(img_fwd.shape[:-1], dtype = np.float32)
 
 # scale sum of fwd image to counts
 if counts > 0:
@@ -64,7 +64,7 @@ if counts > 0:
   # useful to avoid division by 0 in the ratio of data and exprected data
   contam_sino = np.full(img_fwd.shape, 0.2*img_fwd.mean(), dtype = np.float32)
   
-  em_sino = np.random.poisson(sens_sino*img_fwd + contam_sino)
+  em_sino = np.random.poisson(sens_sino[...,np.newaxis]*img_fwd + contam_sino)
 else:
   scale_fac = 1.
 
@@ -72,7 +72,7 @@ else:
   # useful to avoid division by 0 in the ratio of data and exprected data
   contam_sino = np.full(img_fwd.shape, 0.2*img_fwd.mean(), dtype = np.float32)
 
-  em_sino = sens_sino*img_fwd + contam_sino
+  em_sino = sens_sino[...,np.newaxis]*img_fwd + contam_sino
 
 #-------------------------------------------------------------------------------------
 #-------------------------------------------------------------------------------------
@@ -96,15 +96,16 @@ fig.canvas.draw()
 # calculate the sensitivity images for each subset
 sens_img = np.zeros((nsubsets,) + img.shape, dtype = np.float32)
 for i in range(nsubsets):
-  sens_img[i,...] = proj.back_project(sens_sino[i,...], subset = i) 
+  sens_img[i,...] = proj.back_project(sens_sino[i,...].repeat(proj.ntofbins).reshape(sens_sino[i,...].shape +
+                                      (proj.ntofbins,)), subset = i) 
 
 # run MLEM iterations
 for it in range(niter):
   for i in range(nsubsets):
     print(f'iteration {it + 1} subset {i}')
-    exp_sino = sens_sino[i,...]*proj.fwd_project(recon, subset = i) + contam_sino[i,...]
+    exp_sino = sens_sino[i,...][...,np.newaxis]*proj.fwd_project(recon, subset = i) + contam_sino[i,...]
     ratio    = em_sino[i,...] / exp_sino
-    recon *= (proj.back_project(sens_sino[i,...]*ratio, subset = i) / sens_img[i,...]) 
+    recon *= (proj.back_project(sens_sino[i,...][...,np.newaxis]*ratio, subset = i) / sens_img[i,...]) 
 
     ir.set_data(recon[...,n2//2])
     ax[1].set_title(f'itertation {it+1} subset {i}')

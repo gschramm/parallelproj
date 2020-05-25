@@ -151,8 +151,8 @@ class SinogramProjector(LMProjector):
                          sigma_tof = sigma_tof, tofcenter_offset = tofcenter_offset, 
                          n_sigmas = n_sigmas, threadsperblock = threadsperblock, ngpus = ngpus)
 
-    self.sino    = sino
-    self.ntofbins = ctypes.c_int16(self.sino.ntofbins)
+    self.sino     = sino
+    self.ntofbins = self.sino.ntofbins
 
     self.all_views = np.arange(self.sino.nviews)
 

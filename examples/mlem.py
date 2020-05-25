@@ -13,7 +13,7 @@ import numpy as np
 
 ngpus     = 0
 counts    = 1e5
-niter     = 28
+niter     = 10
 
 np.random.seed(1)
 
@@ -42,9 +42,8 @@ proj        = ppp.SinogramProjector(scanner, sino_params, img.shape, nsubsets = 
 img_fwd  = proj.fwd_project(img, subset = 0)
 
 # generate sensitity sinogram (product from attenuation and normalization sinogram)
-# this sinogram is usually non TOF!
-# to keep it simple we just generate a TOF sinogram
-sens_sino = 3.4*np.ones(img_fwd.shape, dtype = np.float32)
+# this sinogram is usually non TOF! which results in a different shape
+sens_sino = 3.4*np.ones(img_fwd.shape[:-1], dtype = np.float32)
 
 # scale sum of fwd image to counts
 if counts > 0:
@@ -56,7 +55,7 @@ if counts > 0:
   # useful to avoid division by 0 in the ratio of data and exprected data
   contam_sino = np.full(img_fwd.shape, 0.2*img_fwd.mean(), dtype = np.float32)
   
-  em_sino = np.random.poisson(sens_sino*img_fwd + contam_sino)
+  em_sino = np.random.poisson(sens_sino[...,np.newaxis]*img_fwd + contam_sino)
 else:
   scale_fac = 1.
 
@@ -64,7 +63,7 @@ else:
   # useful to avoid division by 0 in the ratio of data and exprected data
   contam_sino = np.full(img_fwd.shape, 0.2*img_fwd.mean(), dtype = np.float32)
 
-  em_sino = sens_sino*img_fwd + contam_sino
+  em_sino = sens_sino[...,np.newaxis]*img_fwd + contam_sino
 
 #-------------------------------------------------------------------------------------
 #-------------------------------------------------------------------------------------
@@ -86,15 +85,16 @@ ax[2].set_title('bias')
 fig.tight_layout()
 fig.canvas.draw()
 
-# calculate the sensitivity image
-sens_img = proj.back_project(sens_sino, subset = 0) 
+# calculate the sensitivity image, we have to repeat the sens sino since it is non TOF
+sens_img = proj.back_project(sens_sino.repeat(proj.ntofbins).reshape(sens_sino.shape + 
+                             (proj.ntofbins,)), subset = 0) 
 
 # run MLEM iterations
 for it in range(niter):
   print(f'iteration {it}')
-  exp_sino = sens_sino*proj.fwd_project(recon, subset = 0) + contam_sino
+  exp_sino = sens_sino[...,np.newaxis]*proj.fwd_project(recon, subset = 0) + contam_sino
   ratio    = em_sino / exp_sino
-  recon *= (proj.back_project(sens_sino*ratio, subset = 0) / sens_img) 
+  recon *= (proj.back_project(sens_sino[...,np.newaxis]*ratio, subset = 0) / sens_img) 
 
   ir.set_data(recon[...,n2//2])
   ib.set_data(recon[...,n2//2] - img[...,n2//2])
