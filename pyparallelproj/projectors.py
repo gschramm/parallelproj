@@ -28,24 +28,18 @@ class LMProjector:
       self.img_origin = img_origin
 
     # tof parameters
-    self.sigma_tof = sigma_tof
+    self.sigma_tof        = sigma_tof
     self.tofcenter_offset = tofcenter_offset
-    self.tofbin_width = tofbin_width
-    self.nsigmas = ctypes.c_float(n_sigmas)
+    self.tofbin_width     = tofbin_width
+    self.nsigmas          = float(n_sigmas)
 
     # gpu parameters (not relevant when not run on gpu)
     self.threadsperblock = threadsperblock
     self.ngpus           = ngpus
 
-    # check and cast data type to match libparallel proj
-    if not isinstance(self.voxsize, ctypes.c_float):
-      self.voxsize = self.voxsize.astype(ctypes.c_float)
-
-    if not isinstance(self.img_origin, ctypes.c_float):
-      self.img_origin = self.img_origin.astype(ctypes.c_float)
-
-    if not isinstance(self.img_dim, ctypes.c_int):
-      self.img_dim = self.img_dim.astype(ctypes.c_int)
+    self.voxsize    = self.voxsize.astype(ctypes.c_float)
+    self.img_origin = self.img_origin.astype(ctypes.c_float)
+    self.img_dim    = self.img_dim.astype(ctypes.c_int)
 
   #--------------------------------------------------------------------
   def fwd_project(self, img, events):

@@ -73,7 +73,7 @@ class PETSinogramParameters:
             crystal_id_end.reshape((self.nrad, views.shape[0],self.nplanes,2)))
 
   #-------------------------------------------------------------------
-  def sinogram_to_listmode(self, sinogram):
+  def sinogram_to_listmode(self, sinogram, return_multi_index = False):
 
     if not np.issubdtype(sinogram.flatten()[0], np.signedinteger):
       raise ValueError('Sinogram must be of type unsigned int for conversion to LM.')
@@ -87,7 +87,10 @@ class PETSinogramParameters:
     counter = 0
     
     it = np.nditer(sinogram, flags=['multi_index'])
-    
+
+    if return_multi_index:
+      multi_index = np.zeros((events.shape[0],4), dtype = np.int16)
+
     for x in it:
       if x > 0:
         events[counter:(counter+x),0:2] = istart[it.multi_index[:-1]]
@@ -95,12 +98,19 @@ class PETSinogramParameters:
         # for the LM projector, the central tofbin is 0, so we have to shift
         # the tof index of the sinogram bu ntofbins // 2
         events[counter:(counter+x):,4]   = it.multi_index[-1] - self.ntofbins // 2
+
+        if return_multi_index:
+          multi_index[counter:(counter+x),:] = it.multi_index
     
         counter += x
-   
-    np.random.shuffle(events)
+  
+    tmp = np.arange(events.shape[0])
+    np.random.shuffle(tmp)
 
-    return events
+    if return_multi_index:
+      return events[tmp,:], multi_index[tmp,:]
+    else:
+      return events[tmp,:]
 
 #----------------------------------------------------------------------
 if __name__ == '__main__':

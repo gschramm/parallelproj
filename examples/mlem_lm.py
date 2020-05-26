@@ -1,4 +1,4 @@
-# small demo for sinogram TOF MLEM without subsets
+# small demo for listmode TOF MLEM without subsets
 
 import sys
 import os
@@ -45,25 +45,27 @@ img_fwd  = proj.fwd_project(img, subset = 0)
 # this sinogram is usually non TOF! which results in a different shape
 sens_sino = 3.4*np.ones(img_fwd.shape[:-1], dtype = np.float32)
 
-# scale sum of fwd image to counts
-if counts > 0:
-  scale_fac = (counts / img_fwd.sum())
-  img_fwd  *= scale_fac 
-  img      *= scale_fac 
+scale_fac = (counts / img_fwd.sum())
+img_fwd  *= scale_fac 
+img      *= scale_fac 
 
-  # contamination sinogram with scatter and randoms
-  # useful to avoid division by 0 in the ratio of data and exprected data
-  contam_sino = np.full(img_fwd.shape, 0.2*img_fwd.mean(), dtype = np.float32)
-  
-  em_sino = np.random.poisson(sens_sino[...,np.newaxis]*img_fwd + contam_sino)
-else:
-  scale_fac = 1.
+# contamination sinogram with scatter and randoms
+# useful to avoid division by 0 in the ratio of data and exprected data
+contam_sino = np.full(img_fwd.shape, 0.2*img_fwd.mean(), dtype = np.float32)
 
-  # contamination sinogram with sctter and randoms
-  # useful to avoid division by 0 in the ratio of data and exprected data
-  contam_sino = np.full(img_fwd.shape, 0.2*img_fwd.mean(), dtype = np.float32)
+em_sino = np.random.poisson(sens_sino[...,np.newaxis]*img_fwd + contam_sino)
 
-  em_sino = sens_sino[...,np.newaxis]*img_fwd + contam_sino
+
+#-------------------------------------------------------------------------------------
+#-------------------------------------------------------------------------------------
+
+# generate list mode events and the corresponting values in the contamination and sensitivity
+# sinogram
+
+events, multi_index = sino_params.sinogram_to_listmode(em_sino, return_multi_index = True)
+
+contam_list = contam_sino[multi_index[:,0],multi_index[:,1],multi_index[:,2], multi_index[:,3]]
+sens_list   = sens_sino[multi_index[:,0],multi_index[:,1],multi_index[:,2]]
 
 #-------------------------------------------------------------------------------------
 #-------------------------------------------------------------------------------------
@@ -85,16 +87,23 @@ ax[2].set_title('bias')
 fig.tight_layout()
 fig.canvas.draw()
 
+
 # calculate the sensitivity image, we have to repeat the sens sino since it is non TOF
+# for the sensitivity image we have to back project all possible LORs (not only those
+# appeared in the LM file. Henec, we use the sino projector to back project the sensitibity sinogram
 sens_img = proj.back_project(sens_sino.repeat(proj.ntofbins).reshape(sens_sino.shape + 
                              (proj.ntofbins,)), subset = 0) 
 
+# create a listmode projector for the LM MLEM iterations
+lmproj = ppp.LMProjector(proj.scanner, proj.img_dim, voxsize = proj.voxsize, 
+                         img_origin = proj.img_origin, ngpus = proj.ngpus,
+                         tof = proj.tof, sigma_tof = proj.sigma_tof, tofbin_width = proj.tofbin_width,
+                         n_sigmas = proj.nsigmas)
 # run MLEM iterations
 for it in range(niter):
   print(f'iteration {it}')
-  exp_sino = sens_sino[...,np.newaxis]*proj.fwd_project(recon, subset = 0) + contam_sino
-  ratio    = em_sino / exp_sino
-  recon *= (proj.back_project(sens_sino[...,np.newaxis]*ratio, subset = 0) / sens_img) 
+  exp_list = sens_list*lmproj.fwd_project(recon, events) + contam_list
+  recon   *= (lmproj.back_project(sens_list / exp_list, events) / sens_img) 
 
   ir.set_data(recon[...,n2//2])
   ib.set_data(recon[...,n2//2] - img[...,n2//2])
