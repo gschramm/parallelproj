@@ -32,13 +32,9 @@ class LMProjector:
      width of a LM tof bin in spatial units (same as scanner geometry description)
      Default: None
 
-   sigma_tof : float or array of floats (for each event)
+   sigma_tof : float
      standard deviation of the Gaussian TOF kernel in spatial units
-     Default: 60/2.35 (FWHM of 6cm)
-
-   tofcenter_offset : float or array of floats (for each event)
-     containing the offset of the central TOF bin from the LOR center
-     Default: 0
+     Default: 60/2.35 (FWHM of 6cm, ca 400ps coincidence timing resolution)
 
    n_sigmas : int
      number of standard deviations used to trunacte the TOF kernel.
@@ -56,7 +52,7 @@ class LMProjector:
   """
   def __init__(self, scanner, img_dim, tof = False,
                      img_origin = None, voxsize = np.ones(3, dtype = np.float32),
-                     tofbin_width = None, sigma_tof = 60./2.35, tofcenter_offset = 0,
+                     tofbin_width = None, sigma_tof = 60./2.35,
                      n_sigmas = 3., threadsperblock = 64, ngpus = 0):
 
     self.scanner = scanner
@@ -77,7 +73,6 @@ class LMProjector:
 
     # tof parameters
     self.sigma_tof        = sigma_tof
-    self.tofcenter_offset = tofcenter_offset
     self.tofbin_width     = tofbin_width
     self.nsigmas          = float(n_sigmas)
 
@@ -90,7 +85,7 @@ class LMProjector:
     self.img_dim    = self.img_dim.astype(ctypes.c_int)
 
   #--------------------------------------------------------------------
-  def fwd_project(self, img, events):
+  def fwd_project(self, img, events, tofcenter_offset = None, sigma_tof_per_lor = None):
 
     if not isinstance(img, ctypes.c_float):
       img = img.astype(ctypes.c_float)
@@ -110,29 +105,27 @@ class LMProjector:
                         threadsperblock = self.threadsperblock, ngpus = self.ngpus) 
     else:
       ####### TOF fwd projection 
-      if not isinstance(self.sigma_tof, np.ndarray):
+      if sigma_tof_per_lor is None:
         sigma_tof = np.full(nevents, self.sigma_tof, dtype = ctypes.c_float)
       else:
-        raise ValueError('per event sigma not supported yet')
+        sigma_tof = sigma_tof_per_lor.astype(ctypes.c_float)
 
-      if not isinstance(self.tofcenter_offset, np.ndarray):
-        tofcenter_offset = np.full(nevents, self.tofcenter_offset, dtype = ctypes.c_float)
-      else:
-        raise ValueError('per event tof offset not supported yet')
+      if not isinstance(tofcenter_offset, np.ndarray):
+        tofcenter_offset = np.zeros(nevents, dtype = ctypes.c_float)
 
       tofbin = events[:,4].astype(ctypes.c_int16)
 
       ok = joseph3d_fwd_tof(xstart.flatten(), xend.flatten(), 
                             img.flatten(), self.img_origin, self.voxsize, 
                             img_fwd, nevents, self.img_dim,
-                            self.tofbin_width, sigma_tof, tofcenter_offset, self.nsigmas,
+                            self.tofbin_width, sigma_tof.flatten(), tofcenter_offset, self.nsigmas,
                             tofbin, threadsperblock = self.threadsperblock, 
                             ngpus = self.ngpus, lm = True) 
 
     return img_fwd  
 
   #--------------------------------------------------------------------
-  def back_project(self, values, events):
+  def back_project(self, values, events, tofcenter_offset = None, sigma_tof_per_lor = None):
 
     if not isinstance(values, ctypes.c_float):
       values = values.astype(ctypes.c_float)
@@ -152,22 +145,20 @@ class LMProjector:
                          threadsperblock = self.threadsperblock, ngpus = self.ngpus) 
     else:
       ####### TOF back projection 
-      if not isinstance(self.sigma_tof, np.ndarray):
+      if sigma_tof_per_lor is None:
         sigma_tof = np.full(nevents, self.sigma_tof, dtype = ctypes.c_float)
       else:
-        raise ValueError('per event sigma not supported yet')
+        sigma_tof = sigma_tof_per_lor.astype(ctypes.c_float)
 
-      if not isinstance(self.tofcenter_offset, np.ndarray):
-        tofcenter_offset = np.full(nevents, self.tofcenter_offset, dtype = ctypes.c_float)
-      else:
-        raise ValueError('per event tofcenter offset not supported yet')
+      if not isinstance(tofcenter_offset, np.ndarray):
+        tofcenter_offset = np.zeros(nevents, dtype = ctypes.c_float)
 
       tofbin = events[:,4].astype(ctypes.c_int16)
 
       ok = joseph3d_back_tof(xstart.flatten(), xend.flatten(), 
                              back_img, self.img_origin, self.voxsize, 
                              values.flatten(), nevents, self.img_dim,
-                             self.tofbin_width, sigma_tof, tofcenter_offset, self.nsigmas, 
+                             self.tofbin_width, sigma_tof.flatten(), tofcenter_offset, self.nsigmas, 
                              tofbin, threadsperblock = self.threadsperblock, 
                              ngpus = self.ngpus, lm = True) 
 
@@ -210,13 +201,9 @@ class SinogramProjector(LMProjector):
      containing the voxel size (same units as scanner geometry description)
      Default: np.ones(3)
 
-   sigma_tof : float or array of floats (for each event)
+   sigma_tof : float
      standard deviation of the Gaussian TOF kernel in spatial units
-     Default: 60/2.35 (FWHM of 6cm)
-
-   tofcenter_offset : float or array of floats (for each event)
-     containing the offset of the central TOF bin from the LOR center
-     Default: 0
+     Default: 60/2.35 (FWHM of 6cm, ca 400ps coincidence timing resolution)
 
    n_sigmas : int
      number of standard deviations used to trunacte the TOF kernel.
@@ -235,13 +222,13 @@ class SinogramProjector(LMProjector):
 
   def __init__(self, scanner, sino_params, img_dim, nsubsets = 1, tof = False,
                      img_origin = None, voxsize = np.ones(3),
-                     sigma_tof = 60./2.35, tofcenter_offset = 0, n_sigmas = 3,
+                     sigma_tof = 60./2.35, n_sigmas = 3,
                      threadsperblock = 64, ngpus = 0):
     
     LMProjector.__init__(self, scanner, img_dim, tof = tof,
                          img_origin = img_origin, voxsize = voxsize,
                          tofbin_width = sino_params.tofbin_width,
-                         sigma_tof = sigma_tof, tofcenter_offset = tofcenter_offset, 
+                         sigma_tof = sigma_tof, 
                          n_sigmas = n_sigmas, threadsperblock = threadsperblock, ngpus = ngpus)
 
     self.sino_params = sino_params
@@ -288,7 +275,7 @@ class SinogramProjector(LMProjector):
       self.subset_sino_shapes.append(subset_shape)
 
   #-----------------------------------------------------------------------------------------------
-  def fwd_project(self, img, subset = 0):
+  def fwd_project(self, img, subset = 0, tofcenter_offset = None, sigma_tof_per_lor = None):
 
     if not isinstance(img, ctypes.c_float):
       img = img.astype(ctypes.c_float)
@@ -306,28 +293,26 @@ class SinogramProjector(LMProjector):
                         threadsperblock = self.threadsperblock, ngpus = self.ngpus) 
     else:
       ####### TOF fwd projection 
-      if not isinstance(self.sigma_tof, np.ndarray):
+      if sigma_tof_per_lor is None:
         sigma_tof = np.full(self.nLORs[subset], self.sigma_tof, dtype = ctypes.c_float)
       else:
-        sigma_tof = self.sigma_tof[subset_slice[:-1]].flatten().astype(ctypes.c_float)
+        sigma_tof = sigma_tof_per_lor.astype(ctypes.c_float)
 
-      if not isinstance(self.tofcenter_offset, np.ndarray):
-        tofcenter_offset = np.full(self.nLORs[subset], self.tofcenter_offset, dtype = ctypes.c_float)
-      else:
-        tofcenter_offset = self.tofcenter_offset[subset_slice[:-1]].flatten().astype(ctypes.c_float)
+      if not isinstance(tofcenter_offset, np.ndarray):
+        tofcenter_offset = np.zeros(self.nLORs[subset], dtype = ctypes.c_float)
 
       ok = joseph3d_fwd_tof(self.xstart[subset_slice].flatten(), 
                             self.xend[subset_slice].flatten(), 
                             img.flatten(), self.img_origin, self.voxsize, 
                             img_fwd, self.nLORs[subset], self.img_dim,
-                            self.tofbin_width, sigma_tof, tofcenter_offset, 
+                            self.tofbin_width, sigma_tof.flatten(), tofcenter_offset.flatten(), 
                             self.nsigmas, self.ntofbins, 
                             threadsperblock = self.threadsperblock, ngpus = self.ngpus, lm = False) 
 
     return img_fwd.reshape(self.subset_sino_shapes[subset])
 
   #-----------------------------------------------------------------------------------------------
-  def back_project(self, sino, subset = 0):
+  def back_project(self, sino, subset = 0, tofcenter_offset = None, sigma_tof_per_lor = None):
 
     if not isinstance(sino, ctypes.c_float):
       sino = sino.astype(ctypes.c_float)
@@ -346,21 +331,19 @@ class SinogramProjector(LMProjector):
 
     else:
       ####### TOF back projection 
-      if not isinstance(self.sigma_tof, np.ndarray):
+      if sigma_tof_per_lor is None:
         sigma_tof = np.full(self.nLORs[subset], self.sigma_tof, dtype = ctypes.c_float)
       else:
-        sigma_tof = self.sigma_tof[subset_slice[:-1]].flatten().astype(ctypes.c_float)
+        sigma_tof = sigma_tof_per_lor.astype(ctypes.c_float)
 
-      if not isinstance(self.tofcenter_offset, np.ndarray):
-        tofcenter_offset = np.full(self.nLORs[subset], self.tofcenter_offset, dtype = ctypes.c_float)
-      else:
-        tofcenter_offset = self.tofcenter_offset[subset_slice[:-1]].flatten().astype(ctypes.c_float)
+      if not isinstance(tofcenter_offset, np.ndarray):
+        tofcenter_offset = np.zeros(self.nLORs[subset], dtype = ctypes.c_float)
 
       ok = joseph3d_back_tof(self.xstart[subset_slice].flatten(), 
                              self.xend[subset_slice].flatten(), 
                              back_img, self.img_origin, self.voxsize, 
                              sino.flatten(), self.nLORs[subset], self.img_dim,
-                             self.tofbin_width, sigma_tof, tofcenter_offset, 
+                             self.tofbin_width, sigma_tof.flatten(), tofcenter_offset.flatten(), 
                              self.nsigmas, self.ntofbins, 
                              threadsperblock = self.threadsperblock, ngpus = self.ngpus, lm = False) 
 
