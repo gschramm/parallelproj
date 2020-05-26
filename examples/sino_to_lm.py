@@ -1,3 +1,6 @@
+# a short demo on how to generate LM PET data 
+# we first generate a sinogram, add Poisson noise and then convert it to LM data
+
 import sys
 import os
 
@@ -49,36 +52,13 @@ img      *= scale_fac
 # generate a noise realization
 noisy_sino = np.random.poisson(img_fwd)
 
-########################
-#noisy_sino *= 0
-#noisy_sino[178 + 10,1,0,13-1] = 1
-
 # back project noisy sinogram as reference for listmode backprojection of events
 back_img = proj.back_project(noisy_sino, subset = subset) 
 
 # events is a list of all events
 # each event if characterize by 5 integers: 
 # [start_crystal_id_tr, start_crystal_id_ax, end_crystal_id_tr, end_crystal_id_ax, tofbin]
-
-events  = np.zeros((noisy_sino.sum(),5), dtype = np.int16)
-counter = 0
-
-it = np.nditer(noisy_sino, flags=['multi_index'])
-
-for x in it:
-  if x > 0:
-    events[counter:(counter+x),0:2] = proj.istart[it.multi_index[:-1]]
-    events[counter:(counter+x):,2:4] = proj.iend[it.multi_index[:-1]]
-    # for the LM projector, the central tofbin is 0, so we have to shift
-    # the tof index of the sinogram bu ntofbins // 2
-    events[counter:(counter+x):,4]   = it.multi_index[-1] - sino_params.ntofbins // 2
-
-    counter += x
-
-# shuffle the event order
-tmp = np.arange(events.shape[0])
-np.random.shuffle(tmp)
-events = events[tmp,:]
+events = sino_params.sinogram_to_listmode(noisy_sino)
 
 ### create LM projector
 lmproj = ppp.LMProjector(scanner, img.shape, voxsize = voxsize, img_origin = img_origin, ngpus = ngpus,
@@ -93,9 +73,14 @@ back_img_lm = lmproj.back_project(np.ones(events.shape[0]), events)
 r = ((back_img_lm - back_img)/back_img).squeeze()
 r[back_img.squeeze() == 0] = 0
 
-print(r.min())
-print(r.max())
+print(f' min rel diff of back projections {r.min()}')
+print(f' min rel diff of back projections {r.max()}')
 
 import matplotlib.pyplot as py
-py.imshow(back_img[...,n2//2].squeeze())
-py.show()
+fig, ax = py.subplots(1, 2, figsize =(8,4))
+ax[0].imshow(back_img[...,n2//2].squeeze())
+ax[0].set_title('back projection of sinogram')
+ax[1].imshow(back_img_lm[...,n2//2].squeeze())
+ax[1].set_title('back projection of LM data')
+fig.tight_layout()
+fig.show()

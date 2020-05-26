@@ -2,7 +2,7 @@ import numpy as np
 
 class PETSinogram:
 
-  def __init__(self, scanner, data = None, span = 1, rtrim = 46, ntofbins = 1, tofbin_width = None):
+  def __init__(self, scanner, span = 1, rtrim = 46, ntofbins = 1, tofbin_width = None):
 
     if (scanner.ncrystals_per_plane % 2) != 0:
       raise ValueError(f'Scanners with odd number of crystals per plan not supported yet.')
@@ -11,7 +11,6 @@ class PETSinogram:
       raise ValueError(f'Span {span} not supported yet')
     else:
       self.scanner = scanner
-      self.data    = data
       self.span    = span
       self.rtrim   = rtrim
  
@@ -73,6 +72,35 @@ class PETSinogram:
     return (crystal_id_start.reshape((self.nrad, views.shape[0],self.nplanes,2)), 
             crystal_id_end.reshape((self.nrad, views.shape[0],self.nplanes,2)))
 
+  #-------------------------------------------------------------------
+  def sinogram_to_listmode(self, sinogram):
+
+    if not np.issubdtype(sinogram.flatten()[0], np.signedinteger):
+      raise ValueError('Sinogram must be of type unsigned int for conversion to LM.')
+
+    # events is a 2D array of all events
+    # each event if characterize by 5 integers: 
+    # [start_crystal_id_tr, start_crystal_id_ax, end_crystal_id_tr, end_crystal_id_ax, tofbin]
+    istart, iend = self.get_view_crystal_indices(np.arange(self.nviews))
+
+    events  = np.zeros((sinogram.sum(),5), dtype = np.int16)
+    counter = 0
+    
+    it = np.nditer(sinogram, flags=['multi_index'])
+    
+    for x in it:
+      if x > 0:
+        events[counter:(counter+x),0:2] = istart[it.multi_index[:-1]]
+        events[counter:(counter+x):,2:4] = iend[it.multi_index[:-1]]
+        # for the LM projector, the central tofbin is 0, so we have to shift
+        # the tof index of the sinogram bu ntofbins // 2
+        events[counter:(counter+x):,4]   = it.multi_index[-1] - self.ntofbins // 2
+    
+        counter += x
+   
+    np.random.shuffle(events)
+
+    return events
 
 #----------------------------------------------------------------------
 if __name__ == '__main__':
