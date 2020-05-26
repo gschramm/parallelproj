@@ -1,7 +1,32 @@
 import numpy as np
 
 class PETSinogramParameters:
+  """ Sinogram parameter for a cylinderical PET scanner consisting of modules
 
+  Paramters
+  ---------
+  scanner : RegularPolygonPETScanner
+    an object containing the parameter of the cylindrical PET scanner
+
+  span : int
+    number specifying the meshing of axial planes (spanning).
+    At the moment, only span 1 is supported (no axial mashing)
+    Default: 1
+
+  rtrim : int
+    numer of LORs to trim at both sides in the radial direction
+    Default: 46
+
+  ntofbins : int
+    number of TOF bins in the sinogram.
+    For a non-TOF sinogram use 1.
+    Default: 1
+
+  tofbin_width : float
+    (spatial) width of every TOF bin.
+    Should be in the same units as the crystal coordinates of the scanner.
+    Default: None
+  """
   def __init__(self, scanner, span = 1, rtrim = 46, ntofbins = 1, tofbin_width = None):
 
     if (scanner.ncrystals_per_plane % 2) != 0:
@@ -44,8 +69,17 @@ class PETSinogramParameters:
 
   #-------------------------------------------------------------------
   def get_view_crystal_indices(self, views):
-    """ get an angular subset of the complete sinogram
+    """ get the trans-axial and axial crystal indices for a number of views of the sinogram
 
+    Parameters
+    ----------
+    views : 1d numpy int array
+      containing the views for which the crystals indices should be calculated
+
+    Returns
+    -------
+    2 numpy arrays of shape (nradial, nviews, nplanes, 2) containing the indices of
+    thes start and end detectors for the views.
     """
     i_tr_start = np.zeros((self.nrad, views.shape[0]), dtype = int)
     i_tr_end   = np.zeros((self.nrad, views.shape[0]), dtype = int)
@@ -74,6 +108,28 @@ class PETSinogramParameters:
 
   #-------------------------------------------------------------------
   def sinogram_to_listmode(self, sinogram, return_multi_index = False):
+    """ Convert an unsigned int sinogram to a list of events (list-mode data)
+
+    Parameters
+    ----------
+    sinogram : 4D numpy unsigned int array of shape (nrad, nviews, nplanes, ntofbins)
+      containing the counts to be converted into listmode data
+
+    return_multi_index : bool
+      whether to return the sinogram multi-index for each LM event as well.
+      This is useful for converting contamination and sensitivity sinograms to listmode data
+      when simulated listmode data from sinograms.
+      Default: False
+
+    Returns
+    -------
+    If return_multi_index is False
+      A 2D numpy int16 array of shape (nevents, 5) where each listmode event is characterized
+      by 5 integer number (2 start crystals IDs, 2 end crystal IDs, tof bin)
+    If return_multi_index is True
+      a 2D array with the sinogram multi-index of every event is returned as well
+      (2 output arguments)
+    """
 
     if not np.issubdtype(sinogram.flatten()[0], np.signedinteger):
       raise ValueError('Sinogram must be of type unsigned int for conversion to LM.')
