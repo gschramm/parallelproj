@@ -6,8 +6,56 @@ import os
 from .wrapper import joseph3d_fwd, joseph3d_fwd_tof, joseph3d_back, joseph3d_back_tof
 
 class LMProjector:
+  """ TOF and non TOF 3D listmode Joseph forward and back projector
+
+  Parameters
+  ----------
+  scanner : RegularPolygonPETScanner
+    an object containing the parameter of the cylindrical PET scanner
+
+  img_dim : array like (3 integer elements)
+    containing the 3 dimensions of the image to be projected
+
+  tof : bool
+    whether to do TOF or non-TOF projections
+    Default: False
+
+  img_origin : 3 element numpy float32 array
+    containing the image origin (the world coordinates of voxel 0,0,0)
+    Default: None which means (-(img_dim/2) + 0.5)*voxsize
+
+   voxsize: 3 element numpy float32 array
+     containing the voxel size (same units as scanner geometry description)
+     Default: np.ones(3)
+
+   tofbin_width: float
+     width of a LM tof bin in spatial units (same as scanner geometry description)
+     Default: None
+
+   sigma_tof : float or array of floats (for each event)
+     standard deviation of the Gaussian TOF kernel in spatial units
+     Default: 60/2.35 (FWHM of 6cm)
+
+   tofcenter_offset : float or array of floats (for each event)
+     containing the offset of the central TOF bin from the LOR center
+     Default: 0
+
+   n_sigmas : int
+     number of standard deviations used to trunacte the TOF kernel.
+     Default: 3
+   
+   threadsperblock: int
+     threads per block to use on a CUDA GPU
+     Default: 64
+
+   ngpus: int 
+     number of GPUs to use
+     0 means use CPU and openmp. 1 means 1 GPU, 2 means 2 interconnected GPUS ...
+     -1 means use CUDA to detect all available GPUs.
+     Default: 0
+  """
   def __init__(self, scanner, img_dim, tof = False,
-                     img_origin = None, voxsize = np.ones(3),
+                     img_origin = None, voxsize = np.ones(3, dtype = np.float32),
                      tofbin_width = None, sigma_tof = 60./2.35, tofcenter_offset = 0,
                      n_sigmas = 3., threadsperblock = 64, ngpus = 0):
 
@@ -133,10 +181,61 @@ class LMProjector:
 
 
 class SinogramProjector(LMProjector):
+  """ TOF and non TOF 3D sinogram Joseph forward and back projector
+
+  Parameters
+  ----------
+  scanner : RegularPolygonPETScanner
+    an object containing the parameter of the cylindrical PET scanner
+
+  sino_params: PETSinogramParameters
+    object containing the description of the sinogram parameters
+
+  img_dim : array like (3 integer elements)
+    containing the 3 dimensions of the image to be projected
+
+  nsubsets: int
+    Number of subsets to be used.
+    Default: 1
+
+  tof : bool
+    whether to do TOF or non-TOF projections
+    Default: False
+
+  img_origin : 3 element numpy float32 array
+    containing the image origin (the world coordinates of voxel 0,0,0)
+    Default: None which means (-(img_dim/2) + 0.5)*voxsize
+
+   voxsize: 3 element numpy float32 array
+     containing the voxel size (same units as scanner geometry description)
+     Default: np.ones(3)
+
+   sigma_tof : float or array of floats (for each event)
+     standard deviation of the Gaussian TOF kernel in spatial units
+     Default: 60/2.35 (FWHM of 6cm)
+
+   tofcenter_offset : float or array of floats (for each event)
+     containing the offset of the central TOF bin from the LOR center
+     Default: 0
+
+   n_sigmas : int
+     number of standard deviations used to trunacte the TOF kernel.
+     Default: 3
+   
+   threadsperblock: int
+     threads per block to use on a CUDA GPU
+     Default: 64
+
+   ngpus: int 
+     number of GPUs to use
+     0 means use CPU and openmp. 1 means 1 GPU, 2 means 2 interconnected GPUS ...
+     -1 means use CUDA to detect all available GPUs.
+     Default: 0
+  """
 
   def __init__(self, scanner, sino_params, img_dim, nsubsets = 1, tof = False,
                      img_origin = None, voxsize = np.ones(3),
-                     sigma_tof = 60., tofcenter_offset = 0, n_sigmas = 3,
+                     sigma_tof = 60./2.35, tofcenter_offset = 0, n_sigmas = 3,
                      threadsperblock = 64, ngpus = 0):
     
     LMProjector.__init__(self, scanner, img_dim, tof = tof,
