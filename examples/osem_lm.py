@@ -11,10 +11,13 @@ import numpy as np
 
 #---------------------------------------------------------------------------------
 
-ngpus     = 0
-counts    = 1e5
-niter     = 3
-nsubsets  = 28
+ngpus          = 0
+counts         = 1e5
+niter          = 20
+nsubsets       = 28
+random_subsets = False
+
+track_likelihood = True
 
 np.random.seed(1)
 
@@ -75,6 +78,9 @@ sens_list   = sens_sino[multi_index[:,0],multi_index[:,1],multi_index[:,2]]
 # initialize recon
 recon = np.full((n0,n1,n2), em_sino.sum() / (n0*n1*n2), dtype = np.float32)
 
+if track_likelihood:
+  logL = np.zeros(niter)
+
 py.ion()
 fig, ax = py.subplots(1,3, figsize = (12,4))
 ax[0].imshow(img[...,n2//2],   vmin = 0, vmax = 1.3*img.max(), cmap = py.cm.Greys)
@@ -100,15 +106,37 @@ lmproj = ppp.LMProjector(proj.scanner, proj.img_dim, voxsize = proj.voxsize,
                          img_origin = proj.img_origin, ngpus = proj.ngpus,
                          tof = proj.tof, sigma_tof = proj.sigma_tof, tofbin_width = proj.tofbin_width,
                          n_sigmas = proj.nsigmas)
+
+# generate an index array that enumerates all events
+ind = np.arange(events.shape[0])
+
 # run OSEM iterations
 for it in range(niter):
+
+  if random_subsets:
+    np.random.shuffle(ind)
+
   for i in range(nsubsets):
     print(f'iteration {it + 1} subset {i+1}')
-    exp_list = sens_list[i::nsubsets]*lmproj.fwd_project(recon, events[i::nsubsets,:]) + contam_list[i::nsubsets]
-    recon   *= (nsubsets*lmproj.back_project(sens_list[i::nsubsets]/exp_list, events[i::nsubsets,:]) / 
-                sens_img) 
+
+    # event numbers for the current subsets
+    ind_sub = ind[i::nsubsets]
+
+    exp_list = sens_list[ind_sub]*lmproj.fwd_project(recon, events[ind_sub,:]) + contam_list[ind_sub]
+    recon   *= (nsubsets*lmproj.back_project(sens_list[ind_sub]/exp_list, events[ind_sub,:]) / sens_img) 
 
     ir.set_data(recon[...,n2//2])
     ax[1].set_title(f'itertation {it+1} subset {i+1}')
     ib.set_data(recon[...,n2//2] - img[...,n2//2])
     fig.canvas.draw()
+
+  if track_likelihood:
+    exp_sino = sens_sino[...,np.newaxis]*proj.fwd_project(recon, subset = 0) + contam_sino
+    logL[it] = (exp_sino - em_sino*np.log(exp_sino)).sum()
+    print(f'neg logL {logL[it]}')
+
+if track_likelihood:
+  fig2, ax2 = py.subplots(1,1, figsize = (4,4))
+  ax2.plot(np.arange(niter) + 1, logL)
+  fig2.tight_layout()
+  fig2.show()

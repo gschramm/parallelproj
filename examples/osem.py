@@ -13,8 +13,10 @@ import numpy as np
 
 ngpus     = 0
 counts    = 1e5
-niter     = 3
+niter     = 20
 nsubsets  = 28
+
+track_likelihood = True
 
 np.random.seed(1)
 
@@ -81,6 +83,9 @@ else:
 # initialize recon
 recon = np.full((n0,n1,n2), em_sino.sum() / (n0*n1*n2), dtype = np.float32)
 
+if track_likelihood:
+  logL = np.zeros(niter)
+
 py.ion()
 fig, ax = py.subplots(1,3, figsize = (12,4))
 ax[0].imshow(img[...,n2//2],   vmin = 0, vmax = 1.3*img.max(), cmap = py.cm.Greys)
@@ -111,3 +116,18 @@ for it in range(niter):
     ax[1].set_title(f'itertation {it+1} subset {i+1}')
     ib.set_data(recon[...,n2//2] - img[...,n2//2])
     fig.canvas.draw()
+
+
+  if track_likelihood:
+    exp = np.zeros(img_fwd.shape, dtype = np.float32)
+    for i in range(nsubsets):
+      exp[i,...] = (sens_sino[i,...][...,np.newaxis]*proj.fwd_project(recon, subset = i) + 
+                    contam_sino[i,...])
+    logL[it] = (exp - em_sino*np.log(exp)).sum()
+    print(f'neg logL {logL[it]}')
+
+if track_likelihood:
+  fig2, ax2 = py.subplots(1,1, figsize = (4,4))
+  ax2.plot(np.arange(niter) + 1, logL)
+  fig2.tight_layout()
+  fig2.show()
