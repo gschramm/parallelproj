@@ -37,7 +37,7 @@ img[(n0//4):(3*n0//4),(n1//4):(3*n1//4),:] = 1
 img_origin = (-(np.array(img.shape) / 2) +  0.5) * voxsize
 
 # generate sinogram parameters and the projector
-sino_params = ppp.PETSinogram(scanner, ntofbins = 27, tofbin_width = 28.)
+sino_params = ppp.PETSinogramParameters(scanner, ntofbins = 27, tofbin_width = 28.)
 proj        = ppp.SinogramProjector(scanner, sino_params, img.shape, nsubsets = nsubsets, 
                                     voxsize = voxsize, img_origin = img_origin, ngpus = ngpus,
                                     tof = True, sigma_tof = 60./2.35, n_sigmas = n_sigmas)

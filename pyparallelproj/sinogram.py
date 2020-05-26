@@ -1,6 +1,6 @@
 import numpy as np
 
-class PETSinogram:
+class PETSinogramParameters:
 
   def __init__(self, scanner, span = 1, rtrim = 46, ntofbins = 1, tofbin_width = None):
 
@@ -109,7 +109,7 @@ if __name__ == '__main__':
   from pet_scanners import RegularPolygonPETScanner
   scanner = RegularPolygonPETScanner(ncrystals_per_module = np.array([16,2]),
                                      nmodules             = np.array([28,1]))
-  sino    = PETSinogram(scanner)
+  sino    = PETSinogramParameters(scanner)
 
   views = np.arange(15) * sino.nviews // 15
 

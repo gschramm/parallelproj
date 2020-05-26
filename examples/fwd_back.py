@@ -28,7 +28,7 @@ img = np.random.rand(n0,n1,n2)
 img_origin = (-(np.array(img.shape) / 2) +  0.5) * voxsize
 
 ######## nontof projections
-sino_params = ppp.PETSinogram(scanner)
+sino_params = ppp.PETSinogramParameters(scanner)
 proj        = ppp.SinogramProjector(scanner, sino_params, img.shape, nsubsets = nsubsets, 
                                     voxsize = voxsize, img_origin = img_origin, ngpus = ngpus)
 
@@ -43,7 +43,7 @@ print((img*back).sum())
 print((img_fwd*rsino).sum())
 
 ######## tof projections
-tofsino_params = ppp.PETSinogram(scanner, ntofbins = 27, tofbin_width = 28.)
+tofsino_params = ppp.PETSinogramParameters(scanner, ntofbins = 27, tofbin_width = 28.)
 tofproj        = ppp.SinogramProjector(scanner, tofsino_params, img.shape, nsubsets = nsubsets, 
                                        voxsize = voxsize, img_origin = img_origin, ngpus = ngpus,
                                        tof = True, sigma_tof = 60./2.35, n_sigmas = 3)

@@ -140,32 +140,32 @@ class LMProjector:
 
 class SinogramProjector(LMProjector):
 
-  def __init__(self, scanner, sino, img_dim, nsubsets = 1, tof = False,
+  def __init__(self, scanner, sino_params, img_dim, nsubsets = 1, tof = False,
                      img_origin = None, voxsize = np.ones(3),
                      sigma_tof = 60., tofcenter_offset = 0, n_sigmas = 3,
                      threadsperblock = 64, ngpus = 0):
     
     LMProjector.__init__(self, scanner, img_dim, tof = tof,
                          img_origin = img_origin, voxsize = voxsize,
-                         tofbin_width = sino.tofbin_width,
+                         tofbin_width = sino_params.tofbin_width,
                          sigma_tof = sigma_tof, tofcenter_offset = tofcenter_offset, 
                          n_sigmas = n_sigmas, threadsperblock = threadsperblock, ngpus = ngpus)
 
-    self.sino     = sino
-    self.ntofbins = self.sino.ntofbins
+    self.sino_params = sino_params
+    self.ntofbins    = self.sino_params.ntofbins
 
-    self.all_views = np.arange(self.sino.nviews)
+    self.all_views = np.arange(self.sino_params.nviews)
 
     # get the crystals IDs for all views
-    self.istart, self.iend = self.sino.get_view_crystal_indices(self.all_views)
+    self.istart, self.iend = self.sino_params.get_view_crystal_indices(self.all_views)
 
     # get the world coordiates for all view
     self.xstart = self.scanner.get_crystal_coordinates(
-                    self.istart.reshape(-1,2)).reshape((self.sino.nrad, self.sino.nviews, 
-                                                        self.sino.nplanes,3))
+                    self.istart.reshape(-1,2)).reshape((self.sino_params.nrad, self.sino_params.nviews, 
+                                                        self.sino_params.nplanes,3))
     self.xend = self.scanner.get_crystal_coordinates(
-                  self.iend.reshape(-1,2)).reshape((self.sino.nrad, self.sino.nviews, 
-                                                    self.sino.nplanes,3))
+                  self.iend.reshape(-1,2)).reshape((self.sino_params.nrad, self.sino_params.nviews, 
+                                                    self.sino_params.nplanes,3))
 
     self.init_subsets(nsubsets)
 
@@ -185,7 +185,7 @@ class SinogramProjector(LMProjector):
       self.subset_slices.append(tuple(subset_slice))
       self.nLORs.append(np.prod(self.xstart[self.subset_slices[i]].shape[:-1]).astype(np.int32))
 
-      subset_shape = np.array(self.sino.shape)
+      subset_shape = np.array(self.sino_params.shape)
 
       if i == (self.nsubsets - 1):
         subset_shape[self.subset_dir] -= (self.nsubsets - 1)*int(np.ceil(subset_shape[self.subset_dir]/self.nsubsets))
