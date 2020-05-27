@@ -24,6 +24,7 @@ counts    = args.counts
 niter     = args.niter
 nsubsets  = args.nsubsets
 track_likelihood = args.likeli
+random_subsets   = False
 
 #---------------------------------------------------------------------------------
 
