@@ -13,9 +13,9 @@
  *  This algorithm assumes that the IEEE floating point arithmetic standard 754 is followed 
  *  which handles divions by 0 and -0 correctly.
  *
- *  @param origin0     ...  0 cordinate of the ray origin
- *  @param origin1     ...  1 cordinate of the ray origin
- *  @param origin2     ...  2 cordinate of the ray origin
+ *  @param orig0       ...  0 cordinate of the ray origin
+ *  @param orig1       ...  1 cordinate of the ray origin
+ *  @param orig2       ...  2 cordinate of the ray origin
  *  @param bounds0_min ...  0 cordinate of the start of the cube bounding box
  *  @param bounds1_min ...  1 cordinate of the start of the cube bounding box
  *  @param bounds2_min ...  2 cordinate of the start of the cube bounding box
