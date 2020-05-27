@@ -1,11 +1,7 @@
 # small demo for sinogram TOF OS-MLEM
 
-import sys
 import os
 import matplotlib.pyplot as py
-
-if not os.path.abspath('..') in sys.path: sys.path.append(os.path.abspath('..'))
-
 import pyparallelproj as ppp
 import numpy as np
 
@@ -13,7 +9,7 @@ import numpy as np
 
 ngpus     = 0
 counts    = 1e5
-niter     = 20
+niter     = 5
 nsubsets  = 28
 
 track_likelihood = True

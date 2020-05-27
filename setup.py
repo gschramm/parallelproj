@@ -1,4 +1,13 @@
 import setuptools
+import os
+from glob import glob
+
+#-----------
+# find all compiled C / CUDA libs
+
+lib_files = glob('lib/*')
+
+#-----------
 
 setuptools.setup(
     name="pyparallelproj",
@@ -16,7 +25,8 @@ setuptools.setup(
         "License :: OSI Approved :: MIT License",
         "Operating System :: OS Independent",
     ],
-    python_requires='>=3.6',
+    python_requires='>=3.7',
     install_requires=['numpy>=1.18',
-                      'matplotlib>=3.2.1']
+                      'matplotlib>=3.2.1'],
+    data_files = [('lib', lib_files)]
 )

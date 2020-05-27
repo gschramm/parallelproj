@@ -1,4 +1,5 @@
 import os
+import sys
 import numpy.ctypeslib as npct
 import ctypes
 
@@ -6,8 +7,22 @@ ar_1d_single = npct.ndpointer(dtype = ctypes.c_float, ndim = 1, flags = 'C')
 ar_1d_int    = npct.ndpointer(dtype = ctypes.c_int,   ndim = 1, flags = 'C')
 ar_1d_int16  = npct.ndpointer(dtype = ctypes.c_int16, ndim = 1, flags = 'C')
 
-lib_parallelproj_fname = os.path.join('..','lib','libparallelproj.so')
-lib_parallelproj_cuda_fname = os.path.join('..','lib','libparallelproj_cuda.so')
+#---- find the compiled C / CUDA libraries
+# we first look into the relative ../lib dir which is needed to support users that
+# work on the C / CUDA libs
+# if they don't exist in the relative ../lib dir, we check the install dir which
+# is relative to sys.prefix
+
+lib_parallelproj_fname = os.path.abspath(os.path.join(os.path.dirname(__file__),'..','lib',
+                                                      'libparallelproj.so'))
+if not os.path.exists(lib_parallelproj_fname):
+  lib_parallelproj_fname = os.path.join(sys.prefix,'lib','libparallelproj.so')
+
+lib_parallelproj_cuda_fname = os.path.abspath(os.path.join(os.path.dirname(__file__),'..','lib', 
+                                                           'libparallelproj_cuda.so'))
+if not os.path.exists(lib_parallelproj_cuda_fname):
+  lib_parallelproj_cuda_fname = os.path.join(sys.prefix,'lib','libparallelproj_cuda.so')
+#-----
 
 if os.path.exists(lib_parallelproj_fname):
   lib_parallelproj = npct.load_library(os.path.basename(lib_parallelproj_fname),

@@ -1,11 +1,7 @@
 # small demo for listmode TOF MLEM without subsets
 
-import sys
 import os
 import matplotlib.pyplot as py
-
-if not os.path.abspath('..') in sys.path: sys.path.append(os.path.abspath('..'))
-
 import pyparallelproj as ppp
 import numpy as np
 

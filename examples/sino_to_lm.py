@@ -1,11 +1,7 @@
 # a short demo on how to generate LM PET data 
 # we first generate a sinogram, add Poisson noise and then convert it to LM data
 
-import sys
 import os
-
-if not os.path.abspath('..') in sys.path: sys.path.append(os.path.abspath('..'))
-
 import pyparallelproj as ppp
 import numpy as np
 
