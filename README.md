@@ -10,13 +10,23 @@ for the examples:
 - python (tested with 3.7.6)
 - numpy  (tested with 1.18.1)
 
-## build the project
+## build the C / CUDA libraries
+
+### Linux
 ```
 cd my_project_dir
 mkdir build
 cmake ..
 make 
 make install
+```
+
+### Windows (using MSVC)
+```
+cd my_project_dir
+mkdir build
+cmake -DCMAKE_WINDOWS_EXPORT_ALL_SYMBOLS=TRUE ..
+cmake --build . --target INSTALL --config RELEASE
 ```
 
 The CMakeLists.txt is configured to search for CUDA.
@@ -29,27 +39,3 @@ If doxygen is present, the documentation is rendered in
 html and latex in the ./doc directory.
 
 ## run examples
-All python examples should have the "-h" option to show the meaning of the command line options.
-
-OpenMP CPU examples:
-```
-cd my_project_dir
-cd examples
-
-python openmp_nontof_sino_scaling.py --nv 1
-python openmp_tof_sino_scaling.py --nv 1 --nrep 1
-
-python openmp_nontof_lm_scaling.py --ne 1e6
-python openmp_tof_lm_scaling.py --ne 1e6
-```
-CUDA examples:
-```
-cd my_project_dir
-cd examples
-
-python cuda_nontof_sino_scaling.py --nv 1
-python cuda_tof_sino_scaling.py --nv 1 --nrep 1
-
-python cuda_nontof_lm_scaling.py --ne 1e6
-python cuda_tof_lm_scaling.py --ne 1e6
-```

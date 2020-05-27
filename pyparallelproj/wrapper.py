@@ -2,6 +2,7 @@ import os
 import sys
 import numpy.ctypeslib as npct
 import ctypes
+import platform
 
 ar_1d_single = npct.ndpointer(dtype = ctypes.c_float, ndim = 1, flags = 'C')
 ar_1d_int    = npct.ndpointer(dtype = ctypes.c_int,   ndim = 1, flags = 'C')
@@ -13,15 +14,24 @@ ar_1d_int16  = npct.ndpointer(dtype = ctypes.c_int16, ndim = 1, flags = 'C')
 # if they don't exist in the relative ../lib dir, we check the install dir which
 # is relative to sys.prefix
 
-lib_parallelproj_fname = os.path.abspath(os.path.join(os.path.dirname(__file__),'..','lib',
-                                                      'libparallelproj.so'))
-if not os.path.exists(lib_parallelproj_fname):
-  lib_parallelproj_fname = os.path.join(sys.prefix,'lib','libparallelproj.so')
+plt = platform.system()
 
-lib_parallelproj_cuda_fname = os.path.abspath(os.path.join(os.path.dirname(__file__),'..','lib', 
-                                                           'libparallelproj_cuda.so'))
+if plt == 'Linux':
+  fname      = 'libparallelproj.so'
+  fname_cuda = 'libparallelproj_cuda.so'
+elif plt == 'Windows':
+  fname      = 'parallelproj.dll'
+  fname_cuda = 'parallelproj_cuda.dll'
+else:
+  raise SystemError(f'{platform.system()} not supprted yet.')
+
+lib_parallelproj_fname = os.path.abspath(os.path.join(os.path.dirname(__file__),'..','lib',fname))
+if not os.path.exists(lib_parallelproj_fname):
+  lib_parallelproj_fname = os.path.join(sys.prefix,'lib',fname)
+
+lib_parallelproj_cuda_fname = os.path.abspath(os.path.join(os.path.dirname(__file__),'..','lib',fname_cuda))
 if not os.path.exists(lib_parallelproj_cuda_fname):
-  lib_parallelproj_cuda_fname = os.path.join(sys.prefix,'lib','libparallelproj_cuda.so')
+  lib_parallelproj_cuda_fname = os.path.join(sys.prefix,'lib',fname_cuda)
 #-----
 
 if os.path.exists(lib_parallelproj_fname):

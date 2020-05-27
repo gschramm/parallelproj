@@ -1,11 +1,18 @@
 import setuptools
 import os
 from glob import glob
+import platform
 
 #-----------
 # find all compiled C / CUDA libs
+plt = platform.system()
 
-lib_files = glob('lib/*')
+if plt == 'Linux':
+  lib_files = glob('lib/*.so')
+elif plt == 'Windows':
+  lib_files = glob('lib/*.dll')
+else:
+  raise SystemError(f'{platform.system()} not supported yet.')
 
 #-----------
 
