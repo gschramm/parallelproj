@@ -1,10 +1,18 @@
 import os
 import pyparallelproj as ppp
 import numpy as np
+import argparse
+
+#---------------------------------------------------------------------------------
+# parse the command line
+
+parser = argparse.ArgumentParser()
+parser.add_argument('--ngpus', help = 'number of GPUs to use', default = 0, type = int)
+args = parser.parse_args()
 
 #---------------------------------------------------------------------------------
 
-ngpus       = 0
+ngpus       = args.ngpus
 nsubsets    = 1
 subset      = 0 
 
