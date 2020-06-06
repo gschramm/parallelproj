@@ -1,6 +1,8 @@
-from .pet_scanners import RegularPolygonPETScanner
-from .projectors   import SinogramProjector, LMProjector
-from .sinogram     import PETSinogramParameters
+from .pet_scanners  import RegularPolygonPETScanner
+from .projectors    import SinogramProjector, LMProjector
+from .sinogram      import PETSinogramParameters
+from .utils         import grad, div, prox_tv
+from .cp_tv_denoise import cp_tv_denoise
 
 # this is needed to get the package version at runtime
 from pkg_resources import get_distribution, DistributionNotFound
