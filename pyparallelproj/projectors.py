@@ -113,7 +113,7 @@ class LMProjector:
       if not isinstance(tofcenter_offset, np.ndarray):
         tofcenter_offset = np.zeros(nevents, dtype = ctypes.c_float)
 
-      tofbin = events[:,4].astype(ctypes.c_int16)
+      tofbin = events[:,4].astype(ctypes.c_short)
 
       ok = joseph3d_fwd_tof(xstart.flatten(), xend.flatten(), 
                             img.flatten(), self.img_origin, self.voxsize, 
@@ -153,7 +153,7 @@ class LMProjector:
       if not isinstance(tofcenter_offset, np.ndarray):
         tofcenter_offset = np.zeros(nevents, dtype = ctypes.c_float)
 
-      tofbin = events[:,4].astype(ctypes.c_int16)
+      tofbin = events[:,4].astype(ctypes.c_short)
 
       ok = joseph3d_back_tof(xstart.flatten(), xend.flatten(), 
                              back_img, self.img_origin, self.voxsize, 

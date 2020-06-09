@@ -46,7 +46,8 @@ void joseph3d_back_tof_lm_2(float *xstart,
                             float *sigma_tof,
                             float *tofcenter_offset,
                             float n_sigmas,
-                            int16_t *tof_bin)
+                            short *tof_bin)
+
 {
   long long i;
 
@@ -71,7 +72,7 @@ void joseph3d_back_tof_lm_2(float *xstart,
     float x_m0, x_m1, x_m2;    
     float x_v0, x_v1, x_v2;    
 
-    int16_t it = tof_bin[i];
+    short it = tof_bin[i];
     float dtof, tw;
 
     float sig_tof   = sigma_tof[i];
