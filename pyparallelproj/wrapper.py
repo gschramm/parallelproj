@@ -7,6 +7,7 @@ import platform
 ar_1d_single = npct.ndpointer(dtype = ctypes.c_float, ndim = 1, flags = 'C')
 ar_1d_int    = npct.ndpointer(dtype = ctypes.c_int,   ndim = 1, flags = 'C')
 ar_1d_int16  = npct.ndpointer(dtype = ctypes.c_int16, ndim = 1, flags = 'C')
+ar_1d_short  = npct.ndpointer(dtype = ctypes.c_short, ndim = 1, flags = 'C')
 
 #---- find the compiled C / CUDA libraries
 # we first look into the relative ../lib dir which is needed to support users that
@@ -192,7 +193,7 @@ if os.path.exists(lib_parallelproj_cuda_fname):
                                                              ar_1d_single,      # sigma tof
                                                              ar_1d_single,      # tofcenter_offset
                                                              ctypes.c_float,    # n_sigmas 
-                                                             ar_1d_int,         # tof bin 
+                                                             ar_1d_short,       # tof bin 
                                                              ctypes.c_int,
                                                              ctypes.c_int]
   
@@ -209,7 +210,7 @@ if os.path.exists(lib_parallelproj_cuda_fname):
                                                               ar_1d_single,      # sigma tof
                                                               ar_1d_single,      # tofcenter_offset
                                                               ctypes.c_float,    # n_sigmas 
-                                                              ar_1d_int,         # tof bin 
+                                                              ar_1d_short,       # tof bin 
                                                               ctypes.c_int,
                                                               ctypes.c_int]
 

@@ -41,7 +41,7 @@ __global__ void joseph3d_fwd_tof_lm_cuda_kernel(float *xstart,
                                                 float *sigma_tof,
                                                 float *tofcenter_offset,
                                                 float n_sigmas,
-                                                int *tof_bin)
+                                                short *tof_bin)
 {
   long long i = blockDim.x * blockIdx.x + threadIdx.x;
 
@@ -495,7 +495,7 @@ extern "C" void joseph3d_fwd_tof_lm_cuda(float *h_xstart,
                                          float *h_sigma_tof,
                                          float *h_tofcenter_offset,
                                          float n_sigmas,
-                                         int *h_tof_bin,
+                                         short *h_tof_bin,
                                          int threadsperblock,
                                          int num_devices)
 {
@@ -531,7 +531,7 @@ extern "C" void joseph3d_fwd_tof_lm_cuda(float *h_xstart,
   // init the dynamic arrays of TOF device arrays
   float **d_sigma_tof        = new float * [num_devices];
   float **d_tofcenter_offset = new float * [num_devices];
-  int **d_tof_bin            = new int * [num_devices];
+  short **d_tof_bin          = new short * [num_devices];
 
   // we split the projections across all CUDA devices
   for (int i_dev = 0; i_dev < num_devices; i_dev++) 
@@ -610,11 +610,11 @@ extern "C" void joseph3d_fwd_tof_lm_cuda(float *h_xstart,
     cudaMemcpyAsync(d_tofcenter_offset[i_dev], h_tofcenter_offset + dev_offset, proj_bytes_dev, 
                     cudaMemcpyHostToDevice);
 
-    error = cudaMalloc(&d_tof_bin[i_dev], dev_nlors*sizeof(int));
+    error = cudaMalloc(&d_tof_bin[i_dev], dev_nlors*sizeof(short));
     if (error != cudaSuccess){
         printf("cudaMalloc returned error %s (code %d), line(%d)\n", cudaGetErrorString(error), error, __LINE__);
         exit(EXIT_FAILURE);}
-    cudaMemcpyAsync(d_tof_bin[i_dev], h_tof_bin + dev_offset, proj_bytes_dev, cudaMemcpyHostToDevice);
+    cudaMemcpyAsync(d_tof_bin[i_dev], h_tof_bin + dev_offset, dev_nlors*sizeof(short), cudaMemcpyHostToDevice);
 
     // call the kernel
     joseph3d_fwd_tof_lm_cuda_kernel<<<grid,block>>>(d_xstart[i_dev], d_xend[i_dev], d_img[i_dev], 
