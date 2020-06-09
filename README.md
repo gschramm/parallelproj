@@ -29,6 +29,7 @@ On Linux run
 ```
 cd my_project_dir
 mkdir build
+cd build
 cmake ..
 make 
 make install
@@ -38,6 +39,7 @@ On Windows run
 ```
 cd my_project_dir
 mkdir build
+cd build
 cmake -DCMAKE_WINDOWS_EXPORT_ALL_SYMBOLS=TRUE ..
 cmake --build . --target INSTALL --config RELEASE
 ```
@@ -86,8 +88,8 @@ python osem_lm.py
 ```
 To use the CUDA GPU projector on a single GPU run
 ```
-python --ngpus 1 osem.py
-python --ngpus 1 osem_lm.py
+python osem.py --ngpus 1
+python osem_lm.py --ngpus 1
 ```
 The "ngpus" option specifies on many GPUs should be used. If set to -1, CUDA will auto determine the number of available inter-connected GPUs. The default value 0 means that the OpenMP-based CPU projectors are used.
 
