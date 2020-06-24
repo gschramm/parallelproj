@@ -8,6 +8,8 @@ import pyparallelproj as ppp
 import numpy as np
 import argparse
 
+from pymirc.image_operations import grad, div
+
 #---------------------------------------------------------------------------------
 # parse the command line
 
@@ -58,24 +60,57 @@ sino_shape = sino_params.shape
 img_fwd    = np.zeros((nsubsets, sino_shape[0], sino_shape[1] // nsubsets, sino_shape[2], sino_shape[3]),
                       dtype = np.float32)
 
+
+#---------------------------------------------------------------------------
+#---------------------------------------------------------------------------
+# power iterations to estimate the norm of one subset fwd + back projection
+
+test_img = np.random.rand(*img.shape).astype(np.float32)
+for pi in range(20):
+  fwd  = proj.fwd_project(test_img, subset = 0)
+  back = proj.back_project(fwd, subset = 0)
+  norm = np.linalg.norm(back)
+  
+  test_img = back / norm
+
+pr_norm = np.sqrt(norm)
+
+# power iterations to estimate the norm of gradient
+test_img = np.random.rand(*img.shape).astype(np.float32)
+for pi in range(20):
+  fwd = np.zeros((test_img.ndim,) + test_img.shape, dtype = np.float32) 
+  grad(test_img, fwd)
+  back = -div(fwd)
+  norm = np.linalg.norm(back)
+  
+  test_img = back / norm
+
+grad_norm = np.sqrt(norm)
+
+
+#---------------------------------------------------------------------------
+#---------------------------------------------------------------------------
+# simulate data
+
 # forward project the image
 for i in range(nsubsets):
   img_fwd[i,...] = proj.fwd_project(img, subset = i)
 
 # generate sensitity sinogram (product from attenuation and normalization sinogram)
 # this sinogram is usually non TOF!
-# to keep it simple we just generate a TOF sinogram
-sens_sino = np.ones(img_fwd.shape[:-1], dtype = np.float32)
+# we scale the sens sino in a way to get approx the same norm for a subset projection
+# and the gradient operator
+sens_sino  = (grad_norm / pr_norm) * np.ones(img_fwd.shape[:-1], dtype = np.float32)
 
 # scale sum of fwd image to counts
 if counts > 0:
-  scale_fac = (counts / img_fwd.sum())
+  scale_fac = (counts / ((grad_norm / pr_norm) * img_fwd.sum()))
   img_fwd  *= scale_fac 
   img      *= scale_fac 
 
   # contamination sinogram with scatter and randoms
   # useful to avoid division by 0 in the ratio of data and exprected data
-  contam_sino = np.full(img_fwd.shape, 0.2*img_fwd.mean(), dtype = np.float32)
+  contam_sino = np.full(img_fwd.shape, 0.2*(grad_norm / pr_norm)*img_fwd.mean(), dtype = np.float32)
   
   em_sino = np.random.poisson(sens_sino[...,np.newaxis]*img_fwd + contam_sino)
 else:
@@ -89,6 +124,7 @@ else:
 
 
 #------------------------------------------------------------------------------------------
+#------------------------------------------------------------------------------------------
 # SPDHG algorithm
 
 rho   = 0.999
@@ -100,11 +136,10 @@ S_i = np.zeros((nsubsets, sino_shape[0], sino_shape[1] // nsubsets, sino_shape[2
 
 ones_img = np.ones(img.shape, dtype = np.float32)
 for i in range(nsubsets):
-  S_i[i,...] = (gamma*rho) / proj.fwd_project(ones_img, subset = i)
+  S_i[i,...] = (gamma*rho) / (sens_sino[i,...][...,np.newaxis]*proj.fwd_project(ones_img, subset = i))
 
 # clip inf values
 S_i[S_i == np.inf] = S_i[S_i != np.inf].max()
-#S_i = np.clip(S_i, 0, 1)
 
 T_i = np.zeros((nsubsets,) + img.shape, dtype = np.float32)
 for i in range(nsubsets):
@@ -115,7 +150,8 @@ T = T_i.min(axis = 0)
 
 
 # start SPDHG iterations
-x      = np.zeros(img.shape, dtype = np.float32)
+x  = np.zeros(img.shape, dtype = np.float32)
+
 z      = np.zeros(img.shape, dtype = np.float32)
 zbar   = np.zeros(img.shape, dtype = np.float32)
 y      = np.zeros(img_fwd.shape, dtype = np.float32)
