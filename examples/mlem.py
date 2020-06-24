@@ -49,7 +49,7 @@ img_fwd  = proj.fwd_project(img, subset = 0)
 
 # generate sensitity sinogram (product from attenuation and normalization sinogram)
 # this sinogram is usually non TOF! which results in a different shape
-sens_sino = 3.4*np.ones(img_fwd.shape[:-1], dtype = np.float32)
+sens_sino = np.ones(img_fwd.shape[:-1], dtype = np.float32)
 
 # scale sum of fwd image to counts
 if counts > 0:

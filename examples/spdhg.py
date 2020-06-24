@@ -1,4 +1,6 @@
-# small demo for sinogram TOF OS-MLEM
+# small demo for stochastic primal hybrid dual gradient algorithm without regulatization 
+# Ehrhaardt et al. PMB 2019 "Faster PET reconstruction with non-smooth priors by 
+# randomization and preconditioning"
 
 import os
 import matplotlib.pyplot as py
@@ -85,55 +87,87 @@ else:
 
   em_sino = sens_sino[...,np.newaxis]*img_fwd + contam_sino
 
-#-------------------------------------------------------------------------------------
-#-------------------------------------------------------------------------------------
-#--- OS-MLEM reconstruction
 
-# initialize recon
-recon = np.full((n0,n1,n2), em_sino.sum() / (n0*n1*n2), dtype = np.float32)
+#------------------------------------------------------------------------------------------
+# SPDHG algorithm
 
-if track_likelihood:
-  logL = np.zeros(niter)
+rho   = 0.999
+gamma = 1.
+
+# calculate the "step sizes" S_i, T_i and T
+S_i = np.zeros((nsubsets, sino_shape[0], sino_shape[1] // nsubsets, sino_shape[2], sino_shape[3]),
+                dtype = np.float32)
+
+ones_img = np.ones(img.shape, dtype = np.float32)
+for i in range(nsubsets):
+  S_i[i,...] = (gamma*rho) / proj.fwd_project(ones_img, subset = i)
+
+# clip inf values
+S_i[S_i == np.inf] = S_i[S_i != np.inf].max()
+#S_i = np.clip(S_i, 0, 1)
+
+T_i = np.zeros((nsubsets,) + img.shape, dtype = np.float32)
+for i in range(nsubsets):
+  T_i[i,...] = (rho/(nsubsets*gamma)) / proj.back_project(sens_sino[i,...].repeat(proj.ntofbins).reshape(sens_sino[i,...].shape + (proj.ntofbins,)), subset = i) 
+
+# take the element-wise min of the T_i's of all subsets
+T = T_i.min(axis = 0)
+
+
+# start SPDHG iterations
+x      = np.zeros(img.shape, dtype = np.float32)
+z      = np.zeros(img.shape, dtype = np.float32)
+zbar   = np.zeros(img.shape, dtype = np.float32)
+y      = np.zeros(img_fwd.shape, dtype = np.float32)
 
 py.ion()
 fig, ax = py.subplots(1,3, figsize = (12,4))
 ax[0].imshow(img[...,n2//2],   vmin = 0, vmax = 1.3*img.max(), cmap = py.cm.Greys)
 ax[0].set_title('ground truth')
-ir = ax[1].imshow(recon[...,n2//2], vmin = 0, vmax = 1.3*img.max(), cmap = py.cm.Greys)
-ax[1].set_title('intial recon')
-ib = ax[2].imshow(recon[...,n2//2] - img[...,n2//2], vmin = -0.2*img.max(), vmax = 0.2*img.max(), 
+ir = ax[1].imshow(x[...,n2//2], vmin = 0, vmax = 1.3*img.max(), cmap = py.cm.Greys)
+ax[1].set_title('intial x')
+ib = ax[2].imshow(x[...,n2//2] - img[...,n2//2], vmin = -0.2*img.max(), vmax = 0.2*img.max(), 
                   cmap = py.cm.bwr)
 ax[2].set_title('bias')
 fig.tight_layout()
 fig.canvas.draw()
 
-# calculate the sensitivity images for each subset
-sens_img = np.zeros((nsubsets,) + img.shape, dtype = np.float32)
-for i in range(nsubsets):
-  sens_img[i,...] = proj.back_project(sens_sino[i,...].repeat(proj.ntofbins).reshape(sens_sino[i,...].shape +
-                                      (proj.ntofbins,)), subset = i) 
+if track_likelihood:
+  logL = np.zeros(niter)
 
-# run MLEM iterations
 for it in range(niter):
-  for i in range(nsubsets):
-    print(f'iteration {it + 1} subset {i+1}')
-    exp_sino = sens_sino[i,...][...,np.newaxis]*proj.fwd_project(recon, subset = i) + contam_sino[i,...]
-    ratio    = em_sino[i,...] / exp_sino
-    recon *= (proj.back_project(sens_sino[i,...][...,np.newaxis]*ratio, subset = i) / sens_img[i,...]) 
+  for ss in range(nsubsets):
+    x = np.clip(x - T*zbar, 0, None)
 
-    ir.set_data(recon[...,n2//2])
+    # select a random subset
+    i = np.random.randint(0,nsubsets)
+    print(f'iteration {it + 1} subset {i} step {ss}')
+
+    y_plus = y[i,...] + S_i[i,...]*(sens_sino[i,...][...,np.newaxis]*proj.fwd_project(x, subset = i) + contam_sino[i,...])
+
+    # apply the prox for the dual of the poisson logL
+    y_plus = 0.5*(y_plus + 1 - np.sqrt((y_plus - 1)**2 + 4*S_i[i,...]*em_sino[i,...]))
+
+    dz = proj.back_project(sens_sino[i,...][...,np.newaxis]*(y_plus - y[i,...]), subset = i)
+
+    # update variables
+    z = z + dz
+    y[i,...] = y_plus.copy()
+    zbar = z + dz*nsubsets
+
+    ir.set_data(x[...,n2//2])
     ax[1].set_title(f'itertation {it+1} subset {i+1}')
-    ib.set_data(recon[...,n2//2] - img[...,n2//2])
+    ib.set_data(x[...,n2//2] - img[...,n2//2])
     fig.canvas.draw()
-
 
   if track_likelihood:
     exp = np.zeros(img_fwd.shape, dtype = np.float32)
-    for i in range(nsubsets):
-      exp[i,...] = (sens_sino[i,...][...,np.newaxis]*proj.fwd_project(recon, subset = i) + 
-                    contam_sino[i,...])
+    for ii in range(nsubsets):
+      exp[ii,...] = (sens_sino[ii,...][...,np.newaxis]*proj.fwd_project(x, subset = ii) + 
+                    contam_sino[ii,...])
     logL[it] = (exp - em_sino*np.log(exp)).sum()
     print(f'neg logL {logL[it]}')
+
 
 if track_likelihood:
   fig2, ax2 = py.subplots(1,1, figsize = (4,4))
