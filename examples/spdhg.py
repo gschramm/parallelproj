@@ -171,13 +171,16 @@ fig.canvas.draw()
 if track_likelihood:
   logL = np.zeros(niter)
 
-for it in range(niter):
-  for ss in range(nsubsets):
-    x = np.clip(x - T*zbar, 0, None)
+subsets = np.arange(nsubsets)
 
+for it in range(niter):
+  np.random.shuffle(subsets)
+  for ss in range(nsubsets):
     # select a random subset
-    i = np.random.randint(0,nsubsets)
+    i = subsets[ss]
     print(f'iteration {it + 1} subset {i} step {ss}')
+
+    x = np.clip(x - T*zbar, 0, None)
 
     y_plus = y[i,...] + S_i[i,...]*(sens_sino[i,...][...,np.newaxis]*proj.fwd_project(x, subset = i) + contam_sino[i,...])
 

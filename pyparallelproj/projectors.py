@@ -201,6 +201,9 @@ class SinogramProjector(LMProjector):
      containing the voxel size (same units as scanner geometry description)
      Default: np.ones(3)
 
+   random_subset_angles: bool
+     whether to use random or "regular" angular sampling for angular subsets
+
    sigma_tof : float
      standard deviation of the Gaussian TOF kernel in spatial units
      Default: 60/2.35 (FWHM of 6cm, ca 400ps coincidence timing resolution)
@@ -221,7 +224,7 @@ class SinogramProjector(LMProjector):
   """
 
   def __init__(self, scanner, sino_params, img_dim, nsubsets = 1, tof = False,
-                     img_origin = None, voxsize = np.ones(3),
+                     img_origin = None, voxsize = np.ones(3), random_subset_angles = False,
                      sigma_tof = 60./2.35, n_sigmas = 3,
                      threadsperblock = 64, ngpus = 0):
     
@@ -247,6 +250,8 @@ class SinogramProjector(LMProjector):
                   self.iend.reshape(-1,2)).reshape((self.sino_params.nrad, self.sino_params.nviews, 
                                                     self.sino_params.nplanes,3))
 
+    self.random_subset_angles = random_subset_angles
+
     self.init_subsets(nsubsets)
 
   #-----------------------------------------------------------------------------------------------
@@ -259,9 +264,17 @@ class SinogramProjector(LMProjector):
     self.subset_sino_shapes = []
     self.nLORs              = []
 
+    if self.random_subset_angles:
+      subset_table = self.all_views.copy()
+      np.random.shuffle(subset_table)
+      subset_table = subset_table.reshape(nsubsets,-1)
+
     for i in range(self.nsubsets):
       subset_slice = 4*[slice(None,None,None)]
-      subset_slice[self.subset_dir] = slice(i,None,nsubsets)
+      if self.random_subset_angles:
+        subset_slice[self.subset_dir] = subset_table[i,:]
+      else:
+        subset_slice[self.subset_dir] = slice(i,None,nsubsets)
       self.subset_slices.append(tuple(subset_slice))
       self.nLORs.append(np.prod(self.xstart[self.subset_slices[i]].shape[:-1]).astype(np.int32))
 
