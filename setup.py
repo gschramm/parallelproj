@@ -1,20 +1,6 @@
 import setuptools
 import os
 from glob import glob
-import platform
-
-#-----------
-# find all compiled C / CUDA libs
-plt = platform.system()
-
-if plt == 'Linux':
-  lib_files = glob('lib/*.so')
-elif plt == 'Windows':
-  lib_files = glob('lib/*.dll')
-else:
-  raise SystemError(f'{platform.system()} not supported yet.')
-
-#-----------
 
 setuptools.setup(
     name="pyparallelproj",
@@ -34,6 +20,7 @@ setuptools.setup(
     ],
     python_requires='>=3.7',
     install_requires=['numpy>=1.18',
-                      'matplotlib>=3.2.1'],
-    data_files = [('lib', lib_files)]
+                      'matplotlib>=3.2.1',
+                      'numba>=0.49'],
+    include_package_data=True
 )

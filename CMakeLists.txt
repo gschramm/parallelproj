@@ -16,7 +16,7 @@ if(CMAKE_COMPILER_IS_GNUCC)
 endif(CMAKE_COMPILER_IS_GNUCC)
 # we have to add the openmp library to be linked
 target_link_libraries(parallelproj PRIVATE OpenMP::OpenMP_C)
-install(TARGETS parallelproj DESTINATION ${CMAKE_CURRENT_LIST_DIR}/lib)
+install(TARGETS parallelproj DESTINATION ${CMAKE_CURRENT_LIST_DIR}/pyparallelproj/lib)
 
 
 # (2) build the cuda lib
@@ -32,7 +32,7 @@ if(CMAKE_CUDA_COMPILER)
   add_library(parallelproj_cuda SHARED ${CP_SOURCES})
   set_target_properties(parallelproj_cuda PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
   target_include_directories(parallelproj_cuda PRIVATE ${CMAKE_CURRENT_LIST_DIR}/include)
-  install(TARGETS parallelproj_cuda DESTINATION ${CMAKE_CURRENT_LIST_DIR}/lib)
+  install(TARGETS parallelproj_cuda DESTINATION ${CMAKE_CURRENT_LIST_DIR}/pyparallelproj/lib)
 else()
   message("XXXX NO CUDA FOUND -> skipping CUDA lib")
 endif()

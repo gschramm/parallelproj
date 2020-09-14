@@ -14,6 +14,7 @@ For the python bindings:
 - python (tested with v.3.7.6)
 - numpy  (tested with v.1.18.1)
 - matplotlib (tested with v.3.2.1)
+- numba (tested with v.0.49)
 
 ## 1. Installation
 

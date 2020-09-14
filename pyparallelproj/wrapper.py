@@ -9,10 +9,6 @@ ar_1d_int    = npct.ndpointer(dtype = ctypes.c_int,   ndim = 1, flags = 'C')
 ar_1d_short  = npct.ndpointer(dtype = ctypes.c_short, ndim = 1, flags = 'C')
 
 #---- find the compiled C / CUDA libraries
-# we first look into the relative ../lib dir which is needed to support users that
-# work on the C / CUDA libs
-# if they don't exist in the relative ../lib dir, we check the install dir which
-# is relative to sys.prefix
 
 plt = platform.system()
 
@@ -25,13 +21,10 @@ elif plt == 'Windows':
 else:
   raise SystemError(f'{platform.system()} not supprted yet.')
 
-lib_parallelproj_fname = os.path.abspath(os.path.join(os.path.dirname(__file__),'..','lib',fname))
-if not os.path.exists(lib_parallelproj_fname):
-  lib_parallelproj_fname = os.path.join(sys.prefix,'lib',fname)
+lib_parallelproj_fname = os.path.abspath(os.path.join(os.path.dirname(__file__),'lib',fname))
 
-lib_parallelproj_cuda_fname = os.path.abspath(os.path.join(os.path.dirname(__file__),'..','lib',fname_cuda))
-if not os.path.exists(lib_parallelproj_cuda_fname):
-  lib_parallelproj_cuda_fname = os.path.join(sys.prefix,'lib',fname_cuda)
+lib_parallelproj_cuda_fname = os.path.abspath(os.path.join(os.path.dirname(__file__),'lib',fname_cuda))
+
 #-----
 
 if os.path.exists(lib_parallelproj_fname):
