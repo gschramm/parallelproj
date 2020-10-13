@@ -12,8 +12,6 @@ import pyparallelproj as ppp
 import numpy as np
 import argparse
 
-from pymirc.image_operations import grad, div
-
 #---------------------------------------------------------------------------------
 # parse the command line
 
