@@ -3,7 +3,7 @@
 # randomization and preconditioning"
 
 # open questions:
-# (1) tuning of gamma vs counts -> 1/img.max() 1e4/counts
+# (1) tuning of gamma vs counts -> 1/img.max() -> 1e4/counts for ||A|| = 1
 # (2) random vs ordered subsets
 
 import os
@@ -52,7 +52,7 @@ n1      = 120
 n2      = max(1,int((scanner.xc2.max() - scanner.xc2.min()) / voxsize[2]))
 
 
-# setup a random image
+# setup a test image to be reconstructed
 img = np.zeros((n0,n1,n2), dtype = np.float32)
 img[(n0//4):(3*n0//4),(n1//4):(3*n1//4),:] = 1
 img_origin = (-(np.array(img.shape) / 2) +  0.5) * voxsize
@@ -71,7 +71,9 @@ img_fwd    = np.zeros((nsubsets, sino_shape[0], sino_shape[1] // nsubsets, sino_
 
 #---------------------------------------------------------------------------
 #---------------------------------------------------------------------------
+
 # power iterations to estimate the norm of one subset fwd + back projection
+# of the raw projector
 
 test_img = np.random.rand(*img.shape).astype(np.float32)
 for pi in range(20):
@@ -81,8 +83,8 @@ for pi in range(20):
   
   test_img = back / norm
 
+# calculate the norm of the full projector
 pr_norm = np.sqrt(nsubsets*norm)
-
 
 #---------------------------------------------------------------------------
 #---------------------------------------------------------------------------
@@ -90,6 +92,7 @@ pr_norm = np.sqrt(nsubsets*norm)
 
 # generate sensitity sinogram (product from attenuation and normalization sinogram)
 # this sinogram is usually non TOF!
+# we scale the sensitivity sinogram such that the norm of the projector is approx. 1
 sens_sino = np.full(img_fwd.shape[:-1], 1./pr_norm, dtype = np.float32)
 
 # forward project the image
@@ -122,7 +125,8 @@ else:
 # SPDHG algorithm
 
 rho   = 0.999
-gamma = 1.9e4/counts
+
+gamma = 1./img.max()
 
 # calculate the "step sizes" S_i, T_i  for the projector
 S_i = np.zeros(img_fwd.shape, dtype = np.float32)
@@ -193,7 +197,7 @@ fig, ax = py.subplots(1,3, figsize = (12,4))
 ax[0].imshow(img[...,n2//2],   vmin = 0, vmax = 1.3*img.max(), cmap = py.cm.Greys)
 ax[0].set_title('ground truth')
 ir = ax[1].imshow(x[...,n2//2], vmin = 0, vmax = 1.3*img.max(), cmap = py.cm.Greys)
-ax[1].set_title('intial x')
+ax[1].set_title('reconstruction')
 ib = ax[2].imshow(x[...,n2//2] - img[...,n2//2], vmin = -0.2*img.max(), vmax = 0.2*img.max(), 
                   cmap = py.cm.bwr)
 ax[2].set_title('bias')
