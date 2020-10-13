@@ -5,12 +5,15 @@
 # open questions:
 # (1) tuning of gamma vs counts -> 1/img.max() -> 1e4/counts for ||A|| = 1
 # (2) random vs ordered subsets
+# (3) how often to do gradient update vs projection update
 
 import os
 import matplotlib.pyplot as py
 import pyparallelproj as ppp
 import numpy as np
 import argparse
+
+from pymirc.image_operations import grad, div
 
 #---------------------------------------------------------------------------------
 # parse the command line
@@ -21,7 +24,8 @@ parser.add_argument('--counts',    help = 'counts to simulate',    default = 1e6
 parser.add_argument('--niter',     help = 'number of iterations',  default = 10,  type = int)
 parser.add_argument('--nsubsets',  help = 'number of subsets',     default = 28,  type = int)
 parser.add_argument('--likeli',    help = 'calc logLikelihodd',    action = 'store_true')
-parser.add_argument('--scat_frac', help = 'scatter fraction',      default = 0.2, type = float)
+parser.add_argument('--beta',      help = 'beta for TV',           default = 1e-2, type = float)
+parser.add_argument('--scat_frac', help = 'scatter fraction',      default = 0.2,  type = float)
 args = parser.parse_args()
 
 #---------------------------------------------------------------------------------
@@ -30,6 +34,7 @@ ngpus     = args.ngpus
 counts    = args.counts
 niter     = args.niter
 nsubsets  = args.nsubsets
+beta      = args.beta
 track_likelihood = args.likeli
 scat_frac = args.scat_frac
 
@@ -81,6 +86,9 @@ for pi in range(20):
 
 # calculate the norm of the full projector
 pr_norm = np.sqrt(nsubsets*norm)
+
+# norm of the gradient operator = sqrt(ndim*4)
+grad_norm = np.sqrt(2*4)
 
 #---------------------------------------------------------------------------
 #---------------------------------------------------------------------------
@@ -134,9 +142,15 @@ for i in range(nsubsets):
 # clip inf values
 S_i[S_i == np.inf] = S_i[S_i != np.inf].max()
 
-T_i = np.zeros((nsubsets,) + img.shape, dtype = np.float32)
+# calculate S for the gradient operator
+S_g = (gamma*rho/grad_norm)
+
+T_i = np.zeros((nsubsets + 1,) + img.shape, dtype = np.float32)
 for i in range(nsubsets):
-  T_i[i,...] = (rho/(nsubsets*gamma)) / proj.back_project(sens_sino[i,...].repeat(proj.ntofbins).reshape(sens_sino[i,...].shape + (proj.ntofbins,)), subset = i) 
+  T_i[i,...] = (rho/(2*nsubsets*gamma)) / proj.back_project(sens_sino[i,...].repeat(proj.ntofbins).reshape(sens_sino[i,...].shape + (proj.ntofbins,)), subset = i) 
+
+# calculate T for the gradient operator
+T_i[-1,...] = (rho/(2*gamma*grad_norm))*np.ones(img.shape, dtype = np.float32)
 
 # take the element-wise min of the T_i's of all subsets
 T = T_i.min(axis = 0)
@@ -147,6 +161,11 @@ x  = np.zeros(img.shape, dtype = np.float32)
 z      = np.zeros(img.shape, dtype = np.float32)
 zbar   = np.zeros(img.shape, dtype = np.float32)
 y      = np.zeros(img_fwd.shape, dtype = np.float32)
+
+# allocate arrays for gradient operations
+x_grad      = np.zeros((img.ndim,) + img.shape, dtype = np.float32)
+y_grad      = np.zeros((img.ndim,) + img.shape, dtype = np.float32)
+y_grad_plus = np.zeros((img.ndim,) + img.shape, dtype = np.float32)
 
 if track_likelihood:
   logL = np.zeros(niter)
@@ -159,20 +178,39 @@ for iupdate in range(niter*nsubsets):
   x = np.clip(x - T*zbar, 0, None)
 
   # select a random subset
-  i = np.random.randint(nsubsets)
-  print(f'iteration {it + 1} step {ss} subset {i}')
+  # with a probability of 0.5 we do a gradient update, otherwise a subset update
+  i = np.random.randint(2*nsubsets)
+  if (i < nsubsets):
+    print(f'iteration {it + 1} step {ss} subset {i}')
 
-  y_plus = y[i,...] + S_i[i,...]*(sens_sino[i,...][...,np.newaxis]*proj.fwd_project(x, subset = i) + contam_sino[i,...])
+    y_plus = y[i,...] + S_i[i,...]*(sens_sino[i,...][...,np.newaxis]*proj.fwd_project(x, subset = i) + contam_sino[i,...])
 
-  # apply the prox for the dual of the poisson logL
-  y_plus = 0.5*(y_plus + 1 - np.sqrt((y_plus - 1)**2 + 4*S_i[i,...]*em_sino[i,...]))
+    # apply the prox for the dual of the poisson logL
+    y_plus = 0.5*(y_plus + 1 - np.sqrt((y_plus - 1)**2 + 4*S_i[i,...]*em_sino[i,...]))
 
-  dz = proj.back_project(sens_sino[i,...][...,np.newaxis]*(y_plus - y[i,...]), subset = i)
+    dz = proj.back_project(sens_sino[i,...][...,np.newaxis]*(y_plus - y[i,...]), subset = i)
 
-  # update variables
-  z = z + dz
-  y[i,...] = y_plus.copy()
-  zbar = z + dz*nsubsets
+    # update variables
+    z = z + dz
+    y[i,...] = y_plus.copy()
+    zbar = z + dz*2*nsubsets
+  else:
+    print(f'iteration {it + 1} step {ss} gradient update')
+
+    grad(x, x_grad)
+    y_grad_plus = (y_grad + S_g*x_grad).reshape(img.ndim,-1)
+
+    # proximity operator for dual of TV
+    gnorm = np.linalg.norm(y_grad_plus, axis = 0)
+    y_grad_plus /= np.maximum(np.ones(gnorm.shape, np.float32), gnorm / beta)
+    y_grad_plus = y_grad_plus.reshape(x_grad.shape)
+
+    dz = -1*div(y_grad_plus - y_grad)
+
+    # update variables
+    z = z + dz
+    y_grad = y_grad_plus.copy()
+    zbar = z + dz*2
 
   # calculate the likelihood
   if track_likelihood and ss == (nsubsets - 1):
@@ -181,7 +219,9 @@ for iupdate in range(niter*nsubsets):
       exp[ii,...] = (sens_sino[ii,...][...,np.newaxis]*proj.fwd_project(x, subset = ii) + 
                      contam_sino[ii,...])
 
-    logL[it] = (exp - em_sino*np.log(exp)).sum()
+    grad(x, x_grad)
+
+    logL[it] = (exp - em_sino*np.log(exp)).sum() + beta*np.linalg.norm(x_grad, axis = 0).sum()
     print(f'neg logL {logL[it]}')
 
 
