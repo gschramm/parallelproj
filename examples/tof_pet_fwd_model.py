@@ -22,7 +22,6 @@ def pet_back_model(subset_sino, proj, attn_sino, sens_sino, isub, fwhm_mm = 0):
   if fwhm_mm > 0:
     back_img = gaussian_filter(back_img, fwhm_mm/(2.35*voxsize))
 
-
   return back_img
 
 #---------------------------------------------------------------------------------

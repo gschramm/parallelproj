@@ -6,15 +6,39 @@ import pyparallelproj as ppp
 import numpy as np
 import argparse
 
+from scipy.ndimage import gaussian_filter
+
+#---------------------------------------------------------------------------------
+def pet_fwd_model(img, proj, attn_sino, sens_sino, isub, fwhm_mm = 0):
+
+  if fwhm_mm > 0:
+    img = gaussian_filter(img, fwhm_mm/(2.35*voxsize))
+
+  sino = sens_sino[isub, ...]*attn_sino[isub, ...]*proj.fwd_project(img, subset = isub)
+
+  return sino
+
+#---------------------------------------------------------------------------------
+def pet_back_model(subset_sino, proj, attn_sino, sens_sino, isub, fwhm_mm = 0):
+
+  back_img = proj.back_project(sens_sino[isub, ...]*attn_sino[isub, ...]*subset_sino, subset = isub)
+
+  if fwhm_mm > 0:
+    back_img = gaussian_filter(back_img, fwhm_mm/(2.35*voxsize))
+
+  return back_img
+
+
 #---------------------------------------------------------------------------------
 # parse the command line
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--ngpus',    help = 'number of GPUs to use', default = 0,   type = int)
-parser.add_argument('--counts',   help = 'counts to simulate',    default = 1e5, type = float)
-parser.add_argument('--niter',    help = 'number of iterations',  default = 5,   type = int)
+parser.add_argument('--counts',   help = 'counts to simulate',    default = 1e6, type = float)
+parser.add_argument('--niter',    help = 'number of iterations',  default = 4,   type = int)
 parser.add_argument('--nsubsets', help = 'number of subsets',     default = 28,  type = int)
 parser.add_argument('--likeli',   help = 'calc logLikelihodd',    action = 'store_true')
+parser.add_argument('--fwhm_mm',  help = 'psf modeling FWHM mm',  default = 4.5, type = float)
 args = parser.parse_args()
 
 #---------------------------------------------------------------------------------
@@ -23,6 +47,7 @@ ngpus     = args.ngpus
 counts    = args.counts
 niter     = args.niter
 nsubsets  = args.nsubsets
+fwhm_mm   = args.fwhm_mm
 track_likelihood = args.likeli
 
 #---------------------------------------------------------------------------------
@@ -45,7 +70,26 @@ img = np.zeros((n0,n1,n2), dtype = np.float32)
 img[(n0//4):(3*n0//4),(n1//4):(3*n1//4),:] = 1
 img_origin = (-(np.array(img.shape) / 2) +  0.5) * voxsize
 
-# generate sinogram parameters and the projector
+# setup an attenuation image
+att_img = (img > 0) * 0.01 * voxsize[0]
+
+# generate nonTOF sinogram parameters and the nonTOF projector for attenuation projection
+sino_params_nt = ppp.PETSinogramParameters(scanner)
+proj_nt        = ppp.SinogramProjector(scanner, sino_params_nt, img.shape, nsubsets = nsubsets, 
+                                    voxsize = voxsize, img_origin = img_origin, ngpus = ngpus)
+sino_shape_nt  = sino_params_nt.shape
+
+attn_sino = np.zeros((nsubsets, sino_shape_nt[0], sino_shape_nt[1] // nsubsets, 
+                      sino_shape_nt[2], sino_shape_nt[3]), dtype = np.float32)
+
+for i in range(nsubsets):
+    attn_sino[i, ...] = np.exp(-proj_nt.fwd_project(att_img, subset=i))
+
+# generate the sensitivity sinogram
+sens_sino = np.ones((nsubsets, sino_shape_nt[0], sino_shape_nt[1] // nsubsets, 
+                      sino_shape_nt[2], sino_shape_nt[3]), dtype = np.float32)
+
+# generate TOF sinogram parameters and the TOF projector
 sino_params = ppp.PETSinogramParameters(scanner, ntofbins = 17, tofbin_width = 15.)
 proj        = ppp.SinogramProjector(scanner, sino_params, img.shape, nsubsets = nsubsets, 
                                     voxsize = voxsize, img_origin = img_origin, ngpus = ngpus,
@@ -53,17 +97,12 @@ proj        = ppp.SinogramProjector(scanner, sino_params, img.shape, nsubsets = 
 
 # allocate array for the subset sinogram
 sino_shape = sino_params.shape
-img_fwd    = np.zeros((nsubsets, sino_shape[0], sino_shape[1] // nsubsets, sino_shape[2], sino_shape[3]),
-                      dtype = np.float32)
+img_fwd    = np.zeros((nsubsets, sino_shape[0], sino_shape[1] // nsubsets, sino_shape[2], 
+                       sino_shape[3]), dtype = np.float32)
 
 # forward project the image
 for i in range(nsubsets):
-  img_fwd[i,...] = proj.fwd_project(img, subset = i)
-
-# generate sensitity sinogram (product from attenuation and normalization sinogram)
-# this sinogram is usually non TOF!
-# to keep it simple we just generate a TOF sinogram
-sens_sino = np.ones(img_fwd.shape[:-1], dtype = np.float32)
+  img_fwd[i,...] = pet_fwd_model(img, proj, attn_sino, sens_sino, i, fwhm_mm = fwhm_mm)
 
 # scale sum of fwd image to counts
 if counts > 0:
@@ -75,7 +114,7 @@ if counts > 0:
   # useful to avoid division by 0 in the ratio of data and exprected data
   contam_sino = np.full(img_fwd.shape, 0.2*img_fwd.mean(), dtype = np.float32)
   
-  em_sino = np.random.poisson(sens_sino[...,np.newaxis]*img_fwd + contam_sino)
+  em_sino = np.random.poisson(img_fwd + contam_sino)
 else:
   scale_fac = 1.
 
@@ -83,7 +122,7 @@ else:
   # useful to avoid division by 0 in the ratio of data and exprected data
   contam_sino = np.full(img_fwd.shape, 0.2*img_fwd.mean(), dtype = np.float32)
 
-  em_sino = sens_sino[...,np.newaxis]*img_fwd + contam_sino
+  em_sino = img_fwd + contam_sino
 
 #-------------------------------------------------------------------------------------
 #-------------------------------------------------------------------------------------
@@ -108,19 +147,21 @@ fig.tight_layout()
 fig.canvas.draw()
 
 # calculate the sensitivity images for each subset
-sens_img = np.zeros((nsubsets,) + img.shape, dtype = np.float32)
+sens_img  = np.zeros((nsubsets,) + img.shape, dtype = np.float32)
+ones_sino = np.ones((sino_shape[0], sino_shape[1] // nsubsets, sino_shape[2], 
+                     sino_shape[3]), dtype = np.float32)
+
 for i in range(nsubsets):
-  sens_img[i,...] = proj.back_project(sens_sino[i,...].repeat(proj.ntofbins).reshape(sens_sino[i,...].shape +
-                                      (proj.ntofbins,)), subset = i) 
+  sens_img[i,...] = pet_back_model(ones_sino, proj, attn_sino, sens_sino, i, fwhm_mm = fwhm_mm)
 
 # run MLEM iterations
 for it in range(niter):
   for i in range(nsubsets):
     print(f'iteration {it + 1} subset {i+1}')
-    exp_sino = sens_sino[i,...][...,np.newaxis]*proj.fwd_project(recon, subset = i) + contam_sino[i,...]
-    ratio    = em_sino[i,...] / exp_sino
-    recon *= (proj.back_project(sens_sino[i,...][...,np.newaxis]*ratio, subset = i) / sens_img[i,...]) 
-
+    exp_sino = pet_fwd_model(recon, proj, attn_sino, sens_sino, i, fwhm_mm = fwhm_mm) + contam_sino[i,...]
+    ratio  = em_sino[i,...] / exp_sino
+    recon *= (pet_back_model(ratio, proj, attn_sino, sens_sino, i, fwhm_mm = fwhm_mm) / sens_img[i,...]) 
+    
     ir.set_data(recon[...,n2//2])
     ax[1].set_title(f'itertation {it+1} subset {i+1}')
     ib.set_data(recon[...,n2//2] - img[...,n2//2])
@@ -130,8 +171,7 @@ for it in range(niter):
   if track_likelihood:
     exp = np.zeros(img_fwd.shape, dtype = np.float32)
     for i in range(nsubsets):
-      exp[i,...] = (sens_sino[i,...][...,np.newaxis]*proj.fwd_project(recon, subset = i) + 
-                    contam_sino[i,...])
+      exp[i,...] = pet_fwd_model(recon, proj, attn_sino, sens_sino, i, fwhm_mm = fwhm_mm) + contam_sino[i,...]
     logL[it] = (exp - em_sino*np.log(exp)).sum()
     print(f'neg logL {logL[it]}')
 
