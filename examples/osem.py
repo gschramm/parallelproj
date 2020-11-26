@@ -9,25 +9,24 @@ import argparse
 from scipy.ndimage import gaussian_filter
 
 #---------------------------------------------------------------------------------
-def pet_fwd_model(img, proj, attn_sino, sens_sino, isub, fwhm_mm = 0):
+def pet_fwd_model(img, proj, attn_sino, sens_sino, isub, fwhm = 0):
 
-  if fwhm_mm > 0:
-    img = gaussian_filter(img, fwhm_mm/(2.35*voxsize))
+  if np.any(fwhm > 0):
+    img = gaussian_filter(img, fwhm/2.35)
 
   sino = sens_sino[isub, ...]*attn_sino[isub, ...]*proj.fwd_project(img, subset = isub)
 
   return sino
 
 #---------------------------------------------------------------------------------
-def pet_back_model(subset_sino, proj, attn_sino, sens_sino, isub, fwhm_mm = 0):
+def pet_back_model(subset_sino, proj, attn_sino, sens_sino, isub, fwhm = 0):
 
   back_img = proj.back_project(sens_sino[isub, ...]*attn_sino[isub, ...]*subset_sino, subset = isub)
 
-  if fwhm_mm > 0:
-    back_img = gaussian_filter(back_img, fwhm_mm/(2.35*voxsize))
+  if np.any(fwhm > 0):
+    back_img = gaussian_filter(back_img, fwhm/2.35)
 
   return back_img
-
 
 #---------------------------------------------------------------------------------
 # parse the command line
@@ -35,19 +34,21 @@ def pet_back_model(subset_sino, proj, attn_sino, sens_sino, isub, fwhm_mm = 0):
 parser = argparse.ArgumentParser()
 parser.add_argument('--ngpus',    help = 'number of GPUs to use', default = 0,   type = int)
 parser.add_argument('--counts',   help = 'counts to simulate',    default = 1e6, type = float)
-parser.add_argument('--niter',    help = 'number of iterations',  default = 4,   type = int)
+parser.add_argument('--niter',    help = 'number of iterations',  default = 2,   type = int)
 parser.add_argument('--nsubsets', help = 'number of subsets',     default = 28,  type = int)
 parser.add_argument('--likeli',   help = 'calc logLikelihodd',    action = 'store_true')
 parser.add_argument('--fwhm_mm',  help = 'psf modeling FWHM mm',  default = 4.5, type = float)
+parser.add_argument('--fwhm_data_mm',  help = 'psf for data FWHM mm',  default = 4.5, type = float)
 args = parser.parse_args()
 
 #---------------------------------------------------------------------------------
 
-ngpus     = args.ngpus
-counts    = args.counts
-niter     = args.niter
-nsubsets  = args.nsubsets
-fwhm_mm   = args.fwhm_mm
+ngpus            = args.ngpus
+counts           = args.counts
+niter            = args.niter
+nsubsets         = args.nsubsets
+fwhm_mm          = args.fwhm_mm
+fwhm_data_mm     = args.fwhm_data_mm
 track_likelihood = args.likeli
 
 #---------------------------------------------------------------------------------
@@ -64,6 +65,9 @@ n0      = 120
 n1      = 120
 n2      = max(1,int((scanner.xc2.max() - scanner.xc2.min()) / voxsize[2]))
 
+# convert fwhm from mm to pixels
+fwhm      = fwhm_mm / voxsize
+fwhm_data = fwhm_data_mm / voxsize
 
 # setup a random image
 img = np.zeros((n0,n1,n2), dtype = np.float32)
@@ -102,7 +106,7 @@ img_fwd    = np.zeros((nsubsets, sino_shape[0], sino_shape[1] // nsubsets, sino_
 
 # forward project the image
 for i in range(nsubsets):
-  img_fwd[i,...] = pet_fwd_model(img, proj, attn_sino, sens_sino, i, fwhm_mm = fwhm_mm)
+  img_fwd[i,...] = pet_fwd_model(img, proj, attn_sino, sens_sino, i, fwhm = fwhm_data)
 
 # scale sum of fwd image to counts
 if counts > 0:
@@ -152,15 +156,15 @@ ones_sino = np.ones((sino_shape[0], sino_shape[1] // nsubsets, sino_shape[2],
                      sino_shape[3]), dtype = np.float32)
 
 for i in range(nsubsets):
-  sens_img[i,...] = pet_back_model(ones_sino, proj, attn_sino, sens_sino, i, fwhm_mm = fwhm_mm)
+  sens_img[i,...] = pet_back_model(ones_sino, proj, attn_sino, sens_sino, i, fwhm = fwhm)
 
 # run MLEM iterations
 for it in range(niter):
   for i in range(nsubsets):
     print(f'iteration {it + 1} subset {i+1}')
-    exp_sino = pet_fwd_model(recon, proj, attn_sino, sens_sino, i, fwhm_mm = fwhm_mm) + contam_sino[i,...]
+    exp_sino = pet_fwd_model(recon, proj, attn_sino, sens_sino, i, fwhm = fwhm) + contam_sino[i,...]
     ratio  = em_sino[i,...] / exp_sino
-    recon *= (pet_back_model(ratio, proj, attn_sino, sens_sino, i, fwhm_mm = fwhm_mm) / sens_img[i,...]) 
+    recon *= (pet_back_model(ratio, proj, attn_sino, sens_sino, i, fwhm = fwhm) / sens_img[i,...]) 
     
     ir.set_data(recon[...,n2//2])
     ax[1].set_title(f'itertation {it+1} subset {i+1}')
@@ -171,7 +175,7 @@ for it in range(niter):
   if track_likelihood:
     exp = np.zeros(img_fwd.shape, dtype = np.float32)
     for i in range(nsubsets):
-      exp[i,...] = pet_fwd_model(recon, proj, attn_sino, sens_sino, i, fwhm_mm = fwhm_mm) + contam_sino[i,...]
+      exp[i,...] = pet_fwd_model(recon, proj, attn_sino, sens_sino, i, fwhm = fwhm) + contam_sino[i,...]
     logL[it] = (exp - em_sino*np.log(exp)).sum()
     print(f'neg logL {logL[it]}')
 
