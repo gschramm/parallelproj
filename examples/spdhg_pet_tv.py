@@ -204,6 +204,7 @@ fig.canvas.draw()
 
 for it in range(niter):
   subset_sequence = np.random.permutation(np.arange(2*nsubsets))
+
   for ss in range(2*nsubsets):
     # select a random subset
     i = subset_sequence[ss]
@@ -249,7 +250,7 @@ for it in range(niter):
     fig.canvas.draw()
 
     # calculate the likelihood
-    if track_likelihood and ss == (nsubsets - 1):
+    if track_likelihood and ss == (2*nsubsets - 1):
       exp = np.zeros(img_fwd.shape, dtype = np.float32)
       for ii in range(nsubsets):
         exp[ii,...] = ppp.pet_fwd_model(x, proj, attn_sino, sens_sino, ii, fwhm = fwhm)+contam_sino[ii,...]
