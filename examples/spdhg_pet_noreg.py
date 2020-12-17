@@ -7,7 +7,7 @@
 # (2) random vs ordered subsets
 
 import os
-import matplotlib.pyplot as py
+import matplotlib.pyplot as plt
 import pyparallelproj as ppp
 import numpy as np
 import argparse
@@ -172,15 +172,28 @@ y      = np.zeros(img_fwd.shape, dtype = np.float32)
 if track_likelihood:
   logL = np.zeros(niter)
 
+plt.ion()
+fig, ax = plt.subplots(1,3, figsize = (12,4))
+ax[0].imshow(img[...,n2//2],   vmin = 0, vmax = 1.3*img.max(), cmap = plt.cm.Greys)
+ax[0].set_title('ground truth')
+ir = ax[1].imshow(x[...,n2//2], vmin = 0, vmax = 1.3*img.max(), cmap = plt.cm.Greys)
+ax[1].set_title('intial recon')
+ib = ax[2].imshow(x[...,n2//2] - img[...,n2//2], vmin = -0.2*img.max(), vmax = 0.2*img.max(), 
+                  cmap = plt.cm.bwr)
+ax[2].set_title('bias')
+fig.tight_layout()
+fig.canvas.draw()
+
+
 for iupdate in range(niter*nsubsets):
   it = iupdate // nsubsets
   ss = iupdate % nsubsets
 
-  x = np.clip(x - T*zbar, 0, None)
-
   # select a random subset
   i = np.random.randint(nsubsets)
   print(f'iteration {it + 1} step {ss} subset {i}')
+
+  x = np.clip(x - T*zbar, 0, None)
 
   y_plus = y[i,...] + S_i[i,...]*ppp.pet_fwd_model(x, proj, attn_sino, sens_sino, i, fwhm = fwhm) + contam_sino[i,...]
 
@@ -194,6 +207,11 @@ for iupdate in range(niter*nsubsets):
   y[i,...] = y_plus.copy()
   zbar = z + dz*nsubsets
 
+  ir.set_data(x[...,n2//2])
+  ax[1].set_title(f'itertation {it+1} update {ss+1}')
+  ib.set_data(x[...,n2//2] - img[...,n2//2])
+  fig.canvas.draw()
+
   # calculate the likelihood
   if track_likelihood and ss == (nsubsets - 1):
     exp = np.zeros(img_fwd.shape, dtype = np.float32)
@@ -206,22 +224,8 @@ for iupdate in range(niter*nsubsets):
 
 #--------------------------------------------------------------------------------------------------
 
-# show plots
-
-fig, ax = py.subplots(1,3, figsize = (12,4))
-ax[0].imshow(img[...,n2//2],   vmin = 0, vmax = 1.3*img.max(), cmap = py.cm.Greys)
-ax[0].set_title('ground truth')
-ir = ax[1].imshow(x[...,n2//2], vmin = 0, vmax = 1.3*img.max(), cmap = py.cm.Greys)
-ax[1].set_title('reconstruction')
-ib = ax[2].imshow(x[...,n2//2] - img[...,n2//2], vmin = -0.2*img.max(), vmax = 0.2*img.max(), 
-                  cmap = py.cm.bwr)
-ax[2].set_title('bias')
-fig.tight_layout()
-fig.show()
-
-
 if track_likelihood:
-  fig2, ax2 = py.subplots(1,1, figsize = (4,4))
+  fig2, ax2 = plt.subplots(1,1, figsize = (4,4))
   ax2.plot(np.arange(niter) + 1, logL)
   fig2.tight_layout()
   fig2.show()
