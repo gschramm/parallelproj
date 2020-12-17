@@ -184,42 +184,40 @@ ax[2].set_title('bias')
 fig.tight_layout()
 fig.canvas.draw()
 
+for it in range(niter):
+  subset_sequence = np.random.permutation(np.arange(nsubsets))
+  for ss in range(nsubsets):
+    # select a random subset
+    i = subset_sequence[ss]
+    print(f'iteration {it + 1} step {ss} subset {i}')
 
-for iupdate in range(niter*nsubsets):
-  it = iupdate // nsubsets
-  ss = iupdate % nsubsets
+    x = np.clip(x - T*zbar, 0, None)
 
-  # select a random subset
-  i = np.random.randint(nsubsets)
-  print(f'iteration {it + 1} step {ss} subset {i}')
+    y_plus = y[i,...] + S_i[i,...]*(ppp.pet_fwd_model(x, proj, attn_sino, sens_sino, i, fwhm = fwhm) + contam_sino[i,...])
 
-  x = np.clip(x - T*zbar, 0, None)
+    # apply the prox for the dual of the poisson logL
+    y_plus = 0.5*(y_plus + 1 - np.sqrt((y_plus - 1)**2 + 4*S_i[i,...]*em_sino[i,...]))
 
-  y_plus = y[i,...] + S_i[i,...]*ppp.pet_fwd_model(x, proj, attn_sino, sens_sino, i, fwhm = fwhm) + contam_sino[i,...]
+    dz = ppp.pet_back_model(y_plus - y[i,...], proj, attn_sino, sens_sino, i, fwhm = fwhm)
 
-  # apply the prox for the dual of the poisson logL
-  y_plus = 0.5*(y_plus + 1 - np.sqrt((y_plus - 1)**2 + 4*S_i[i,...]*em_sino[i,...]))
+    # update variables
+    z = z + dz
+    y[i,...] = y_plus.copy()
+    zbar = z + dz*nsubsets
 
-  dz = ppp.pet_back_model(y_plus - y[i,...], proj, attn_sino, sens_sino, i, fwhm = fwhm)
+    ir.set_data(x[...,n2//2])
+    ax[1].set_title(f'itertation {it+1} update {ss+1}')
+    ib.set_data(x[...,n2//2] - img[...,n2//2])
+    fig.canvas.draw()
 
-  # update variables
-  z = z + dz
-  y[i,...] = y_plus.copy()
-  zbar = z + dz*nsubsets
+    # calculate the likelihood
+    if track_likelihood and ss == (nsubsets - 1):
+      exp = np.zeros(img_fwd.shape, dtype = np.float32)
+      for ii in range(nsubsets):
+        exp[ii,...] = ppp.pet_fwd_model(x, proj, attn_sino, sens_sino, ii, fwhm = fwhm)+contam_sino[ii,...]
 
-  ir.set_data(x[...,n2//2])
-  ax[1].set_title(f'itertation {it+1} update {ss+1}')
-  ib.set_data(x[...,n2//2] - img[...,n2//2])
-  fig.canvas.draw()
-
-  # calculate the likelihood
-  if track_likelihood and ss == (nsubsets - 1):
-    exp = np.zeros(img_fwd.shape, dtype = np.float32)
-    for ii in range(nsubsets):
-      exp[ii,...] = ppp.pet_fwd_model(x, proj, attn_sino, sens_sino, ii, fwhm = fwhm)+contam_sino[ii,...]
-
-    logL[it] = (exp - em_sino*np.log(exp)).sum()
-    print(f'neg logL {logL[it]}')
+      logL[it] = (exp - em_sino*np.log(exp)).sum()
+      print(f'neg logL {logL[it]}')
 
 
 #--------------------------------------------------------------------------------------------------
