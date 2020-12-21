@@ -6,7 +6,7 @@ import pyparallelproj as ppp
 import numpy as np
 import argparse
 
-from algorithms import osem
+from algorithms import osem, spdhg
 
 #---------------------------------------------------------------------------------
 # parse the command line
@@ -19,6 +19,7 @@ parser.add_argument('--nsubsets', help = 'number of subsets',     default = 28, 
 parser.add_argument('--likeli',   help = 'calc logLikelihodd',    action = 'store_true')
 parser.add_argument('--fwhm_mm',  help = 'psf modeling FWHM mm',  default = 4.5, type = float)
 parser.add_argument('--fwhm_data_mm',  help = 'psf for data FWHM mm',  default = 4.5, type = float)
+parser.add_argument('--gamma',     help = 'gamma parameter',       default = 1., type = float)
 args = parser.parse_args()
 
 #---------------------------------------------------------------------------------
@@ -113,9 +114,11 @@ else:
 #--- OS-MLEM reconstruction
 
 if track_likelihood:
-  cost = np.zeros(niter)
+  cost_osem  = np.zeros(niter)
+  cost_spdhg = np.zeros(niter)
 else:
-  cost = None
+  cost_osem  = None
+  cost_spdhg = None
 
 plt.ion()
 fig, ax = plt.subplots(1,3, figsize = (12,4))
@@ -134,11 +137,16 @@ def _cb(x):
   ib.set_data(x[...,n2//2] - img[...,n2//2])
   fig.canvas.draw()
 
-recon = osem(em_sino, attn_sino, sens_sino, contam_sino, proj, niter, nsubsets, 
-             fwhm = fwhm, cost = cost, verbose = True, callback = _cb)
+recon_osem = osem(em_sino, attn_sino, sens_sino, contam_sino, proj, niter, nsubsets, 
+                  fwhm = fwhm, cost = cost_osem, verbose = True, callback = _cb)
+
+recon_spdhg = spdhg(em_sino, attn_sino, sens_sino, contam_sino, proj, niter, nsubsets, 
+                    gamma = args.gamma/img.max(), fwhm = fwhm, cost = cost_spdhg, verbose = True, 
+                    callback = _cb)
 
 if track_likelihood:
   fig2, ax2 = plt.subplots(1,1, figsize = (4,4))
-  ax2.plot(np.arange(niter) + 1, cost)
+  ax2.plot(np.arange(niter) + 1, cost_osem)
+  ax2.plot(np.arange(niter) + 1, cost_spdhg)
   fig2.tight_layout()
   fig2.show()            
