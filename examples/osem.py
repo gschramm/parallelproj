@@ -1,10 +1,12 @@
 # small demo for sinogram TOF OS-MLEM
 
 import os
-import matplotlib.pyplot as py
+import matplotlib.pyplot as plt
 import pyparallelproj as ppp
 import numpy as np
 import argparse
+
+from algorithms import osem
 
 #---------------------------------------------------------------------------------
 # parse the command line
@@ -110,55 +112,33 @@ else:
 #-------------------------------------------------------------------------------------
 #--- OS-MLEM reconstruction
 
-# initialize recon
-recon = np.full((n0,n1,n2), em_sino.sum() / (n0*n1*n2), dtype = np.float32)
-
 if track_likelihood:
-  logL = np.zeros(niter)
+  cost = np.zeros(niter)
+else:
+  cost = None
 
-py.ion()
-fig, ax = py.subplots(1,3, figsize = (12,4))
-ax[0].imshow(img[...,n2//2],   vmin = 0, vmax = 1.3*img.max(), cmap = py.cm.Greys)
+plt.ion()
+fig, ax = plt.subplots(1,3, figsize = (12,4))
+ax[0].imshow(img[...,n2//2],   vmin = 0, vmax = 1.3*img.max(), cmap = plt.cm.Greys)
 ax[0].set_title('ground truth')
-ir = ax[1].imshow(recon[...,n2//2], vmin = 0, vmax = 1.3*img.max(), cmap = py.cm.Greys)
-ax[1].set_title('intial recon')
-ib = ax[2].imshow(recon[...,n2//2] - img[...,n2//2], vmin = -0.2*img.max(), vmax = 0.2*img.max(), 
-                  cmap = py.cm.bwr)
+ir = ax[1].imshow(0*img[...,n2//2], vmin = 0, vmax = 1.3*img.max(), cmap = plt.cm.Greys)
+ax[1].set_title('recon')
+ib = ax[2].imshow(img[...,n2//2] - img[...,n2//2], vmin = -0.2*img.max(), vmax = 0.2*img.max(), 
+                  cmap = plt.cm.bwr)
 ax[2].set_title('bias')
 fig.tight_layout()
 fig.canvas.draw()
 
-# calculate the sensitivity images for each subset
-sens_img  = np.zeros((nsubsets,) + img.shape, dtype = np.float32)
-ones_sino = np.ones((sino_shape[0], sino_shape[1] // nsubsets, sino_shape[2], 
-                     sino_shape[3]), dtype = np.float32)
+def _cb(x):
+  ir.set_data(x[...,n2//2])
+  ib.set_data(x[...,n2//2] - img[...,n2//2])
+  fig.canvas.draw()
 
-for i in range(nsubsets):
-  sens_img[i,...] = ppp.pet_back_model(ones_sino, proj, attn_sino, sens_sino, i, fwhm = fwhm)
-
-# run MLEM iterations
-for it in range(niter):
-  for i in range(nsubsets):
-    print(f'iteration {it + 1} subset {i+1}')
-    exp_sino = ppp.pet_fwd_model(recon, proj, attn_sino, sens_sino, i, fwhm = fwhm) + contam_sino[i,...]
-    ratio  = em_sino[i,...] / exp_sino
-    recon *= (ppp.pet_back_model(ratio, proj, attn_sino, sens_sino, i, fwhm = fwhm) / sens_img[i,...]) 
-    
-    ir.set_data(recon[...,n2//2])
-    ax[1].set_title(f'itertation {it+1} subset {i+1}')
-    ib.set_data(recon[...,n2//2] - img[...,n2//2])
-    fig.canvas.draw()
-
-
-  if track_likelihood:
-    exp = np.zeros(img_fwd.shape, dtype = np.float32)
-    for i in range(nsubsets):
-      exp[i,...] = ppp.pet_fwd_model(recon, proj, attn_sino, sens_sino, i, fwhm = fwhm) + contam_sino[i,...]
-    logL[it] = (exp - em_sino*np.log(exp)).sum()
-    print(f'neg logL {logL[it]}')
+recon = osem(em_sino, attn_sino, sens_sino, contam_sino, proj, niter, nsubsets, 
+             fwhm = fwhm, cost = cost, verbose = True, callback = _cb)
 
 if track_likelihood:
-  fig2, ax2 = py.subplots(1,1, figsize = (4,4))
-  ax2.plot(np.arange(niter) + 1, logL)
+  fig2, ax2 = plt.subplots(1,1, figsize = (4,4))
+  ax2.plot(np.arange(niter) + 1, cost)
   fig2.tight_layout()
-  fig2.show()
+  fig2.show()            
