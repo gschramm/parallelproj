@@ -23,6 +23,7 @@ parser.add_argument('--nsubsets',  help = 'number of subsets',     default = 28,
 parser.add_argument('--likeli',    help = 'calc logLikelihodd',    action = 'store_true')
 parser.add_argument('--scat_frac', help = 'scatter fraction',      default = 0.2, type = float)
 parser.add_argument('--fwhm_mm',   help = 'psf modeling FWHM mm',  default = 4.5, type = float)
+parser.add_argument('--gamma',     help = 'gamma parameter',       default = 1., type = float)
 parser.add_argument('--fwhm_data_mm',  help = 'psf for data FWHM mm',  default = 4.5, type = float)
 args = parser.parse_args()
 
@@ -139,7 +140,7 @@ else:
 
 rho   = 0.999
 
-gamma = 1./img.max()
+gamma = args.gamma/img.max()
 
 # calculate the "step sizes" S_i, T_i  for the projector
 S_i = np.zeros(img_fwd.shape, dtype = np.float32)
