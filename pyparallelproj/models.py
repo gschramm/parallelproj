@@ -2,7 +2,7 @@ import numpy as np
 from scipy.ndimage import gaussian_filter
 
 #---------------------------------------------------------------------------------
-def pet_fwd_model(img, proj, attn_sino, sens_sino, isub, fwhm = 0):
+def pet_fwd_model(img, proj, attn_sino, sens_sino, isub = 0, fwhm = 0):
   """PET forward model
 
   Parameters
@@ -80,7 +80,7 @@ def pet_fwd_model_lm(img, lmproj, subset_events, attn_list, sens_list, fwhm = 0)
 
 
 #---------------------------------------------------------------------------------
-def pet_back_model(subset_sino, proj, attn_sino, sens_sino, isub, fwhm = 0):
+def pet_back_model(subset_sino, proj, attn_sino, sens_sino, isub = 0, fwhm = 0):
   """Adjoint of PET forward model (backward model)
 
   Parameters
