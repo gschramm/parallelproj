@@ -3,10 +3,10 @@
 import os
 import matplotlib.pyplot as plt
 import pyparallelproj as ppp
+from pyparallelproj.algorithms import osem, spdhg
+
 import numpy as np
 import argparse
-
-from algorithms import osem, spdhg
 
 #---------------------------------------------------------------------------------
 # parse the command line
