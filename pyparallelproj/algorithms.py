@@ -13,7 +13,7 @@ def osem(em_sino, attn_sino, sens_sino, contam_sino, proj, niter, nsubsets,
                        sino_shape[3]), dtype = np.float32)
  
   for i in range(nsubsets):
-    sens_img[i,...] = pet_back_model(ones_sino, proj, attn_sino, sens_sino, i, fwhm = fwhm)
+    sens_img[i,...] = pet_back_model(ones_sino, proj, attn_sino[i,...], sens_sino[i,...], i, fwhm = fwhm)
   
   # initialize recon
   recon = np.full(img_shape, em_sino.sum() / np.prod(img_shape), dtype = np.float32)
@@ -22,9 +22,11 @@ def osem(em_sino, attn_sino, sens_sino, contam_sino, proj, niter, nsubsets,
   for it in range(niter):
     for i in range(nsubsets):
       if verbose: print(f'iteration {it + 1} subset {i+1}')
-      exp_sino = pet_fwd_model(recon, proj, attn_sino, sens_sino, i, fwhm = fwhm) + contam_sino[i,...]
+      exp_sino = pet_fwd_model(recon, proj, attn_sino[i,...], sens_sino[i,...], i, 
+                               fwhm = fwhm) + contam_sino[i,...]
       ratio  = em_sino[i,...] / exp_sino
-      recon *= (pet_back_model(ratio, proj, attn_sino, sens_sino, i, fwhm = fwhm) / sens_img[i,...]) 
+      recon *= (pet_back_model(ratio, proj, attn_sino[i,...], sens_sino[i,...], i, 
+                               fwhm = fwhm) / sens_img[i,...]) 
     
       if callback is not None:
         callback(recon)
@@ -32,7 +34,8 @@ def osem(em_sino, attn_sino, sens_sino, contam_sino, proj, niter, nsubsets,
     if cost is not None:
       exp = np.zeros(em_sino.shape, dtype = np.float32)
       for i in range(nsubsets):
-        exp[i,...] = pet_fwd_model(recon, proj, attn_sino, sens_sino, i, fwhm = fwhm) + contam_sino[i,...]
+        exp[i,...] = pet_fwd_model(recon, proj, attn_sino[i,...], sens_sino[i,...], i, 
+                                   fwhm = fwhm) + contam_sino[i,...]
       cost[it] = (exp - em_sino*np.log(exp)).sum()
       if verbose: print(f'cost {cost[it]}')
 
@@ -56,7 +59,8 @@ def spdhg(em_sino, attn_sino, sens_sino, contam_sino, proj, niter, nsubsets,
   
   ones_img = np.ones(img_shape, dtype = np.float32)
   for i in range(nsubsets):
-    S_i[i,...] = (gamma*rho) / pet_fwd_model(ones_img, proj, attn_sino, sens_sino, i, fwhm = fwhm)
+    S_i[i,...] = (gamma*rho) / pet_fwd_model(ones_img, proj, attn_sino[i,...], sens_sino[i,...], i, 
+                                             fwhm = fwhm)
   # clip inf values
   S_i[S_i == np.inf] = S_i[S_i != np.inf].max()
 
@@ -65,7 +69,8 @@ def spdhg(em_sino, attn_sino, sens_sino, contam_sino, proj, niter, nsubsets,
                        sino_shape[3]), dtype = np.float32)
   T_i = np.zeros((nsubsets,) + img_shape, dtype = np.float32)
   for i in range(nsubsets):
-    T_i[i,...] = (rho/(nsubsets*gamma)) / pet_back_model(ones_sino, proj, attn_sino, sens_sino, i, fwhm = fwhm)
+    T_i[i,...] = (rho/(nsubsets*gamma)) / pet_back_model(ones_sino, proj, attn_sino[i,...],  
+                                                         sens_sino[i,...], i, fwhm = fwhm)
   
   # take the element-wise min of the T_i's of all subsets
   T = T_i.min(axis = 0)
@@ -87,12 +92,13 @@ def spdhg(em_sino, attn_sino, sens_sino, contam_sino, proj, niter, nsubsets,
   
       x = np.clip(x - T*zbar, 0, None)
   
-      y_plus = y[i,...] + S_i[i,...]*(pet_fwd_model(x, proj, attn_sino, sens_sino, i, fwhm = fwhm) + contam_sino[i,...])
+      y_plus = y[i,...] + S_i[i,...]*(pet_fwd_model(x, proj, attn_sino[i,...], sens_sino[i,...], i, 
+                                                    fwhm = fwhm) + contam_sino[i,...])
   
       # apply the prox for the dual of the poisson logL
       y_plus = 0.5*(y_plus + 1 - np.sqrt((y_plus - 1)**2 + 4*S_i[i,...]*em_sino[i,...]))
   
-      dz = pet_back_model(y_plus - y[i,...], proj, attn_sino, sens_sino, i, fwhm = fwhm)
+      dz = pet_back_model(y_plus - y[i,...], proj, attn_sino[i,...], sens_sino[i,...], i, fwhm = fwhm)
   
       # update variables
       z = z + dz
@@ -105,7 +111,8 @@ def spdhg(em_sino, attn_sino, sens_sino, contam_sino, proj, niter, nsubsets,
     if cost is not None:
       exp = np.zeros(em_sino.shape, dtype = np.float32)
       for i in range(nsubsets):
-        exp[i,...] = pet_fwd_model(x, proj, attn_sino, sens_sino, i, fwhm = fwhm) + contam_sino[i,...]
+        exp[i,...] = pet_fwd_model(x, proj, attn_sino[i,...], sens_sino[i,...], i, 
+                                   fwhm = fwhm) + contam_sino[i,...]
       cost[it] = (exp - em_sino*np.log(exp)).sum()
       if verbose: print(f'cost {cost[it]}')
 

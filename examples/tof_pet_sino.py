@@ -87,7 +87,7 @@ img_fwd    = np.zeros((nsubsets, sino_shape[0], sino_shape[1] // nsubsets, sino_
 
 # forward project the image
 for i in range(nsubsets):
-  img_fwd[i,...] = ppp.pet_fwd_model(img, proj, attn_sino, sens_sino, i, fwhm = fwhm_data)
+  img_fwd[i,...] = ppp.pet_fwd_model(img, proj, attn_sino[i,...], sens_sino[i,...], i, fwhm = fwhm_data)
 
 # scale sum of fwd image to counts
 if counts > 0:
