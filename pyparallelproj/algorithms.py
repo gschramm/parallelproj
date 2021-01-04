@@ -2,7 +2,7 @@ import numpy as np
 from pyparallelproj.models import pet_fwd_model, pet_back_model, pet_fwd_model_lm, pet_back_model_lm
 
 def osem(em_sino, attn_sino, sens_sino, contam_sino, proj, niter, nsubsets, 
-         fwhm = 0, cost = None, verbose = False, callback = None):
+         fwhm = 0, verbose = False, callback = None, subset_callback = None):
 
   sino_shape = tuple(proj.sino_params.shape)
   img_shape  = tuple(proj.img_dim)
@@ -28,17 +28,12 @@ def osem(em_sino, attn_sino, sens_sino, contam_sino, proj, niter, nsubsets,
       recon *= (pet_back_model(ratio, proj, attn_sino[i,...], sens_sino[i,...], i, 
                                fwhm = fwhm) / sens_img[i,...]) 
     
-      if callback is not None:
-        callback(recon)
-      
-    if cost is not None:
-      exp = np.zeros(em_sino.shape, dtype = np.float32)
-      for i in range(nsubsets):
-        exp[i,...] = pet_fwd_model(recon, proj, attn_sino[i,...], sens_sino[i,...], i, 
-                                   fwhm = fwhm) + contam_sino[i,...]
-      cost[it] = (exp - em_sino*np.log(exp)).sum()
-      if verbose: print(f'cost {cost[it]}')
+      if subset_callback is not None:
+        subset_callback(recon)
 
+    if callback is not None:
+      callback(recon)
+      
   return recon
 
 #------------------------------------------------------------------------------------------------------
@@ -46,7 +41,7 @@ def osem(em_sino, attn_sino, sens_sino, contam_sino, proj, niter, nsubsets,
 #------------------------------------------------------------------------------------------------------
 
 def osem_lm(events, attn_list, sens_list, contam_list, lmproj, sens_img, niter, nsubsets, 
-            fwhm = 0, cost = None, verbose = False, callback = None):
+            fwhm = 0, verbose = False, callback = None, subset_callback = None):
 
   img_shape  = tuple(lmproj.img_dim)
 
@@ -63,17 +58,13 @@ def osem_lm(events, attn_list, sens_list, contam_list, lmproj, sens_img, niter, 
 
       recon *= (pet_back_model_lm(1/exp_list, lmproj, events[i::nsubsets,:], attn_list[i::nsubsets], 
                                   sens_list[i::nsubsets], fwhm = fwhm)*nsubsets / sens_img)
-      if callback is not None:
-        callback(recon)
-      
-    #if cost is not None:
-    #  exp = np.zeros(em_sino.shape, dtype = np.float32)
-    #  for i in range(nsubsets):
-    #    exp[i,...] = pet_fwd_model(recon, proj, attn_sino[i,...], sens_sino[i,...], i, 
-    #                               fwhm = fwhm) + contam_sino[i,...]
-    #  cost[it] = (exp - em_sino*np.log(exp)).sum()
-    #  if verbose: print(f'cost {cost[it]}')
 
+      if subset_callback is not None:
+        subset_callback(recon)
+
+    if callback is not None:
+      callback(recon)
+      
   return recon
 
 #------------------------------------------------------------------------------------------------------
@@ -81,7 +72,8 @@ def osem_lm(events, attn_list, sens_list, contam_list, lmproj, sens_img, niter, 
 #------------------------------------------------------------------------------------------------------
 
 def spdhg(em_sino, attn_sino, sens_sino, contam_sino, proj, niter, nsubsets,
-          fwhm = 0, gamma = 1., rho = 0.999, cost = None, verbose = False, callback = None):
+          fwhm = 0, gamma = 1., rho = 0.999, verbose = False, 
+          callback = None, subset_callback = None):
 
   sino_shape = tuple(proj.sino_params.shape)
   img_shape  = tuple(proj.img_dim)
@@ -107,7 +99,6 @@ def spdhg(em_sino, attn_sino, sens_sino, contam_sino, proj, niter, nsubsets,
   
   # take the element-wise min of the T_i's of all subsets
   T = T_i.min(axis = 0)
-
 
 
   # initialize variables
@@ -138,15 +129,10 @@ def spdhg(em_sino, attn_sino, sens_sino, contam_sino, proj, niter, nsubsets,
       y[i,...] = y_plus.copy()
       zbar = z + dz*nsubsets
 
-      if callback is not None:
-        callback(x)
+      if subset_callback is not None:
+        subset_callback(recon)
 
-    if cost is not None:
-      exp = np.zeros(em_sino.shape, dtype = np.float32)
-      for i in range(nsubsets):
-        exp[i,...] = pet_fwd_model(x, proj, attn_sino[i,...], sens_sino[i,...], i, 
-                                   fwhm = fwhm) + contam_sino[i,...]
-      cost[it] = (exp - em_sino*np.log(exp)).sum()
-      if verbose: print(f'cost {cost[it]}')
+    if callback is not None:
+      callback(x)
 
   return x

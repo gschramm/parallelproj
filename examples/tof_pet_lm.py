@@ -140,10 +140,26 @@ ax[2].set_title('bias')
 fig.tight_layout()
 fig.canvas.draw()
 
+cost = []
+
 def _cb(x):
+  # calculate likelihood
+  if track_likelihood:
+    exp = ppp.pet_fwd_model(x, proj, attn_sino, sens_sino, 0, fwhm = fwhm) + contam_sino
+    cost.append((exp - em_sino*np.log(exp)).sum())
+
+  # show updates
   ir.set_data(x[...,n2//2])
   ib.set_data(x[...,n2//2] - img[...,n2//2])
   fig.canvas.draw()
 
 recon = osem_lm(events, attn_list, sens_list, contam_list, lmproj, sens_img, niter, nsubsets, 
                 fwhm = fwhm, verbose = True, callback = _cb)
+
+if track_likelihood:
+  fig2, ax2 = plt.subplots(1,1, figsize = (4,4))
+  ax2.plot(np.arange(niter) + 1, cost, label = 'OSEM')
+  ax2.legend()
+  ax2.grid(ls = ':')
+  fig2.tight_layout()
+  fig2.show() 

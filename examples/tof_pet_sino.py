@@ -132,17 +132,42 @@ ax[2].set_title('bias')
 fig.tight_layout()
 fig.canvas.draw()
 
-def _cb(x):
+cost_osem  = []
+cost_spdhg = []
+
+#-----------------------------------------------------------------------------------------------
+# callback functions to calculate likelihood and show recon updates
+
+def update_img(x):
   ir.set_data(x[...,n2//2])
   ib.set_data(x[...,n2//2] - img[...,n2//2])
   fig.canvas.draw()
 
+def calc_likeli(x):
+  exp = np.zeros(em_sino.shape, dtype = np.float32)
+  for i in range(nsubsets):
+    exp[i,...] = ppp.pet_fwd_model(x, proj, attn_sino[i,...], sens_sino[i,...], i, 
+                                   fwhm = fwhm) + contam_sino[i,...]
+  return (exp - em_sino*np.log(exp)).sum()
+
+def _cb_osem(x):
+  if track_likelihood:
+    cost_osem.append(calc_likeli(x))
+  update_img(x)
+
+def _cb_spdhg(x):
+  if track_likelihood:
+    cost_spdhg.append(calc_likeli(x))
+  update_img(x)
+
+#-----------------------------------------------------------------------------------------------
+
+
 recon_osem = osem(em_sino, attn_sino, sens_sino, contam_sino, proj, niter, nsubsets, 
-                  fwhm = fwhm, cost = cost_osem, verbose = True, callback = _cb)
+                  fwhm = fwhm, verbose = True, callback = _cb_osem)
 
 recon_spdhg = spdhg(em_sino, attn_sino, sens_sino, contam_sino, proj, niter, nsubsets, 
-                    gamma = args.gamma/img.max(), fwhm = fwhm, cost = cost_spdhg, verbose = True, 
-                    callback = _cb)
+                    gamma = args.gamma/img.max(), fwhm = fwhm, verbose = True, callback = _cb_spdhg)
 
 if track_likelihood:
   fig2, ax2 = plt.subplots(1,1, figsize = (4,4))
