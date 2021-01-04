@@ -146,7 +146,9 @@ recon_spdhg = spdhg(em_sino, attn_sino, sens_sino, contam_sino, proj, niter, nsu
 
 if track_likelihood:
   fig2, ax2 = plt.subplots(1,1, figsize = (4,4))
-  ax2.plot(np.arange(niter) + 1, cost_osem)
-  ax2.plot(np.arange(niter) + 1, cost_spdhg)
+  ax2.plot(np.arange(niter) + 1, cost_osem, label = 'OSEM')
+  ax2.plot(np.arange(niter) + 1, cost_spdhg, label = 'SPDHG')
+  ax2.legend()
+  ax2.grid(ls = ':')
   fig2.tight_layout()
   fig2.show()            
