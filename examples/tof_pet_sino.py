@@ -132,8 +132,6 @@ ax[2].set_title('bias')
 fig.tight_layout()
 fig.canvas.draw()
 
-cost_osem  = []
-cost_spdhg = []
 
 #-----------------------------------------------------------------------------------------------
 # callback functions to calculate likelihood and show recon updates
@@ -150,29 +148,49 @@ def calc_likeli(x):
                                    fwhm = fwhm) + contam_sino[i,...]
   return (exp - em_sino*np.log(exp)).sum()
 
-def _cb_osem(x):
-  if track_likelihood:
-    cost_osem.append(calc_likeli(x))
-  update_img(x)
-
-def _cb_spdhg(x):
-  if track_likelihood:
-    cost_spdhg.append(calc_likeli(x))
+def _cb(x, cost = None):
+  if cost is not None:
+    cost.append(calc_likeli(x))
   update_img(x)
 
 #-----------------------------------------------------------------------------------------------
 
+#init_recon = osem(em_sino, attn_sino, sens_sino, contam_sino, proj, 1, nsubsets, 
+#                  fwhm = fwhm, verbose = True)
+
+init_recon = None
+cost_osem  = []
 
 recon_osem = osem(em_sino, attn_sino, sens_sino, contam_sino, proj, niter, nsubsets, 
-                  fwhm = fwhm, verbose = True, callback = _cb_osem)
+                  fwhm = fwhm, verbose = True, xstart = init_recon,
+                  callback = _cb, callback_kwargs = {'cost': cost_osem})
 
+cost_spdhg = []
 recon_spdhg = spdhg(em_sino, attn_sino, sens_sino, contam_sino, proj, niter, nsubsets, 
-                    gamma = args.gamma/img.max(), fwhm = fwhm, verbose = True, callback = _cb_spdhg)
+                    gamma = args.gamma/img.max(), fwhm = fwhm, verbose = True, xstart = init_recon, 
+                    callback = _cb, callback_kwargs = {'cost': cost_spdhg})
+
+ystart = np.zeros(em_sino.shape, dtype = np.float32)
+ystart[em_sino == 0] = 1
+
+cost_spdhg2 = []
+recon_spdhg2 = spdhg(em_sino, attn_sino, sens_sino, contam_sino, proj, niter, nsubsets, 
+                     gamma = args.gamma/img.max(), fwhm = fwhm, verbose = True,
+                     xstart = init_recon, ystart = ystart, 
+                     callback = _cb, callback_kwargs = {'cost': cost_spdhg2})
+
+cost_spdhg3 = []
+recon_spdhg3 = spdhg(em_sino, attn_sino, sens_sino, contam_sino, proj, niter, nsubsets, 
+                     gamma = 10*args.gamma/img.max(), fwhm = fwhm, verbose = True,
+                     xstart = init_recon, ystart = ystart, 
+                     callback = _cb, callback_kwargs = {'cost': cost_spdhg3})
 
 if track_likelihood:
   fig2, ax2 = plt.subplots(1,1, figsize = (4,4))
-  ax2.plot(np.arange(niter) + 1, cost_osem, label = 'OSEM')
-  ax2.plot(np.arange(niter) + 1, cost_spdhg, label = 'SPDHG')
+  ax2.plot(np.arange(niter) + 1, cost_osem,   label = 'OSEM')
+  ax2.plot(np.arange(niter) + 1, cost_spdhg,  label = 'SPDHG')
+  ax2.plot(np.arange(niter) + 1, cost_spdhg2, label = 'SPDHG2')
+  ax2.plot(np.arange(niter) + 1, cost_spdhg3, label = 'SPDHG3')
   ax2.legend()
   ax2.grid(ls = ':')
   fig2.tight_layout()

@@ -2,7 +2,9 @@ import numpy as np
 from pyparallelproj.models import pet_fwd_model, pet_back_model, pet_fwd_model_lm, pet_back_model_lm
 
 def osem(em_sino, attn_sino, sens_sino, contam_sino, proj, niter, nsubsets, 
-         fwhm = 0, verbose = False, callback = None, subset_callback = None):
+         fwhm = 0, verbose = False, xstart = None, 
+         callback = None, subset_callback = None,
+         callback_kwargs = None, subset_callback_kwargs = None):
 
   sino_shape = tuple(proj.sino_params.shape)
   img_shape  = tuple(proj.img_dim)
@@ -16,7 +18,10 @@ def osem(em_sino, attn_sino, sens_sino, contam_sino, proj, niter, nsubsets,
     sens_img[i,...] = pet_back_model(ones_sino, proj, attn_sino[i,...], sens_sino[i,...], i, fwhm = fwhm)
   
   # initialize recon
-  recon = np.full(img_shape, em_sino.sum() / np.prod(img_shape), dtype = np.float32)
+  if xstart is None:
+    recon = np.full(img_shape, em_sino.sum() / np.prod(img_shape), dtype = np.float32)
+  else:
+    recon = xstart.copy()
 
   # run OSEM iterations
   for it in range(niter):
@@ -29,10 +34,10 @@ def osem(em_sino, attn_sino, sens_sino, contam_sino, proj, niter, nsubsets,
                                fwhm = fwhm) / sens_img[i,...]) 
     
       if subset_callback is not None:
-        subset_callback(recon)
+        subset_callback(recon, **subset_callback_kwargs)
 
     if callback is not None:
-      callback(recon)
+      callback(recon, **callback_kwargs)
       
   return recon
 
@@ -41,12 +46,16 @@ def osem(em_sino, attn_sino, sens_sino, contam_sino, proj, niter, nsubsets,
 #------------------------------------------------------------------------------------------------------
 
 def osem_lm(events, attn_list, sens_list, contam_list, lmproj, sens_img, niter, nsubsets, 
-            fwhm = 0, verbose = False, callback = None, subset_callback = None):
+            fwhm = 0, verbose = False, xstart = None, callback = None, subset_callback = None,
+            callback_kwargs = None, subset_callback_kwargs = None):
 
   img_shape  = tuple(lmproj.img_dim)
 
   # initialize recon
-  recon = np.full(img_shape, events.shape[0] / np.prod(img_shape), dtype = np.float32)
+  if xstart is None:
+    recon = np.full(img_shape, em_sino.sum() / np.prod(img_shape), dtype = np.float32)
+  else:
+    recon = xstart.copy()
 
   # run OSEM iterations
   for it in range(niter):
@@ -60,10 +69,11 @@ def osem_lm(events, attn_list, sens_list, contam_list, lmproj, sens_img, niter, 
                                   sens_list[i::nsubsets], fwhm = fwhm)*nsubsets / sens_img)
 
       if subset_callback is not None:
-        subset_callback(recon)
+        subset_callback(recon, **subset_callback_kwargs)
 
     if callback is not None:
       callback(recon)
+      callback(recon, **callback_kwargs)
       
   return recon
 
@@ -73,7 +83,9 @@ def osem_lm(events, attn_list, sens_list, contam_list, lmproj, sens_img, niter, 
 
 def spdhg(em_sino, attn_sino, sens_sino, contam_sino, proj, niter, nsubsets,
           fwhm = 0, gamma = 1., rho = 0.999, verbose = False, 
-          callback = None, subset_callback = None):
+          xstart = None, ystart = None,
+          callback = None, subset_callback = None,
+          callback_kwargs = None, subset_callback_kwargs = None):
 
   sino_shape = tuple(proj.sino_params.shape)
   img_shape  = tuple(proj.img_dim)
@@ -94,18 +106,32 @@ def spdhg(em_sino, attn_sino, sens_sino, contam_sino, proj, niter, nsubsets,
                        sino_shape[3]), dtype = np.float32)
   T_i = np.zeros((nsubsets,) + img_shape, dtype = np.float32)
   for i in range(nsubsets):
-    T_i[i,...] = (rho/(nsubsets*gamma)) / pet_back_model(ones_sino, proj, attn_sino[i,...],  
-                                                         sens_sino[i,...], i, fwhm = fwhm)
+    tmp = pet_back_model(ones_sino, proj, attn_sino[i,...], sens_sino[i,...], i, fwhm = fwhm)
+    T_i[i,...] = (rho/(nsubsets*gamma)) / tmp  
+                                                         
   
   # take the element-wise min of the T_i's of all subsets
   T = T_i.min(axis = 0)
 
 
   # initialize variables
-  x      = np.zeros(img_shape, dtype = np.float32)
-  z      = np.zeros(img_shape, dtype = np.float32)
-  zbar   = np.zeros(img_shape, dtype = np.float32)
-  y      = np.zeros(em_sino.shape, dtype = np.float32)
+  if xstart is None:
+    x = np.zeros(img_shape, dtype = np.float32)
+  else:
+    x = xstart.copy()
+
+  if ystart is None:
+    y = np.zeros(em_sino.shape, dtype = np.float32)
+  else:
+    y = ystart.copy()
+
+  z  = np.zeros(img_shape, dtype = np.float32)
+
+  for i in range(nsubsets):
+    if np.any(y[i,...] != 0):
+      z += pet_back_model(y[i,...], proj, attn_sino[i,...], sens_sino[i,...], i, fwhm = fwhm)
+
+  zbar = z.copy()
 
   for it in range(niter):
     subset_sequence = np.random.permutation(np.arange(nsubsets))
@@ -130,9 +156,9 @@ def spdhg(em_sino, attn_sino, sens_sino, contam_sino, proj, niter, nsubsets,
       zbar = z + dz*nsubsets
 
       if subset_callback is not None:
-        subset_callback(recon)
+        subset_callback(x, **subset_callback_kwargs)
 
     if callback is not None:
-      callback(x)
+      callback(x, **callback_kwargs)
 
   return x
