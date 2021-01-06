@@ -92,34 +92,37 @@ def spdhg(em_sino, attn_sino, sens_sino, contam_sino, proj, niter,
           callback = None, subset_callback = None,
           callback_kwargs = None, subset_callback_kwargs = None):
 
-  sino_shape = tuple(proj.sino_params.shape)
-  img_shape  = tuple(proj.img_dim)
-
-  msubsets = proj.nsubsets
+  img_shape = tuple(proj.img_dim)
+  nsubsets  = proj.nsubsets
 
   # calculate the "step sizes" S_i, T_i  for the projector
-  S_i = np.zeros(em_sino.shape, dtype = np.float32)
-  
+  S_i = []
   ones_img = np.ones(img_shape, dtype = np.float32)
+
   for i in range(nsubsets):
-    S_i[i,...] = (gamma*rho) / pet_fwd_model(ones_img, proj, attn_sino[i,...], sens_sino[i,...], i, 
-                                             fwhm = fwhm)
-  # clip inf values
-  S_i[S_i == np.inf] = S_i[S_i != np.inf].max()
+    # get the slice for the current subset
+    ss = proj.subset_slices[i]
+    tmp = (gamma*rho) / pet_fwd_model(ones_img, proj, attn_sino[ss], sens_sino[ss], i, fwhm = fwhm)
+    # clip inf values
+    tmp[tmp == np.inf] = tmp[tmp != np.inf].max()
+    S_i.append(tmp)
 
 
-  ones_sino = np.ones((sino_shape[0], sino_shape[1] // nsubsets, sino_shape[2], 
-                       sino_shape[3]), dtype = np.float32)
   T_i = np.zeros((nsubsets,) + img_shape, dtype = np.float32)
   for i in range(nsubsets):
-    tmp = pet_back_model(ones_sino, proj, attn_sino[i,...], sens_sino[i,...], i, fwhm = fwhm)
+    # get the slice for the current subset
+    ss = proj.subset_slices[i]
+    # generate a subset sinogram full of ones
+    ones_sino = np.ones(proj.subset_sino_shapes[i] , dtype = np.float32)
+
+    tmp = pet_back_model(ones_sino, proj, attn_sino[ss], sens_sino[ss], i, fwhm = fwhm)
     T_i[i,...] = (rho/(nsubsets*gamma)) / tmp  
                                                          
-  
   # take the element-wise min of the T_i's of all subsets
   T = T_i.min(axis = 0)
 
 
+  #--------------------------------------------------------------------------------------------
   # initialize variables
   if xstart is None:
     x = np.zeros(img_shape, dtype = np.float32)
@@ -131,34 +134,40 @@ def spdhg(em_sino, attn_sino, sens_sino, contam_sino, proj, niter,
   else:
     y = ystart.copy()
 
-  z  = np.zeros(img_shape, dtype = np.float32)
-
+  z = np.zeros(img_shape, dtype = np.float32)
   for i in range(nsubsets):
-    if np.any(y[i,...] != 0):
-      z += pet_back_model(y[i,...], proj, attn_sino[i,...], sens_sino[i,...], i, fwhm = fwhm)
+    # get the slice for the current subset
+    ss = proj.subset_slices[i]
+    if np.any(y[ss] != 0):
+      z += pet_back_model(y[ss], proj, attn_sino[ss], sens_sino[ss], i, fwhm = fwhm)
 
   zbar = z.copy()
 
+  #--------------------------------------------------------------------------------------------
+  # SPDHG iterations
+
   for it in range(niter):
     subset_sequence = np.random.permutation(np.arange(nsubsets))
-    for ss in range(nsubsets):
+    for iss in range(nsubsets):
       # select a random subset
-      i = subset_sequence[ss]
-      print(f'iteration {it + 1} step {ss} subset {i}')
+      i = subset_sequence[iss]
+      print(f'iteration {it + 1} step {iss} subset {i}')
+      # get the slice for the current subset
+      ss = proj.subset_slices[i]
   
       x = np.clip(x - T*zbar, 0, None)
   
-      y_plus = y[i,...] + S_i[i,...]*(pet_fwd_model(x, proj, attn_sino[i,...], sens_sino[i,...], i, 
-                                                    fwhm = fwhm) + contam_sino[i,...])
+      y_plus = y[ss] + S_i[i]*(pet_fwd_model(x, proj, attn_sino[ss], sens_sino[ss], i, 
+                                             fwhm = fwhm) + contam_sino[ss])
   
       # apply the prox for the dual of the poisson logL
-      y_plus = 0.5*(y_plus + 1 - np.sqrt((y_plus - 1)**2 + 4*S_i[i,...]*em_sino[i,...]))
+      y_plus = 0.5*(y_plus + 1 - np.sqrt((y_plus - 1)**2 + 4*S_i[i]*em_sino[ss]))
   
-      dz = pet_back_model(y_plus - y[i,...], proj, attn_sino[i,...], sens_sino[i,...], i, fwhm = fwhm)
+      dz = pet_back_model(y_plus - y[ss], proj, attn_sino[ss], sens_sino[ss], i, fwhm = fwhm)
   
       # update variables
       z = z + dz
-      y[i,...] = y_plus.copy()
+      y[ss] = y_plus.copy()
       zbar = z + dz*nsubsets
 
       if subset_callback is not None:

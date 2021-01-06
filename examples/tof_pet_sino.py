@@ -152,6 +152,11 @@ def _cb(x, cost = None):
 init_recon = None
 
 cost_mlem  = []
+cost_osem  = []
+cost_spdhg = []
+cost_spdhg2 = []
+cost_spdhg3 = []
+
 recon_mlem = osem(em_sino, attn_sino, sens_sino, contam_sino, proj, niter, 
                   fwhm = fwhm, verbose = True, xstart = init_recon,
                   callback = _cb, callback_kwargs = {'cost': cost_mlem})
@@ -159,38 +164,39 @@ recon_mlem = osem(em_sino, attn_sino, sens_sino, contam_sino, proj, niter,
 # initialize the subsets for the projector
 proj.init_subsets(nsubsets)
 
-cost_osem  = []
 recon_osem = osem(em_sino, attn_sino, sens_sino, contam_sino, proj, niter, 
                   fwhm = fwhm, verbose = True, xstart = init_recon,
                   callback = _cb, callback_kwargs = {'cost': cost_osem})
-#
-#cost_spdhg = []
-#recon_spdhg = spdhg(em_sino, attn_sino, sens_sino, contam_sino, proj, niter, nsubsets, 
-#                    gamma = args.gamma/img.max(), fwhm = fwhm, verbose = True, xstart = init_recon, 
-#                    callback = _cb, callback_kwargs = {'cost': cost_spdhg})
+
+recon_spdhg = spdhg(em_sino, attn_sino, sens_sino, contam_sino, proj, niter,
+                    gamma = args.gamma/img.max(), fwhm = fwhm, verbose = True, xstart = init_recon, 
+                    callback = _cb, callback_kwargs = {'cost': cost_spdhg})
 #
 #ystart = np.zeros(em_sino.shape, dtype = np.float32)
 ##ystart[em_sino == 0] = 1
 #
-#cost_spdhg2 = []
-#recon_spdhg2 = spdhg(em_sino, attn_sino, sens_sino, contam_sino, proj, niter, nsubsets, 
+#recon_spdhg2 = spdhg(em_sino, attn_sino, sens_sino, contam_sino, proj, niter,
 #                     gamma = args.gamma/img.max(), fwhm = fwhm, verbose = True,
 #                     xstart = init_recon, ystart = ystart, 
 #                     callback = _cb, callback_kwargs = {'cost': cost_spdhg2})
 #
-#cost_spdhg3 = []
-#recon_spdhg3 = spdhg(em_sino, attn_sino, sens_sino, contam_sino, proj, niter, nsubsets, 
+#recon_spdhg3 = spdhg(em_sino, attn_sino, sens_sino, contam_sino, proj, niter,
 #                     gamma = 10*args.gamma/img.max(), fwhm = fwhm, verbose = True,
 #                     xstart = init_recon, ystart = ystart, 
 #                     callback = _cb, callback_kwargs = {'cost': cost_spdhg3})
 #
 if track_likelihood:
   fig2, ax2 = plt.subplots(1,1, figsize = (4,4))
-  ax2.plot(np.arange(niter) + 1, cost_mlem, label = 'MLEM')
-  ax2.plot(np.arange(niter) + 1, cost_osem, label = 'OSEM')
-  #ax2.plot(np.arange(niter) + 1, cost_spdhg,  label = 'SPDHG')
-  #ax2.plot(np.arange(niter) + 1, cost_spdhg2, label = 'SPDHG2')
-  #ax2.plot(np.arange(niter) + 1, cost_spdhg3, label = 'SPDHG3')
+  if len(cost_mlem) == niter:
+    ax2.plot(np.arange(niter) + 1, cost_mlem, label = 'MLEM')
+  if len(cost_osem) == niter:
+    ax2.plot(np.arange(niter) + 1, cost_osem, label = 'OSEM')
+  if len(cost_spdhg) == niter:
+    ax2.plot(np.arange(niter) + 1, cost_spdhg,  label = 'SPDHG')
+  if len(cost_spdhg2) == niter:
+    ax2.plot(np.arange(niter) + 1, cost_spdhg2, label = 'SPDHG2')
+  if len(cost_spdhg3) == niter:
+    ax2.plot(np.arange(niter) + 1, cost_spdhg3, label = 'SPDHG3')
   ax2.legend()
   ax2.grid(ls = ':')
   fig2.tight_layout()
