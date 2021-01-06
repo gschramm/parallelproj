@@ -1,21 +1,22 @@
 import numpy as np
 from pyparallelproj.models import pet_fwd_model, pet_back_model, pet_fwd_model_lm, pet_back_model_lm
 
-def osem(em_sino, attn_sino, sens_sino, contam_sino, proj, niter, nsubsets, 
+def osem(em_sino, attn_sino, sens_sino, contam_sino, proj, niter,
          fwhm = 0, verbose = False, xstart = None, 
          callback = None, subset_callback = None,
          callback_kwargs = None, subset_callback_kwargs = None):
 
-  sino_shape = tuple(proj.sino_params.shape)
   img_shape  = tuple(proj.img_dim)
 
   # calculate the sensitivity images for each subset
-  sens_img  = np.zeros((nsubsets,) + img_shape, dtype = np.float32)
-  ones_sino = np.ones((sino_shape[0], sino_shape[1] // nsubsets, sino_shape[2], 
-                       sino_shape[3]), dtype = np.float32)
+  sens_img  = np.zeros((proj.nsubsets,) + img_shape, dtype = np.float32)
  
-  for i in range(nsubsets):
-    sens_img[i,...] = pet_back_model(ones_sino, proj, attn_sino[i,...], sens_sino[i,...], i, fwhm = fwhm)
+  for i in range(proj.nsubsets):
+    # get the slice for the current subset
+    ss        = proj.subset_slices[i]
+    # generate a subset sinogram full of ones
+    ones_sino = np.ones(proj.subset_sino_shapes[i] , dtype = np.float32)
+    sens_img[i,...] = pet_back_model(ones_sino, proj, attn_sino[ss], sens_sino[ss], i, fwhm = fwhm)
   
   # initialize recon
   if xstart is None:
@@ -25,12 +26,16 @@ def osem(em_sino, attn_sino, sens_sino, contam_sino, proj, niter, nsubsets,
 
   # run OSEM iterations
   for it in range(niter):
-    for i in range(nsubsets):
+    for i in range(proj.nsubsets):
       if verbose: print(f'iteration {it + 1} subset {i+1}')
-      exp_sino = pet_fwd_model(recon, proj, attn_sino[i,...], sens_sino[i,...], i, 
-                               fwhm = fwhm) + contam_sino[i,...]
-      ratio  = em_sino[i,...] / exp_sino
-      recon *= (pet_back_model(ratio, proj, attn_sino[i,...], sens_sino[i,...], i, 
+
+      # get the slice for the current subset
+      ss        = proj.subset_slices[i]
+
+      exp_sino = pet_fwd_model(recon, proj, attn_sino[ss], sens_sino[ss], i, 
+                               fwhm = fwhm) + contam_sino[ss]
+      ratio  = em_sino[ss] / exp_sino
+      recon *= (pet_back_model(ratio, proj, attn_sino[ss], sens_sino[ss], i, 
                                fwhm = fwhm) / sens_img[i,...]) 
     
       if subset_callback is not None:
@@ -81,7 +86,7 @@ def osem_lm(events, attn_list, sens_list, contam_list, lmproj, sens_img, niter, 
 #------------------------------------------------------------------------------------------------------
 #------------------------------------------------------------------------------------------------------
 
-def spdhg(em_sino, attn_sino, sens_sino, contam_sino, proj, niter, nsubsets,
+def spdhg(em_sino, attn_sino, sens_sino, contam_sino, proj, niter,
           fwhm = 0, gamma = 1., rho = 0.999, verbose = False, 
           xstart = None, ystart = None,
           callback = None, subset_callback = None,
@@ -90,6 +95,7 @@ def spdhg(em_sino, attn_sino, sens_sino, contam_sino, proj, niter, nsubsets,
   sino_shape = tuple(proj.sino_params.shape)
   img_shape  = tuple(proj.img_dim)
 
+  msubsets = proj.nsubsets
 
   # calculate the "step sizes" S_i, T_i  for the projector
   S_i = np.zeros(em_sino.shape, dtype = np.float32)

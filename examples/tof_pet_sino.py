@@ -60,34 +60,25 @@ att_img = (img > 0) * 0.01 * voxsize[0]
 
 # generate nonTOF sinogram parameters and the nonTOF projector for attenuation projection
 sino_params_nt = ppp.PETSinogramParameters(scanner)
-proj_nt        = ppp.SinogramProjector(scanner, sino_params_nt, img.shape, nsubsets = nsubsets, 
+proj_nt        = ppp.SinogramProjector(scanner, sino_params_nt, img.shape, nsubsets = 1, 
                                     voxsize = voxsize, img_origin = img_origin, ngpus = ngpus)
-sino_shape_nt  = sino_params_nt.shape
 
-attn_sino = np.zeros((nsubsets, sino_shape_nt[0], sino_shape_nt[1] // nsubsets, 
-                      sino_shape_nt[2], sino_shape_nt[3]), dtype = np.float32)
-
-for i in range(nsubsets):
-    attn_sino[i, ...] = np.exp(-proj_nt.fwd_project(att_img, subset=i))
+attn_sino = np.exp(-proj_nt.fwd_project(att_img))
 
 # generate the sensitivity sinogram
-sens_sino = np.ones((nsubsets, sino_shape_nt[0], sino_shape_nt[1] // nsubsets, 
-                      sino_shape_nt[2], sino_shape_nt[3]), dtype = np.float32)
+sens_sino = np.ones(sino_params_nt.shape, dtype = np.float32)
 
 # generate TOF sinogram parameters and the TOF projector
 sino_params = ppp.PETSinogramParameters(scanner, ntofbins = 17, tofbin_width = 15.)
-proj        = ppp.SinogramProjector(scanner, sino_params, img.shape, nsubsets = nsubsets, 
+proj        = ppp.SinogramProjector(scanner, sino_params, img.shape, nsubsets = 1, 
                                     voxsize = voxsize, img_origin = img_origin, ngpus = ngpus,
                                     tof = True, sigma_tof = 60./2.35, n_sigmas = 3.)
 
 # allocate array for the subset sinogram
-sino_shape = sino_params.shape
-img_fwd    = np.zeros((nsubsets, sino_shape[0], sino_shape[1] // nsubsets, sino_shape[2], 
-                       sino_shape[3]), dtype = np.float32)
+img_fwd    = np.zeros(sino_params.shape, dtype = np.float32)
 
 # forward project the image
-for i in range(nsubsets):
-  img_fwd[i,...] = ppp.pet_fwd_model(img, proj, attn_sino[i,...], sens_sino[i,...], i, fwhm = fwhm_data)
+img_fwd= ppp.pet_fwd_model(img, proj, attn_sino, sens_sino, 0, fwhm = fwhm_data)
 
 # scale sum of fwd image to counts
 if counts > 0:
@@ -142,55 +133,64 @@ def update_img(x):
   fig.canvas.draw()
 
 def calc_likeli(x):
-  exp = np.zeros(em_sino.shape, dtype = np.float32)
-  for i in range(nsubsets):
-    exp[i,...] = ppp.pet_fwd_model(x, proj, attn_sino[i,...], sens_sino[i,...], i, 
-                                   fwhm = fwhm) + contam_sino[i,...]
-  return (exp - em_sino*np.log(exp)).sum()
+  logL = 0
+
+  for i in range(proj.nsubsets):
+    # get the slice for the current subset
+    ss = proj.subset_slices[i]
+    exp = ppp.pet_fwd_model(x, proj, attn_sino[ss], sens_sino[ss], i, fwhm = fwhm) + contam_sino[ss]
+    logL += (exp - em_sino[ss]*np.log(exp)).sum()
+
+  return logL
 
 def _cb(x, cost = None):
-  if cost is not None:
+  if (cost is not None) and track_likelihood:
     cost.append(calc_likeli(x))
   update_img(x)
 
 #-----------------------------------------------------------------------------------------------
-
-#init_recon = osem(em_sino, attn_sino, sens_sino, contam_sino, proj, 1, nsubsets, 
-#                  fwhm = fwhm, verbose = True)
-
 init_recon = None
-cost_osem  = []
 
-recon_osem = osem(em_sino, attn_sino, sens_sino, contam_sino, proj, niter, nsubsets, 
+cost_mlem  = []
+recon_mlem = osem(em_sino, attn_sino, sens_sino, contam_sino, proj, niter, 
+                  fwhm = fwhm, verbose = True, xstart = init_recon,
+                  callback = _cb, callback_kwargs = {'cost': cost_mlem})
+
+# initialize the subsets for the projector
+proj.init_subsets(nsubsets)
+
+cost_osem  = []
+recon_osem = osem(em_sino, attn_sino, sens_sino, contam_sino, proj, niter, 
                   fwhm = fwhm, verbose = True, xstart = init_recon,
                   callback = _cb, callback_kwargs = {'cost': cost_osem})
-
-cost_spdhg = []
-recon_spdhg = spdhg(em_sino, attn_sino, sens_sino, contam_sino, proj, niter, nsubsets, 
-                    gamma = args.gamma/img.max(), fwhm = fwhm, verbose = True, xstart = init_recon, 
-                    callback = _cb, callback_kwargs = {'cost': cost_spdhg})
-
-ystart = np.zeros(em_sino.shape, dtype = np.float32)
-ystart[em_sino == 0] = 1
-
-cost_spdhg2 = []
-recon_spdhg2 = spdhg(em_sino, attn_sino, sens_sino, contam_sino, proj, niter, nsubsets, 
-                     gamma = args.gamma/img.max(), fwhm = fwhm, verbose = True,
-                     xstart = init_recon, ystart = ystart, 
-                     callback = _cb, callback_kwargs = {'cost': cost_spdhg2})
-
-cost_spdhg3 = []
-recon_spdhg3 = spdhg(em_sino, attn_sino, sens_sino, contam_sino, proj, niter, nsubsets, 
-                     gamma = 10*args.gamma/img.max(), fwhm = fwhm, verbose = True,
-                     xstart = init_recon, ystart = ystart, 
-                     callback = _cb, callback_kwargs = {'cost': cost_spdhg3})
-
+#
+#cost_spdhg = []
+#recon_spdhg = spdhg(em_sino, attn_sino, sens_sino, contam_sino, proj, niter, nsubsets, 
+#                    gamma = args.gamma/img.max(), fwhm = fwhm, verbose = True, xstart = init_recon, 
+#                    callback = _cb, callback_kwargs = {'cost': cost_spdhg})
+#
+#ystart = np.zeros(em_sino.shape, dtype = np.float32)
+##ystart[em_sino == 0] = 1
+#
+#cost_spdhg2 = []
+#recon_spdhg2 = spdhg(em_sino, attn_sino, sens_sino, contam_sino, proj, niter, nsubsets, 
+#                     gamma = args.gamma/img.max(), fwhm = fwhm, verbose = True,
+#                     xstart = init_recon, ystart = ystart, 
+#                     callback = _cb, callback_kwargs = {'cost': cost_spdhg2})
+#
+#cost_spdhg3 = []
+#recon_spdhg3 = spdhg(em_sino, attn_sino, sens_sino, contam_sino, proj, niter, nsubsets, 
+#                     gamma = 10*args.gamma/img.max(), fwhm = fwhm, verbose = True,
+#                     xstart = init_recon, ystart = ystart, 
+#                     callback = _cb, callback_kwargs = {'cost': cost_spdhg3})
+#
 if track_likelihood:
   fig2, ax2 = plt.subplots(1,1, figsize = (4,4))
-  ax2.plot(np.arange(niter) + 1, cost_osem,   label = 'OSEM')
-  ax2.plot(np.arange(niter) + 1, cost_spdhg,  label = 'SPDHG')
-  ax2.plot(np.arange(niter) + 1, cost_spdhg2, label = 'SPDHG2')
-  ax2.plot(np.arange(niter) + 1, cost_spdhg3, label = 'SPDHG3')
+  ax2.plot(np.arange(niter) + 1, cost_mlem, label = 'MLEM')
+  ax2.plot(np.arange(niter) + 1, cost_osem, label = 'OSEM')
+  #ax2.plot(np.arange(niter) + 1, cost_spdhg,  label = 'SPDHG')
+  #ax2.plot(np.arange(niter) + 1, cost_spdhg2, label = 'SPDHG2')
+  #ax2.plot(np.arange(niter) + 1, cost_spdhg3, label = 'SPDHG3')
   ax2.legend()
   ax2.grid(ls = ':')
   fig2.tight_layout()
