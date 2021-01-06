@@ -6,6 +6,8 @@ import pyparallelproj as ppp
 from pyparallelproj.algorithms import osem, spdhg
 
 import numpy as np
+from scipy.ndimage import gaussian_filter
+
 import argparse
 
 #---------------------------------------------------------------------------------
@@ -111,7 +113,6 @@ else:
   cost_osem  = None
   cost_spdhg = None
 
-plt.ion()
 fig, ax = plt.subplots(1,3, figsize = (12,4))
 ax[0].imshow(img[...,n2//2],   vmin = 0, vmax = 1.3*img.max(), cmap = plt.cm.Greys)
 ax[0].set_title('ground truth')
@@ -130,7 +131,7 @@ fig.canvas.draw()
 def update_img(x):
   ir.set_data(x[...,n2//2])
   ib.set_data(x[...,n2//2] - img[...,n2//2])
-  fig.canvas.draw()
+  plt.pause(1e-6)
 
 def calc_likeli(x):
   logL = 0
@@ -151,53 +152,89 @@ def _cb(x, cost = None):
 #-----------------------------------------------------------------------------------------------
 init_recon = None
 
-cost_mlem  = []
-cost_osem  = []
-cost_spdhg = []
-cost_spdhg2 = []
-cost_spdhg3 = []
-
-recon_mlem = osem(em_sino, attn_sino, sens_sino, contam_sino, proj, niter, 
-                  fwhm = fwhm, verbose = True, xstart = init_recon,
-                  callback = _cb, callback_kwargs = {'cost': cost_mlem})
+cost_mlem = []
+#recon_mlem = osem(em_sino, attn_sino, sens_sino, contam_sino, proj, niter*nsubsets, 
+#                  fwhm = fwhm, verbose = True, xstart = init_recon,
+#                  callback = _cb, callback_kwargs = {'cost': cost_mlem})
 
 # initialize the subsets for the projector
 proj.init_subsets(nsubsets)
 
+cost_osem = []
 recon_osem = osem(em_sino, attn_sino, sens_sino, contam_sino, proj, niter, 
                   fwhm = fwhm, verbose = True, xstart = init_recon,
                   callback = _cb, callback_kwargs = {'cost': cost_osem})
 
-recon_spdhg = spdhg(em_sino, attn_sino, sens_sino, contam_sino, proj, niter,
-                    gamma = args.gamma/img.max(), fwhm = fwhm, verbose = True, xstart = init_recon, 
-                    callback = _cb, callback_kwargs = {'cost': cost_spdhg})
-#
-#ystart = np.zeros(em_sino.shape, dtype = np.float32)
-##ystart[em_sino == 0] = 1
-#
-#recon_spdhg2 = spdhg(em_sino, attn_sino, sens_sino, contam_sino, proj, niter,
-#                     gamma = args.gamma/img.max(), fwhm = fwhm, verbose = True,
-#                     xstart = init_recon, ystart = ystart, 
-#                     callback = _cb, callback_kwargs = {'cost': cost_spdhg2})
-#
-#recon_spdhg3 = spdhg(em_sino, attn_sino, sens_sino, contam_sino, proj, niter,
-#                     gamma = 10*args.gamma/img.max(), fwhm = fwhm, verbose = True,
-#                     xstart = init_recon, ystart = ystart, 
-#                     callback = _cb, callback_kwargs = {'cost': cost_spdhg3})
-#
+ystart = np.zeros(em_sino.shape, dtype = np.float32)
+ystart[em_sino == 0] = 1
+
+gammas = [1e-2,3e-2,1e-1,3e-1,1e0,3e0,1e1]
+costs_spdhg = np.zeros((len(gammas),niter))
+costs_spdhg_sparse = np.zeros((len(gammas),niter))
+
+recons_spdhg        = np.zeros((len(gammas),) + img.shape, dtype = np.float32)
+recons_spdhg_sparse = np.zeros((len(gammas),) + img.shape, dtype = np.float32)
+
+for ig, gamma in enumerate(gammas):
+  cost_spdhg = []
+  recons_spdhg[ig,...] = spdhg(em_sino, attn_sino, sens_sino, contam_sino, proj, niter,
+                               gamma = gamma, fwhm = fwhm, verbose = True, xstart = init_recon, 
+                               callback = _cb, callback_kwargs = {'cost': cost_spdhg})
+  costs_spdhg[ig,:] = cost_spdhg
+
+  cost_spdhg_sparse = [] 
+  recons_spdhg_sparse[ig,...] = spdhg(em_sino, attn_sino, sens_sino, contam_sino, proj, niter,
+                                      gamma = gamma, fwhm = fwhm, verbose = True,
+                                      xstart = init_recon, ystart = ystart, 
+                                      callback = _cb, callback_kwargs = {'cost': cost_spdhg_sparse})
+  costs_spdhg_sparse[ig,:] = cost_spdhg_sparse
+
+
+
+# show the results
+
 if track_likelihood:
-  fig2, ax2 = plt.subplots(1,1, figsize = (4,4))
-  if len(cost_mlem) == niter:
-    ax2.plot(np.arange(niter) + 1, cost_mlem, label = 'MLEM')
-  if len(cost_osem) == niter:
-    ax2.plot(np.arange(niter) + 1, cost_osem, label = 'OSEM')
-  if len(cost_spdhg) == niter:
-    ax2.plot(np.arange(niter) + 1, cost_spdhg,  label = 'SPDHG')
-  if len(cost_spdhg2) == niter:
-    ax2.plot(np.arange(niter) + 1, cost_spdhg2, label = 'SPDHG2')
-  if len(cost_spdhg3) == niter:
-    ax2.plot(np.arange(niter) + 1, cost_spdhg3, label = 'SPDHG3')
-  ax2.legend()
-  ax2.grid(ls = ':')
+  fig2, ax2 = plt.subplots(1,len(gammas), figsize = (16,3))
+  it = np.arange(niter) + 1
+
+  for ig, gamma in enumerate(gammas):
+    ax2[ig].plot(it,cost_osem, label = 'OSEM')
+    ax2[ig].plot(it,costs_spdhg[ig,:], label = f'SPD')
+    ax2[ig].plot(it,costs_spdhg_sparse[ig,:], label = f'SPD-S')
+    ax2[ig].set_title(f'{gamma}')
+
+  for axx in ax2.flatten():
+    axx.legend()
+    axx.grid(ls = ':')
+    axx.set_ylim(min(min(cost_osem), costs_spdhg.min(), costs_spdhg_sparse.min()), 
+                 1.5*max(cost_osem) - 0.5*min(cost_osem))
   fig2.tight_layout()
+  fig2.savefig(f'counts_{counts:.1E}_niter_{niter}_nsub{nsubsets}_cost.pdf')
   fig2.show()            
+
+fig3, ax3 = plt.subplots(4,len(gammas) + 1, figsize = (16,8))
+vmax = 1.5*img.max()
+sig  = 1.5
+
+ax3[0,0].imshow(recon_osem, vmax = vmax, cmap = plt.cm.Greys)
+ax3[0,0].set_title('OSEM')
+ax3[2,0].imshow(gaussian_filter(recon_osem,sig), vmax = vmax, cmap = plt.cm.Greys)
+ax3[2,0].set_title('ps OSEM')
+
+for ig, gamma in enumerate(gammas):
+  ax3[0,ig+1].imshow(recons_spdhg[ig,...], vmax = vmax, cmap = plt.cm.Greys)
+  ax3[1,ig+1].imshow(recons_spdhg_sparse[ig,...], vmax = vmax, cmap = plt.cm.Greys)
+  ax3[0,ig+1].set_title(f'SPD {gamma}')
+  ax3[1,ig+1].set_title(f'SPD-S {gamma}')
+
+  ax3[2,ig+1].imshow(gaussian_filter(recons_spdhg[ig,...],sig), vmax = vmax, cmap = plt.cm.Greys)
+  ax3[3,ig+1].imshow(gaussian_filter(recons_spdhg_sparse[ig,...],sig), vmax = vmax, cmap = plt.cm.Greys)
+  ax3[2,ig+1].set_title(f'ps SPD {gamma}')
+  ax3[3,ig+1].set_title(f'ps SPD-S {gamma}')
+
+for axx in ax3.flatten():
+  axx.set_axis_off()
+
+fig3.tight_layout()
+fig3.savefig(f'counts_{counts:.1E}_niter_{niter}_nsub{nsubsets}.png')
+fig3.show()
