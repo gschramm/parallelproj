@@ -8,6 +8,8 @@ from pyparallelproj.algorithms import osem, spdhg
 import numpy as np
 from scipy.ndimage import gaussian_filter
 
+from phantoms import ellipse_phantom
+
 import argparse
 
 #---------------------------------------------------------------------------------
@@ -15,13 +17,14 @@ import argparse
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--ngpus',    help = 'number of GPUs to use', default = 0,   type = int)
-parser.add_argument('--counts',   help = 'counts to simulate',    default = 1e6, type = float)
+parser.add_argument('--counts',   help = 'counts to simulate',    default = 1e5, type = float)
 parser.add_argument('--niter',    help = 'number of iterations',  default = 2,   type = int)
 parser.add_argument('--nsubsets', help = 'number of subsets',     default = 28,  type = int)
-parser.add_argument('--likeli',   help = 'calc logLikelihodd',    action = 'store_true')
+parser.add_argument('--likeli',   help = 'calc logLikelihood',    action = 'store_true')
+parser.add_argument('--warm'  ,   help = 'warm start with 1 OSEM it', action = 'store_true')
 parser.add_argument('--fwhm_mm',  help = 'psf modeling FWHM mm',  default = 4.5, type = float)
 parser.add_argument('--fwhm_data_mm',  help = 'psf for data FWHM mm',  default = 4.5, type = float)
-parser.add_argument('--gamma',     help = 'gamma parameter',       default = 1., type = float)
+#parser.add_argument('--gamma',     help = 'gamma parameter',       default = 1., type = float)
 args = parser.parse_args()
 
 #---------------------------------------------------------------------------------
@@ -33,6 +36,7 @@ nsubsets         = args.nsubsets
 fwhm_mm          = args.fwhm_mm
 fwhm_data_mm     = args.fwhm_data_mm
 track_likelihood = args.likeli
+warm             = args.warm
 
 #---------------------------------------------------------------------------------
 
@@ -44,8 +48,9 @@ scanner = ppp.RegularPolygonPETScanner(ncrystals_per_module = np.array([16,1]),
 
 # setup a test image
 voxsize = np.array([2.,2.,2.])
-n0      = 120
-n1      = 120
+n       = 200
+n0      = n
+n1      = n
 n2      = max(1,int((scanner.xc2.max() - scanner.xc2.min()) / voxsize[2]))
 
 # convert fwhm from mm to pixels
@@ -54,7 +59,9 @@ fwhm_data = fwhm_data_mm / voxsize
 
 # setup a random image
 img = np.zeros((n0,n1,n2), dtype = np.float32)
-img[(n0//4):(3*n0//4),(n1//4):(3*n1//4),:] = 1
+for i2 in range(n2):
+  img[:,:,i2] = ellipse_phantom(n = n, c = 3)
+
 img_origin = (-(np.array(img.shape) / 2) +  0.5) * voxsize
 
 # setup an attenuation image
@@ -76,8 +83,19 @@ proj        = ppp.SinogramProjector(scanner, sino_params, img.shape, nsubsets = 
                                     voxsize = voxsize, img_origin = img_origin, ngpus = ngpus,
                                     tof = True, sigma_tof = 60./2.35, n_sigmas = 3.)
 
-# allocate array for the subset sinogram
-img_fwd    = np.zeros(sino_params.shape, dtype = np.float32)
+# estimate the norm of the operator
+test_img = np.random.rand(*img.shape)
+for i in range(10):
+  fwd  = ppp.pet_fwd_model(test_img, proj, attn_sino, sens_sino, 0, fwhm = fwhm)
+  back = ppp.pet_back_model(fwd, proj, attn_sino, sens_sino, 0, fwhm = fwhm)
+
+  norm = np.linalg.norm(back)
+  print(i,norm)
+
+  test_img = back / norm
+
+# normalize sensitivity sinogram to get PET forward model with norm 1
+sens_sino /= np.sqrt(norm)
 
 # forward project the image
 img_fwd= ppp.pet_fwd_model(img, proj, attn_sino, sens_sino, 0, fwhm = fwhm_data)
@@ -150,15 +168,20 @@ def _cb(x, cost = None):
   update_img(x)
 
 #-----------------------------------------------------------------------------------------------
-init_recon = None
 
-cost_mlem = []
+#cost_mlem = []
 #recon_mlem = osem(em_sino, attn_sino, sens_sino, contam_sino, proj, niter*nsubsets, 
 #                  fwhm = fwhm, verbose = True, xstart = init_recon,
 #                  callback = _cb, callback_kwargs = {'cost': cost_mlem})
 
 # initialize the subsets for the projector
 proj.init_subsets(nsubsets)
+
+if warm:
+  init_recon = osem(em_sino, attn_sino, sens_sino, contam_sino, proj, 1, 
+                    fwhm = fwhm, verbose = True)
+else:
+  init_recon = None
 
 cost_osem = []
 recon_osem = osem(em_sino, attn_sino, sens_sino, contam_sino, proj, niter, 
@@ -168,7 +191,7 @@ recon_osem = osem(em_sino, attn_sino, sens_sino, contam_sino, proj, niter,
 ystart = np.zeros(em_sino.shape, dtype = np.float32)
 ystart[em_sino == 0] = 1
 
-gammas = [1e-2,3e-2,1e-1,3e-1,1e0,3e0,1e1]
+gammas = np.array([0.1,0.3,1,3,10,30,100]) / (counts/1e3)
 costs_spdhg = np.zeros((len(gammas),niter))
 costs_spdhg_sparse = np.zeros((len(gammas),niter))
 
@@ -178,7 +201,8 @@ recons_spdhg_sparse = np.zeros((len(gammas),) + img.shape, dtype = np.float32)
 for ig, gamma in enumerate(gammas):
   cost_spdhg = []
   recons_spdhg[ig,...] = spdhg(em_sino, attn_sino, sens_sino, contam_sino, proj, niter,
-                               gamma = gamma, fwhm = fwhm, verbose = True, xstart = init_recon, 
+                               gamma = gamma, fwhm = fwhm, verbose = True, 
+                               xstart = init_recon, 
                                callback = _cb, callback_kwargs = {'cost': cost_spdhg})
   costs_spdhg[ig,:] = cost_spdhg
 
@@ -214,7 +238,7 @@ if track_likelihood:
 
 fig3, ax3 = plt.subplots(4,len(gammas) + 1, figsize = (16,8))
 vmax = 1.5*img.max()
-sig  = 1.5
+sig  = 2
 
 ax3[0,0].imshow(recon_osem, vmax = vmax, cmap = plt.cm.Greys)
 ax3[0,0].set_title('OSEM')
