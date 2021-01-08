@@ -42,6 +42,7 @@ warm             = args.warm
 interactive      = args.interactive
 phantom          = args.phantom
 seed             = args.seed
+ps_fwhm_mm       = 8.
 
 #---------------------------------------------------------------------------------
 
@@ -57,6 +58,9 @@ n       = 200
 n0      = n
 n1      = n
 n2      = max(1,int((scanner.xc2.max() - scanner.xc2.min()) / voxsize[2]))
+
+# sigma for post_smoothing
+sig     = ps_fwhm_mm / (voxsize*2.35)
 
 # convert fwhm from mm to pixels
 fwhm      = fwhm_mm / voxsize
@@ -172,6 +176,10 @@ def _cb(x, **kwargs):
   if 'psnr' in kwargs:
     MSE = ((x - kwargs['xref'])**2).mean()
     kwargs['psnr'][it-1] = 20*np.log10(kwargs['xref'].max()/np.sqrt(MSE))
+  if 'psnr_ps' in kwargs:
+    x_ps = gaussian_filter(x, kwargs['sig'])
+    MSE = ((x_ps - kwargs['xref_ps'])**2).mean()
+    kwargs['psnr_ps'][it-1] = 20*np.log10(kwargs['xref_ps'].max()/np.sqrt(MSE))
 
 #-----------------------------------------------------------------------------------------------
 
@@ -191,7 +199,8 @@ else:
 
   np.savez(mlem_fname, recon_mlem = recon_mlem, cost_mlem = cost_mlem)
 
-ref_recon = recon_mlem
+ref_recon    = recon_mlem
+ref_recon_ps = gaussian_filter(ref_recon, sig)
 
 # initialize the subsets for the projector
 proj.init_subsets(nsubsets)
@@ -202,10 +211,12 @@ if warm:
 else:
   init_recon = None
 
-cost_osem = np.zeros(niter)
-psnr_osem = np.zeros(niter)
+cost_osem    = np.zeros(niter)
+psnr_osem    = np.zeros(niter)
+psnr_ps_osem = np.zeros(niter)
 
-cbk = {'cost':cost_osem, 'xref':ref_recon, 'psnr':psnr_osem}
+cbk = {'cost':cost_osem, 'xref':ref_recon, 'psnr':psnr_osem, 
+       'xref_ps':ref_recon_ps, 'psnr_ps':psnr_ps_osem, 'sig':sig}
 recon_osem = osem(em_sino, attn_sino, sens_sino, contam_sino, proj, niter, 
                   fwhm = fwhm, verbose = True, xstart = init_recon,
                   callback = _cb, callback_kwargs = cbk)
@@ -220,18 +231,22 @@ costs_spdhg_sparse = np.zeros((len(gammas),niter))
 
 psnr_spdhg = np.zeros((len(gammas),niter))
 psnr_spdhg_sparse = np.zeros((len(gammas),niter))
+psnr_ps_spdhg = np.zeros((len(gammas),niter))
+psnr_ps_spdhg_sparse = np.zeros((len(gammas),niter))
 
 recons_spdhg        = np.zeros((len(gammas),) + img.shape, dtype = np.float32)
 recons_spdhg_sparse = np.zeros((len(gammas),) + img.shape, dtype = np.float32)
 
 for ig, gamma in enumerate(gammas):
-  cbs = {'cost':costs_spdhg[ig,:], 'xref':ref_recon, 'psnr':psnr_spdhg[ig,:]}
+  cbs = {'cost':costs_spdhg[ig,:], 'xref':ref_recon, 'psnr':psnr_spdhg[ig,:],
+         'xref_ps':ref_recon_ps, 'psnr_ps':psnr_ps_spdhg[ig,:], 'sig':sig}
   recons_spdhg[ig,...] = spdhg(em_sino, attn_sino, sens_sino, contam_sino, proj, niter,
                                gamma = gamma, fwhm = fwhm, verbose = True, 
                                xstart = init_recon, 
                                callback = _cb, callback_kwargs = cbs)
 
-  cbss = {'cost':costs_spdhg_sparse[ig,:], 'xref':ref_recon, 'psnr':psnr_spdhg_sparse[ig,:]}
+  cbss = {'cost':costs_spdhg_sparse[ig,:], 'xref':ref_recon, 'psnr':psnr_spdhg_sparse[ig,:],
+          'xref_ps':ref_recon_ps, 'psnr_ps':psnr_ps_spdhg_sparse[ig,:], 'sig':sig}
   recons_spdhg_sparse[ig,...] = spdhg(em_sino, attn_sino, sens_sino, contam_sino, proj, niter,
                                       gamma = gamma, fwhm = fwhm, verbose = True,
                                       xstart = init_recon, ystart = ystart, 
@@ -239,14 +254,14 @@ for ig, gamma in enumerate(gammas):
 
 # show the cost function
 it = np.arange(niter) + 1
-base_str = f'{phantom}_counts_{counts:.1E}_niter_{niter}_nsub_{nsubsets}'
+base_str = f'{phantom}_counts_{counts:.1E}_niter_{niter_mlem}_{niter}_nsub_{nsubsets}'
 
-fig2, ax2 = plt.subplots(1,len(gammas), figsize = (16,3), sharex = True, sharey = True)
+fig2, ax2 = plt.subplots(1,len(gammas), figsize = (16,3), sharex = True, sharey = 'row')
 for ig, gamma in enumerate(gammas):
   ax2[ig].plot(it,cost_osem, label = 'OSEM')
   ax2[ig].plot(it,costs_spdhg[ig,:], label = f'SPD')
   ax2[ig].plot(it,costs_spdhg_sparse[ig,:], label = f'SPD-S')
-  ax2[ig].set_title(f'{gamma}')
+  ax2[ig].set_title(f'Gam {gamma:.1E}')
 
 ax2[0].set_ylabel('cost')
 ax2[0].legend()
@@ -261,15 +276,20 @@ fig2.savefig(os.path.join('figs',f'{base_str}_cost.png'))
 fig2.show()            
 
 # show the PSNR
-fig4, ax4 = plt.subplots(1,len(gammas), figsize = (16,3), sharex = True, sharey = True)
+fig4, ax4 = plt.subplots(2,len(gammas), figsize = (16,6), sharex = True, sharey = 'row')
 for ig, gamma in enumerate(gammas):
-  ax4[ig].plot(it,psnr_osem, label = 'OSEM')
-  ax4[ig].plot(it,psnr_spdhg[ig,:], label = f'SPD')
-  ax4[ig].plot(it,psnr_spdhg_sparse[ig,:], label = f'SPD-S')
-  ax4[ig].set_title(f'{gamma}')
+  ax4[0,ig].plot(it,psnr_osem, label = 'OSEM')
+  ax4[0,ig].plot(it,psnr_spdhg[ig,:], label = f'SPD')
+  ax4[0,ig].plot(it,psnr_spdhg_sparse[ig,:], label = f'SPD-S')
+  ax4[0,ig].set_title(f'Gam {gamma:.1E}')
 
-ax4[0].set_ylabel('PSNR')
-ax4[0].legend()
+  ax4[1,ig].plot(it,psnr_ps_osem, label = 'OSEM')
+  ax4[1,ig].plot(it,psnr_ps_spdhg[ig,:], label = f'SPD')
+  ax4[1,ig].plot(it,psnr_ps_spdhg_sparse[ig,:], label = f'SPD-S')
+
+ax4[0,0].set_ylabel('PSNR')
+ax4[0,1].set_ylabel('PSNR ps')
+ax4[0,0].legend()
 for axx in ax4.flatten():
   axx.set_xlabel('iteration')
   axx.grid(ls = ':')
@@ -279,10 +299,10 @@ fig4.savefig(os.path.join('figs',f'{base_str}_psnr.pdf'))
 fig4.savefig(os.path.join('figs',f'{base_str}_psnr.png'))
 fig4.show()            
 
+
 # show the reconstructions
 fig3, ax3 = plt.subplots(4,len(gammas) + 1, figsize = (16,8))
 vmax = 1.5*img.max()
-sig  = 2
 
 ax3[0,0].imshow(recon_mlem, vmax = vmax, cmap = plt.cm.Greys)
 ax3[0,0].set_title('MLEM')
@@ -297,13 +317,13 @@ ax3[3,0].set_title('ps OSEM')
 for ig, gamma in enumerate(gammas):
   ax3[0,ig+1].imshow(recons_spdhg[ig,...], vmax = vmax, cmap = plt.cm.Greys)
   ax3[1,ig+1].imshow(recons_spdhg_sparse[ig,...], vmax = vmax, cmap = plt.cm.Greys)
-  ax3[0,ig+1].set_title(f'SPD {gamma}')
-  ax3[1,ig+1].set_title(f'SPD-S {gamma}')
+  ax3[0,ig+1].set_title(f'SPD {gamma:.1E}')
+  ax3[1,ig+1].set_title(f'SPD-S {gamma:.1E}')
 
   ax3[2,ig+1].imshow(gaussian_filter(recons_spdhg[ig,...],sig), vmax = vmax, cmap = plt.cm.Greys)
   ax3[3,ig+1].imshow(gaussian_filter(recons_spdhg_sparse[ig,...],sig), vmax = vmax, cmap = plt.cm.Greys)
-  ax3[2,ig+1].set_title(f'ps SPD {gamma}')
-  ax3[3,ig+1].set_title(f'ps SPD-S {gamma}')
+  ax3[2,ig+1].set_title(f'ps SPD {gamma:.1E}')
+  ax3[3,ig+1].set_title(f'ps SPD-S {gamma:.1E}')
 
 for axx in ax3.flatten():
   axx.set_axis_off()
