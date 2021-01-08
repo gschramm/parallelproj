@@ -1,3 +1,5 @@
 *.pbs
 *.?50*
 *.bat
+data/*
+figs/*

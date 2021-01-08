@@ -27,7 +27,7 @@ def osem(em_sino, attn_sino, sens_sino, contam_sino, proj, niter,
   # run OSEM iterations
   for it in range(niter):
     for i in range(proj.nsubsets):
-      if verbose: print(f'iteration {it + 1} subset {i+1}')
+      if verbose: print(f'iteration {it+1} subset {i+1}')
 
       # get the slice for the current subset
       ss        = proj.subset_slices[i]
@@ -39,10 +39,10 @@ def osem(em_sino, attn_sino, sens_sino, contam_sino, proj, niter,
                                fwhm = fwhm) / sens_img[i,...]) 
     
       if subset_callback is not None:
-        subset_callback(recon, **subset_callback_kwargs)
+        subset_callback(recon, iteration = (it+1), subset = (i+1), **subset_callback_kwargs)
 
     if callback is not None:
-      callback(recon, **callback_kwargs)
+      callback(recon, iteration = (it+1), subset = (i+1), **callback_kwargs)
       
   return recon
 
@@ -65,7 +65,7 @@ def osem_lm(events, attn_list, sens_list, contam_list, lmproj, sens_img, niter, 
   # run OSEM iterations
   for it in range(niter):
     for i in range(nsubsets):
-      if verbose: print(f'iteration {it + 1} subset {i+1}')
+      if verbose: print(f'iteration {it+1} subset {i+1}')
     
       exp_list = pet_fwd_model_lm(recon, lmproj, events[i::nsubsets,:], attn_list[i::nsubsets], 
                                       sens_list[i::nsubsets], fwhm = fwhm) + contam_list[i::nsubsets]
@@ -74,11 +74,11 @@ def osem_lm(events, attn_list, sens_list, contam_list, lmproj, sens_img, niter, 
                                   sens_list[i::nsubsets], fwhm = fwhm)*nsubsets / sens_img)
 
       if subset_callback is not None:
-        subset_callback(recon, **subset_callback_kwargs)
+        subset_callback(recon, iteration = (it+1), subset = (i+1), **subset_callback_kwargs)
 
     if callback is not None:
       callback(recon)
-      callback(recon, **callback_kwargs)
+      callback(recon, iteration = (it+1), subset = (i+1), **callback_kwargs)
       
   return recon
 
@@ -151,7 +151,7 @@ def spdhg(em_sino, attn_sino, sens_sino, contam_sino, proj, niter,
     for iss in range(nsubsets):
       # select a random subset
       i = subset_sequence[iss]
-      print(f'iteration {it + 1} step {iss} subset {i}')
+      print(f'iteration {it + 1} step {iss} subset {i+1}')
       # get the slice for the current subset
       ss = proj.subset_slices[i]
   
@@ -171,9 +171,9 @@ def spdhg(em_sino, attn_sino, sens_sino, contam_sino, proj, niter,
       zbar = z + dz*nsubsets
 
       if subset_callback is not None:
-        subset_callback(x, **subset_callback_kwargs)
+        subset_callback(x, iteration = (it+1), subset = (i+1), **subset_callback_kwargs)
 
     if callback is not None:
-      callback(x, **callback_kwargs)
+      callback(x, iteration = (it+1), subset = (i+1), **callback_kwargs)
 
   return x
