@@ -288,7 +288,7 @@ for ig, gamma in enumerate(gammas):
   ax4[1,ig].plot(it,psnr_ps_spdhg_sparse[ig,:], label = f'SPD-S')
 
 ax4[0,0].set_ylabel('PSNR')
-ax4[0,1].set_ylabel('PSNR ps')
+ax4[1,0].set_ylabel('PSNR ps')
 ax4[0,0].legend()
 for axx in ax4.flatten():
   axx.set_xlabel('iteration')
