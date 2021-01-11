@@ -9,6 +9,7 @@ import numpy as np
 from scipy.ndimage import gaussian_filter
 
 from phantoms import ellipse_phantom
+from pymirc.image_operations import grad, div
 
 import argparse
 
@@ -19,7 +20,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument('--ngpus',    help = 'number of GPUs to use', default = 0,   type = int)
 parser.add_argument('--counts',   help = 'counts to simulate',    default = 1e5, type = float)
 parser.add_argument('--niter',    help = 'number of iterations',  default = 50,  type = int)
-parser.add_argument('--niter_mlem', help = 'number of MLEM iterations', default = 10000,  type = int)
+parser.add_argument('--niter_ref', help = 'number of MLEM iterations', default = 10000,  type = int)
 parser.add_argument('--nsubsets',   help = 'number of subsets',     default = 28,  type = int)
 parser.add_argument('--warm'  ,   help = 'warm start with 1 OSEM it', action = 'store_true')
 parser.add_argument('--interactive', help = 'show recons updates', action = 'store_true')
@@ -27,24 +28,27 @@ parser.add_argument('--fwhm_mm',  help = 'psf modeling FWHM mm',  default = 4.5,
 parser.add_argument('--fwhm_data_mm',  help = 'psf for data FWHM mm',  default = 4.5, type = float)
 parser.add_argument('--phantom', help = 'phantom to use', default = 'brain2d')
 parser.add_argument('--seed',    help = 'seed for random generator', default = 1, type = int)
+parser.add_argument('--beta',   help = 'beta for TV', default = 1e-3, type = float)
 args = parser.parse_args()
 
 #---------------------------------------------------------------------------------
 
-ngpus            = args.ngpus
-counts           = args.counts
-niter            = args.niter
-niter_mlem       = args.niter_mlem
-nsubsets         = args.nsubsets
-fwhm_mm          = args.fwhm_mm
-fwhm_data_mm     = args.fwhm_data_mm
-warm             = args.warm
-interactive      = args.interactive
-phantom          = args.phantom
-seed             = args.seed
-ps_fwhm_mm       = 8.
+ngpus         = args.ngpus
+counts        = args.counts
+niter         = args.niter
+niter_ref     = args.niter_ref
+nsubsets      = args.nsubsets
+fwhm_mm       = args.fwhm_mm
+fwhm_data_mm  = args.fwhm_data_mm
+warm          = args.warm
+interactive   = args.interactive
+phantom       = args.phantom
+seed          = args.seed
+ps_fwhm_mm    = 8.
+beta          = args.beta
 
-gammas = np.array([0.1,0.3,1,3,10,30,100]) / (counts/1e3)
+#gammas = np.array([0.1,0.3,1,3,10,30,100]) / (counts/1e3)
+gammas = np.array([1,3]) / (counts/1e3)
 
 #---------------------------------------------------------------------------------
 
@@ -162,23 +166,28 @@ def update_img(x):
   ib.set_data(x[...,n2//2] - img[...,n2//2])
   plt.pause(1e-6)
 
-def calc_likeli(x):
-  logL = 0
+def calc_cost(x):
+  cost = 0
 
   for i in range(proj.nsubsets):
     # get the slice for the current subset
     ss = proj.subset_slices[i]
     exp = ppp.pet_fwd_model(x, proj, attn_sino[ss], sens_sino[ss], i, fwhm = fwhm) + contam_sino[ss]
-    logL += (exp - em_sino[ss]*np.log(exp)).sum()
+    cost += (exp - em_sino[ss]*np.log(exp)).sum()
 
-  return logL
+  if beta > 0:
+    x_grad = np.zeros((img.ndim,) + img.shape, dtype = np.float32)
+    grad(x, x_grad)
+    cost += beta*np.linalg.norm(x_grad, axis = 0).sum()
+
+  return cost
 
 def _cb(x, **kwargs):
   it = kwargs.get('iteration',0)
   if interactive: 
     update_img(x)
   if 'cost' in kwargs:
-    kwargs['cost'][it-1] = calc_likeli(x)
+    kwargs['cost'][it-1] = calc_cost(x)
   if 'psnr' in kwargs:
     MSE = ((x - kwargs['xref'])**2).mean()
     kwargs['psnr'][it-1] = 20*np.log10(kwargs['xref'].max()/np.sqrt(MSE))
@@ -190,22 +199,28 @@ def _cb(x, **kwargs):
 #-----------------------------------------------------------------------------------------------
 
 # do long MLEM as reference
-mlem_fname = os.path.join('data',
-                          f'mlem_{phantom}_niter_{niter_mlem}_counts_{counts:.1E}_seed_{seed}.npz')
-
-if os.path.exists(mlem_fname):
-  tmp = np.load(mlem_fname)
-  recon_mlem = tmp['recon_mlem']
-  cost_mlem  = tmp['cost_mlem']
+if beta > 0:
+  ref_fname = os.path.join('data', f'PDHG_{phantom}_TVbeta_{beta:.1E}_niter_{niter_ref}_{niter}_counts_{counts:.1E}_seed_{seed}.npz')
 else:
-  cost_mlem = np.zeros(niter_mlem)
-  recon_mlem = osem(em_sino, attn_sino, sens_sino, contam_sino, proj, niter_mlem, 
-                    fwhm = fwhm, verbose = True,
-                    callback = _cb, callback_kwargs = {'cost': cost_mlem})
+  ref_fname = os.path.join('data', f'mlem_{phantom}_niter_{niter_ref}_{niter}_counts_{counts:.1E}_seed_{seed}.npz')
 
-  np.savez(mlem_fname, recon_mlem = recon_mlem, cost_mlem = cost_mlem)
+if os.path.exists(ref_fname):
+  tmp = np.load(ref_fname)
+  ref_recon = tmp['ref_recon']
+  ref_cost  = tmp['ref_cost']
+else:
+  ref_cost  = np.zeros(niter_ref)
 
-ref_recon    = recon_mlem
+  if beta > 0:
+    ref_recon = spdhg(em_sino, attn_sino, sens_sino, contam_sino, proj, niter_ref,
+                      gamma = 3./(counts/1e3), fwhm = fwhm, verbose = True, 
+                      beta = beta, callback = _cb, callback_kwargs = {'cost': ref_cost})
+  else:
+    ref_recon = osem(em_sino, attn_sino, sens_sino, contam_sino, proj, niter_ref,
+                     fwhm = fwhm, verbose = True, callback = _cb, callback_kwargs = {'cost': ref_cost})
+
+  np.savez(ref_fname, ref_recon = ref_recon, ref_cost = ref_cost)
+
 ref_recon_ps = gaussian_filter(ref_recon, sig)
 
 # initialize the subsets for the projector
@@ -221,11 +236,12 @@ cost_osem    = np.zeros(niter)
 psnr_osem    = np.zeros(niter)
 psnr_ps_osem = np.zeros(niter)
 
-cbk = {'cost':cost_osem, 'xref':ref_recon, 'psnr':psnr_osem, 
-       'xref_ps':ref_recon_ps, 'psnr_ps':psnr_ps_osem, 'sig':sig}
-recon_osem = osem(em_sino, attn_sino, sens_sino, contam_sino, proj, niter, 
-                  fwhm = fwhm, verbose = True, xstart = init_recon,
-                  callback = _cb, callback_kwargs = cbk)
+if beta == 0:
+  cbk = {'cost':cost_osem, 'xref':ref_recon, 'psnr':psnr_osem, 
+         'xref_ps':ref_recon_ps, 'psnr_ps':psnr_ps_osem, 'sig':sig}
+  recon_osem = osem(em_sino, attn_sino, sens_sino, contam_sino, proj, niter, 
+                    fwhm = fwhm, verbose = True, xstart = init_recon,
+                    callback = _cb, callback_kwargs = cbk)
 
 ystart = np.zeros(em_sino.shape, dtype = np.float32)
 ystart[em_sino == 0] = 1
@@ -246,33 +262,36 @@ for ig, gamma in enumerate(gammas):
          'xref_ps':ref_recon_ps, 'psnr_ps':psnr_ps_spdhg[ig,:], 'sig':sig}
   recons_spdhg[ig,...] = spdhg(em_sino, attn_sino, sens_sino, contam_sino, proj, niter,
                                gamma = gamma, fwhm = fwhm, verbose = True, 
-                               xstart = init_recon, 
+                               xstart = init_recon, beta = beta,
                                callback = _cb, callback_kwargs = cbs)
 
   cbss = {'cost':costs_spdhg_sparse[ig,:], 'xref':ref_recon, 'psnr':psnr_spdhg_sparse[ig,:],
           'xref_ps':ref_recon_ps, 'psnr_ps':psnr_ps_spdhg_sparse[ig,:], 'sig':sig}
   recons_spdhg_sparse[ig,...] = spdhg(em_sino, attn_sino, sens_sino, contam_sino, proj, niter,
                                       gamma = gamma, fwhm = fwhm, verbose = True,
-                                      xstart = init_recon, ystart = ystart, 
+                                      xstart = init_recon, ystart = ystart, beta = beta,
                                       callback = _cb, callback_kwargs = cbss)
 
 # show the cost function
 it = np.arange(niter) + 1
-base_str = f'{phantom}_counts_{counts:.1E}_niter_{niter_mlem}_{niter}_nsub_{nsubsets}'
+base_str = f'{phantom}_counts_{counts:.1E}_beta_{beta:.1E}_niter_{niter_ref}_{niter}_nsub_{nsubsets}'
 
 # show the PSNR
 fig2, ax2 = plt.subplots(3,len(gammas), figsize = (16,6), sharex = True, sharey = 'row')
 for ig, gamma in enumerate(gammas):
-  ax2[0,ig].plot(it,cost_osem, label = 'OSEM')
+  if beta == 0:
+    ax2[0,ig].plot(it,cost_osem, label = 'OSEM')
   ax2[0,ig].plot(it,costs_spdhg[ig,:], label = f'SPD')
   ax2[0,ig].plot(it,costs_spdhg_sparse[ig,:], label = f'SPD-S')
   ax2[0,ig].set_title(f'Gam {gamma:.1E}', fontsize = 'medium')
 
-  ax2[1,ig].plot(it,psnr_osem, label = 'OSEM')
+  if beta == 0:
+    ax2[1,ig].plot(it,psnr_osem, label = 'OSEM')
   ax2[1,ig].plot(it,psnr_spdhg[ig,:], label = f'SPD')
   ax2[1,ig].plot(it,psnr_spdhg_sparse[ig,:], label = f'SPD-S')
 
-  ax2[2,ig].plot(it,psnr_ps_osem, label = 'OSEM')
+  if beta == 0:
+    ax2[2,ig].plot(it,psnr_ps_osem, label = 'OSEM')
   ax2[2,ig].plot(it,psnr_ps_spdhg[ig,:], label = f'SPD')
   ax2[2,ig].plot(it,psnr_ps_spdhg_sparse[ig,:], label = f'SPD-S')
 
@@ -281,9 +300,10 @@ ax2[1,0].set_ylabel('PSNR')
 ax2[2,0].set_ylabel('PSNR ps')
 ax2[0,0].legend()
 
-for axx in ax2[0,:].flatten():
-  axx.set_ylim(min(min(cost_osem), costs_spdhg.min(), costs_spdhg_sparse.min()), 
-               1.5*max(cost_osem) - 0.5*min(cost_osem))
+if beta == 0:
+  for axx in ax2[0,:].flatten():
+    axx.set_ylim(min(min(cost_osem), costs_spdhg.min(), costs_spdhg_sparse.min()), 
+                 1.5*max(cost_osem) - 0.5*min(cost_osem))
 
 for axx in ax2[-1,:].flatten():
   axx.set_xlabel('iteration')
@@ -300,15 +320,17 @@ fig2.show()
 fig3, ax3 = plt.subplots(4,len(gammas) + 1, figsize = (16,8))
 vmax = 1.5*img.max()
 
-ax3[0,0].imshow(recon_mlem, vmax = vmax, cmap = plt.cm.Greys)
-ax3[0,0].set_title('MLEM')
-ax3[1,0].imshow(recon_osem, vmax = vmax, cmap = plt.cm.Greys)
-ax3[1,0].set_title('OSEM')
+ax3[0,0].imshow(ref_recon, vmax = vmax, cmap = plt.cm.Greys)
+ax3[0,0].set_title('REFERENCE')
+if beta == 0:
+  ax3[1,0].imshow(recon_osem, vmax = vmax, cmap = plt.cm.Greys)
+  ax3[1,0].set_title('OSEM')
 
-ax3[2,0].imshow(gaussian_filter(recon_mlem,sig), vmax = vmax, cmap = plt.cm.Greys)
-ax3[2,0].set_title('ps MLEM')
-ax3[3,0].imshow(gaussian_filter(recon_osem,sig), vmax = vmax, cmap = plt.cm.Greys)
-ax3[3,0].set_title('ps OSEM')
+ax3[2,0].imshow(gaussian_filter(ref_recon,sig), vmax = vmax, cmap = plt.cm.Greys)
+ax3[2,0].set_title('ps REFERNCE')
+if beta == 0:
+  ax3[3,0].imshow(gaussian_filter(recon_osem,sig), vmax = vmax, cmap = plt.cm.Greys)
+  ax3[3,0].set_title('ps OSEM')
 
 for ig, gamma in enumerate(gammas):
   ax3[0,ig+1].imshow(recons_spdhg[ig,...], vmax = vmax, cmap = plt.cm.Greys)

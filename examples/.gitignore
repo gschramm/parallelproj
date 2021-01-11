@@ -3,3 +3,4 @@
 *.bat
 data/*
 figs/*
+test*
