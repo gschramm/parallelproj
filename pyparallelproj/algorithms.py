@@ -1,5 +1,6 @@
 import numpy as np
 from pyparallelproj.models import pet_fwd_model, pet_back_model, pet_fwd_model_lm, pet_back_model_lm
+from pymirc.image_operations import grad, div
 
 def osem(em_sino, attn_sino, sens_sino, contam_sino, proj, niter,
          fwhm = 0, verbose = False, xstart = None, 
@@ -90,10 +91,25 @@ def spdhg(em_sino, attn_sino, sens_sino, contam_sino, proj, niter,
           fwhm = 0, gamma = 1., rho = 0.999, verbose = False, 
           xstart = None, ystart = None,
           callback = None, subset_callback = None,
-          callback_kwargs = None, subset_callback_kwargs = None):
-
+          callback_kwargs = None, subset_callback_kwargs = None,
+          beta = 0):
+ 
   img_shape = tuple(proj.img_dim)
   nsubsets  = proj.nsubsets
+
+  # setup the probabilities for doing a pet data or gradient update
+  # p_g is the probablility for doing a gradient update
+  # p_p is the probablility for doing a PET data subset update
+
+  if beta == 0:
+    p_g = 0
+  else: 
+    p_g = 0.5
+    # norm of the gradient operator = sqrt(ndim*4)
+    ndim  = len([x for x in img_shape if x > 1])
+    grad_norm = np.sqrt(ndim*4)
+
+  p_p = (1 - p_g) / nsubsets
 
   # calculate the "step sizes" S_i, T_i  for the projector
   S_i = []
@@ -107,8 +123,17 @@ def spdhg(em_sino, attn_sino, sens_sino, contam_sino, proj, niter,
     tmp[tmp == np.inf] = tmp[tmp != np.inf].max()
     S_i.append(tmp)
 
+  if p_g > 0:
+    # calculate S for the gradient operator
+    S_g = (gamma*rho/grad_norm)
 
-  T_i = np.zeros((nsubsets,) + img_shape, dtype = np.float32)
+
+  if p_g == 0:
+    T_i = np.zeros((nsubsets,) + img_shape, dtype = np.float32)
+  else:
+    T_i = np.zeros(((nsubsets+1),) + img_shape, dtype = np.float32)
+    T_i[-1,...] = rho*p_g/(gamma*grad_norm)
+
   for i in range(nsubsets):
     # get the slice for the current subset
     ss = proj.subset_slices[i]
@@ -116,7 +141,7 @@ def spdhg(em_sino, attn_sino, sens_sino, contam_sino, proj, niter,
     ones_sino = np.ones(proj.subset_sino_shapes[i] , dtype = np.float32)
 
     tmp = pet_back_model(ones_sino, proj, attn_sino[ss], sens_sino[ss], i, fwhm = fwhm)
-    T_i[i,...] = (rho/(nsubsets*gamma)) / tmp  
+    T_i[i,...] = (rho*p_p/gamma) / tmp  
                                                          
   # take the element-wise min of the T_i's of all subsets
   T = T_i.min(axis = 0)
@@ -143,32 +168,60 @@ def spdhg(em_sino, attn_sino, sens_sino, contam_sino, proj, niter,
 
   zbar = z.copy()
 
+  # allocate arrays for gradient operations
+  x_grad      = np.zeros((T.ndim,) + img_shape, dtype = np.float32)
+  y_grad      = np.zeros((T.ndim,) + img_shape, dtype = np.float32)
+  y_grad_plus = np.zeros((T.ndim,) + img_shape, dtype = np.float32)
+
   #--------------------------------------------------------------------------------------------
   # SPDHG iterations
 
   for it in range(niter):
-    subset_sequence = np.random.permutation(np.arange(nsubsets))
-    for iss in range(nsubsets):
+    subset_sequence = np.random.permutation(np.arange(int(nsubsets/(1-p_g))))
+
+    for iss in range(subset_sequence.shape[0]):
+      
       # select a random subset
       i = subset_sequence[iss]
-      print(f'iteration {it + 1} step {iss} subset {i+1}')
-      # get the slice for the current subset
-      ss = proj.subset_slices[i]
+
+      if i < nsubsets:
+        # PET subset update
+        print(f'iteration {it + 1} step {iss} subset {i+1}')
+        # get the slice for the current subset
+        ss = proj.subset_slices[i]
   
-      x = np.clip(x - T*zbar, 0, None)
+        x = np.clip(x - T*zbar, 0, None)
   
-      y_plus = y[ss] + S_i[i]*(pet_fwd_model(x, proj, attn_sino[ss], sens_sino[ss], i, 
-                                             fwhm = fwhm) + contam_sino[ss])
+        y_plus = y[ss] + S_i[i]*(pet_fwd_model(x, proj, attn_sino[ss], sens_sino[ss], i, 
+                                               fwhm = fwhm) + contam_sino[ss])
   
-      # apply the prox for the dual of the poisson logL
-      y_plus = 0.5*(y_plus + 1 - np.sqrt((y_plus - 1)**2 + 4*S_i[i]*em_sino[ss]))
+        # apply the prox for the dual of the poisson logL
+        y_plus = 0.5*(y_plus + 1 - np.sqrt((y_plus - 1)**2 + 4*S_i[i]*em_sino[ss]))
   
-      dz = pet_back_model(y_plus - y[ss], proj, attn_sino[ss], sens_sino[ss], i, fwhm = fwhm)
+        dz = pet_back_model(y_plus - y[ss], proj, attn_sino[ss], sens_sino[ss], i, fwhm = fwhm)
   
-      # update variables
-      z = z + dz
-      y[ss] = y_plus.copy()
-      zbar = z + dz*nsubsets
+        # update variables
+        z = z + dz
+        y[ss] = y_plus.copy()
+        zbar = z + dz/p_p
+      else:
+        print(f'iteration {it + 1} step {iss} gradient update')
+
+        grad(x, x_grad)
+        y_grad_plus = (y_grad + S_g*x_grad).reshape(T.ndim,-1)
+
+        # proximity operator for dual of TV
+        gnorm = np.linalg.norm(y_grad_plus, axis = 0)
+        y_grad_plus /= np.maximum(np.ones(gnorm.shape, np.float32), gnorm / beta)
+        y_grad_plus = y_grad_plus.reshape(x_grad.shape)
+
+        dz = -1*div(y_grad_plus - y_grad)
+
+        # update variables
+        z = z + dz
+        y_grad = y_grad_plus.copy()
+        zbar = z + dz/p_g
+
 
       if subset_callback is not None:
         subset_callback(x, iteration = (it+1), subset = (i+1), **subset_callback_kwargs)
