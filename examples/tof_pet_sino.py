@@ -47,8 +47,7 @@ seed          = args.seed
 ps_fwhm_mm    = 8.
 beta          = args.beta
 
-#gammas = np.array([0.1,0.3,1,3,10,30,100]) / (counts/1e3)
-gammas = np.array([1,3]) / (counts/1e3)
+gammas = np.array([0.1,0.3,1,3,10,30,100]) / (counts/1e3)
 
 #---------------------------------------------------------------------------------
 
