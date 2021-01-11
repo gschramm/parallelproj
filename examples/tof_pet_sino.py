@@ -19,13 +19,13 @@ parser = argparse.ArgumentParser()
 parser.add_argument('--ngpus',    help = 'number of GPUs to use', default = 0,   type = int)
 parser.add_argument('--counts',   help = 'counts to simulate',    default = 1e5, type = float)
 parser.add_argument('--niter',    help = 'number of iterations',  default = 50,  type = int)
-parser.add_argument('--niter_mlem', help = 'number of MLEM iterations', default = 5000,  type = int)
+parser.add_argument('--niter_mlem', help = 'number of MLEM iterations', default = 10000,  type = int)
 parser.add_argument('--nsubsets',   help = 'number of subsets',     default = 28,  type = int)
 parser.add_argument('--warm'  ,   help = 'warm start with 1 OSEM it', action = 'store_true')
 parser.add_argument('--interactive', help = 'show recons updates', action = 'store_true')
 parser.add_argument('--fwhm_mm',  help = 'psf modeling FWHM mm',  default = 4.5, type = float)
 parser.add_argument('--fwhm_data_mm',  help = 'psf for data FWHM mm',  default = 4.5, type = float)
-parser.add_argument('--phantom', help = 'phantom to use', default = 'ellipse')
+parser.add_argument('--phantom', help = 'phantom to use', default = 'brain2d')
 parser.add_argument('--seed',    help = 'seed for random generator', default = 1, type = int)
 args = parser.parse_args()
 
@@ -44,6 +44,8 @@ phantom          = args.phantom
 seed             = args.seed
 ps_fwhm_mm       = 8.
 
+gammas = np.array([0.1,0.3,1,3,10,30,100]) / (counts/1e3)
+
 #---------------------------------------------------------------------------------
 
 np.random.seed(seed)
@@ -54,9 +56,6 @@ scanner = ppp.RegularPolygonPETScanner(ncrystals_per_module = np.array([16,1]),
 
 # setup a test image
 voxsize = np.array([2.,2.,2.])
-n       = 200
-n0      = n
-n1      = n
 n2      = max(1,int((scanner.xc2.max() - scanner.xc2.min()) / voxsize[2]))
 
 # sigma for post_smoothing
@@ -67,11 +66,18 @@ fwhm      = fwhm_mm / voxsize
 fwhm_data = fwhm_data_mm / voxsize
 
 # setup a random image
-img = np.zeros((n0,n1,n2), dtype = np.float32)
 
 if phantom == 'ellipse':
+  n   = 200
+  img = np.zeros((n,n,n2), dtype = np.float32)
   for i2 in range(n2):
     img[:,:,i2] = ellipse_phantom(n = n, c = 3)
+elif phantom == 'brain2d':
+  n   = 128
+  img = np.zeros((n,n,n2), dtype = np.float32)
+  tmp = np.load(os.path.join('data','brain2d.npy'))
+  for i2 in range(n2):
+    img[:,:,i2] = tmp
 
 img_origin = (-(np.array(img.shape) / 2) +  0.5) * voxsize
 
@@ -224,8 +230,6 @@ recon_osem = osem(em_sino, attn_sino, sens_sino, contam_sino, proj, niter,
 ystart = np.zeros(em_sino.shape, dtype = np.float32)
 ystart[em_sino == 0] = 1
 
-gammas = np.array([0.1,0.3,1,3,10,30,100]) / (counts/1e3)
-
 costs_spdhg = np.zeros((len(gammas),niter))
 costs_spdhg_sparse = np.zeros((len(gammas),niter))
 
@@ -256,49 +260,41 @@ for ig, gamma in enumerate(gammas):
 it = np.arange(niter) + 1
 base_str = f'{phantom}_counts_{counts:.1E}_niter_{niter_mlem}_{niter}_nsub_{nsubsets}'
 
-fig2, ax2 = plt.subplots(1,len(gammas), figsize = (16,3), sharex = True, sharey = 'row')
+# show the PSNR
+fig2, ax2 = plt.subplots(3,len(gammas), figsize = (16,6), sharex = True, sharey = 'row')
 for ig, gamma in enumerate(gammas):
-  ax2[ig].plot(it,cost_osem, label = 'OSEM')
-  ax2[ig].plot(it,costs_spdhg[ig,:], label = f'SPD')
-  ax2[ig].plot(it,costs_spdhg_sparse[ig,:], label = f'SPD-S')
-  ax2[ig].set_title(f'Gam {gamma:.1E}')
+  ax2[0,ig].plot(it,cost_osem, label = 'OSEM')
+  ax2[0,ig].plot(it,costs_spdhg[ig,:], label = f'SPD')
+  ax2[0,ig].plot(it,costs_spdhg_sparse[ig,:], label = f'SPD-S')
+  ax2[0,ig].set_title(f'Gam {gamma:.1E}', fontsize = 'medium')
 
-ax2[0].set_ylabel('cost')
-ax2[0].legend()
-for axx in ax2.flatten():
-  axx.set_xlabel('iteration')
-  axx.grid(ls = ':')
+  ax2[1,ig].plot(it,psnr_osem, label = 'OSEM')
+  ax2[1,ig].plot(it,psnr_spdhg[ig,:], label = f'SPD')
+  ax2[1,ig].plot(it,psnr_spdhg_sparse[ig,:], label = f'SPD-S')
+
+  ax2[2,ig].plot(it,psnr_ps_osem, label = 'OSEM')
+  ax2[2,ig].plot(it,psnr_ps_spdhg[ig,:], label = f'SPD')
+  ax2[2,ig].plot(it,psnr_ps_spdhg_sparse[ig,:], label = f'SPD-S')
+
+ax2[0,0].set_ylabel('cost')
+ax2[1,0].set_ylabel('PSNR')
+ax2[2,0].set_ylabel('PSNR ps')
+ax2[0,0].legend()
+
+for axx in ax2[0,:].flatten():
   axx.set_ylim(min(min(cost_osem), costs_spdhg.min(), costs_spdhg_sparse.min()), 
                1.5*max(cost_osem) - 0.5*min(cost_osem))
-fig2.tight_layout()
-fig2.savefig(os.path.join('figs',f'{base_str}_cost.pdf'))
-fig2.savefig(os.path.join('figs',f'{base_str}_cost.png'))
-fig2.show()            
 
-# show the PSNR
-fig4, ax4 = plt.subplots(2,len(gammas), figsize = (16,6), sharex = True, sharey = 'row')
-for ig, gamma in enumerate(gammas):
-  ax4[0,ig].plot(it,psnr_osem, label = 'OSEM')
-  ax4[0,ig].plot(it,psnr_spdhg[ig,:], label = f'SPD')
-  ax4[0,ig].plot(it,psnr_spdhg_sparse[ig,:], label = f'SPD-S')
-  ax4[0,ig].set_title(f'Gam {gamma:.1E}')
-
-  ax4[1,ig].plot(it,psnr_ps_osem, label = 'OSEM')
-  ax4[1,ig].plot(it,psnr_ps_spdhg[ig,:], label = f'SPD')
-  ax4[1,ig].plot(it,psnr_ps_spdhg_sparse[ig,:], label = f'SPD-S')
-
-ax4[0,0].set_ylabel('PSNR')
-ax4[1,0].set_ylabel('PSNR ps')
-ax4[0,0].legend()
-for axx in ax4.flatten():
+for axx in ax2[-1,:].flatten():
   axx.set_xlabel('iteration')
+
+for axx in ax2.flatten():
   axx.grid(ls = ':')
 
-fig4.tight_layout()
-fig4.savefig(os.path.join('figs',f'{base_str}_psnr.pdf'))
-fig4.savefig(os.path.join('figs',f'{base_str}_psnr.png'))
-fig4.show()            
-
+fig2.tight_layout()
+fig2.savefig(os.path.join('figs',f'{base_str}_metrics.pdf'))
+fig2.savefig(os.path.join('figs',f'{base_str}_metrics.png'))
+fig2.show()            
 
 # show the reconstructions
 fig3, ax3 = plt.subplots(4,len(gammas) + 1, figsize = (16,8))
@@ -317,13 +313,13 @@ ax3[3,0].set_title('ps OSEM')
 for ig, gamma in enumerate(gammas):
   ax3[0,ig+1].imshow(recons_spdhg[ig,...], vmax = vmax, cmap = plt.cm.Greys)
   ax3[1,ig+1].imshow(recons_spdhg_sparse[ig,...], vmax = vmax, cmap = plt.cm.Greys)
-  ax3[0,ig+1].set_title(f'SPD {gamma:.1E}')
-  ax3[1,ig+1].set_title(f'SPD-S {gamma:.1E}')
+  ax3[0,ig+1].set_title(f'SPD {gamma:.1E}', fontsize = 'medium')
+  ax3[1,ig+1].set_title(f'SPD-S {gamma:.1E}', fontsize = 'medium')
 
   ax3[2,ig+1].imshow(gaussian_filter(recons_spdhg[ig,...],sig), vmax = vmax, cmap = plt.cm.Greys)
   ax3[3,ig+1].imshow(gaussian_filter(recons_spdhg_sparse[ig,...],sig), vmax = vmax, cmap = plt.cm.Greys)
-  ax3[2,ig+1].set_title(f'ps SPD {gamma:.1E}')
-  ax3[3,ig+1].set_title(f'ps SPD-S {gamma:.1E}')
+  ax3[2,ig+1].set_title(f'ps SPD {gamma:.1E}', fontsize = 'medium')
+  ax3[3,ig+1].set_title(f'ps SPD-S {gamma:.1E}', fontsize = 'medium')
 
 for axx in ax3.flatten():
   axx.set_axis_off()
