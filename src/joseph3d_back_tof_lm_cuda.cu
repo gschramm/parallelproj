@@ -684,8 +684,8 @@ extern "C" void joseph3d_back_tof_lm_cuda(float *h_xstart,
     cudaFree(d_p[i_dev]);
     cudaFree(d_xstart[i_dev]);
     cudaFree(d_xend[i_dev]);
-    cudaFree(d_img_origin);
-    cudaFree(d_voxsize);
+    cudaFree(d_img_origin[i_dev]);
+    cudaFree(d_voxsize[i_dev]);
 
     cudaFree(d_sigma_tof[i_dev]);
     cudaFree(d_tofcenter_offset[i_dev]);

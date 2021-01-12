@@ -439,9 +439,9 @@ extern "C" void joseph3d_fwd_cuda(float *h_xstart,
     cudaFree(d_p[i_dev]);
     cudaFree(d_xstart[i_dev]);
     cudaFree(d_xend[i_dev]);
-    cudaFree(d_img);
-    cudaFree(d_img_origin);
-    cudaFree(d_voxsize);
+    cudaFree(d_img[i_dev]);
+    cudaFree(d_img_origin[i_dev]);
+    cudaFree(d_voxsize[i_dev]);
   }
 
   // make sure that all devices are done before leaving
