@@ -199,9 +199,9 @@ def _cb(x, **kwargs):
 
 # do long MLEM as reference
 if beta > 0:
-  ref_fname = os.path.join('data', f'PDHG_{phantom}_TVbeta_{beta:.1E}_niter_{niter_ref}_{niter}_counts_{counts:.1E}_seed_{seed}.npz')
+  ref_fname = os.path.join('data', f'PDHG_{phantom}_TVbeta_{beta:.1E}_niter_{niter_ref}_counts_{counts:.1E}_seed_{seed}.npz')
 else:
-  ref_fname = os.path.join('data', f'mlem_{phantom}_niter_{niter_ref}_{niter}_counts_{counts:.1E}_seed_{seed}.npz')
+  ref_fname = os.path.join('data', f'mlem_{phantom}_niter_{niter_ref}_counts_{counts:.1E}_seed_{seed}.npz')
 
 if os.path.exists(ref_fname):
   tmp = np.load(ref_fname)
