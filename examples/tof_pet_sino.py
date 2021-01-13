@@ -47,9 +47,9 @@ seed          = args.seed
 ps_fwhm_mm    = 8.
 beta          = args.beta
 
-gammas = np.array([0.3,1,3,10,30]) / (counts/1e3)
+gammas = np.array([0.1,0.3,1,3,10]) / (counts/1e3)
 
-it_early = 20
+it_early = 10
 #---------------------------------------------------------------------------------
 
 np.random.seed(seed)
@@ -286,9 +286,30 @@ for ig, gamma in enumerate(gammas):
                                       xstart = init_recon, ystart = ystart, beta = beta,
                                       callback = _cb, callback_kwargs = cbss)
 
-# show the cost and PSNR
-it = np.arange(niter) + 1
 base_str = f'{phantom}_counts_{counts:.1E}_beta_{beta:.1E}_niter_{niter_ref}_{niter}_nsub_{nsubsets}'
+
+ofile = os.path.join('figs',f'{base_str}.npz')
+
+c0   = (contam_sino - em_sino*np.log(contam_sino)).sum()
+cref = ref_cost[-1]
+
+
+if beta == 0:
+  np.savez(ofile, ref_recon = ref_recon, ref_cost = ref_cost,
+                  recon_osem = recon_osem, cost_osem = cost_osem,
+                  recons_spdhg = recons_spdhg, costs_spdhg = costs_spdhg,
+                  recons_spdhg_sparse = recons_spdhg_sparse, 
+                  costs_spdhg_sparse = costs_spdhg_sparse,
+                  c0 = c0, cref = cref, gammas = gammas)
+else:
+  np.savez(ofile, ref_recon = ref_recon, ref_cost = ref_cost,
+                  recons_spdhg = recons_spdhg, costs_spdhg = costs_spdhg,
+                  recons_spdhg_sparse = recons_spdhg_sparse, 
+                  costs_spdhg_sparse = costs_spdhg_sparse,
+                  c0 = c0, cref = cref, gammas = gammas)
+
+# show the relative cost and PSNR
+it = np.arange(niter) + 1
 
 if  beta== 0:
   fig2, ax2 = plt.subplots(3, len(gammas), figsize = (len(gammas)*2,6), 
@@ -299,33 +320,29 @@ else:
 
 for ig, gamma in enumerate(gammas):
   if beta == 0:
-    ax2[0,ig].plot(it,cost_osem, label = 'OSEM')
-  ax2[0,ig].plot(it,costs_spdhg[ig,:], label = f'SPDHG')
-  ax2[0,ig].plot(it,costs_spdhg_sparse[ig,:], label = f'SPDHG-S')
+    ax2[0,ig].semilogy(it,(cost_osem-cref)/(c0-cref), label = 'OSEM', color = 'tab:green')
+  ax2[0,ig].semilogy(it,(costs_spdhg[ig,:]-cref)/(c0-cref), 
+                     label = f'SPDHG', color = 'tab:blue')
+  ax2[0,ig].semilogy(it,(costs_spdhg_sparse[ig,:]-cref)/(c0-cref), 
+                     label = f'SPDHG-S', color = 'tab:orange', ls = '--')
   ax2[0,ig].set_title(f'Gamma {gamma:.1E}', fontsize = 'medium')
 
   if beta == 0:
-    ax2[1,ig].plot(it,psnr_osem, label = 'OSEM')
-  ax2[1,ig].plot(it,psnr_spdhg[ig,:], label = f'SPD')
-  ax2[1,ig].plot(it,psnr_spdhg_sparse[ig,:], label = f'SPDHG-S')
+    ax2[1,ig].plot(it,psnr_osem, label = 'OSEM', color = 'tab:green')
+  ax2[1,ig].plot(it,psnr_spdhg[ig,:], label = f'SPDHG', color = 'tab:blue')
+  ax2[1,ig].plot(it,psnr_spdhg_sparse[ig,:], 
+                 label = f'SPDHG-S', color = 'tab:orange', ls = '--')
 
   if beta == 0:
-    ax2[2,ig].plot(it,psnr_ps_osem, label = 'OSEM')
-    ax2[2,ig].plot(it,psnr_ps_spdhg[ig,:], label = f'SPDHG')
-    ax2[2,ig].plot(it,psnr_ps_spdhg_sparse[ig,:], label = f'SPDHG-S')
+    ax2[2,ig].plot(it,psnr_ps_osem, label = 'OSEM', color = 'tab:green')
+    ax2[2,ig].plot(it,psnr_ps_spdhg[ig,:], label = f'SPDHG', color = 'tab:blue')
+    ax2[2,ig].plot(it,psnr_ps_spdhg_sparse[ig,:], 
+                   label = f'SPDHG-S', color = 'tab:orange', ls = '--')
     ax2[2,0].set_ylabel('PSNR ps')
 
-ax2[0,0].set_ylabel('cost')
+ax2[0,0].set_ylabel('relative cost')
 ax2[1,0].set_ylabel('PSNR')
 ax2[0,0].legend()
-
-if beta == 0:
-  for axx in ax2[0,:].flatten():
-    axx.set_ylim(min(min(cost_osem), costs_spdhg.min(), costs_spdhg_sparse.min()), 
-                 1.5*max(cost_osem) - 0.5*min(cost_osem))
-else:
-  for axx in ax2[0,:].flatten():
-    axx.set_ylim(costs_spdhg[len(gammas)//2,:].min(),costs_spdhg[len(gammas)//2,2:].max())
 
 for axx in ax2[-1,:].flatten():
   axx.set_xlabel('iteration')
