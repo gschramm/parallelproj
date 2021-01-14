@@ -20,7 +20,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument('--ngpus',    help = 'number of GPUs to use', default = 0,   type = int)
 parser.add_argument('--counts',   help = 'counts to simulate',    default = 1e5, type = float)
 parser.add_argument('--niter',    help = 'number of iterations',  default = 50,  type = int)
-parser.add_argument('--niter_ref', help = 'number of ref iterations', default = 20000,  type = int)
+parser.add_argument('--niter_ref', help = 'number of ref iterations', default = 5000,  type = int)
 parser.add_argument('--nsubsets',   help = 'number of subsets',     default = 28,  type = int)
 parser.add_argument('--warm'  ,   help = 'warm start with 1 OSEM it', action = 'store_true')
 parser.add_argument('--interactive', help = 'show recons updates', action = 'store_true')
@@ -28,7 +28,7 @@ parser.add_argument('--fwhm_mm',  help = 'psf modeling FWHM mm',  default = 4.5,
 parser.add_argument('--fwhm_data_mm',  help = 'psf for data FWHM mm',  default = 4.5, type = float)
 parser.add_argument('--phantom', help = 'phantom to use', default = 'brain2d')
 parser.add_argument('--seed',    help = 'seed for random generator', default = 1, type = int)
-parser.add_argument('--beta',   help = 'beta for TV', default = 1e-3, type = float)
+parser.add_argument('--beta',   help = 'beta for TV', default = 6e-1, type = float)
 args = parser.parse_args()
 
 #---------------------------------------------------------------------------------
@@ -47,7 +47,7 @@ seed          = args.seed
 ps_fwhm_mm    = 8.
 beta          = args.beta
 
-gammas = np.array([0.1,0.3,1,3,10]) / (counts/1e3)
+gammas = np.array([1e5,3e5,1e6,3e6,1e7])/counts
 
 it_early = 10
 #---------------------------------------------------------------------------------
@@ -115,8 +115,9 @@ for i in range(10):
 
   test_img = back / norm
 
-# normalize sensitivity sinogram to get PET forward model with norm 1
-sens_sino /= np.sqrt(norm)
+# normalize sensitivity sinogram to get PET forward model for 1 view with norm 1
+# this is important otherwise the step size T in SPDHG get dominated by the gradient
+sens_sino /= (np.sqrt(norm)/proj.sino_params.nviews)
 
 # forward project the image
 img_fwd= ppp.pet_fwd_model(img, proj, attn_sino, sens_sino, 0, fwhm = fwhm_data)
@@ -218,7 +219,7 @@ else:
 
   if beta > 0:
     ref_recon = spdhg(em_sino, attn_sino, sens_sino, contam_sino, proj, niter_ref,
-                      gamma = 3./(counts/1e3), fwhm = fwhm, verbose = True, 
+                      gamma = 3e5/counts, fwhm = fwhm, verbose = True, 
                       beta = beta, callback = _cb, callback_kwargs = {'cost': ref_cost})
   else:
     ref_recon = osem(em_sino, attn_sino, sens_sino, contam_sino, proj, niter_ref,
