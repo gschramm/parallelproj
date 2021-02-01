@@ -26,30 +26,21 @@ The installation consists of two parts:
 
 We use CMake to auto generate a Makefile / Visual Studio project file which is used to compile the libraries. Make sure that cmake and the desired C compiler are on the PATH. The CMakeLists.txt is configured to search for CUDA. If CUDA is not present, compilation of the CUDA lib is skipped.
 
-On Linux run
+To build all libraries using cmake, execute 
+
 ```
 cd my_project_dir
-mkdir build
-cd build
-cmake ..
-make 
-make install
+python build_c_libs.py
 ```
 
-On Windows run
-```
-cd my_project_dir
-mkdir build
-cd build
-cmake -DCMAKE_WINDOWS_EXPORT_ALL_SYMBOLS=TRUE ..
-cmake --build . --target INSTALL --config RELEASE
-```
 where ```my_project_dir``` is the directory that contains this file and the CMakeLists.txt file.
 After a successful build and install, the compiled libs should appear in the **my_project_dir/lib** directory. The linux libs should be called libparallelproj.so (and libparallelproj_cuda.so) and the Windows libs should be called parallelproj.dll (and parallelproj_cuda.dll).
 
-
-
 If doxygen is present, the documentation of the C and CUDA sources is rendered in html and latex in the ./doc directory.
+
+(optional) If you know cmake well, you can of course also call cmake yourself.
+On Windows, don't forget to set the option ```-DCMAKE_WINDOWS_EXPORT_ALL_SYMBOLS=TRUE``` 
+when doing so.
 
 ### (ii) Installation of the python package
 
