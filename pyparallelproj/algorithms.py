@@ -59,7 +59,7 @@ def osem_lm(events, attn_list, sens_list, contam_list, lmproj, sens_img, niter, 
 
   # initialize recon
   if xstart is None:
-    recon = np.full(img_shape, em_sino.sum() / np.prod(img_shape), dtype = np.float32)
+    recon = np.full(img_shape, events.shape[0] / np.prod(img_shape), dtype = np.float32)
   else:
     recon = xstart.copy()
 
@@ -78,7 +78,6 @@ def osem_lm(events, attn_list, sens_list, contam_list, lmproj, sens_img, niter, 
         subset_callback(recon, iteration = (it+1), subset = (i+1), **subset_callback_kwargs)
 
     if callback is not None:
-      callback(recon)
       callback(recon, iteration = (it+1), subset = (i+1), **callback_kwargs)
       
   return recon

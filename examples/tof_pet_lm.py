@@ -4,6 +4,7 @@ import os
 import matplotlib.pyplot as plt
 import pyparallelproj as ppp
 from pyparallelproj.algorithms import osem_lm
+from phantoms import ellipse_phantom
 
 import numpy as np
 import argparse
@@ -14,27 +15,28 @@ import argparse
 parser = argparse.ArgumentParser()
 parser.add_argument('--ngpus',    help = 'number of GPUs to use', default = 0,   type = int)
 parser.add_argument('--counts',   help = 'counts to simulate',    default = 1e6, type = float)
-parser.add_argument('--niter',    help = 'number of iterations',  default = 2,   type = int)
+parser.add_argument('--niter',    help = 'number of iterations',  default = 4,   type = int)
 parser.add_argument('--nsubsets', help = 'number of subsets',     default = 28,  type = int)
-parser.add_argument('--likeli',   help = 'calc logLikelihodd',    action = 'store_true')
 parser.add_argument('--fwhm_mm',  help = 'psf modeling FWHM mm',  default = 4.5, type = float)
 parser.add_argument('--fwhm_data_mm',  help = 'psf for data FWHM mm',  default = 4.5, type = float)
-parser.add_argument('--gamma',     help = 'gamma parameter',       default = 1., type = float)
+parser.add_argument('--phantom', help = 'phantom to use', default = 'ellipse')
+parser.add_argument('--seed',    help = 'seed for random generator', default = 1, type = int)
 args = parser.parse_args()
 
 #---------------------------------------------------------------------------------
 
-ngpus            = args.ngpus
-counts           = args.counts
-niter            = args.niter
-nsubsets         = args.nsubsets
-fwhm_mm          = args.fwhm_mm
-fwhm_data_mm     = args.fwhm_data_mm
-track_likelihood = args.likeli
+ngpus         = args.ngpus
+counts        = args.counts
+niter         = args.niter
+nsubsets      = args.nsubsets
+fwhm_mm       = args.fwhm_mm
+fwhm_data_mm  = args.fwhm_data_mm
+phantom       = args.phantom
+seed          = args.seed
 
 #---------------------------------------------------------------------------------
 
-np.random.seed(1)
+np.random.seed(seed)
 
 # setup a scanner with one ring
 scanner = ppp.RegularPolygonPETScanner(ncrystals_per_module = np.array([16,1]),
@@ -50,9 +52,19 @@ n2      = max(1,int((scanner.xc2.max() - scanner.xc2.min()) / voxsize[2]))
 fwhm      = fwhm_mm / voxsize
 fwhm_data = fwhm_data_mm / voxsize
 
-# setup a random image
-img = np.zeros((n0,n1,n2), dtype = np.float32)
-img[(n0//4):(3*n0//4),(n1//4):(3*n1//4),:] = 1
+# setup a test image
+if phantom == 'ellipse':
+  n   = 200
+  img = np.zeros((n,n,n2), dtype = np.float32)
+  for i2 in range(n2):
+    img[:,:,i2] = ellipse_phantom(n = n, c = 3)
+elif phantom == 'brain2d':
+  n   = 128
+  img = np.zeros((n,n,n2), dtype = np.float32)
+  tmp = np.load(os.path.join('data','brain2d.npy'))
+  for i2 in range(n2):
+    img[:,:,i2] = tmp
+
 img_origin = (-(np.array(img.shape) / 2) +  0.5) * voxsize
 
 # setup an attenuation image
@@ -138,28 +150,52 @@ ib = ax[2].imshow(img[...,n2//2] - img[...,n2//2], vmin = -0.2*img.max(), vmax =
                   cmap = plt.cm.bwr)
 ax[2].set_title('bias')
 fig.tight_layout()
-fig.canvas.draw()
 
-cost = []
+#-----------------------------------------------------------------------------------------------
+# callback functions to calculate likelihood and show recon updates
 
-def _cb(x):
-  # calculate likelihood
-  if track_likelihood:
-    exp = ppp.pet_fwd_model(x, proj, attn_sino, sens_sino, 0, fwhm = fwhm) + contam_sino
-    cost.append((exp - em_sino*np.log(exp)).sum())
-
-  # show updates
+def update_img(x):
   ir.set_data(x[...,n2//2])
   ib.set_data(x[...,n2//2] - img[...,n2//2])
-  fig.canvas.draw()
+  plt.pause(1e-6)
+
+def calc_cost(x):
+  cost = 0
+
+  for i in range(proj.nsubsets):
+    # get the slice for the current subset
+    ss = proj.subset_slices[i]
+    exp = ppp.pet_fwd_model(x, proj, attn_sino[ss], sens_sino[ss], i, fwhm = fwhm) + contam_sino[ss]
+    cost += (exp - em_sino[ss]*np.log(exp)).sum()
+
+  return cost
+
+def _cb(x, **kwargs):
+  """ This function is called by the iterative recon algorithm after every iteration 
+      where x is the current reconstructed image
+  """
+  it = kwargs.get('iteration',0)
+  update_img(x)
+  if 'cost' in kwargs:
+    kwargs['cost'][it-1] = calc_cost(x)
+
+#-----------------------------------------------------------------------------------------------
+# run the actual reconstruction using listmode OSEM
+
+cost_lmosem = np.zeros(niter)
+cbk         = {'cost':cost_lmosem}
 
 recon = osem_lm(events, attn_list, sens_list, contam_list, lmproj, sens_img, niter, nsubsets, 
-                fwhm = fwhm, verbose = True, callback = _cb)
+                fwhm = fwhm, verbose = True, callback = _cb, callback_kwargs = cbk)
 
-if track_likelihood:
-  fig2, ax2 = plt.subplots(1,1, figsize = (4,4))
-  ax2.plot(np.arange(niter) + 1, cost, label = 'OSEM')
-  ax2.legend()
-  ax2.grid(ls = ':')
-  fig2.tight_layout()
-  fig2.show() 
+
+#-----------------------------------------------------------------------------------------------
+# plot the cost function
+
+fig2, ax2 = plt.subplots(1,1, figsize = (6,4))
+ax2.plot(np.arange(1,niter+1), cost_lmosem, '.-')
+ax2.set_xlabel('iteration')
+ax2.set_ylabel('cost')
+
+fig2.tight_layout()
+fig2.show()

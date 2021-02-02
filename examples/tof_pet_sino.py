@@ -122,8 +122,6 @@ ib = ax[2].imshow(img[...,n2//2] - img[...,n2//2], vmin = -0.2*img.max(), vmax =
                   cmap = plt.cm.bwr)
 ax[2].set_title('bias')
 fig.tight_layout()
-plt.pause(1e-6)
-
 
 #-----------------------------------------------------------------------------------------------
 # callback functions to calculate likelihood and show recon updates
@@ -154,13 +152,25 @@ def _cb(x, **kwargs):
     kwargs['cost'][it-1] = calc_cost(x)
 
 #-----------------------------------------------------------------------------------------------
+# run the actual reconstruction using OSEM
 
 # initialize the subsets for the projector
 proj.init_subsets(nsubsets)
 
 cost_osem = np.zeros(niter)
+cbk       = {'cost':cost_osem}
 
-cbk = {'cost':cost_osem}
 recon_osem = osem(em_sino, attn_sino, sens_sino, contam_sino, proj, niter, 
                   fwhm = fwhm, verbose = True, xstart = None,
                   callback = _cb, callback_kwargs = cbk)
+
+#-----------------------------------------------------------------------------------------------
+# plot the cost function
+
+fig2, ax2 = plt.subplots(1,1, figsize = (6,4))
+ax2.plot(np.arange(1,niter+1), cost_osem, '.-')
+ax2.set_xlabel('iteration')
+ax2.set_ylabel('cost')
+
+fig2.tight_layout()
+fig2.show()
