@@ -3,13 +3,10 @@
 import os
 import matplotlib.pyplot as plt
 import pyparallelproj as ppp
-from pyparallelproj.algorithms import osem, spdhg
+from pyparallelproj.algorithms import osem
+from pyparallelproj.phantoms import ellipse_phantom
 
 import numpy as np
-from scipy.ndimage import gaussian_filter
-
-from phantoms import ellipse_phantom
-
 import argparse
 
 #---------------------------------------------------------------------------------

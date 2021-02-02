@@ -4,7 +4,7 @@ import os
 import matplotlib.pyplot as plt
 import pyparallelproj as ppp
 from pyparallelproj.algorithms import osem_lm
-from phantoms import ellipse_phantom
+from pyparallelproj.phantoms import ellipse_phantom
 
 import numpy as np
 import argparse
