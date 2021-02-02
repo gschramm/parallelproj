@@ -4,7 +4,7 @@ import os
 import matplotlib.pyplot as plt
 import pyparallelproj as ppp
 from pyparallelproj.algorithms import osem_lm
-from pyparallelproj.phantoms import ellipse_phantom
+from pyparallelproj.phantoms import ellipse2d_phantom, brain2d_phantom
 
 import numpy as np
 import argparse
@@ -19,7 +19,7 @@ parser.add_argument('--niter',    help = 'number of iterations',  default = 4,  
 parser.add_argument('--nsubsets', help = 'number of subsets',     default = 28,  type = int)
 parser.add_argument('--fwhm_mm',  help = 'psf modeling FWHM mm',  default = 4.5, type = float)
 parser.add_argument('--fwhm_data_mm',  help = 'psf for data FWHM mm',  default = 4.5, type = float)
-parser.add_argument('--phantom', help = 'phantom to use', default = 'ellipse')
+parser.add_argument('--phantom', help = 'phantom to use', default = 'brain2d')
 parser.add_argument('--seed',    help = 'seed for random generator', default = 1, type = int)
 args = parser.parse_args()
 
@@ -53,15 +53,16 @@ fwhm      = fwhm_mm / voxsize
 fwhm_data = fwhm_data_mm / voxsize
 
 # setup a test image
-if phantom == 'ellipse':
+if phantom == 'ellipse2d':
   n   = 200
   img = np.zeros((n,n,n2), dtype = np.float32)
+  tmp = ellipse_phantom(n = n, c = 3)
   for i2 in range(n2):
-    img[:,:,i2] = ellipse_phantom(n = n, c = 3)
+    img[:,:,i2] = tmp
 elif phantom == 'brain2d':
   n   = 128
   img = np.zeros((n,n,n2), dtype = np.float32)
-  tmp = np.load(os.path.join('data','brain2d.npy'))
+  tmp = brain2d_phantom(n = n)
   for i2 in range(n2):
     img[:,:,i2] = tmp
 

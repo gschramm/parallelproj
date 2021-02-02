@@ -1,4 +1,8 @@
 import numpy as np
+import os
+import pyparallelproj
+
+from scipy.ndimage import zoom
 
 def ellipse_inds(nx, ny, rx, ry = None, x0 = 0, y0 = 0):
 
@@ -13,7 +17,7 @@ def ellipse_inds(nx, ny, rx, ry = None, x0 = 0, y0 = 0):
   return np.where((((X-x0)/rx)**2 + ((Y-y0)/ry)**2) <= 1)
 
 #--------------------------------------------------------------
-def ellipse_phantom(n = 256, c = 3):
+def ellipse2d_phantom(n = 256, c = 3):
   r    = n/6
   
   img = np.zeros((n,n), dtype = np.float32)
@@ -28,5 +32,22 @@ def ellipse_phantom(n = 256, c = 3):
   for i, phi in enumerate(phis):
     i = ellipse_inds(n, n, np.sqrt(i+1)*n/80, np.sqrt(i+1)*n/80, x0 = r*np.sin(phi), y0 = r*np.cos(phi))
     img[i] = c
+
+  return img
+
+#--------------------------------------------------------------
+  
+def brain2d_phantom(n = 128):
+  img = np.load(os.path.join(os.path.dirname(pyparallelproj.__file__),'data','brain2d.npy'))
+
+  if n != 128:
+    img = zoom(img, n/128, order = 1, prefilter = False)
+
+  # due to floating point predicision shape of img can be different from n
+  if img.shape[0] > n: img = img[:n,:]
+  if img.shape[1] > n: img = img[:,:n]
+
+  if img.shape[0] < n: img = np.pad(img,((0,n-img.shape[0]),(0,0)))
+  if img.shape[1] < n: img = np.pad(img,((0,0),(0,n-img.shape[1])))
 
   return img

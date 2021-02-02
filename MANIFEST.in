@@ -1,1 +1,2 @@
 recursive-include pyparallelproj/lib *
+recursive-include pyparallelproj/data *
