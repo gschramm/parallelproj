@@ -72,21 +72,15 @@ import pyparallelproj as ppp
 print(ppp.wrapper.lib_parallelproj_cuda) 
 ``` 
 
-In the examples sub directory you can find a few demo script that show how to use the projectors. Two good examples to start with are the osem.py and osem_lm.py which demonstrate a short sinogram and listmode OS-MLEM reconstruction on simulated data. To run them without a a GPU and CUDA, execute:
+In the examples sub directory you can find a few demo script that show how to use the projectors. Two good examples to start with are the tof_pet_sino.py and tof_pet_lm.py which demonstrate a short sinogram and listmode OS-MLEM reconstruction on simulated data. To run them without a a GPU and CUDA, execute:
 
 ```
-python osem.py
-python osem_lm.py
+python tof_pet_sino.py
+python tof_pet_lm.py
 ```
 To use the CUDA GPU projector on a single GPU run
 ```
-python osem.py --ngpus 1
-python osem_lm.py --ngpus 1
+python tof_pet_sino.py --ngpus 1
+python tof_pet_lm.py --ngpus 1
 ```
 The "ngpus" option specifies on many GPUs should be used. If set to -1, CUDA will auto determine the number of available inter-connected GPUs. The default value 0 means that the OpenMP-based CPU projectors are used.
-
-
-
- 
-
-
