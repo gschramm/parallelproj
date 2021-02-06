@@ -107,7 +107,8 @@ class PETSinogramParameters:
             crystal_id_end.reshape((self.nrad, views.shape[0],self.nplanes,2)))
 
   #-------------------------------------------------------------------
-  def sinogram_to_listmode(self, sinogram, return_multi_index = False):
+  def sinogram_to_listmode(self, sinogram, return_multi_index = False,
+                                 subset = 0, nsubsets = 1):
     """ Convert an unsigned int sinogram to a list of events (list-mode data)
 
     Parameters
@@ -120,6 +121,12 @@ class PETSinogramParameters:
       This is useful for converting contamination and sensitivity sinograms to listmode data
       when simulated listmode data from sinograms.
       Default: False
+
+    subset : int 
+      sinogram subset number of input - default 0 (first subset)
+
+    nsubsets : int
+      number of sinogram subsets for input - defaut 1 (one subset = complete sinogram)
 
     Returns
     -------
@@ -137,7 +144,7 @@ class PETSinogramParameters:
     # events is a 2D array of all events
     # each event if characterize by 5 integers: 
     # [start_crystal_id_tr, start_crystal_id_ax, end_crystal_id_tr, end_crystal_id_ax, tofbin]
-    istart, iend = self.get_view_crystal_indices(np.arange(self.nviews))
+    istart, iend = self.get_view_crystal_indices(np.arange(self.nviews)[subset::nsubsets])
 
     events  = np.zeros((sinogram.sum(),5), dtype = np.int16)
     counter = 0

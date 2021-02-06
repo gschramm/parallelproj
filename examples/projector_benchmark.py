@@ -68,25 +68,25 @@ ones_sino = np.ones(proj.subset_sino_shapes[0], dtype = np.float32)
 #-------------------------------------------------------------------------------------
 # time sino fwd and back projection
 
-t_sino_fwd  = np.zeros(n)
-t_sino_back = np.zeros(n)
+t_sino_fwd  = np.zeros(nsubsets)
+t_sino_back = np.zeros(nsubsets)
 
 # forward project 
 print(f'timing sinogram fwd projection for 1 out of {nsubsets} subsets')
-for i in range(n):
-  print(f'run {i+1} / {n}')
+for i in range(nsubsets):
+  print(f'subset {i+1} / {nsubsets}')
   t0 = time()
-  img_fwd = proj.fwd_project(img, subset = 0)
+  img_fwd = proj.fwd_project(img, subset = i)
   t1 = time()
   t_sino_fwd[i] = t1 - t0
 print(f'{t_sino_fwd.mean():.4f} s (mean) +-  {t_sino_fwd.std():.4f} s (std)\n')
   
 # back project
 print(f'timing sinogram back projection for 1 out of {nsubsets} subsets')
-for i in range(n):
-  print(f'run {i+1} / {n}')
+for i in range(nsubsets):
+  print(f'subset {i+1} / {nsubsets}')
   t0 = time()
-  sino_back = proj.back_project(ones_sino, subset = 0)
+  sino_back = proj.back_project(ones_sino, subset = i)
   t1 = time()
   t_sino_back[i] = t1 - t0
 print(f'{t_sino_back.mean():.4f} s (mean) +-  {t_sino_back.std():.4f} s (std)\n')
@@ -104,7 +104,8 @@ if counts > 0:
   
   em_sino = np.random.poisson(img_fwd)
   
-  events, multi_index = sino_params.sinogram_to_listmode(em_sino, return_multi_index = True)
+  events = sino_params.sinogram_to_listmode(em_sino, subset = nsubsets - 1, 
+                                            nsubsets = nsubsets)
   
   # create a listmode projector for the LM MLEM iterations
   lmproj = ppp.LMProjector(proj.scanner, proj.img_dim, voxsize = proj.voxsize, 
