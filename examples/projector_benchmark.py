@@ -16,6 +16,8 @@ parser.add_argument('--ngpus',    help = 'number of GPUs to use', default = 0,  
 parser.add_argument('--counts',   help = 'counts to simulate',    default = 4e6, type = float)
 parser.add_argument('--nsubsets', help = 'number of subsets',     default = 28,  type = int)
 parser.add_argument('--n',        help = 'number of averages',    default = 5,   type = int)
+parser.add_argument('--tpb',      help = 'threads per block',     default = 64,  type = int)
+parser.add_argument('--nontof',   help = 'non-TOF instead of TOF', action = 'store_true')
 args = parser.parse_args()
 
 #---------------------------------------------------------------------------------
@@ -24,6 +26,13 @@ ngpus     = args.ngpus
 counts    = args.counts
 nsubsets  = args.nsubsets
 n         = args.n
+tpb       = args.tpb
+tof       = not args.nontof
+
+if tof:
+  ntofbins = 27
+else:
+  ntofbins = 1
 
 np.random.seed(1)
 
@@ -46,10 +55,11 @@ img[(n0//6):(5*n0//6),(n1//6):(5*n1//6),:] = 1
 img_origin = (-(np.array(img.shape) / 2) +  0.5) * voxsize
 
 # generate sinogram parameters and the projector
-sino_params = ppp.PETSinogramParameters(scanner, ntofbins = 27, tofbin_width = 23.)
+sino_params = ppp.PETSinogramParameters(scanner, ntofbins = ntofbins, tofbin_width = 23.)
 proj        = ppp.SinogramProjector(scanner, sino_params, img.shape, nsubsets = nsubsets, 
                                     voxsize = voxsize, img_origin = img_origin, ngpus = ngpus,
-                                    tof = True, sigma_tof = 60./2.35, n_sigmas = 3.)
+                                    tof = tof, sigma_tof = 60./2.35, n_sigmas = 3.,
+                                    threadsperblock = tpb)
 
 # contamination sinogram with scatter and randoms
 # useful to avoid division by 0 in the ratio of data and exprected data
@@ -99,8 +109,10 @@ if counts > 0:
   # create a listmode projector for the LM MLEM iterations
   lmproj = ppp.LMProjector(proj.scanner, proj.img_dim, voxsize = proj.voxsize, 
                            img_origin = proj.img_origin, ngpus = proj.ngpus,
-                           tof = proj.tof, sigma_tof = proj.sigma_tof, tofbin_width = proj.tofbin_width,
-                           n_sigmas = proj.nsigmas)
+                           tof = proj.tof, sigma_tof = proj.sigma_tof, 
+                           tofbin_width = proj.tofbin_width,
+                           n_sigmas = proj.nsigmas,
+                           threadsperblock = proj.threadsperblock)
   
   ones = np.ones(events.shape[0], dtype = np.float32)
   

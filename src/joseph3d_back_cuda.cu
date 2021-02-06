@@ -32,6 +32,7 @@ __global__ void joseph3d_back_cuda_kernel(float *xstart,
                                           int *img_dim)
 {
   long long i = blockDim.x * blockIdx.x + threadIdx.x;
+  //long long i = blockIdx.x + threadIdx.x * gridDim.x;
 
   if(i < nlors)
   {

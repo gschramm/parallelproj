@@ -46,6 +46,7 @@ __global__ void joseph3d_back_tof_sino_cuda_kernel(float *xstart,
                                                    float n_sigmas)
 {
   long long i = blockDim.x * blockIdx.x + threadIdx.x;
+  //long long i = blockIdx.x + threadIdx.x * gridDim.x;
 
   int n0 = img_dim[0];
   int n1 = img_dim[1];
