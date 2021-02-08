@@ -18,7 +18,7 @@
  *  @param xend   array of shape [3*nlors] with the coordinates of the end   points of the LORs.
  *                The start coordinates of the n-th LOR are at xstart[n*3 + i] with i = 0,1,2 
  *  @param img    array of shape [n0*n1*n2] containing the 3D image used for back projection (output).
- *                The pixel [i,j,k] ist stored at [n1*n2+i + n2*k + j].
+ *                The pixel [i,j,k] ist stored at [n1*n2*i + n2*j + k].
  *  @param img_origin  array [x0_0,x0_1,x0_2] of coordinates of the center of the [0,0,0] voxel
  *  @param voxsize     array [vs0, vs1, vs2] of the voxel sizes
  *  @param p           array of length nlors with the values to be back projected
