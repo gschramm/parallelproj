@@ -276,7 +276,7 @@ class SinogramProjector(LMProjector):
       else:
         subset_slice[self.subset_dir] = slice(i,None,nsubsets)
       self.subset_slices.append(tuple(subset_slice))
-      self.nLORs.append(np.prod(self.xstart[self.subset_slices[i]].shape[:-1]).astype(np.int32))
+      self.nLORs.append(np.prod(self.xstart[self.subset_slices[i]].shape[:-1]).astype(np.int64))
 
       subset_shape = np.array(self.sino_params.shape)
 
