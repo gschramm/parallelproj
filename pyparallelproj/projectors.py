@@ -204,6 +204,10 @@ class SinogramProjector(LMProjector):
    random_subset_angles: bool
      whether to use random or "regular" angular sampling for angular subsets
 
+   subset_dir : int
+     dimension along which to sample subsets
+     default: angular dimension, deduced from sino_params
+
    sigma_tof : float
      standard deviation of the Gaussian TOF kernel in spatial units
      Default: 60/2.35 (FWHM of 6cm, ca 400ps coincidence timing resolution)
@@ -225,7 +229,7 @@ class SinogramProjector(LMProjector):
 
   def __init__(self, scanner, sino_params, img_dim, nsubsets = 1, tof = False,
                      img_origin = None, voxsize = np.ones(3), random_subset_angles = False,
-                     sigma_tof = 60./2.35, n_sigmas = 3,
+                     subset_dir = None, sigma_tof = 60./2.35, n_sigmas = 3,
                      threadsperblock = 64, ngpus = 0):
     
     LMProjector.__init__(self, scanner, img_dim, tof = tof,
@@ -242,23 +246,27 @@ class SinogramProjector(LMProjector):
     # get the crystals IDs for all views
     self.istart, self.iend = self.sino_params.get_view_crystal_indices(self.all_views)
 
-    # get the world coordiates for all view
+    # get the world coordiates for all views
     self.xstart = self.scanner.get_crystal_coordinates(
-                    self.istart.reshape(-1,2)).reshape((self.sino_params.nrad, self.sino_params.nviews, 
-                                                        self.sino_params.nplanes,3))
+                    self.istart.reshape(-1,2)).reshape(self.sino_params.spatial_shape + (3,))
     self.xend = self.scanner.get_crystal_coordinates(
-                  self.iend.reshape(-1,2)).reshape((self.sino_params.nrad, self.sino_params.nviews, 
-                                                    self.sino_params.nplanes,3))
+                  self.iend.reshape(-1,2)).reshape(self.sino_params.spatial_shape + (3,))
 
     self.random_subset_angles = random_subset_angles
+
+    if subset_dir is None:
+      self.subset_dir = np.where(sino_params.spatial_dim_order == 1)[0][0]
+      if sino_params.tof_dim == 0:
+        self.subset_dir += 1
+    else:
+      self.subset_dir = subset_dir
 
     self.init_subsets(nsubsets)
 
   #-----------------------------------------------------------------------------------------------
-  def init_subsets(self, nsubsets, subset_dir = 1):
+  def init_subsets(self, nsubsets):
 
     self.nsubsets   = nsubsets
-    self.subset_dir = subset_dir
 
     self.subset_slices      = []
     self.subset_sino_shapes = []

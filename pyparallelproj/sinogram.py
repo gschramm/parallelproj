@@ -37,7 +37,7 @@ class PETSinogramParameters:
   tof_dim : int
     position of tof dimension
     -1 (default) ... TOF is last dimension
-     0           ... TOF is first dimension
+    other values are not supported yet
   """
   def __init__(self, scanner, span = 1, rtrim = 46, ntofbins = 1, tofbin_width = None,
                      spatial_dim_order = np.array([0,1,2]), tof_dim = -1):
@@ -65,14 +65,12 @@ class PETSinogramParameters:
 
       self.nLORs_per_view = self.nrad*self.nplanes 
 
+      self.spatial_shape = tuple(np.array([self.nrad, self.nviews, self.nplanes])[self.spatial_dim_order])
       if self.tof_dim == -1:
-        self.shape = tuple(np.array([self.nrad, self.nviews, self.nplanes])[self.spatial_dim_order]) + (self.ntofbins,)
-      elif self.tof_dim == 0:
-        self.shape = (self.ntofbins,) + tuple(np.array([self.nrad, self.nviews, self.nplanes])[self.spatial_dim_order])
+        self.shape = self.spatial_shape + (self.ntofbins,) 
       else:
-        raise ValueError('TOF dim must be -1 or 0')
+        raise ValueError('TOF dim must be -1')
                            
-
       self.istart_plane, self.iend_plane = self.get_plane_det_index()
 
   #-------------------------------------------------------------------
