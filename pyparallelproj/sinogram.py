@@ -26,8 +26,21 @@ class PETSinogramParameters:
     (spatial) width of every TOF bin.
     Should be in the same units as the crystal coordinates of the scanner.
     Default: None
+
+  spatial_dim_order : 1d numpy array with permutation of [0,1,2]
+    order of the spatial dimensions
+    (default) [0,1,2] -> (radial, angular, planes)
+              [1,0,2] -> (angular, radial, planes)
+              [2,1,0] -> (planes, angular, radial)
+              ...
+
+  tof_dim : int
+    position of tof dimension
+    -1 (default) ... TOF is last dimension
+     0           ... TOF is first dimension
   """
-  def __init__(self, scanner, span = 1, rtrim = 46, ntofbins = 1, tofbin_width = None):
+  def __init__(self, scanner, span = 1, rtrim = 46, ntofbins = 1, tofbin_width = None,
+                     spatial_dim_order = np.array([0,1,2]), tof_dim = -1):
 
     if (scanner.ncrystals_per_plane % 2) != 0:
       raise ValueError(f'Scanners with odd number of crystals per plan not supported yet.')
@@ -43,13 +56,22 @@ class PETSinogramParameters:
       self.nviews   = scanner.ncrystals_per_plane//2
       self.nplanes  = scanner.ncrystals_axial**2
 
+      self.spatial_dim_order = spatial_dim_order
+
       # TOF parameters
       self.ntofbins     = ntofbins
       self.tofbin_width = tofbin_width
+      self.tof_dim      = tof_dim
 
       self.nLORs_per_view = self.nrad*self.nplanes 
 
-      self.shape = (self.nrad, self.nviews, self.nplanes, self.ntofbins)
+      if self.tof_dim == -1:
+        self.shape = tuple(np.array([self.nrad, self.nviews, self.nplanes])[self.spatial_dim_order]) + (self.ntofbins,)
+      elif self.tof_dim == 0:
+        self.shape = (self.ntofbins,) + tuple(np.array([self.nrad, self.nviews, self.nplanes])[self.spatial_dim_order])
+      else:
+        raise ValueError('TOF dim must be -1 or 0')
+                           
 
       self.istart_plane, self.iend_plane = self.get_plane_det_index()
 
@@ -103,8 +125,10 @@ class PETSinogramParameters:
     crystal_id_start = np.array(np.meshgrid(i_tr_start.flatten(), self.istart_plane)).T.reshape(-1,2) 
     crystal_id_end   = np.array(np.meshgrid(i_tr_end.flatten(),   self.iend_plane)).T.reshape(-1,2) 
 
-    return (crystal_id_start.reshape((self.nrad, views.shape[0],self.nplanes,2)), 
-            crystal_id_end.reshape((self.nrad, views.shape[0],self.nplanes,2)))
+    return (np.transpose(crystal_id_start.reshape((self.nrad, views.shape[0],self.nplanes,2)),
+                         np.concatenate((self.spatial_dim_order,[3]))), 
+            np.transpose(crystal_id_end.reshape((self.nrad, views.shape[0],self.nplanes,2)),
+                         np.concatenate((self.spatial_dim_order,[3]))))
 
   #-------------------------------------------------------------------
   def sinogram_to_listmode(self, sinogram, return_multi_index = False,
