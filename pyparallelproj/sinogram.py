@@ -120,8 +120,8 @@ class PETSinogramParameters:
       i_tr_start[:,i] = (np.concatenate((np.repeat(np.arange(n//2),2),[n//2])) - view)[self.rtrim:-self.rtrim]
       i_tr_end[:,i]   = (np.concatenate(([-1],np.repeat(-np.arange(n//2) - 2,2))) - view)[self.rtrim:-self.rtrim]
 
-    crystal_id_start = np.array(np.meshgrid(i_tr_start.flatten(), self.istart_plane)).T.reshape(-1,2) 
-    crystal_id_end   = np.array(np.meshgrid(i_tr_end.flatten(),   self.iend_plane)).T.reshape(-1,2) 
+    crystal_id_start = np.array(np.meshgrid(i_tr_start.ravel(), self.istart_plane)).T.reshape(-1,2) 
+    crystal_id_end   = np.array(np.meshgrid(i_tr_end.ravel(),   self.iend_plane)).T.reshape(-1,2) 
 
     return (np.transpose(crystal_id_start.reshape((self.nrad, views.shape[0],self.nplanes,2)),
                          np.concatenate((self.spatial_dim_order,[3]))), 
@@ -160,7 +160,7 @@ class PETSinogramParameters:
       (2 output arguments)
     """
 
-    if not np.issubdtype(sinogram.flatten()[0], np.signedinteger):
+    if not np.issubdtype(sinogram.ravel()[0], np.signedinteger):
       raise ValueError('Sinogram must be of type unsigned int for conversion to LM.')
 
     # events is a 2D array of all events
@@ -217,11 +217,11 @@ if __name__ == '__main__':
 
   for k, view in enumerate(views):
     for i in range(xstart.shape[0]):
-      ax.flatten()[k].plot([xstart[i,k,0,0], xend[i,k,0,0]], [xstart[i,k,0,1], xend[i,k,0,1]], 
+      ax.ravel()[k].plot([xstart[i,k,0,0], xend[i,k,0,0]], [xstart[i,k,0,1], xend[i,k,0,1]], 
                            color = 'b', lw = 0.1)
-    ax.flatten()[k].set_xlim(-350,350)
-    ax.flatten()[k].set_ylim(-350,350)
-    ax.flatten()[k].set_title(f'view {view}')
+    ax.ravel()[k].set_xlim(-350,350)
+    ax.ravel()[k].set_ylim(-350,350)
+    ax.ravel()[k].set_title(f'view {view}')
   
   fig.tight_layout()
   fig.show()

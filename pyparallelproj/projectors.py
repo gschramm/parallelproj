@@ -99,8 +99,8 @@ class LMProjector:
 
     if self.tof == False:
       ####### NONTOF fwd projection 
-      ok = joseph3d_fwd(xstart.flatten(), xend.flatten(), 
-                        img.flatten(), self.img_origin, self.voxsize, 
+      ok = joseph3d_fwd(xstart.ravel(), xend.ravel(), 
+                        img.ravel(), self.img_origin, self.voxsize, 
                         img_fwd, nevents, self.img_dim,
                         threadsperblock = self.threadsperblock, ngpus = self.ngpus) 
     else:
@@ -115,10 +115,10 @@ class LMProjector:
 
       tofbin = events[:,4].astype(ctypes.c_short)
 
-      ok = joseph3d_fwd_tof(xstart.flatten(), xend.flatten(), 
-                            img.flatten(), self.img_origin, self.voxsize, 
+      ok = joseph3d_fwd_tof(xstart.ravel(), xend.ravel(), 
+                            img.ravel(), self.img_origin, self.voxsize, 
                             img_fwd, nevents, self.img_dim,
-                            self.tofbin_width, sigma_tof.flatten(), tofcenter_offset, self.nsigmas,
+                            self.tofbin_width, sigma_tof.ravel(), tofcenter_offset, self.nsigmas,
                             tofbin, threadsperblock = self.threadsperblock, 
                             ngpus = self.ngpus, lm = True) 
 
@@ -139,9 +139,9 @@ class LMProjector:
 
     if self.tof == False:
       ####### NONTOF back projection 
-      ok = joseph3d_back(xstart.flatten(), xend.flatten(), 
+      ok = joseph3d_back(xstart.ravel(), xend.ravel(), 
                          back_img, self.img_origin, self.voxsize, 
-                         values.flatten(), nevents, self.img_dim,
+                         values.ravel(), nevents, self.img_dim,
                          threadsperblock = self.threadsperblock, ngpus = self.ngpus) 
     else:
       ####### TOF back projection 
@@ -155,10 +155,10 @@ class LMProjector:
 
       tofbin = events[:,4].astype(ctypes.c_short)
 
-      ok = joseph3d_back_tof(xstart.flatten(), xend.flatten(), 
+      ok = joseph3d_back_tof(xstart.ravel(), xend.ravel(), 
                              back_img, self.img_origin, self.voxsize, 
-                             values.flatten(), nevents, self.img_dim,
-                             self.tofbin_width, sigma_tof.flatten(), tofcenter_offset, self.nsigmas, 
+                             values.ravel(), nevents, self.img_dim,
+                             self.tofbin_width, sigma_tof.ravel(), tofcenter_offset, self.nsigmas, 
                              tofbin, threadsperblock = self.threadsperblock, 
                              ngpus = self.ngpus, lm = True) 
 
@@ -307,9 +307,9 @@ class SinogramProjector(LMProjector):
 
     if self.tof == False:
       ####### NONTOF fwd projection 
-      ok = joseph3d_fwd(self.xstart[subset_slice].flatten(), 
-                        self.xend[subset_slice].flatten(), 
-                        img.flatten(), self.img_origin, self.voxsize, 
+      ok = joseph3d_fwd(self.xstart[subset_slice].ravel(), 
+                        self.xend[subset_slice].ravel(), 
+                        img.ravel(), self.img_origin, self.voxsize, 
                         img_fwd, self.nLORs[subset], self.img_dim,
                         threadsperblock = self.threadsperblock, ngpus = self.ngpus) 
     else:
@@ -322,11 +322,11 @@ class SinogramProjector(LMProjector):
       if not isinstance(tofcenter_offset, np.ndarray):
         tofcenter_offset = np.zeros(self.nLORs[subset], dtype = ctypes.c_float)
 
-      ok = joseph3d_fwd_tof(self.xstart[subset_slice].flatten(), 
-                            self.xend[subset_slice].flatten(), 
-                            img.flatten(), self.img_origin, self.voxsize, 
+      ok = joseph3d_fwd_tof(self.xstart[subset_slice].ravel(), 
+                            self.xend[subset_slice].ravel(), 
+                            img.ravel(), self.img_origin, self.voxsize, 
                             img_fwd, self.nLORs[subset], self.img_dim,
-                            self.tofbin_width, sigma_tof.flatten(), tofcenter_offset.flatten(), 
+                            self.tofbin_width, sigma_tof.ravel(), tofcenter_offset.ravel(), 
                             self.nsigmas, self.ntofbins, 
                             threadsperblock = self.threadsperblock, ngpus = self.ngpus, lm = False) 
 
@@ -344,10 +344,10 @@ class SinogramProjector(LMProjector):
 
     if self.tof == False:
       ####### NONTOF back projection 
-      ok = joseph3d_back(self.xstart[subset_slice].flatten(), 
-                         self.xend[subset_slice].flatten(), 
+      ok = joseph3d_back(self.xstart[subset_slice].ravel(), 
+                         self.xend[subset_slice].ravel(), 
                          back_img, self.img_origin, self.voxsize, 
-                         sino.flatten(), self.nLORs[subset], self.img_dim,
+                         sino.ravel(), self.nLORs[subset], self.img_dim,
                          threadsperblock = self.threadsperblock, ngpus = self.ngpus) 
 
     else:
@@ -360,11 +360,11 @@ class SinogramProjector(LMProjector):
       if not isinstance(tofcenter_offset, np.ndarray):
         tofcenter_offset = np.zeros(self.nLORs[subset], dtype = ctypes.c_float)
 
-      ok = joseph3d_back_tof(self.xstart[subset_slice].flatten(), 
-                             self.xend[subset_slice].flatten(), 
+      ok = joseph3d_back_tof(self.xstart[subset_slice].ravel(), 
+                             self.xend[subset_slice].ravel(), 
                              back_img, self.img_origin, self.voxsize, 
-                             sino.flatten(), self.nLORs[subset], self.img_dim,
-                             self.tofbin_width, sigma_tof.flatten(), tofcenter_offset.flatten(), 
+                             sino.ravel(), self.nLORs[subset], self.img_dim,
+                             self.tofbin_width, sigma_tof.ravel(), tofcenter_offset.ravel(), 
                              self.nsigmas, self.ntofbins, 
                              threadsperblock = self.threadsperblock, ngpus = self.ngpus, lm = False) 
 
