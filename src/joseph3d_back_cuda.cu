@@ -331,14 +331,14 @@ __global__ void joseph3d_back_cuda_kernel(float *xstart,
  *  @param threadsperblock number of threads per block
  *  @param num_devices     number of CUDA devices to use. if set to -1 cudaGetDeviceCount() is used
  */
-extern "C" void joseph3d_back_cuda(float *h_xstart, 
-                                   float *h_xend, 
+extern "C" void joseph3d_back_cuda(const float *h_xstart, 
+                                   const float *h_xend, 
                                    float *h_img,
-                                   float *h_img_origin, 
-                                   float *h_voxsize, 
-                                   float *h_p,
+                                   const float *h_img_origin, 
+                                   const float *h_voxsize, 
+                                   const float *h_p,
                                    long long nlors, 
-                                   int *h_img_dim, 
+                                   const int *h_img_dim, 
                                    int threadsperblock,
                                    int num_devices)
 {

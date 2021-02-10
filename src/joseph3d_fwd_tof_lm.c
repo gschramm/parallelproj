@@ -32,19 +32,19 @@
  *  @param n_sigmas         number of sigmas to consider for calculation of TOF kernel
  *  @param tof_bin          array containing the TOF bin of each event
  */
-void joseph3d_fwd_tof_lm(float *xstart, 
-                         float *xend, 
-                         float *img,
-                         float *img_origin, 
-                         float *voxsize, 
+void joseph3d_fwd_tof_lm(const float *xstart, 
+                         const float *xend, 
+                         const float *img,
+                         const float *img_origin, 
+                         const float *voxsize, 
                          float *p,
                          long long nlors, 
-                         int *img_dim,
+                         const int *img_dim,
                          float tofbin_width,
-                         float *sigma_tof,
-                         float *tofcenter_offset,
+                         const float *sigma_tof,
+                         const float *tofcenter_offset,
                          float n_sigmas,
-                         short *tof_bin)
+                         const short *tof_bin)
 {
   long long i;
 

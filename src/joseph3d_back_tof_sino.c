@@ -34,17 +34,17 @@
  *  @param n_sigmas         number of sigmas to consider for calculation of TOF kernel
  *  @param n_tofbins        number of TOF bins
  */
-void joseph3d_back_tof_sino(float *xstart, 
-                            float *xend, 
+void joseph3d_back_tof_sino(const float *xstart, 
+                            const float *xend, 
                             float *img,
-                            float *img_origin, 
-                            float *voxsize,
-                            float *p, 
+                            const float *img_origin, 
+                            const float *voxsize,
+                            const float *p, 
                             long long nlors, 
-                            int *img_dim,
+                            const int *img_dim,
                             float tofbin_width,
-                            float *sigma_tof,
-                            float *tofcenter_offset,
+                            const float *sigma_tof,
+                            const float *tofcenter_offset,
                             float n_sigmas,
                             short n_tofbins)
 {

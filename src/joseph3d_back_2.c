@@ -25,14 +25,14 @@
  *  @param nlors       number of geometrical LORs
  *  @param img_dim     array with dimensions of image [n0,n1,n2]
  */
-void joseph3d_back_2(float *xstart, 
-                     float *xend, 
+void joseph3d_back_2(const float *xstart, 
+                     const float *xend, 
                      float *img,
-                     float *img_origin, 
-                     float *voxsize,
-                     float *p, 
+                     const float *img_origin, 
+                     const float *voxsize,
+                     const float *p, 
                      long long nlors, 
-                     int *img_dim)
+                     const int *img_dim)
 {
   long long i;
 

@@ -23,14 +23,14 @@
  *  @param nlors       number of geomtrical LORs
  *  @param img_dim     array with dimensions of image [n0,n1,n2]
  */
-void joseph3d_fwd(float *xstart, 
-                  float *xend, 
-                  float *img,
-                  float *img_origin, 
-                  float *voxsize, 
+void joseph3d_fwd(const float *xstart, 
+                  const float *xend, 
+                  const float *img,
+                  const float *img_origin, 
+                  const float *voxsize, 
                   float *p,
                   long long nlors, 
-                  int *img_dim)
+                  const int *img_dim)
 {
   long long i;
 
