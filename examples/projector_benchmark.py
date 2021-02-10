@@ -210,11 +210,11 @@ if counts > 0:
                              tofbin, threadsperblock = lmproj.threadsperblock, 
                              ngpus = lmproj.ngpus, lm = True) 
     else:
-      ok = joseph3d_back_tof(xstart, xend, 
-                             back_img, lmproj.img_origin, lmproj.voxsize, 
-                             values, nevents, lmproj.img_dim,
-                             threadsperblock = lmproj.threadsperblock, 
-                             ngpus = lmproj.ngpus) 
+      ok = joseph3d_back(xstart, xend, 
+                         back_img, lmproj.img_origin, lmproj.voxsize, 
+                         values, nevents, lmproj.img_dim,
+                         threadsperblock = lmproj.threadsperblock, 
+                         ngpus = lmproj.ngpus) 
     t3 = time()
     if i > 0:
       t_lm_back[i-1] = t3 - t2
