@@ -18,6 +18,8 @@ parser.add_argument('--ngpus',    help = 'number of GPUs to use', default = 0,  
 parser.add_argument('--nsubsets', help = 'number of subsets',     default = 28,  type = int)
 parser.add_argument('--tpb',      help = 'threads per block',     default = 64,  type = int)
 parser.add_argument('--nontof',   help = 'non-TOF instead of TOF', action = 'store_true')
+parser.add_argument('--img_mem_order', help = 'memory layout for image', default = 'C',
+                                       choices = ['C','F'])
 args = parser.parse_args()
 
 #---------------------------------------------------------------------------------
@@ -27,7 +29,8 @@ nsubsets  = args.nsubsets
 tpb       = args.tpb
 tof       = not args.nontof
 
-subset    = 0
+img_mem_order = args.img_mem_order
+subset        = 0
 
 if tof:
   ntofbins = 27
@@ -49,7 +52,7 @@ n1      = 250
 n2      = max(1,int((scanner.xc2.max() - scanner.xc2.min()) / voxsize[2]))
 
 # setup a random image
-img = np.zeros((n0,n1,n2), dtype = np.float32)
+img = np.zeros((n0,n1,n2), dtype = np.float32, order = img_mem_order)
 img[(n0//6):(5*n0//6),(n1//6):(5*n1//6),:] = 1
 img_origin = (-(np.array(img.shape) / 2) +  0.5) * voxsize
 
@@ -84,7 +87,7 @@ for sdo in sd:
 
   xstart = proj.xstart[subset_slice].ravel()
   xend   = proj.xend[subset_slice].ravel()
-  img_ravel = img.ravel()
+  img_ravel = img.ravel(order = img_mem_order)
   subset_nLORs     = proj.nLORs[subset]
 
   img_fwd = np.zeros(subset_nLORs*proj.ntofbins, dtype = ctypes.c_float)  
