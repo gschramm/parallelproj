@@ -1,13 +1,26 @@
 cmake_minimum_required(VERSION 3.9.0)
+include(CMakePackageConfigHelpers)
 
 set (CMAKE_BUILD_TYPE Release)
 
 project(parallelproj LANGUAGES C)
 
+
 # directory where libs get installed
 set(INSTALL_LIB_DIR ${CMAKE_INSTALL_PREFIX}/lib/parallelproj CACHE PATH "install directory for compiled libs")
 # directory where cmake targets get installed
-set(INSTALL_TARGET_DIR ${CMAKE_INSTALL_PREFIX}/lib/cmake CACHE PATH "install directory for cmake targets")
+set(CONFIG_FILE_DIR ${CMAKE_INSTALL_PREFIX}/lib/cmake CACHE PATH "install directory for cmake targets")
+set(INCLUDE_DIR ${CMAKE_CURRENT_LIST_DIR}/include)
+
+
+
+CONFIGURE_PACKAGE_CONFIG_FILE(
+  src/cmake/parallelprojConfig.cmake.in
+  "${CMAKE_BINARY_DIR}/parallelprojConfig.cmake"
+   INSTALL_DESTINATION "${CONFIG_FILE_DIR}"
+   PATH_VARS INCLUDE_DIR
+)
+
 
 
 # (1) build the standard C lib with OpenMP support
@@ -16,7 +29,7 @@ find_package(OpenMP REQUIRED)
 
 file(GLOB CP_SOURCES src/*.c)
 add_library(parallelproj SHARED ${CP_SOURCES})
-target_include_directories(parallelproj PRIVATE ${CMAKE_CURRENT_LIST_DIR}/include)
+target_include_directories(parallelproj PRIVATE ${INCLUDE_DIR})
 if(CMAKE_COMPILER_IS_GNUCC)
   target_link_libraries(parallelproj PRIVATE m)
 endif(CMAKE_COMPILER_IS_GNUCC)
@@ -39,14 +52,27 @@ if(CMAKE_CUDA_COMPILER)
   file(GLOB CP_SOURCES src/*.cu)
   add_library(parallelproj_cuda SHARED ${CP_SOURCES})
   set_target_properties(parallelproj_cuda PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
-  target_include_directories(parallelproj_cuda PRIVATE ${CMAKE_CURRENT_LIST_DIR}/include)
+  target_include_directories(parallelproj_cuda PRIVATE ${INCLUDE_DIR})
   install(TARGETS parallelproj_cuda DESTINATION ${INSTALL_LIB_DIR} EXPORT parallelproj-targets)
 else()
   message("XXXX NO CUDA FOUND -> skipping CUDA lib")
 endif()
 
+
+
+
+
 # export the targets
-install(EXPORT parallelproj-targets DESTINATION ${INSTALL_TARGET_DIR})
+install(EXPORT parallelproj-targets DESTINATION ${CONFIG_FILE_DIR})
+
+
+# install STIRConfig*.cmake
+install(
+  FILES
+    "${CMAKE_BINARY_DIR}/parallelprojConfig.cmake"
+  DESTINATION "${CONFIG_FILE_DIR}"
+)
+
 
 
 

@@ -16,7 +16,7 @@ parser.add_argument('--source_dir', help = 'cmake source dir',
 parser.add_argument('--install_dir', help = 'cmake INSTALL_LIB_DIR - default: %(default)s', 
                     default = os.path.join(os.path.dirname(os.path.abspath(__file__)),
                                            'pyparallelproj','lib'))
-parser.add_argument('--target_dir', help = 'cmake INSTALL_TARGET_DIR - default: %(default)s', 
+parser.add_argument('--target_dir', help = 'cmake CONFIG_FILE_DIR - default: %(default)s', 
                     default = os.path.join(os.path.dirname(os.path.abspath(__file__)),
                                            'pyparallelproj','lib'))
 parser.add_argument('--keep_build_dir', help = 'do not remove tempory build dir', 
@@ -45,7 +45,7 @@ dry = args.dry
 #---------------------------------------------------------------------------------------------
 
 if os.name == 'nt':
-  cmd1 = f'cmake -B {build_dir} -DCMAKE_WINDOWS_EXPORT_ALL_SYMBOLS=TRUE -DINSTALL_LIB_DIR={install_dir} -DINSTALL_TARGET_DIR={target_dir} {source_dir}'
+  cmd1 = f'cmake -B {build_dir} -DCMAKE_WINDOWS_EXPORT_ALL_SYMBOLS=TRUE -DINSTALL_LIB_DIR={install_dir} -DCONFIG_FILE_DIR={target_dir} {source_dir}'
   cmd2 = f'cmake --build {build_dir} --target INSTALL --config RELEASE'
 
   if dry:
@@ -55,7 +55,7 @@ if os.name == 'nt':
     os.system(cmd1)
     os.system(cmd2)
 else:
-  cmd1 = f'cmake -B {build_dir} -DINSTALL_LIB_DIR={install_dir} -DINSTALL_TARGET_DIR={target_dir} {source_dir}'
+  cmd1 = f'cmake -B {build_dir} -DINSTALL_LIB_DIR={install_dir} -DCONFIG_FILE_DIR={target_dir} {source_dir}'
   cmd2 = f'cmake --build {build_dir}'
   cmd3 = f'cmake --install {build_dir}'
 
