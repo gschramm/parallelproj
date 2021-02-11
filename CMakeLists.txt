@@ -2,9 +2,11 @@ cmake_minimum_required(VERSION 3.9.0)
 include(CMakePackageConfigHelpers)
 
 set (CMAKE_BUILD_TYPE Release)
-
 project(parallelproj LANGUAGES C)
 
+
+#-------------------------------------------------------------
+# define variables
 
 # directory where libs get installed
 set(INSTALL_LIB_DIR ${CMAKE_INSTALL_PREFIX}/lib/parallelproj CACHE PATH "install directory for compiled libs")
@@ -13,6 +15,24 @@ set(CONFIG_FILE_DIR ${CMAKE_INSTALL_PREFIX}/lib/cmake CACHE PATH "install direct
 set(INCLUDE_DIR ${CMAKE_CURRENT_LIST_DIR}/include)
 
 
+
+#-------------------------------------------------------------
+# checks for OpenMP, CUDA and doxygen
+
+# find the required OpeMP
+find_package(OpenMP REQUIRED)
+
+# check if CUDA is available
+include(CheckLanguage)
+check_language(CUDA)
+
+# check if Doxygen is installed
+find_package(Doxygen)
+
+
+
+#-------------------------------------------------------------
+# package config file
 
 CONFIGURE_PACKAGE_CONFIG_FILE(
   src/cmake/parallelprojConfig.cmake.in
@@ -23,9 +43,8 @@ CONFIGURE_PACKAGE_CONFIG_FILE(
 
 
 
+#-------------------------------------------------------------
 # (1) build the standard C lib with OpenMP support
-# find the required OpeMP
-find_package(OpenMP REQUIRED)
 
 file(GLOB CP_SOURCES src/*.c)
 add_library(parallelproj SHARED ${CP_SOURCES})
@@ -39,10 +58,8 @@ install(TARGETS parallelproj DESTINATION ${INSTALL_LIB_DIR} EXPORT parallelproj-
 
 
 
-
+#-------------------------------------------------------------
 # (2) build the cuda lib
-include(CheckLanguage)
-check_language(CUDA)
 
 # only build CUDA lib if CUDA is available
 if(CMAKE_CUDA_COMPILER)
@@ -60,11 +77,11 @@ endif()
 
 
 
-
+#-------------------------------------------------------------
+# install the config files
 
 # export the targets
 install(EXPORT parallelproj-targets DESTINATION ${CONFIG_FILE_DIR})
-
 
 # install STIRConfig*.cmake
 install(
@@ -75,11 +92,9 @@ install(
 
 
 
-
-
+#-------------------------------------------------------------
 # (3) build the documentation with Doxygen
-# check if Doxygen is installed
-find_package(Doxygen)
+
 if (DOXYGEN_FOUND)
   # set input and output files
   set(DOXYGEN_IN ${CMAKE_CURRENT_SOURCE_DIR}/Doxyfile.in)
@@ -87,7 +102,6 @@ if (DOXYGEN_FOUND)
 
   # request to configure the file
   configure_file(${DOXYGEN_IN} ${DOXYGEN_OUT} @ONLY)
-  message("Doxygen build started")
 
   # note the option ALL which allows to build the docs together with the application
   add_custom_target( doc_doxygen ALL
