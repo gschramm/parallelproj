@@ -4,6 +4,12 @@ set (CMAKE_BUILD_TYPE Release)
 
 project(parallelproj LANGUAGES C)
 
+# directory where libs get installed
+set(INSTALL_LIB_DIR ${CMAKE_INSTALL_PREFIX}/lib/parallelproj CACHE PATH "install directory for compiled libs")
+# directory where cmake targets get installed
+set(INSTALL_TARGET_DIR ${CMAKE_INSTALL_PREFIX}/lib/cmake CACHE PATH "install directory for cmake targets")
+
+
 # (1) build the standard C lib with OpenMP support
 # find the required OpeMP
 find_package(OpenMP REQUIRED)
@@ -16,7 +22,10 @@ if(CMAKE_COMPILER_IS_GNUCC)
 endif(CMAKE_COMPILER_IS_GNUCC)
 # we have to add the openmp library to be linked
 target_link_libraries(parallelproj PRIVATE OpenMP::OpenMP_C)
-install(TARGETS parallelproj DESTINATION ${CMAKE_CURRENT_LIST_DIR}/pyparallelproj/lib EXPORT parallelproj-targets)
+install(TARGETS parallelproj DESTINATION ${INSTALL_LIB_DIR} EXPORT parallelproj-targets)
+
+
+
 
 # (2) build the cuda lib
 include(CheckLanguage)
@@ -31,17 +40,18 @@ if(CMAKE_CUDA_COMPILER)
   add_library(parallelproj_cuda SHARED ${CP_SOURCES})
   set_target_properties(parallelproj_cuda PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
   target_include_directories(parallelproj_cuda PRIVATE ${CMAKE_CURRENT_LIST_DIR}/include)
-  install(TARGETS parallelproj_cuda DESTINATION ${CMAKE_CURRENT_LIST_DIR}/pyparallelproj/lib EXPORT parallelproj-targets)
+  install(TARGETS parallelproj_cuda DESTINATION ${INSTALL_LIB_DIR} EXPORT parallelproj-targets)
 else()
   message("XXXX NO CUDA FOUND -> skipping CUDA lib")
 endif()
 
 # export the targets
-install(EXPORT parallelproj-targets DESTINATION ${CMAKE_CURRENT_LIST_DIR}/pyparallelproj/lib)
+install(EXPORT parallelproj-targets DESTINATION ${INSTALL_TARGET_DIR})
+
+
 
 
 # (3) build the documentation with Doxygen
-
 # check if Doxygen is installed
 find_package(Doxygen)
 if (DOXYGEN_FOUND)
