@@ -12,7 +12,7 @@ project(parallelproj LANGUAGES C)
 set(INSTALL_LIB_DIR ${CMAKE_INSTALL_PREFIX}/lib/parallelproj CACHE PATH "install directory for compiled libs")
 # directory where cmake targets get installed
 set(CONFIG_FILE_DIR ${CMAKE_INSTALL_PREFIX}/lib/cmake CACHE PATH "install directory for cmake targets")
-set(INCLUDE_DIR ${CMAKE_CURRENT_LIST_DIR}/include)
+set(INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/include)
 
 
 
