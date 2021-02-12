@@ -71,12 +71,12 @@ endif()
 #-------------------------------------------------------------
 # package config and version file
 
-CONFIGURE_PACKAGE_CONFIG_FILE(
+configure_package_config_file(
   src/cmake/parallelprojConfig.cmake.in
   "${CMAKE_BINARY_DIR}/parallelprojConfig.cmake"
    INSTALL_DESTINATION "${CONFIG_FILE_DIR}"
-   PATH_VARS INCLUDE_DIR
-)
+   PATH_VARS INCLUDE_DIR INCLUDE_DIR_CUDA)
+
 write_basic_package_version_file(
   "${CMAKE_BINARY_DIR}/parallelprojVersion.cmake"
   VERSION ${parallelproj_VERSION}
