@@ -32,6 +32,7 @@ set(INCLUDE_DIR_CUDA ${CMAKE_CURRENT_SOURCE_DIR}/src/include/cuda)
 
 # find the required OpeMP
 find_package(OpenMP REQUIRED)
+add_definitions(${OpenMP_C_FLAGS})
 
 # check if CUDA is available
 check_language(CUDA)
