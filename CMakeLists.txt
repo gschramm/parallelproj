@@ -12,7 +12,10 @@ project(parallelproj LANGUAGES C)
 set(INSTALL_LIB_DIR ${CMAKE_INSTALL_PREFIX}/lib/parallelproj CACHE PATH "install directory for compiled libs")
 # directory where cmake targets get installed
 set(CONFIG_FILE_DIR ${CMAKE_INSTALL_PREFIX}/lib/cmake CACHE PATH "install directory for cmake targets")
-set(INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/include)
+
+# define include dirs
+set(INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/include/c)
+set(INCLUDE_DIR_CUDA ${CMAKE_CURRENT_SOURCE_DIR}/include/cuda)
 
 # define the version number
 set(VERSION_MAJOR   0)
@@ -41,7 +44,7 @@ find_package(Doxygen)
 #-------------------------------------------------------------
 # (1) build the standard C lib with OpenMP support
 
-file(GLOB CP_SOURCES src/*.c)
+file(GLOB CP_SOURCES src/c/*.c)
 add_library(parallelproj SHARED ${CP_SOURCES})
 target_include_directories(parallelproj PRIVATE ${INCLUDE_DIR})
 if(CMAKE_COMPILER_IS_GNUCC)
@@ -61,10 +64,10 @@ if(CMAKE_CUDA_COMPILER)
   enable_language(CUDA)
   # set cuda compiler flags
   #set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} --compiler-options '-fPIC'")
-  file(GLOB CP_SOURCES src/*.cu)
+  file(GLOB CP_SOURCES src/cuda/*.cu)
   add_library(parallelproj_cuda SHARED ${CP_SOURCES})
   set_target_properties(parallelproj_cuda PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
-  target_include_directories(parallelproj_cuda PRIVATE ${INCLUDE_DIR})
+  target_include_directories(parallelproj_cuda PRIVATE ${INCLUDE_DIR_CUDA})
   install(TARGETS parallelproj_cuda DESTINATION ${INSTALL_LIB_DIR} EXPORT parallelproj-targets)
 else()
   message("XXXX NO CUDA FOUND -> skipping CUDA lib")
