@@ -14,6 +14,12 @@ set(INSTALL_LIB_DIR ${CMAKE_INSTALL_PREFIX}/lib/parallelproj CACHE PATH "install
 set(CONFIG_FILE_DIR ${CMAKE_INSTALL_PREFIX}/lib/cmake CACHE PATH "install directory for cmake targets")
 set(INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/include)
 
+# define the version number
+set(VERSION_MAJOR   0)
+set(VERSION_MINOR   1)
+set(VERSION_PATCH   0-prealpha)
+
+set(parallelproj_VERSION ${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH})
 
 
 #-------------------------------------------------------------
@@ -29,17 +35,6 @@ check_language(CUDA)
 # check if Doxygen is installed
 find_package(Doxygen)
 
-
-
-#-------------------------------------------------------------
-# package config file
-
-CONFIGURE_PACKAGE_CONFIG_FILE(
-  src/cmake/parallelprojConfig.cmake.in
-  "${CMAKE_BINARY_DIR}/parallelprojConfig.cmake"
-   INSTALL_DESTINATION "${CONFIG_FILE_DIR}"
-   PATH_VARS INCLUDE_DIR
-)
 
 
 
@@ -78,6 +73,20 @@ endif()
 
 
 #-------------------------------------------------------------
+# package config and version file
+
+CONFIGURE_PACKAGE_CONFIG_FILE(
+  src/cmake/parallelprojConfig.cmake.in
+  "${CMAKE_BINARY_DIR}/parallelprojConfig.cmake"
+   INSTALL_DESTINATION "${CONFIG_FILE_DIR}"
+   PATH_VARS INCLUDE_DIR
+)
+write_basic_package_version_file(
+  "${CMAKE_BINARY_DIR}/parallelprojVersion.cmake"
+  VERSION ${parallelproj_VERSION}
+  COMPATIBILITY SameMajorVersion )
+
+#-------------------------------------------------------------
 # install the config files
 
 # export the targets
@@ -87,6 +96,7 @@ install(EXPORT parallelproj-targets DESTINATION ${CONFIG_FILE_DIR})
 install(
   FILES
     "${CMAKE_BINARY_DIR}/parallelprojConfig.cmake"
+    "${CMAKE_BINARY_DIR}/parallelprojVersion.cmake"
   DESTINATION "${CONFIG_FILE_DIR}"
 )
 
