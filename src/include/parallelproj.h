@@ -1,5 +1,5 @@
-#ifndef PARALLELPROJ
-#define PARALLELPROJ
+#ifndef __PARALLELPROJ_H__
+#define __PARALLELPROJ_H__
 
 void joseph3d_back_2(const float *xstart, 
                      const float *xend, 

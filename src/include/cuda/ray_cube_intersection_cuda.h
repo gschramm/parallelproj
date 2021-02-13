@@ -1,5 +1,5 @@
-#ifndef __RAY_CUBE_INTERSECTION_CUDA_H__
-#define __RAY_CUBE_INTERSECTION_CUDA_H__
+#ifndef __PARALLELPROJ_CUDA_RAY_CUBE_INTERSECTION_CUDA_H__
+#define __PARALLELPROJ_CUDA_RAY_CUBE_INTERSECTION_CUDA_H__
 
 extern "C" __device__ unsigned char ray_cube_intersection_cuda(float orig0,
                                                                float orig1,

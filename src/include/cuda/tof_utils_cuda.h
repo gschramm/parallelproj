@@ -1,5 +1,5 @@
-#ifndef __TOF_UTILS_CUDA_H__
-#define __TOF_UTILS_CUDA_H__
+#ifndef __PARALLELPROJ_CUDA_TOF_UTILS_CUDA_H__
+#define __PARALLELPROJ_CUDA_TOF_UTILS_CUDA_H__
 
 extern "C" __device__ float erff_as_cuda(float x);
 

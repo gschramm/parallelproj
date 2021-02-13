@@ -1,5 +1,5 @@
-#ifndef TOF_UTILS_H
-#define TOFUTILS_H
+#ifndef __PARALLELPROJ_TOF_UTILS_H__
+#define __PARALLELPROJ_TOF_UTILS_H__
 
 float erff_as(float x);
 

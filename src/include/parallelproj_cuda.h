@@ -1,5 +1,5 @@
-#ifndef PARALLELPROJ_CUDA
-#define PARALLELPROJ_CUDA
+#ifndef __PARALLELPROJ_CUDA_H__
+#define __PARALLELPROJ_CUDA_H__
 
 extern "C" void joseph3d_back_cuda(const float *h_xstart, 
                                    const float *h_xend, 

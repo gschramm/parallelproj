@@ -1,5 +1,5 @@
-#ifndef RAY_CUBE_INTERSECTION_H
-#define RAY_CUBE_INTERSECTION_H
+#ifndef __PARALLELPROJ_RAY_CUBE_INTERSECTION_H__
+#define __PARALLELPROJ_RAY_CUBE_INTERSECTION_H__
 
 unsigned char ray_cube_intersection(float orig0,
                                     float orig1,
