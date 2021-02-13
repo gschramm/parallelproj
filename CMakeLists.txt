@@ -1,3 +1,6 @@
+# structure and content of CMakeLists.txt files adapted from 
+# https://stackoverflow.com/questions/55635294/how-to-create-packages-with-cmake
+
 cmake_minimum_required(VERSION 3.9.0)
 include(CMakePackageConfigHelpers)
 include(CheckLanguage)
@@ -15,21 +18,6 @@ set(parallelproj_VERSION ${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH})
 
 
 #-------------------------------------------------------------
-# define variables
-
-# directory where libs get installed
-set(INSTALL_LIB_DIR ${CMAKE_INSTALL_PREFIX}/lib/parallelproj CACHE PATH "install directory for compiled libs")
-# directory where cmake targets get installed
-set(CONFIG_FILE_DIR ${CMAKE_INSTALL_PREFIX}/lib/cmake CACHE PATH "install directory for cmake targets")
-
-# path where public headers get installed
-set(INSTALL_LIB_DIR ${CMAKE_INSTALL_PREFIX}/lib/parallelproj CACHE PATH "install directory for shared libs")
-
-
-# define include dirs
-set(INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src/include/c)
-
-#-------------------------------------------------------------
 # checks for OpenMP, CUDA and doxygen
 
 # find the required OpeMP
@@ -44,69 +32,55 @@ find_package(Doxygen)
 
 
 #-------------------------------------------------------------
-# (1) build the standard C lib with OpenMP support
+# build the C/OpenMP lib
+add_subdirectory(c)
 
-file(GLOB C_SOURCES src/c/*.c)
-add_library(parallelproj SHARED ${C_SOURCES})
-target_include_directories(parallelproj PRIVATE ${INCLUDE_DIR})
-set_target_properties(parallelproj PROPERTIES PUBLIC_HEADER "src/include/parallelproj.h")
-# we have to add the openmp library to be linked
-target_link_libraries(parallelproj PRIVATE OpenMP::OpenMP_C)
-install(TARGETS parallelproj DESTINATION ${INSTALL_LIB_DIR}
-        EXPORT parallelproj-targets)
-
-
-
-#-------------------------------------------------------------
-# (2) build the cuda lib
 
 # only build CUDA lib if CUDA is available
 if(CMAKE_CUDA_COMPILER)
-  enable_language(CUDA)
-  file(GLOB CUDA_SOURCES src/cuda/*.cu)
-  set(INCLUDE_DIR_CUDA ${CMAKE_CURRENT_SOURCE_DIR}/src/include/cuda)
-  add_library(parallelproj_cuda SHARED ${CUDA_SOURCES})
-  set_target_properties(parallelproj_cuda PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
-  set_target_properties(parallelproj_cuda PROPERTIES PUBLIC_HEADER "src/include/parallelproj_cuda.h")
-  target_include_directories(parallelproj_cuda PRIVATE ${INCLUDE_DIR_CUDA})
-  install(TARGETS parallelproj_cuda DESTINATION ${INSTALL_LIB_DIR} 
-          EXPORT parallelproj-targets)
+  add_subdirectory(c)
 endif()
 
 
+#-------------------------------------------------------------
+# install the targets
+install(
+  EXPORT parallelprojTargets
+  DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/parallelproj
+  NAMESPACE parallelproj::
+  FILE parallelprojTargets.cmake # Not sure if this is still needed
+  )
+
+
 
 #-------------------------------------------------------------
-# package config and version file
+# generate and install cmake package and version files
 
 configure_package_config_file(
-  src/cmake/parallelprojConfig.cmake.in
-  "${CMAKE_BINARY_DIR}/parallelprojConfig.cmake"
-   INSTALL_DESTINATION "${CONFIG_FILE_DIR}")
+  Config.cmake.in
+  ${CMAKE_CURRENT_BINARY_DIR}/parallelprojConfig.cmake
+  INSTALL_DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/parallelproj
+  PATH_VARS
+    CMAKE_INSTALL_LIBDIR
+  )
 
 write_basic_package_version_file(
-  "${CMAKE_BINARY_DIR}/parallelprojVersion.cmake"
+  ${CMAKE_CURRENT_BINARY_DIR}/parallelprojConfigVersion.cmake
   VERSION ${parallelproj_VERSION}
-  COMPATIBILITY SameMajorVersion )
+  COMPATIBILITY SameMajorVersion
+  )
 
-
-#-------------------------------------------------------------
-# install the config files
-
-# export the targets
-install(EXPORT parallelproj-targets DESTINATION ${CONFIG_FILE_DIR})
-
-# install STIRConfig*.cmake
+# Install Config and ConfigVersion files
 install(
-  FILES
-    "${CMAKE_BINARY_DIR}/parallelprojConfig.cmake"
-    "${CMAKE_BINARY_DIR}/parallelprojVersion.cmake"
-  DESTINATION "${CONFIG_FILE_DIR}"
-)
+  FILES "${CMAKE_CURRENT_BINARY_DIR}/parallelprojConfig.cmake"
+        "${CMAKE_CURRENT_BINARY_DIR}/parallelprojConfigVersion.cmake"
+  DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/parallelproj"
+  )
 
 
 
 #-------------------------------------------------------------
-# (3) build the documentation with Doxygen
+# build the documentation with Doxygen
 
 if (DOXYGEN_FOUND)
   # set input and output files
