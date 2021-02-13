@@ -13,10 +13,10 @@ ar_1d_short  = npct.ndpointer(dtype = ctypes.c_short, ndim = 1, flags = 'C')
 plt = platform.system()
 
 if plt == 'Linux':
-  fname      = 'libparallelproj.so'
+  fname      = 'libparallelproj_c.so'
   fname_cuda = 'libparallelproj_cuda.so'
 elif plt == 'Windows':
-  fname      = 'parallelproj.dll'
+  fname      = 'parallelproj_c.dll'
   fname_cuda = 'parallelproj_cuda.dll'
 else:
   raise SystemError(f'{platform.system()} not supprted yet.')
