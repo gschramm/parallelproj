@@ -4,6 +4,8 @@ import numpy.ctypeslib as npct
 import ctypes
 import platform
 
+from glob import glob
+
 ar_1d_single = npct.ndpointer(dtype = ctypes.c_float, ndim = 1, flags = 'C')
 ar_1d_int    = npct.ndpointer(dtype = ctypes.c_int,   ndim = 1, flags = 'C')
 ar_1d_short  = npct.ndpointer(dtype = ctypes.c_short, ndim = 1, flags = 'C')
@@ -19,15 +21,25 @@ elif plt == 'Windows':
   fname      = 'parallelproj_c.dll'
   fname_cuda = 'parallelproj_cuda.dll'
 else:
-  raise SystemError(f'{platform.system()} not supprted yet.')
+  raise SystemError(f'{platform.system()} not supported yet.')
 
-lib_parallelproj_fname = os.path.abspath(os.path.join(os.path.dirname(__file__),'lib',fname))
 
-lib_parallelproj_cuda_fname = os.path.abspath(os.path.join(os.path.dirname(__file__),'lib',fname_cuda))
+
+lib_parallelproj_fnames = glob(os.path.abspath(os.path.join(os.path.dirname(__file__),'*',fname)))
+if len(lib_parallelproj_fnames) > 0:
+  lib_parallelproj_fname = lib_parallelproj_fnames[0]
+else:
+  lib_parallelproj_fname = None
+
+lib_parallelproj_cuda_fnames = glob(os.path.abspath(os.path.join(os.path.dirname(__file__),'*',fname_cuda)))
+if len(lib_parallelproj_cuda_fnames) > 0:
+  lib_parallelproj_cuda_fname = lib_parallelproj_cuda_fnames[0]
+else:
+  lib_parallelproj_cuda_fname = None
 
 #-----
 
-if os.path.exists(lib_parallelproj_fname):
+if lib_parallelproj_fname is not None:
   lib_parallelproj = npct.load_library(os.path.basename(lib_parallelproj_fname),
                                        os.path.dirname(lib_parallelproj_fname))
   lib_parallelproj.joseph3d_fwd.restype  = None
@@ -111,7 +123,7 @@ if os.path.exists(lib_parallelproj_fname):
                                                     ar_1d_short]       # tof bin 
   
 
-if os.path.exists(lib_parallelproj_cuda_fname):
+if lib_parallelproj_cuda_fname is not None:
   lib_parallelproj_cuda = npct.load_library(os.path.basename(lib_parallelproj_cuda_fname),
                                             os.path.dirname(lib_parallelproj_cuda_fname))
   lib_parallelproj_cuda.joseph3d_fwd_cuda.restype  = None

@@ -38,7 +38,7 @@ add_subdirectory(c)
 
 # only build CUDA lib if CUDA is available
 if(CMAKE_CUDA_COMPILER)
-  add_subdirectory(c)
+  add_subdirectory(cuda)
 endif()
 
 
