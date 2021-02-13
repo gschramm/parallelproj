@@ -8,7 +8,7 @@ set (CMAKE_BUILD_TYPE Release)
 #-------------------------------------------------------------
 # define the version number
 set(VERSION_MAJOR   0)
-set(VERSION_MINOR   1)
+set(VERSION_MINOR   5)
 set(VERSION_PATCH   0-prealpha)
 
 set(parallelproj_VERSION ${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH})
@@ -83,6 +83,7 @@ write_basic_package_version_file(
   VERSION ${parallelproj_VERSION}
   COMPATIBILITY SameMajorVersion )
 
+
 #-------------------------------------------------------------
 # install the config files
 
@@ -116,6 +117,4 @@ if (DOXYGEN_FOUND)
       WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
       COMMENT "Generating API documentation with Doxygen"
       VERBATIM )
-else (DOXYGEN_FOUND)
-  message("Doxygen need to be installed to generate the doxygen documentation")
 endif (DOXYGEN_FOUND)

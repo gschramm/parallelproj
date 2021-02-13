@@ -1,1 +1,9 @@
 @PACKAGE_INIT@
+
+find_package(OpenMP REQUIRED)
+
+if(@CMAKE_CUDA_COMPILER@)
+  enable_language(CUDA)
+endif()
+
+
