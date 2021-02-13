@@ -22,6 +22,10 @@ set(INSTALL_LIB_DIR ${CMAKE_INSTALL_PREFIX}/lib/parallelproj CACHE PATH "install
 # directory where cmake targets get installed
 set(CONFIG_FILE_DIR ${CMAKE_INSTALL_PREFIX}/lib/cmake CACHE PATH "install directory for cmake targets")
 
+# path where public headers get installed
+set(INSTALL_LIB_DIR ${CMAKE_INSTALL_PREFIX}/lib/parallelproj CACHE PATH "install directory for shared libs")
+
+
 # define include dirs
 set(INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src/include/c)
 
@@ -45,9 +49,11 @@ find_package(Doxygen)
 file(GLOB C_SOURCES src/c/*.c)
 add_library(parallelproj SHARED ${C_SOURCES})
 target_include_directories(parallelproj PRIVATE ${INCLUDE_DIR})
+set_target_properties(parallelproj PROPERTIES PUBLIC_HEADER "src/include/parallelproj.h")
 # we have to add the openmp library to be linked
 target_link_libraries(parallelproj PRIVATE OpenMP::OpenMP_C)
-install(TARGETS parallelproj DESTINATION ${INSTALL_LIB_DIR} EXPORT parallelproj-targets)
+install(TARGETS parallelproj DESTINATION ${INSTALL_LIB_DIR}
+        EXPORT parallelproj-targets)
 
 
 
@@ -61,8 +67,10 @@ if(CMAKE_CUDA_COMPILER)
   set(INCLUDE_DIR_CUDA ${CMAKE_CURRENT_SOURCE_DIR}/src/include/cuda)
   add_library(parallelproj_cuda SHARED ${CUDA_SOURCES})
   set_target_properties(parallelproj_cuda PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
+  set_target_properties(parallelproj_cuda PROPERTIES PUBLIC_HEADER "src/include/parallelproj_cuda.h")
   target_include_directories(parallelproj_cuda PRIVATE ${INCLUDE_DIR_CUDA})
-  install(TARGETS parallelproj_cuda DESTINATION ${INSTALL_LIB_DIR} EXPORT parallelproj-targets)
+  install(TARGETS parallelproj_cuda DESTINATION ${INSTALL_LIB_DIR} 
+          EXPORT parallelproj-targets)
 endif()
 
 
