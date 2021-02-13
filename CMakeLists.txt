@@ -24,8 +24,6 @@ set(CONFIG_FILE_DIR ${CMAKE_INSTALL_PREFIX}/lib/cmake CACHE PATH "install direct
 
 # define include dirs
 set(INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src/include/c)
-set(INCLUDE_DIR_CUDA ${CMAKE_CURRENT_SOURCE_DIR}/src/include/cuda)
-
 
 #-------------------------------------------------------------
 # checks for OpenMP, CUDA and doxygen
@@ -60,6 +58,7 @@ install(TARGETS parallelproj DESTINATION ${INSTALL_LIB_DIR} EXPORT parallelproj-
 if(CMAKE_CUDA_COMPILER)
   enable_language(CUDA)
   file(GLOB CUDA_SOURCES src/cuda/*.cu)
+  set(INCLUDE_DIR_CUDA ${CMAKE_CURRENT_SOURCE_DIR}/src/include/cuda)
   add_library(parallelproj_cuda SHARED ${CUDA_SOURCES})
   set_target_properties(parallelproj_cuda PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
   target_include_directories(parallelproj_cuda PRIVATE ${INCLUDE_DIR_CUDA})
