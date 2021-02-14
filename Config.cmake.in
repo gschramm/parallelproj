@@ -4,5 +4,5 @@ include( "${CMAKE_CURRENT_LIST_DIR}/parallelprojTargets.cmake" )
 find_package(OpenMP REQUIRED)
 
 if(@CMAKE_CUDA_COMPILER@)
-  enable_language(CUDA)
+  set(parallelproj_built_with_CUDA TRUE)
 endif()
