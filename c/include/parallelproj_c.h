@@ -1,6 +1,10 @@
 #ifndef __PARALLELPROJ_H__
 #define __PARALLELPROJ_H__
 
+#ifdef  __cplusplus
+extern "C" {
+#endif
+
 void joseph3d_back_2(const float *xstart, 
                      const float *xend, 
                      float *img,
@@ -111,5 +115,9 @@ void joseph3d_fwd_tof_sino(const float *xstart,
                            const float *tofcenter_offset,
                            float n_sigmas,
                            short n_tofbins);
+
+#ifdef  __cplusplus
+} // end of extern "C"
+#endif
 
 #endif
