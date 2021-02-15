@@ -61,7 +61,8 @@ lib_parallelproj_cuda = None
 if lib_parallelproj_c_fname is not None:
   lib_parallelproj_c = npct.load_library(os.path.basename(lib_parallelproj_c_fname),
                                        os.path.dirname(lib_parallelproj_c_fname))
-  lib_parallelproj_c.version = version
+  lib_parallelproj_c.__version__ = version
+  lib_parallelproj_c.__file__    = lib_parallelproj_c_fname
 
   lib_parallelproj_c.joseph3d_fwd.restype  = None
   lib_parallelproj_c.joseph3d_fwd.argtypes = [ar_1d_single,
@@ -147,7 +148,8 @@ if lib_parallelproj_c_fname is not None:
 if lib_parallelproj_cuda_fname is not None:
   lib_parallelproj_cuda = npct.load_library(os.path.basename(lib_parallelproj_cuda_fname),
                                             os.path.dirname(lib_parallelproj_cuda_fname))
-  lib_parallelproj_cuda.version = version
+  lib_parallelproj_cuda.__version__ = version
+  lib_parallelproj_cuda.__file__    = lib_parallelproj_cuda_fname
 
   lib_parallelproj_cuda.joseph3d_fwd_cuda.restype  = None
   lib_parallelproj_cuda.joseph3d_fwd_cuda.argtypes = [ar_1d_single,
