@@ -1,8 +1,10 @@
 import os
 import sys
+import re
 import numpy.ctypeslib as npct
 import ctypes
 import platform
+import warnings
 
 from glob import glob
 
@@ -11,6 +13,19 @@ ar_1d_int    = npct.ndpointer(dtype = ctypes.c_int,   ndim = 1, flags = 'C')
 ar_1d_short  = npct.ndpointer(dtype = ctypes.c_short, ndim = 1, flags = 'C')
 
 #---- find the compiled C / CUDA libraries
+# get the version of the libs from the ConfigVersion file
+configVersion_files = glob(os.path.abspath(os.path.join(os.path.dirname(__file__),'*','cmake',
+                                                        'parallelproj',
+                                                        'parallelprojConfigVersion.cmake')))
+
+version = None
+if len(configVersion_files) > 0:
+  try:
+    with open(configVersion_files[0],'r') as f:
+      version = re.search("set\(PACKAGE_VERSION (.*)\)", f.read()).group(1).replace('"','')
+  except: 
+    warnings.warn("failed to read lib version from cmake config version file", UserWarning) 
+
 
 plt = platform.system()
 
@@ -46,6 +61,8 @@ lib_parallelproj_cuda = None
 if lib_parallelproj_c_fname is not None:
   lib_parallelproj_c = npct.load_library(os.path.basename(lib_parallelproj_c_fname),
                                        os.path.dirname(lib_parallelproj_c_fname))
+  lib_parallelproj_c.version = version
+
   lib_parallelproj_c.joseph3d_fwd.restype  = None
   lib_parallelproj_c.joseph3d_fwd.argtypes = [ar_1d_single,
                                             ar_1d_single,
@@ -130,6 +147,8 @@ if lib_parallelproj_c_fname is not None:
 if lib_parallelproj_cuda_fname is not None:
   lib_parallelproj_cuda = npct.load_library(os.path.basename(lib_parallelproj_cuda_fname),
                                             os.path.dirname(lib_parallelproj_cuda_fname))
+  lib_parallelproj_cuda.version = version
+
   lib_parallelproj_cuda.joseph3d_fwd_cuda.restype  = None
   lib_parallelproj_cuda.joseph3d_fwd_cuda.argtypes = [ar_1d_single,
                                                       ar_1d_single,
