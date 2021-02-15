@@ -29,7 +29,8 @@ check_language(CUDA)
 # check if Doxygen is installed
 find_package(Doxygen)
 
-
+# get standard paths for installation
+include(GNUInstallDirs)
 
 #-------------------------------------------------------------
 # build the C/OpenMP lib
