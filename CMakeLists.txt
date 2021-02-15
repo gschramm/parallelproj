@@ -2,10 +2,14 @@
 # https://stackoverflow.com/questions/55635294/how-to-create-packages-with-cmake
 
 cmake_minimum_required(VERSION 3.9.0)
+project(parallelproj LANGUAGES C)
+
 include(CMakePackageConfigHelpers)
 include(CheckLanguage)
 
-project(parallelproj LANGUAGES C)
+# get standard paths for installation
+include(GNUInstallDirs)
+
 set (CMAKE_BUILD_TYPE Release)
 
 #-------------------------------------------------------------
@@ -15,7 +19,6 @@ set(VERSION_MINOR   5)
 set(VERSION_PATCH   0-prealpha)
 
 set(parallelproj_VERSION ${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH})
-
 
 #-------------------------------------------------------------
 # checks for OpenMP, CUDA and doxygen
@@ -29,8 +32,6 @@ check_language(CUDA)
 # check if Doxygen is installed
 find_package(Doxygen)
 
-# get standard paths for installation
-include(GNUInstallDirs)
 
 #-------------------------------------------------------------
 # build the C/OpenMP lib
