@@ -307,22 +307,6 @@ __global__ void joseph3d_fwd_cuda_kernel(float *xstart,
 //------------------------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
-/** @brief 3D non-tof joseph forward projector CUDA wrapper
- *
- *  @param h_xstart array of shape [3*nlors] with the coordinates of the start points of the LORs.
- *                  The start coordinates of the n-th LOR are at xstart[n*3 + i] with i = 0,1,2 
- *  @param h_xend   array of shape [3*nlors] with the coordinates of the end   points of the LORs.
- *                  The start coordinates of the n-th LOR are at xstart[n*3 + i] with i = 0,1,2 
- *  @param h_img    array of shape [n0*n1*n2] containing the 3D image to be projected.
- *                  The pixel [i,j,k] ist stored at [n1*n2*i + n2*j + k].
- *  @param h_img_origin  array [x0_0,x0_1,x0_2] of coordinates of the center of the [0,0,0] voxel
- *  @param h_voxsize     array [vs0, vs1, vs2] of the voxel sizes
- *  @param h_p           array of length nlors (output) used to store the projections
- *  @param nlors            number of projections (length of p array)
- *  @param h_img_dim     array with dimensions of image [n0,n1,n2]
- *  @param threadsperblock number of threads per block
- *  @param num_devices     number of CUDA devices to use. if set to -1 cudaGetDeviceCount() is used
- */
 extern "C" void joseph3d_fwd_cuda(const float *h_xstart, 
                                   const float *h_xend, 
                                   const float *h_img,
