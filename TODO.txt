@@ -1,6 +1,4 @@
 - [ ] calculate integrals as chunks over smaller cubes
-- [ ] use texture memory for image in fwd projection
 - [ ] break up loop over multiple GPU devices in many smaller loops
       to get asynchronous memory transfer
-- [ ] use const pointers for arrays that are not being changed
 - [ ] voxels outside ring
