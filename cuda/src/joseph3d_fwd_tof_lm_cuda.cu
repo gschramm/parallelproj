@@ -171,6 +171,23 @@ __global__ void joseph3d_fwd_tof_lm_cuda_kernel(float *xstart,
         istart = (int)floor(istart_f);
         iend   = (int)ceil(iend_f);
 
+        // check in which "plane" the start and end points are
+        // we have to do this to avoid that we include voxels
+        // that are "outside" the line segment bewteen xstart and xend
+        
+        // !! for these calculations we overwrite the istart_f and iend_f variables !!
+        istart_f = (xstart0 - img_origin0) / voxsize0;
+        iend_f   = (xend0   - img_origin0) / voxsize0;
+
+        if (istart_f > iend_f){
+          tmp      = iend_f;
+          iend_f   = istart_f;
+          istart_f = tmp;
+        }
+
+        if (istart < (int)floor(istart_f)){istart = (int)floor(istart_f);}
+        if (iend >= (int)ceil(iend_f)){iend = (int)ceil(iend_f);}
+
         //-- check where we should start and stop according to the TOF kernel
         //-- the tof weights outside +- 3 sigma will be close to 0 so we can
         //-- ignore them         
@@ -270,6 +287,23 @@ __global__ void joseph3d_fwd_tof_lm_cuda_kernel(float *xstart,
     
         istart = (int)floor(istart_f);
         iend   = (int)ceil(iend_f);
+
+        // check in which "plane" the start and end points are
+        // we have to do this to avoid that we include voxels
+        // that are "outside" the line segment bewteen xstart and xend
+        
+        // !! for these calculations we overwrite the istart_f and iend_f variables !!
+        istart_f = (xstart1 - img_origin1) / voxsize1;
+        iend_f   = (xend1   - img_origin1) / voxsize1;
+
+        if (istart_f > iend_f){
+          tmp      = iend_f;
+          iend_f   = istart_f;
+          istart_f = tmp;
+        }
+
+        if (istart < (int)floor(istart_f)){istart = (int)floor(istart_f);}
+        if (iend >= (int)ceil(iend_f)){iend = (int)ceil(iend_f);}
 
         //-- check where we should start and stop according to the TOF kernel
         //-- the tof weights outside +- 3 sigma will be close to 0 so we can
@@ -372,6 +406,23 @@ __global__ void joseph3d_fwd_tof_lm_cuda_kernel(float *xstart,
     
         istart = (int)floor(istart_f);
         iend   = (int)ceil(iend_f);
+
+        // check in which "plane" the start and end points are
+        // we have to do this to avoid that we include voxels
+        // that are "outside" the line segment bewteen xstart and xend
+        
+        // !! for these calculations we overwrite the istart_f and iend_f variables !!
+        istart_f = (xstart2 - img_origin2) / voxsize2;
+        iend_f   = (xend2   - img_origin2) / voxsize2;
+
+        if (istart_f > iend_f){
+          tmp      = iend_f;
+          iend_f   = istart_f;
+          istart_f = tmp;
+        }
+
+        if (istart < (int)floor(istart_f)){istart = (int)floor(istart_f);}
+        if (iend >= (int)ceil(iend_f)){iend = (int)ceil(iend_f);}
 
         //-- check where we should start and stop according to the TOF kernel
         //-- the tof weights outside +- 3 sigma will be close to 0 so we can
