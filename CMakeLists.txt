@@ -24,10 +24,7 @@ set(parallelproj_VERSION ${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH})
 # checks for OpenMP, CUDA and doxygen
 
 # find the required OpeMP
-find_package(OpenMP REQUIRED)
-
-# check if CUDA is available
-check_language(CUDA)
+find_package(OpenACC REQUIRED)
 
 # check if Doxygen is installed
 find_package(Doxygen)
@@ -35,13 +32,7 @@ find_package(Doxygen)
 
 #-------------------------------------------------------------
 # build the C/OpenMP lib
-add_subdirectory(c)
-
-
-# only build CUDA lib if CUDA is available
-if(CMAKE_CUDA_COMPILER)
-  add_subdirectory(cuda)
-endif()
+add_subdirectory(openacc)
 
 
 #-------------------------------------------------------------
