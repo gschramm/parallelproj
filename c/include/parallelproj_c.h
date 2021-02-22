@@ -83,7 +83,8 @@ extern "C" void joseph3d_back(const float *xstart,
  *  @param sigma_tof        array of length nlors with the TOF resolution (sigma) for each LOR in
  *                          spatial units (units of xstart and xend) 
  *  @param tofcenter_offset array of length nlors with the offset of the central TOF bin from the 
- *                          midpoint of each LOR in spatial units (units of xstart and xend) 
+ *                          midpoint of each LOR in spatial units (units of xstart and xend). 
+ *                          A positive value means a shift towards the end point of the LOR.
  *  @param n_sigmas         number of sigmas to consider for calculation of TOF kernel
  *  @param tof_bin          array containing the TOF bin of each event
  */
@@ -123,7 +124,8 @@ extern "C" void joseph3d_back_tof_lm_2(const float *xstart,
  *  @param sigma_tof        array of length nlors with the TOF resolution (sigma) for each LOR in
  *                          spatial units (units of xstart and xend) 
  *  @param tofcenter_offset array of length nlors with the offset of the central TOF bin from the 
- *                          midpoint of each LOR in spatial units (units of xstart and xend) 
+ *                          midpoint of each LOR in spatial units (units of xstart and xend). 
+ *                          A positive value means a shift towards the end point of the LOR.
  *  @param n_sigmas         number of sigmas to consider for calculation of TOF kernel
  *  @param tof_bin          array containing the TOF bin of each event
  */
@@ -163,7 +165,8 @@ extern "C" void joseph3d_back_tof_lm(const float *xstart,
  *  @param sigma_tof        array of length nlors with the TOF resolution (sigma) for each LOR in
  *                          spatial units (units of xstart and xend) 
  *  @param tofcenter_offset array of length nlors with the offset of the central TOF bin from the 
- *                          midpoint of each LOR in spatial units (units of xstart and xend) 
+ *                          midpoint of each LOR in spatial units (units of xstart and xend). 
+ *                          A positive value means a shift towards the end point of the LOR.
  *  @param n_sigmas         number of sigmas to consider for calculation of TOF kernel
  *  @param n_tofbins        number of TOF bins
  */
@@ -203,7 +206,8 @@ extern "C" void joseph3d_back_tof_sino_2(const float *xstart,
  *  @param sigma_tof        array of length nlors with the TOF resolution (sigma) for each LOR in
  *                          spatial units (units of xstart and xend) 
  *  @param tofcenter_offset array of length nlors with the offset of the central TOF bin from the 
- *                          midpoint of each LOR in spatial units (units of xstart and xend) 
+ *                          midpoint of each LOR in spatial units (units of xstart and xend). 
+ *                          A positive value means a shift towards the end point of the LOR.
  *  @param n_sigmas         number of sigmas to consider for calculation of TOF kernel
  *  @param n_tofbins        number of TOF bins
  */
@@ -265,7 +269,8 @@ extern "C" void joseph3d_fwd(const float *xstart,
  *  @param sigma_tof        array of length nlors with the TOF resolution (sigma) for each LOR in
  *                          spatial units (units of xstart and xend) 
  *  @param tofcenter_offset array of length nlors with the offset of the central TOF bin from the 
- *                          midpoint of each LOR in spatial units (units of xstart and xend) 
+ *                          midpoint of each LOR in spatial units (units of xstart and xend).
+ *                          A positive value means a shift towards the end point of the LOR.
  *  @param n_sigmas         number of sigmas to consider for calculation of TOF kernel
  *  @param tof_bin          array containing the TOF bin of each event
  */
@@ -302,7 +307,8 @@ extern "C" void joseph3d_fwd_tof_lm(const float *xstart,
  *  @param sigma_tof        array of length nlors with the TOF resolution (sigma) for each LOR in
  *                          spatial units (units of xstart and xend) 
  *  @param tofcenter_offset array of length nlors with the offset of the central TOF bin from the 
- *                          midpoint of each LOR in spatial units (units of xstart and xend) 
+ *                          midpoint of each LOR in spatial units (units of xstart and xend).
+ *                          A positive value means a shift towards the end point of the LOR.
  *  @param n_sigmas         number of sigmas to consider for calculation of TOF kernel
  *  @param n_tofbins        number of TOF bins
  */
