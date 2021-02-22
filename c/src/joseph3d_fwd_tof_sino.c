@@ -84,6 +84,11 @@ void joseph3d_fwd_tof_sino(const float *xstart,
     float istart_tof_f, iend_tof_f;
     int istart_tof, iend_tof;
 
+    // initialize all TOF bins in projection along current LOR with 0
+    for(it = 0; it < n_tofbins; it++){
+      p[i*n_tofbins + it] = 0;
+    }
+
     // test whether the ray between the two detectors is most parallel
     // with the 0, 1, or 2 axis
     d0 = xend0 - xstart0;

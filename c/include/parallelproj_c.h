@@ -15,6 +15,7 @@
  *                The start coordinates of the n-th LOR are at xstart[n*3 + i] with i = 0,1,2 
  *  @param img    array of shape [n0*n1*n2] containing the 3D image used for back projection (output).
  *                The pixel [i,j,k] ist stored at [n1*n2*i + n2*j + k].
+ *                !! values are added to existing array !!
  *  @param img_origin  array [x0_0,x0_1,x0_2] of coordinates of the center of the [0,0,0] voxel
  *  @param voxsize     array [vs0, vs1, vs2] of the voxel sizes
  *  @param p           array of length nlors with the values to be back projected
@@ -40,6 +41,7 @@ extern "C" void joseph3d_back_2(const float *xstart,
  *                The start coordinates of the n-th LOR are at xstart[n*3 + i] with i = 0,1,2 
  *  @param img    array of shape [n0*n1*n2] containing the 3D image used for back projection (output).
  *                The pixel [i,j,k] ist stored at [n1*n2*i + n2*j + k].
+ *                !! values are added to existing array !!
  *  @param img_origin  array [x0_0,x0_1,x0_2] of coordinates of the center of the [0,0,0] voxel
  *  @param voxsize     array [vs0, vs1, vs2] of the voxel sizes
  *  @param p           array of length nlors with the values to be back projected
@@ -65,6 +67,7 @@ extern "C" void joseph3d_back(const float *xstart,
  *                The start coordinates of the n-th LOR are at xstart[n*3 + i] with i = 0,1,2 
  *  @param img    array of shape [n0*n1*n2] containing the 3D image used for back projection (output).
  *                The pixel [i,j,k] ist stored at [n1*n2*i + n2*j + k].
+ *                !! values are added to existing array !!
  *  @param img_origin  array [x0_0,x0_1,x0_2] of coordinates of the center of the [0,0,0] voxel
  *  @param voxsize     array [vs0, vs1, vs2] of the voxel sizes
  *  @param p           array of length nlors with the values to be back projected
@@ -102,6 +105,7 @@ extern "C" void joseph3d_back_tof_lm_2(const float *xstart,
  *                The start coordinates of the n-th LOR are at xstart[n*3 + i] with i = 0,1,2 
  *  @param img    array of shape [n0*n1*n2] containing the 3D image used for back projection (output).
  *                The pixel [i,j,k] ist stored at [n1*n2*i + n2*j + k].
+ *                !! values are added to existing array !!
  *  @param img_origin  array [x0_0,x0_1,x0_2] of coordinates of the center of the [0,0,0] voxel
  *  @param voxsize     array [vs0, vs1, vs2] of the voxel sizes
  *  @param p           array of length nlors with the values to be back projected
@@ -139,6 +143,7 @@ extern "C" void joseph3d_back_tof_lm(const float *xstart,
  *                The start coordinates of the n-th LOR are at xstart[n*3 + i] with i = 0,1,2 
  *  @param img    array of shape [n0*n1*n2] containing the 3D image used for back projection (output).
  *                The pixel [i,j,k] ist stored at [n1*n2*i + n2*j + k].
+ *                !! values are added to existing array !!
  *  @param img_origin  array [x0_0,x0_1,x0_2] of coordinates of the center of the [0,0,0] voxel
  *  @param voxsize     array [vs0, vs1, vs2] of the voxel sizes
  *  @param p           array of length nlors with the values to be back projected
@@ -176,6 +181,7 @@ extern "C" void joseph3d_back_tof_sino_2(const float *xstart,
  *                The start coordinates of the n-th LOR are at xstart[n*3 + i] with i = 0,1,2 
  *  @param img    array of shape [n0*n1*n2] containing the 3D image used for back projection (output).
  *                The pixel [i,j,k] ist stored at [n1*n2*i + n2*j + k].
+ *                !! values are added to existing array !!
  *  @param img_origin  array [x0_0,x0_1,x0_2] of coordinates of the center of the [0,0,0] voxel
  *  @param voxsize     array [vs0, vs1, vs2] of the voxel sizes
  *  @param p           array of length nlors*n_tofbins with the values to be back projected

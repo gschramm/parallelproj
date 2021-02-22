@@ -81,6 +81,9 @@ void joseph3d_fwd_tof_lm(const float *xstart,
     float istart_tof_f, iend_tof_f;
     int   istart_tof, iend_tof;
 
+    // initialize projection with 0
+    p[i] = 0;
+
     // test whether the ray between the two detectors is most parallel
     // with the 0, 1, or 2 axis
 

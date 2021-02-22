@@ -60,6 +60,9 @@ void joseph3d_fwd(const float *xstart,
     float istart_f, iend_f, tmp;
     int   istart, iend;
 
+    // initialize projection with 0
+    p[i] = 0;
+
     // test whether the ray between the two detectors is most parallel
     // with the 0, 1, or 2 axis
     d0 = xend0 - xstart0;
