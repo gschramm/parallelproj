@@ -11,9 +11,11 @@
 /** @brief 3D listmode tof joseph forward projector kernel
  *
  *  @param xstart array of shape [3*nlors] with the coordinates of the start points of the LORs.
- *                The start coordinates of the n-th LOR are at xstart[n*3 + i] with i = 0,1,2 
+ *                The start coordinates of the n-th LOR are at xstart[n*3 + i] with i = 0,1,2. 
+ *                Units are the ones of voxsize.
  *  @param xend   array of shape [3*nlors] with the coordinates of the end   points of the LORs.
- *                The start coordinates of the n-th LOR are at xstart[n*3 + i] with i = 0,1,2 
+ *                The start coordinates of the n-th LOR are at xstart[n*3 + i] with i = 0,1,2. 
+ *                Units are the ones of voxsize.
  *  @param img    array of shape [n0*n1*n2] containing the 3D image to be projected.
  *                The pixel [i,j,k] ist stored at [n1*n2*i + n2*j + k].
  *  @param img_origin  array [x0_0,x0_1,x0_2] of coordinates of the center of the [0,0,0] voxel

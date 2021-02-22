@@ -13,9 +13,11 @@
  *  are interconnected.
  *
  *  @param h_xstart array of shape [3*nlors] with the coordinates of the start points of the LORs.
- *                  The start coordinates of the n-th LOR are at xstart[n*3 + i] with i = 0,1,2 
+ *                  The start coordinates of the n-th LOR are at xstart[n*3 + i] with i = 0,1,2. 
+ *                  Units are the ones of voxsize.
  *  @param h_xend   array of shape [3*nlors] with the coordinates of the end   points of the LORs.
- *                  The start coordinates of the n-th LOR are at xstart[n*3 + i] with i = 0,1,2 
+ *                  The start coordinates of the n-th LOR are at xstart[n*3 + i] with i = 0,1,2. 
+ *                  Units are the ones of voxsize.
  *  @param h_img    array of shape [n0*n1*n2] for the back projection image (output).
  *                  The pixel [i,j,k] ist stored at [n1*n2*i + n2*j + j].
  *                  !! values are added to existing array !!
@@ -46,9 +48,11 @@ extern "C" void joseph3d_back_cuda(const float *h_xstart,
  *  are interconnected.
  *
  *  @param h_xstart array of shape [3*nlors] with the coordinates of the start points of the LORs.
- *                  The start coordinates of the n-th LOR are at xstart[n*3 + i] with i = 0,1,2 
+ *                  The start coordinates of the n-th LOR are at xstart[n*3 + i] with i = 0,1,2. 
+ *                  Units are the ones of voxsize.
  *  @param h_xend   array of shape [3*nlors] with the coordinates of the end   points of the LORs.
- *                  The start coordinates of the n-th LOR are at xstart[n*3 + i] with i = 0,1,2 
+ *                  The start coordinates of the n-th LOR are at xstart[n*3 + i] with i = 0,1,2. 
+ *                  Units are the ones of voxsize.
  *  @param h_img    array of shape [n0*n1*n2] for the back projection image (output).
  *                  The pixel [i,j,k] ist stored at [n1*n2*i + n2*j + k].
  *                  !! values are added to existing array !!
@@ -91,9 +95,11 @@ extern "C" void joseph3d_back_tof_lm_cuda(const float *h_xstart,
  *  are interconnected.
  *
  *  @param h_xstart array of shape [3*nlors] with the coordinates of the start points of the LORs.
- *                  The start coordinates of the n-th LOR are at xstart[n*3 + i] with i = 0,1,2 
+ *                  The start coordinates of the n-th LOR are at xstart[n*3 + i] with i = 0,1,2. 
+ *                  Units are the ones of voxsize.
  *  @param h_xend   array of shape [3*nlors] with the coordinates of the end   points of the LORs.
- *                  The start coordinates of the n-th LOR are at xstart[n*3 + i] with i = 0,1,2 
+ *                  The start coordinates of the n-th LOR are at xstart[n*3 + i] with i = 0,1,2. 
+ *                  Units are the ones of voxsize.
  *  @param h_img    array of shape [n0*n1*n2] for the back projection image (output).
  *                  The pixel [i,j,k] ist stored at [n1*n2*i + n2*j + k].
  *                  !! values are added to existing array !!
@@ -131,9 +137,11 @@ extern "C" void joseph3d_back_tof_sino_cuda(const float *h_xstart,
 /** @brief 3D non-tof joseph forward projector CUDA wrapper
  *
  *  @param h_xstart array of shape [3*nlors] with the coordinates of the start points of the LORs.
- *                  The start coordinates of the n-th LOR are at xstart[n*3 + i] with i = 0,1,2 
+ *                  The start coordinates of the n-th LOR are at xstart[n*3 + i] with i = 0,1,2. 
+ *                  Units are the ones of voxsize.
  *  @param h_xend   array of shape [3*nlors] with the coordinates of the end   points of the LORs.
- *                  The start coordinates of the n-th LOR are at xstart[n*3 + i] with i = 0,1,2 
+ *                  The start coordinates of the n-th LOR are at xstart[n*3 + i] with i = 0,1,2. 
+ *                  Units are the ones of voxsize.
  *  @param h_img    array of shape [n0*n1*n2] containing the 3D image to be projected.
  *                  The pixel [i,j,k] ist stored at [n1*n2*i + n2*j + k].
  *  @param h_img_origin  array [x0_0,x0_1,x0_2] of coordinates of the center of the [0,0,0] voxel
@@ -158,9 +166,11 @@ extern "C" void joseph3d_fwd_cuda(const float *h_xstart,
 /** @brief 3D listmode tof joseph forward projector CUDA wrapper
  *
  *  @param h_xstart array of shape [3*nlors] with the coordinates of the start points of the LORs.
- *                  The start coordinates of the n-th LOR are at xstart[n*3 + i] with i = 0,1,2 
+ *                  The start coordinates of the n-th LOR are at xstart[n*3 + i] with i = 0,1,2. 
+ *                  Units are the ones of voxsize.
  *  @param h_xend   array of shape [3*nlors] with the coordinates of the end   points of the LORs.
- *                  The start coordinates of the n-th LOR are at xstart[n*3 + i] with i = 0,1,2 
+ *                  The start coordinates of the n-th LOR are at xstart[n*3 + i] with i = 0,1,2. 
+ *                  Units are the ones of voxsize.
  *  @param h_img    array of shape [n0*n1*n2] containing the 3D image to be projected.
  *                  The pixel [i,j,k] ist stored at [n1*n2*i + n2*j + k].
  *  @param h_img_origin  array [x0_0,x0_1,x0_2] of coordinates of the center of the [0,0,0] voxel
@@ -197,9 +207,11 @@ extern "C" void joseph3d_fwd_tof_lm_cuda(const float *h_xstart,
 /** @brief 3D sinogram tof joseph forward projector CUDA wrapper
  *
  *  @param h_xstart array of shape [3*nlors] with the coordinates of the start points of the LORs.
- *                  The start coordinates of the n-th LOR are at xstart[n*3 + i] with i = 0,1,2 
+ *                  The start coordinates of the n-th LOR are at xstart[n*3 + i] with i = 0,1,2. 
+ *                  Units are the ones of voxsize.
  *  @param h_xend   array of shape [3*nlors] with the coordinates of the end   points of the LORs.
- *                  The start coordinates of the n-th LOR are at xstart[n*3 + i] with i = 0,1,2 
+ *                  The start coordinates of the n-th LOR are at xstart[n*3 + i] with i = 0,1,2. 
+ *                  Units are the ones of voxsize.
  *  @param h_img    array of shape [n0*n1*n2] containing the 3D image to be projected.
  *                  The pixel [i,j,k] ist stored at [n1*n2*i + n2*j + k].
  *  @param h_img_origin  array [x0_0,x0_1,x0_2] of coordinates of the center of the [0,0,0] voxel
