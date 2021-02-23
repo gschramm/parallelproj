@@ -1,4 +1,8 @@
 recursive-include pyparallelproj/lib *
 recursive-include pyparallelproj/lib64 *
+recursive-include pyparallelproj/lib32 *
+recursive-include pyparallelproj/include *
+recursive-include pyparallelproj/share *
 recursive-include pyparallelproj/bin *
 recursive-include pyparallelproj/data *
+include pyparallelproj/CMAKE_INSTALL_LIBDIR__*

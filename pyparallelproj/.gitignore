@@ -1,5 +1,5 @@
 lib*/*
 include/*
 bin/*
-documentation*/*
 share/*
+CMAKE_INSTALL_LIBDIR__*

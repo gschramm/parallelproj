@@ -39,7 +39,7 @@ dry = args.dry
 #---------------------------------------------------------------------------------------------
 
 if os.name == 'nt':
-  cmd1 = f'cmake -B {build_dir} -DCMAKE_WINDOWS_EXPORT_ALL_SYMBOLS=TRUE -DCMAKE_INSTALL_PREFIX={cmake_install_prefix} {source_dir}'
+  cmd1 = f'cmake -B {build_dir} -DPARALLELPROJ_EXPORT_PYTHON_LIBDIR=TRUE -DCMAKE_WINDOWS_EXPORT_ALL_SYMBOLS=TRUE -DCMAKE_INSTALL_PREFIX={cmake_install_prefix} {source_dir}'
   cmd2 = f'cmake --build {build_dir} --target INSTALL --config RELEASE'
 
   if dry:
@@ -49,7 +49,7 @@ if os.name == 'nt':
     os.system(cmd1)
     os.system(cmd2)
 else:
-  cmd1 = f'cmake -B {build_dir} -DCMAKE_INSTALL_PREFIX={cmake_install_prefix} {source_dir}'
+  cmd1 = f'cmake -B {build_dir} -DPARALLELPROJ_EXPORT_PYTHON_LIBDIR=TRUE -DCMAKE_INSTALL_PREFIX={cmake_install_prefix} {source_dir}'
   cmd2 = f'cmake --build {build_dir}'
   cmd3 = f'cmake --install {build_dir}'
 
