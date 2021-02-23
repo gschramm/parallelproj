@@ -8,4 +8,4 @@ target_include_directories(parallelproj_cuda PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include/>
   $<INSTALL_INTERFACE:include/>
   )
-install(TARGETS parallelproj_cuda EXPORT parallelprojTargets)
+install(TARGETS parallelproj_cuda EXPORT parallelprojTargets DESTINATION ${CMAKE_INSTALL_LIBDIR})

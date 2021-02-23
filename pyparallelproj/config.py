@@ -16,7 +16,7 @@ ar_1d_short  = npct.ndpointer(dtype = ctypes.c_short, ndim = 1, flags = 'C')
 # the actual libdir for the current system and processor is written to a dedicated file
 # the name of that file is CMAKE_INSTALL_LIBDIR__{system}__{processor}
 
-lib_subdir_fname = os.path.join(os.path.dirname(__file__),f'CMAKE_INSTALL_LIBDIR__{platform.system()}__{platform.processor()}')
+lib_subdir_fname = os.path.join(os.path.dirname(__file__),f'CMAKE_INSTALL_LIBDIR__{platform.system()}__{platform.machine()}')
 
 if os.access(lib_subdir_fname, os.R_OK):
   with open(lib_subdir_fname,'r') as f:

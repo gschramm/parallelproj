@@ -10,4 +10,4 @@ set_target_properties(parallelproj_c PROPERTIES PUBLIC_HEADER "include/parallelp
 # we have to add the openmp library to be linked
 target_link_libraries(parallelproj_c PUBLIC OpenMP::OpenMP_C)
 
-install(TARGETS parallelproj_c EXPORT parallelprojTargets)
+install(TARGETS parallelproj_c EXPORT parallelprojTargets DESTINATION ${CMAKE_INSTALL_LIBDIR})
