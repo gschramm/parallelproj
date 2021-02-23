@@ -92,7 +92,10 @@ endif (DOXYGEN_FOUND)
 
 #-------------------------------------------------------------
 # generate and install cmake package and version files
-
+if(CMAKE_CUDA_COMPILER)
+  set(CUDA_SUPPORTED ON)
+endif()
+  
 configure_package_config_file(
   Config.cmake.in
   ${CMAKE_CURRENT_BINARY_DIR}/parallelprojConfig.cmake
