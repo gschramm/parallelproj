@@ -1,6 +1,6 @@
 import numpy as np
 from pyparallelproj.models import pet_fwd_model, pet_back_model, pet_fwd_model_lm, pet_back_model_lm
-from pymirc.image_operations import grad, div
+from pyparallelproj.utils import grad, div
 
 def osem(em_sino, attn_sino, sens_sino, contam_sino, proj, niter,
          fwhm = 0, verbose = False, xstart = None, 
