@@ -4,6 +4,7 @@
 
 import argparse
 import os
+import platform
 from tempfile import mkdtemp
 from shutil import rmtree
 
@@ -20,6 +21,8 @@ parser.add_argument('--keep_build_dir', help = 'do not remove tempory build dir'
 parser.add_argument('--dry', help = 'dry run - only print cmake commands', 
                     action = 'store_true')
 parser.add_argument('--cmake_bin', help = 'cmake binary to use', default = 'cmake') 
+parser.add_argument('--install_libdir', help = 'subdir to install libs', 
+                    default = f'pyparallelproj/lib_{platform.system()}_{platform.architecture()[0]}') 
 args = parser.parse_args()
 
 #---------------------------------------------------------------------------------------------
@@ -29,19 +32,16 @@ if args.build_dir is None:
 else:
   build_dir = args.build_dir
 
-source_dir = args.source_dir
-
+source_dir           = args.source_dir
 cmake_install_prefix = args.cmake_install_prefix
-
-remove_build_dir = not args.keep_build_dir
-
-dry = args.dry
-
-cmake_bin = args.cmake_bin
+remove_build_dir     = not args.keep_build_dir
+dry                  = args.dry
+cmake_bin            = args.cmake_bin
+install_libdir       = args.install_libdir
 #---------------------------------------------------------------------------------------------
 
-if os.name == 'nt':
-  cmd1 = f'{cmake_bin} -B {build_dir} -DPARALLELPROJ_EXPORT_PYTHON_LIBDIR=TRUE -DCMAKE_WINDOWS_EXPORT_ALL_SYMBOLS=TRUE -DCMAKE_INSTALL_PREFIX={cmake_install_prefix} {source_dir}'
+if platform.system() == 'Windows':
+  cmd1 = f'{cmake_bin} -B {build_dir} -DPARALLELPROJ_INSTALL_LIBDIR={install_libdir} -DCMAKE_WINDOWS_EXPORT_ALL_SYMBOLS=TRUE -DCMAKE_INSTALL_PREFIX={cmake_install_prefix} {source_dir}'
   cmd2 = f'{cmake_bin} --build {build_dir} --target INSTALL --config RELEASE'
 
   if dry:
@@ -51,7 +51,7 @@ if os.name == 'nt':
     os.system(cmd1)
     os.system(cmd2)
 else:
-  cmd1 = f'{cmake_bin} -B {build_dir} -DPARALLELPROJ_EXPORT_PYTHON_LIBDIR=TRUE -DCMAKE_INSTALL_PREFIX={cmake_install_prefix} {source_dir}'
+  cmd1 = f'{cmake_bin} -B {build_dir} -DPARALLELPROJ_INSTALL_LIBDIR={install_libdir} -DCMAKE_INSTALL_PREFIX={cmake_install_prefix} {source_dir}'
   cmd2 = f'{cmake_bin} --build {build_dir}'
   cmd3 = f'{cmake_bin} --install {build_dir}'
 

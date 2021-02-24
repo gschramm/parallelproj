@@ -11,18 +11,9 @@ ar_1d_int    = npct.ndpointer(dtype = ctypes.c_int,   ndim = 1, flags = 'C')
 ar_1d_short  = npct.ndpointer(dtype = ctypes.c_short, ndim = 1, flags = 'C')
 
 #---- find the compiled C / CUDA libraries
-# construct the install subdirectory of the compiled libs
-# with cmake, the libs get installed in the GnuInstall LIBDIR which can be lib, lib64, lib32 ...
-# the actual libdir for the current system and processor is written to a dedicated file
-# the name of that file is CMAKE_INSTALL_LIBDIR__{system}__{processor}
 
-lib_subdir_fname = os.path.join(os.path.dirname(__file__),f'CMAKE_INSTALL_LIBDIR__{platform.system()}__{platform.machine()}')
-
-if os.access(lib_subdir_fname, os.R_OK):
-  with open(lib_subdir_fname,'r') as f:
-    lib_subdir = f.readline()
-else:
-  raise Exception(f'Could not open {lib_subdir_fname}')
+# this is the default lib install dir used by the python-cmake build script
+lib_subdir = f'lib_{platform.system()}_{platform.architecture()[0]}' 
 
 # get the version of the libs from the ConfigVersion file
 configVersion_file = os.path.abspath(os.path.join(os.path.dirname(__file__), lib_subdir, 'cmake',
@@ -35,18 +26,22 @@ if os.access(configVersion_file, os.R_OK):
 else:
   warnings.warn("failed to read lib version from cmake config version file", UserWarning) 
 
+libname_c    = 'parallelproj_c'
+libname_cuda = 'parallelproj_cuda'
 
 if platform.system() == 'Linux':
-  fname      = 'libparallelproj_c.so'
-  fname_cuda = 'libparallelproj_cuda.so'
+  libprefix = 'lib'
+  libfext   = 'so' 
 elif platform.system() == 'Windows':
-  fname      = 'parallelproj_c.dll'
-  fname_cuda = 'parallelproj_cuda.dll'
+  libprefix = ''
+  libfext   = 'dll' 
 else:
   raise SystemError(f'{platform.system()} not supported yet.')
 
-lib_parallelproj_c_fname    = os.path.abspath(os.path.join(os.path.dirname(__file__),lib_subdir,fname))
-lib_parallelproj_cuda_fname = os.path.abspath(os.path.join(os.path.dirname(__file__),lib_subdir,fname_cuda))
+lib_parallelproj_c_fname    = os.path.abspath(os.path.join(os.path.dirname(__file__),lib_subdir, 
+                                              f'{libprefix}{libname_c}.{libfext}'))
+lib_parallelproj_cuda_fname = os.path.abspath(os.path.join(os.path.dirname(__file__),lib_subdir,
+                                              f'{libprefix}{libname_cuda}.{libfext}'))
 
 #-------------------------------------------------------------------------------------------
 # add the calling signature

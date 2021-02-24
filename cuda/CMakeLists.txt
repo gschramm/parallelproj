@@ -11,4 +11,4 @@ target_include_directories(parallelproj_cuda PUBLIC
 
 # we explicitly specify DESTINATION here, because otherwise DLLs on Windows
 # are installed in ${CMAKE_INSTALL_BINDIR}
-install(TARGETS parallelproj_cuda EXPORT parallelprojTargets DESTINATION ${CMAKE_INSTALL_LIBDIR} PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
+install(TARGETS parallelproj_cuda EXPORT parallelprojTargets DESTINATION ${PARALLELPROJ_INSTALL_LIBDIR} PUBLIC_HEADER DESTINATION ${PARALLELPROJ_INSTALL_INCLUDEDIR})
