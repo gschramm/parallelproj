@@ -19,6 +19,7 @@ parser.add_argument('--keep_build_dir', help = 'do not remove tempory build dir'
                     action = 'store_true')
 parser.add_argument('--dry', help = 'dry run - only print cmake commands', 
                     action = 'store_true')
+parser.add_argument('--cmake_bin', help = 'cmake binary to use', default = 'cmake') 
 args = parser.parse_args()
 
 #---------------------------------------------------------------------------------------------
@@ -36,11 +37,12 @@ remove_build_dir = not args.keep_build_dir
 
 dry = args.dry
 
+cmake_bin = args.cmake_bin
 #---------------------------------------------------------------------------------------------
 
 if os.name == 'nt':
-  cmd1 = f'cmake -B {build_dir} -DPARALLELPROJ_EXPORT_PYTHON_LIBDIR=TRUE -DCMAKE_WINDOWS_EXPORT_ALL_SYMBOLS=TRUE -DCMAKE_INSTALL_PREFIX={cmake_install_prefix} {source_dir}'
-  cmd2 = f'cmake --build {build_dir} --target INSTALL --config RELEASE'
+  cmd1 = f'{cmake_bin} -B {build_dir} -DPARALLELPROJ_EXPORT_PYTHON_LIBDIR=TRUE -DCMAKE_WINDOWS_EXPORT_ALL_SYMBOLS=TRUE -DCMAKE_INSTALL_PREFIX={cmake_install_prefix} {source_dir}'
+  cmd2 = f'{cmake_bin} --build {build_dir} --target INSTALL --config RELEASE'
 
   if dry:
     print(cmd1,'\n')
@@ -49,9 +51,9 @@ if os.name == 'nt':
     os.system(cmd1)
     os.system(cmd2)
 else:
-  cmd1 = f'cmake -B {build_dir} -DPARALLELPROJ_EXPORT_PYTHON_LIBDIR=TRUE -DCMAKE_INSTALL_PREFIX={cmake_install_prefix} {source_dir}'
-  cmd2 = f'cmake --build {build_dir}'
-  cmd3 = f'cmake --install {build_dir}'
+  cmd1 = f'{cmake_bin} -B {build_dir} -DPARALLELPROJ_EXPORT_PYTHON_LIBDIR=TRUE -DCMAKE_INSTALL_PREFIX={cmake_install_prefix} {source_dir}'
+  cmd2 = f'{cmake_bin} --build {build_dir}'
+  cmd3 = f'{cmake_bin} --install {build_dir}'
 
   if dry:
     print(cmd1,'\n')
