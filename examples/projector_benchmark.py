@@ -62,7 +62,7 @@ np.random.seed(1)
 
 #---------------------------------------------------------------------------------
 
-# setup a scanner with one ring
+# setup a scanner
 scanner = ppp.RegularPolygonPETScanner(ncrystals_per_module = np.array([16,9]),
                                        nmodules             = np.array([28,5]))
 
