@@ -4,6 +4,7 @@ import os
 import matplotlib.pyplot as py
 import pyparallelproj as ppp
 from pyparallelproj.wrapper import joseph3d_fwd, joseph3d_fwd_tof, joseph3d_back, joseph3d_back_tof
+from pyparallelproj.phantoms import ellipse2d_phantom
 import numpy as np
 import argparse
 import ctypes
@@ -24,10 +25,15 @@ parser.add_argument('--img_mem_order', help = 'memory layout for image', default
                                        choices = ['C','F'])
 parser.add_argument('--sino_dim_order', help = 'axis order in sinogram', default = ['0','1','2'],
                      nargs = '+')
+parser.add_argument('--fov',     help = 'FOV: wb -> 600mm, brain -> 250mm', default = 'wb', choices = ['wb','brain'])
+parser.add_argument('--voxsize', help = '3 voxel sizes (mm)', default = ['2','2','2'], nargs = '+')
 
 args = parser.parse_args()
 
 #---------------------------------------------------------------------------------
+
+print(' '.join([x[0] + ':' + str(x[1]) for x in args.__dict__.items()]))
+print('')
 
 ngpus         = args.ngpus
 counts        = args.counts
@@ -37,6 +43,13 @@ tpb           = args.tpb
 tof           = not args.nontof
 img_mem_order = args.img_mem_order
 subset        = 0
+
+voxsize       = np.array(args.voxsize, dtype = np.float32)
+
+if args.fov == 'wb':
+  fov_mm = 600
+elif args.fov == 'brain':
+  fov_mm = 250
 
 spatial_dim_order = np.array(args.sino_dim_order, dtype = np.int)
 
@@ -54,15 +67,17 @@ scanner = ppp.RegularPolygonPETScanner(ncrystals_per_module = np.array([16,9]),
                                        nmodules             = np.array([28,5]))
 
 # setup a test image
-voxsize = np.array([2.,2.,2.])
-n0      = 250
-n1      = 250
+n0      = int(fov_mm / voxsize[0])
+n1      = int(fov_mm / voxsize[1])
 n2      = max(1,int((scanner.xc2.max() - scanner.xc2.min()) / voxsize[2]))
 
 
-# setup a random image
+# setup an ellipse image
+tmp =  ellipse2d_phantom(n = n0).T
 img = np.zeros((n0,n1,n2), dtype = np.float32, order = img_mem_order)
-img[(n0//6):(5*n0//6),(n1//6):(5*n1//6),:] = 1
+
+for i in range(n2):
+  img[:,:,i] = tmp
 img_origin = (-(np.array(img.shape) / 2) +  0.5) * voxsize
 
 # generate sinogram parameters and the projector
@@ -95,15 +110,14 @@ xstart = proj.xstart[subset_slice].ravel()
 xend   = proj.xend[subset_slice].ravel()
 img_ravel = img.ravel(order = img_mem_order)
 subset_nLORs     = proj.nLORs[subset]
-
-img_fwd = np.zeros(subset_nLORs*proj.ntofbins, dtype = ctypes.c_float)  
-
-back_img = np.zeros(proj.nvox, dtype = ctypes.c_float)  
 sino     = np.ones(subset_nLORs*proj.ntofbins, dtype = ctypes.c_float)  
 
 #--- time fwd projection
 for i in range(n+1):
+  img_fwd = np.zeros(subset_nLORs*proj.ntofbins, dtype = ctypes.c_float)  
+
   if i > 0: print(f'run {i} / {n}')
+
   t0 = time()
   if tof:
     ok = joseph3d_fwd_tof(xstart, xend, img_ravel, proj.img_origin, proj.voxsize, 
@@ -120,6 +134,7 @@ for i in range(n+1):
     t_sino_fwd[i-1]  = t1 - t0
 
   #--- time back projection
+  back_img = np.zeros(proj.nvox, dtype = ctypes.c_float)  
   t2 = time()
   if tof:
     ok = joseph3d_back_tof(xstart, xend, back_img, proj.img_origin, proj.voxsize, 
@@ -138,6 +153,9 @@ for i in range(n+1):
 print(f'\nsino fwd  {t_sino_fwd[1:].mean():.4f} s (mean) +-  {t_sino_fwd[1:].std():.4f} s (std)')
 print(f'sino back {t_sino_back[1:].mean():.4f} s (mean) +-  {t_sino_back[1:].std():.4f} s (std)')
 
+# reshape the sinogram
+img_fwd  = img_fwd.reshape(proj.subset_sino_shapes[subset])
+back_img = back_img.reshape((n0,n1,n2)) 
 
 #-------------------------------------------------------------------------------------
 # time LM fwd and back projection
@@ -168,8 +186,6 @@ if counts > 0:
 
   nevents = events.shape[0]
 
-  img_fwd = np.zeros(nevents, dtype = ctypes.c_float)  
-
   xstart = lmproj.scanner.get_crystal_coordinates(events[:,0:2]).ravel()
   xend   = lmproj.scanner.get_crystal_coordinates(events[:,2:4]).ravel()
   tofbin = events[:,4].astype(ctypes.c_short)
@@ -177,10 +193,9 @@ if counts > 0:
   sigma_tof = np.full(nevents, lmproj.sigma_tof, dtype = ctypes.c_float)
   tofcenter_offset = np.zeros(nevents, dtype = ctypes.c_float)
 
-  back_img = np.zeros(lmproj.nvox, dtype = ctypes.c_float)  
-
   # time LM fwd projection
   for i in range(n+1):
+    img_fwd = np.zeros(nevents, dtype = ctypes.c_float)  
     if i > 0: print(f'run {i} / {n}')
     t0 = time()
     if tof:
@@ -201,6 +216,7 @@ if counts > 0:
       t_lm_fwd[i-1] = t1 - t0
 
 
+    back_img = np.zeros(lmproj.nvox, dtype = ctypes.c_float)  
     t2 = time()
     if tof:
       ok = joseph3d_back_tof(xstart, xend, 
@@ -219,5 +235,5 @@ if counts > 0:
     if i > 0:
       t_lm_back[i-1] = t3 - t2
   
-  print(f'\n{t_lm_fwd.mean():.4f} s (mean) +-  {t_lm_fwd.std():.4f} s (std)')
-  print(f'{t_lm_back.mean():.4f} s (mean) +-  {t_lm_back.std():.4f} s (std)\n')
+  print(f'\nLM fwd   {t_lm_fwd.mean():.4f} s (mean) +-  {t_lm_fwd.std():.4f} s (std)')
+  print(f'LM back  {t_lm_back.mean():.4f} s (mean) +-  {t_lm_back.std():.4f} s (std)\n')
