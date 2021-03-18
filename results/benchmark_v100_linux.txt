@@ -1,0 +1,792 @@
+ngpus:1 counts:4000000.0 nsubsets:28 n:5 tpb:64 nontof:True img_mem_order:C sino_dim_order:['0', '1', '2'] fov:brain voxsize:['2', '2', '2']
+
+run 1 / 5
+run 2 / 5
+run 3 / 5
+run 4 / 5
+run 5 / 5
+
+sino fwd  0.0423 s (mean) +-  0.0026 s (std)
+sino back 0.0609 s (mean) +-  0.0038 s (std)
+
+generating LM data
+
+run 1 / 5
+run 2 / 5
+run 3 / 5
+run 4 / 5
+run 5 / 5
+
+LM fwd   0.1014 s (mean) +-  0.0002 s (std)
+LM back  0.2186 s (mean) +-  0.0055 s (std)
+
+ngpus:1 counts:4000000.0 nsubsets:28 n:5 tpb:64 nontof:True img_mem_order:C sino_dim_order:['0', '1', '2'] fov:wb voxsize:['2', '2', '2']
+
+run 1 / 5
+run 2 / 5
+run 3 / 5
+run 4 / 5
+run 5 / 5
+
+sino fwd  0.0929 s (mean) +-  0.0238 s (std)
+sino back 0.1960 s (mean) +-  0.0032 s (std)
+
+generating LM data
+
+run 1 / 5
+run 2 / 5
+run 3 / 5
+run 4 / 5
+run 5 / 5
+
+LM fwd   0.4421 s (mean) +-  0.0059 s (std)
+LM back  1.6066 s (mean) +-  0.0169 s (std)
+
+ngpus:1 counts:4000000.0 nsubsets:28 n:5 tpb:64 nontof:False img_mem_order:C sino_dim_order:['0', '1', '2'] fov:brain voxsize:['2', '2', '2']
+
+run 1 / 5
+run 2 / 5
+run 3 / 5
+run 4 / 5
+run 5 / 5
+
+sino fwd  0.5063 s (mean) +-  0.0011 s (std)
+sino back 0.3592 s (mean) +-  0.0018 s (std)
+
+generating LM data
+
+run 1 / 5
+run 2 / 5
+run 3 / 5
+run 4 / 5
+run 5 / 5
+
+LM fwd   0.1111 s (mean) +-  0.0086 s (std)
+LM back  0.1252 s (mean) +-  0.0016 s (std)
+
+ngpus:1 counts:4000000.0 nsubsets:28 n:5 tpb:64 nontof:False img_mem_order:C sino_dim_order:['0', '1', '2'] fov:wb voxsize:['2', '2', '2']
+
+run 1 / 5
+run 2 / 5
+run 3 / 5
+run 4 / 5
+run 5 / 5
+
+sino fwd  0.7192 s (mean) +-  0.0606 s (std)
+sino back 1.7317 s (mean) +-  0.0207 s (std)
+
+generating LM data
+
+run 1 / 5
+run 2 / 5
+run 3 / 5
+run 4 / 5
+run 5 / 5
+
+LM fwd   0.1394 s (mean) +-  0.0079 s (std)
+LM back  0.4676 s (mean) +-  0.0058 s (std)
+
+ngpus:1 counts:400000.0 nsubsets:28 n:5 tpb:64 nontof:True img_mem_order:C sino_dim_order:['0', '1', '2'] fov:brain voxsize:['2', '2', '2']
+
+run 1 / 5
+run 2 / 5
+run 3 / 5
+run 4 / 5
+run 5 / 5
+
+sino fwd  0.0434 s (mean) +-  0.0044 s (std)
+sino back 0.0598 s (mean) +-  0.0030 s (std)
+
+generating LM data
+
+run 1 / 5
+run 2 / 5
+run 3 / 5
+run 4 / 5
+run 5 / 5
+
+LM fwd   0.0118 s (mean) +-  0.0024 s (std)
+LM back  0.0187 s (mean) +-  0.0005 s (std)
+
+ngpus:1 counts:400000.0 nsubsets:28 n:5 tpb:64 nontof:True img_mem_order:C sino_dim_order:['0', '1', '2'] fov:wb voxsize:['2', '2', '2']
+
+run 1 / 5
+run 2 / 5
+run 3 / 5
+run 4 / 5
+run 5 / 5
+
+sino fwd  0.0799 s (mean) +-  0.0067 s (std)
+sino back 0.1999 s (mean) +-  0.0126 s (std)
+
+generating LM data
+
+run 1 / 5
+run 2 / 5
+run 3 / 5
+run 4 / 5
+run 5 / 5
+
+LM fwd   0.0486 s (mean) +-  0.0002 s (std)
+LM back  0.1652 s (mean) +-  0.0195 s (std)
+
+ngpus:1 counts:400000.0 nsubsets:28 n:5 tpb:64 nontof:False img_mem_order:C sino_dim_order:['0', '1', '2'] fov:brain voxsize:['2', '2', '2']
+
+run 1 / 5
+run 2 / 5
+run 3 / 5
+run 4 / 5
+run 5 / 5
+
+sino fwd  0.5078 s (mean) +-  0.0016 s (std)
+sino back 0.3674 s (mean) +-  0.0170 s (std)
+
+generating LM data
+
+run 1 / 5
+run 2 / 5
+run 3 / 5
+run 4 / 5
+run 5 / 5
+
+LM fwd   0.0174 s (mean) +-  0.0040 s (std)
+LM back  0.0185 s (mean) +-  0.0010 s (std)
+
+ngpus:1 counts:400000.0 nsubsets:28 n:5 tpb:64 nontof:False img_mem_order:C sino_dim_order:['0', '1', '2'] fov:wb voxsize:['2', '2', '2']
+
+run 1 / 5
+run 2 / 5
+run 3 / 5
+run 4 / 5
+run 5 / 5
+
+sino fwd  0.8919 s (mean) +-  0.0064 s (std)
+sino back 1.7973 s (mean) +-  0.0044 s (std)
+
+generating LM data
+
+run 1 / 5
+run 2 / 5
+run 3 / 5
+run 4 / 5
+run 5 / 5
+
+LM fwd   0.0217 s (mean) +-  0.0002 s (std)
+LM back  0.0667 s (mean) +-  0.0001 s (std)
+
+ngpus:1 counts:40000.0 nsubsets:28 n:5 tpb:64 nontof:True img_mem_order:C sino_dim_order:['0', '1', '2'] fov:brain voxsize:['2', '2', '2']
+
+run 1 / 5
+run 2 / 5
+run 3 / 5
+run 4 / 5
+run 5 / 5
+
+sino fwd  0.0446 s (mean) +-  0.0060 s (std)
+sino back 0.0613 s (mean) +-  0.0029 s (std)
+
+generating LM data
+
+run 1 / 5
+run 2 / 5
+run 3 / 5
+run 4 / 5
+run 5 / 5
+
+LM fwd   0.0031 s (mean) +-  0.0001 s (std)
+LM back  0.0054 s (mean) +-  0.0010 s (std)
+
+ngpus:1 counts:40000.0 nsubsets:28 n:5 tpb:64 nontof:True img_mem_order:C sino_dim_order:['0', '1', '2'] fov:wb voxsize:['2', '2', '2']
+
+run 1 / 5
+run 2 / 5
+run 3 / 5
+run 4 / 5
+run 5 / 5
+
+sino fwd  0.0815 s (mean) +-  0.0085 s (std)
+sino back 0.1933 s (mean) +-  0.0011 s (std)
+
+generating LM data
+
+run 1 / 5
+run 2 / 5
+run 3 / 5
+run 4 / 5
+run 5 / 5
+
+LM fwd   0.0096 s (mean) +-  0.0013 s (std)
+LM back  0.0385 s (mean) +-  0.0130 s (std)
+
+ngpus:1 counts:40000.0 nsubsets:28 n:5 tpb:64 nontof:False img_mem_order:C sino_dim_order:['0', '1', '2'] fov:brain voxsize:['2', '2', '2']
+
+run 1 / 5
+run 2 / 5
+run 3 / 5
+run 4 / 5
+run 5 / 5
+
+sino fwd  0.5278 s (mean) +-  0.0231 s (std)
+sino back 0.4087 s (mean) +-  0.0404 s (std)
+
+generating LM data
+
+run 1 / 5
+run 2 / 5
+run 3 / 5
+run 4 / 5
+run 5 / 5
+
+LM fwd   0.0027 s (mean) +-  0.0002 s (std)
+LM back  0.0038 s (mean) +-  0.0001 s (std)
+
+ngpus:1 counts:40000.0 nsubsets:28 n:5 tpb:64 nontof:False img_mem_order:C sino_dim_order:['0', '1', '2'] fov:wb voxsize:['2', '2', '2']
+
+run 1 / 5
+run 2 / 5
+run 3 / 5
+run 4 / 5
+run 5 / 5
+
+sino fwd  0.6991 s (mean) +-  0.0018 s (std)
+sino back 1.7771 s (mean) +-  0.0154 s (std)
+
+generating LM data
+
+run 1 / 5
+run 2 / 5
+run 3 / 5
+run 4 / 5
+run 5 / 5
+
+LM fwd   0.0129 s (mean) +-  0.0001 s (std)
+LM back  0.0324 s (mean) +-  0.0027 s (std)
+
+ngpus:2 counts:4000000.0 nsubsets:28 n:5 tpb:64 nontof:True img_mem_order:C sino_dim_order:['0', '1', '2'] fov:brain voxsize:['2', '2', '2']
+
+run 1 / 5
+run 2 / 5
+run 3 / 5
+run 4 / 5
+run 5 / 5
+
+sino fwd  0.0516 s (mean) +-  0.0027 s (std)
+sino back 0.0545 s (mean) +-  0.0018 s (std)
+
+generating LM data
+
+run 1 / 5
+run 2 / 5
+run 3 / 5
+run 4 / 5
+run 5 / 5
+
+LM fwd   0.1065 s (mean) +-  0.0002 s (std)
+LM back  0.1181 s (mean) +-  0.0059 s (std)
+
+ngpus:2 counts:4000000.0 nsubsets:28 n:5 tpb:64 nontof:True img_mem_order:C sino_dim_order:['0', '1', '2'] fov:wb voxsize:['2', '2', '2']
+
+run 1 / 5
+run 2 / 5
+run 3 / 5
+run 4 / 5
+run 5 / 5
+
+sino fwd  0.1160 s (mean) +-  0.0126 s (std)
+sino back 0.1531 s (mean) +-  0.0047 s (std)
+
+generating LM data
+
+run 1 / 5
+run 2 / 5
+run 3 / 5
+run 4 / 5
+run 5 / 5
+
+LM fwd   0.4365 s (mean) +-  0.0017 s (std)
+LM back  0.7956 s (mean) +-  0.0061 s (std)
+
+ngpus:2 counts:4000000.0 nsubsets:28 n:5 tpb:64 nontof:False img_mem_order:C sino_dim_order:['0', '1', '2'] fov:brain voxsize:['2', '2', '2']
+
+run 1 / 5
+run 2 / 5
+run 3 / 5
+run 4 / 5
+run 5 / 5
+
+sino fwd  0.5234 s (mean) +-  0.0039 s (std)
+sino back 0.2589 s (mean) +-  0.0018 s (std)
+
+generating LM data
+
+run 1 / 5
+run 2 / 5
+run 3 / 5
+run 4 / 5
+run 5 / 5
+
+LM fwd   0.1415 s (mean) +-  0.0494 s (std)
+LM back  0.0820 s (mean) +-  0.0026 s (std)
+
+ngpus:2 counts:4000000.0 nsubsets:28 n:5 tpb:64 nontof:False img_mem_order:C sino_dim_order:['0', '1', '2'] fov:wb voxsize:['2', '2', '2']
+
+run 1 / 5
+run 2 / 5
+run 3 / 5
+run 4 / 5
+run 5 / 5
+
+sino fwd  0.8788 s (mean) +-  0.0014 s (std)
+sino back 0.9509 s (mean) +-  0.0015 s (std)
+
+generating LM data
+
+run 1 / 5
+run 2 / 5
+run 3 / 5
+run 4 / 5
+run 5 / 5
+
+LM fwd   0.1556 s (mean) +-  0.0088 s (std)
+LM back  0.2876 s (mean) +-  0.0188 s (std)
+
+ngpus:2 counts:400000.0 nsubsets:28 n:5 tpb:64 nontof:True img_mem_order:C sino_dim_order:['0', '1', '2'] fov:brain voxsize:['2', '2', '2']
+
+run 1 / 5
+run 2 / 5
+run 3 / 5
+run 4 / 5
+run 5 / 5
+
+sino fwd  0.0521 s (mean) +-  0.0049 s (std)
+sino back 0.0529 s (mean) +-  0.0021 s (std)
+
+generating LM data
+
+run 1 / 5
+run 2 / 5
+run 3 / 5
+run 4 / 5
+run 5 / 5
+
+LM fwd   0.0141 s (mean) +-  0.0001 s (std)
+LM back  0.0140 s (mean) +-  0.0002 s (std)
+
+ngpus:2 counts:400000.0 nsubsets:28 n:5 tpb:64 nontof:True img_mem_order:C sino_dim_order:['0', '1', '2'] fov:wb voxsize:['2', '2', '2']
+
+run 1 / 5
+run 2 / 5
+run 3 / 5
+run 4 / 5
+run 5 / 5
+
+sino fwd  0.1053 s (mean) +-  0.0100 s (std)
+sino back 0.1450 s (mean) +-  0.0073 s (std)
+
+generating LM data
+
+run 1 / 5
+run 2 / 5
+run 3 / 5
+run 4 / 5
+run 5 / 5
+
+LM fwd   0.0573 s (mean) +-  0.0005 s (std)
+LM back  0.0944 s (mean) +-  0.0039 s (std)
+
+ngpus:2 counts:400000.0 nsubsets:28 n:5 tpb:64 nontof:False img_mem_order:C sino_dim_order:['0', '1', '2'] fov:brain voxsize:['2', '2', '2']
+
+run 1 / 5
+run 2 / 5
+run 3 / 5
+run 4 / 5
+run 5 / 5
+
+sino fwd  0.5169 s (mean) +-  0.0004 s (std)
+sino back 0.2581 s (mean) +-  0.0018 s (std)
+
+generating LM data
+
+run 1 / 5
+run 2 / 5
+run 3 / 5
+run 4 / 5
+run 5 / 5
+
+LM fwd   0.0209 s (mean) +-  0.0080 s (std)
+LM back  0.0159 s (mean) +-  0.0024 s (std)
+
+ngpus:2 counts:400000.0 nsubsets:28 n:5 tpb:64 nontof:False img_mem_order:C sino_dim_order:['0', '1', '2'] fov:wb voxsize:['2', '2', '2']
+
+run 1 / 5
+run 2 / 5
+run 3 / 5
+run 4 / 5
+run 5 / 5
+
+sino fwd  0.6832 s (mean) +-  0.0034 s (std)
+sino back 0.9310 s (mean) +-  0.0023 s (std)
+
+generating LM data
+
+run 1 / 5
+run 2 / 5
+run 3 / 5
+run 4 / 5
+run 5 / 5
+
+LM fwd   0.0359 s (mean) +-  0.0044 s (std)
+LM back  0.0606 s (mean) +-  0.0045 s (std)
+
+ngpus:2 counts:40000.0 nsubsets:28 n:5 tpb:64 nontof:True img_mem_order:C sino_dim_order:['0', '1', '2'] fov:brain voxsize:['2', '2', '2']
+
+run 1 / 5
+run 2 / 5
+run 3 / 5
+run 4 / 5
+run 5 / 5
+
+sino fwd  0.0817 s (mean) +-  0.0511 s (std)
+sino back 0.0528 s (mean) +-  0.0019 s (std)
+
+generating LM data
+
+run 1 / 5
+run 2 / 5
+run 3 / 5
+run 4 / 5
+run 5 / 5
+
+LM fwd   0.0050 s (mean) +-  0.0001 s (std)
+LM back  0.0069 s (mean) +-  0.0020 s (std)
+
+ngpus:2 counts:40000.0 nsubsets:28 n:5 tpb:64 nontof:True img_mem_order:C sino_dim_order:['0', '1', '2'] fov:wb voxsize:['2', '2', '2']
+
+run 1 / 5
+run 2 / 5
+run 3 / 5
+run 4 / 5
+run 5 / 5
+
+sino fwd  0.1037 s (mean) +-  0.0063 s (std)
+sino back 0.1320 s (mean) +-  0.0023 s (std)
+
+generating LM data
+
+run 1 / 5
+run 2 / 5
+run 3 / 5
+run 4 / 5
+run 5 / 5
+
+LM fwd   0.0200 s (mean) +-  0.0001 s (std)
+LM back  0.0335 s (mean) +-  0.0039 s (std)
+
+ngpus:2 counts:40000.0 nsubsets:28 n:5 tpb:64 nontof:False img_mem_order:C sino_dim_order:['0', '1', '2'] fov:brain voxsize:['2', '2', '2']
+
+run 1 / 5
+run 2 / 5
+run 3 / 5
+run 4 / 5
+run 5 / 5
+
+sino fwd  0.5171 s (mean) +-  0.0035 s (std)
+sino back 0.2582 s (mean) +-  0.0035 s (std)
+
+generating LM data
+
+run 1 / 5
+run 2 / 5
+run 3 / 5
+run 4 / 5
+run 5 / 5
+
+LM fwd   0.0078 s (mean) +-  0.0004 s (std)
+LM back  0.0089 s (mean) +-  0.0012 s (std)
+
+ngpus:2 counts:40000.0 nsubsets:28 n:5 tpb:64 nontof:False img_mem_order:C sino_dim_order:['0', '1', '2'] fov:wb voxsize:['2', '2', '2']
+
+run 1 / 5
+run 2 / 5
+run 3 / 5
+run 4 / 5
+run 5 / 5
+
+sino fwd  0.6975 s (mean) +-  0.0005 s (std)
+sino back 0.9346 s (mean) +-  0.0006 s (std)
+
+generating LM data
+
+run 1 / 5
+run 2 / 5
+run 3 / 5
+run 4 / 5
+run 5 / 5
+
+LM fwd   0.0215 s (mean) +-  0.0002 s (std)
+LM back  0.0297 s (mean) +-  0.0007 s (std)
+
+ngpus:4 counts:4000000.0 nsubsets:28 n:5 tpb:64 nontof:True img_mem_order:C sino_dim_order:['0', '1', '2'] fov:brain voxsize:['2', '2', '2']
+
+run 1 / 5
+run 2 / 5
+run 3 / 5
+run 4 / 5
+run 5 / 5
+
+sino fwd  0.0548 s (mean) +-  0.0024 s (std)
+sino back 0.0437 s (mean) +-  0.0009 s (std)
+
+generating LM data
+
+run 1 / 5
+run 2 / 5
+run 3 / 5
+run 4 / 5
+run 5 / 5
+
+LM fwd   0.1282 s (mean) +-  0.0098 s (std)
+LM back  0.0739 s (mean) +-  0.0020 s (std)
+
+ngpus:4 counts:4000000.0 nsubsets:28 n:5 tpb:64 nontof:True img_mem_order:C sino_dim_order:['0', '1', '2'] fov:wb voxsize:['2', '2', '2']
+
+run 1 / 5
+run 2 / 5
+run 3 / 5
+run 4 / 5
+run 5 / 5
+
+sino fwd  0.1336 s (mean) +-  0.0073 s (std)
+sino back 0.0992 s (mean) +-  0.0054 s (std)
+
+generating LM data
+
+run 1 / 5
+run 2 / 5
+run 3 / 5
+run 4 / 5
+run 5 / 5
+
+LM fwd   0.4367 s (mean) +-  0.0070 s (std)
+LM back  0.3911 s (mean) +-  0.0032 s (std)
+
+ngpus:4 counts:4000000.0 nsubsets:28 n:5 tpb:64 nontof:False img_mem_order:C sino_dim_order:['0', '1', '2'] fov:brain voxsize:['2', '2', '2']
+
+run 1 / 5
+run 2 / 5
+run 3 / 5
+run 4 / 5
+run 5 / 5
+
+sino fwd  0.5374 s (mean) +-  0.0028 s (std)
+sino back 0.2698 s (mean) +-  0.0488 s (std)
+
+generating LM data
+
+run 1 / 5
+run 2 / 5
+run 3 / 5
+run 4 / 5
+run 5 / 5
+
+LM fwd   0.1265 s (mean) +-  0.0055 s (std)
+LM back  0.0587 s (mean) +-  0.0043 s (std)
+
+ngpus:4 counts:4000000.0 nsubsets:28 n:5 tpb:64 nontof:False img_mem_order:C sino_dim_order:['0', '1', '2'] fov:wb voxsize:['2', '2', '2']
+
+run 1 / 5
+run 2 / 5
+run 3 / 5
+run 4 / 5
+run 5 / 5
+
+sino fwd  0.9035 s (mean) +-  0.0057 s (std)
+sino back 0.6757 s (mean) +-  0.0384 s (std)
+
+generating LM data
+
+run 1 / 5
+run 2 / 5
+run 3 / 5
+run 4 / 5
+run 5 / 5
+
+LM fwd   0.1853 s (mean) +-  0.0157 s (std)
+LM back  0.1939 s (mean) +-  0.0139 s (std)
+
+ngpus:4 counts:400000.0 nsubsets:28 n:5 tpb:64 nontof:True img_mem_order:C sino_dim_order:['0', '1', '2'] fov:brain voxsize:['2', '2', '2']
+
+run 1 / 5
+run 2 / 5
+run 3 / 5
+run 4 / 5
+run 5 / 5
+
+sino fwd  0.0559 s (mean) +-  0.0031 s (std)
+sino back 0.0426 s (mean) +-  0.0010 s (std)
+
+generating LM data
+
+run 1 / 5
+run 2 / 5
+run 3 / 5
+run 4 / 5
+run 5 / 5
+
+LM fwd   0.0169 s (mean) +-  0.0000 s (std)
+LM back  0.0117 s (mean) +-  0.0002 s (std)
+
+ngpus:4 counts:400000.0 nsubsets:28 n:5 tpb:64 nontof:True img_mem_order:C sino_dim_order:['0', '1', '2'] fov:wb voxsize:['2', '2', '2']
+
+run 1 / 5
+run 2 / 5
+run 3 / 5
+run 4 / 5
+run 5 / 5
+
+sino fwd  0.1366 s (mean) +-  0.0082 s (std)
+sino back 0.1030 s (mean) +-  0.0038 s (std)
+
+generating LM data
+
+run 1 / 5
+run 2 / 5
+run 3 / 5
+run 4 / 5
+run 5 / 5
+
+LM fwd   0.0708 s (mean) +-  0.0039 s (std)
+LM back  0.0688 s (mean) +-  0.0083 s (std)
+
+ngpus:4 counts:400000.0 nsubsets:28 n:5 tpb:64 nontof:False img_mem_order:C sino_dim_order:['0', '1', '2'] fov:brain voxsize:['2', '2', '2']
+
+run 1 / 5
+run 2 / 5
+run 3 / 5
+run 4 / 5
+run 5 / 5
+
+sino fwd  0.3743 s (mean) +-  0.0528 s (std)
+sino back 0.2435 s (mean) +-  0.0031 s (std)
+
+generating LM data
+
+run 1 / 5
+run 2 / 5
+run 3 / 5
+run 4 / 5
+run 5 / 5
+
+LM fwd   0.0234 s (mean) +-  0.0021 s (std)
+LM back  0.0178 s (mean) +-  0.0049 s (std)
+
+ngpus:4 counts:400000.0 nsubsets:28 n:5 tpb:64 nontof:False img_mem_order:C sino_dim_order:['0', '1', '2'] fov:wb voxsize:['2', '2', '2']
+
+run 1 / 5
+run 2 / 5
+run 3 / 5
+run 4 / 5
+run 5 / 5
+
+sino fwd  0.8836 s (mean) +-  0.1100 s (std)
+sino back 0.6565 s (mean) +-  0.0302 s (std)
+
+generating LM data
+
+run 1 / 5
+run 2 / 5
+run 3 / 5
+run 4 / 5
+run 5 / 5
+
+LM fwd   0.0536 s (mean) +-  0.0025 s (std)
+LM back  0.0621 s (mean) +-  0.0005 s (std)
+
+ngpus:4 counts:40000.0 nsubsets:28 n:5 tpb:64 nontof:True img_mem_order:C sino_dim_order:['0', '1', '2'] fov:brain voxsize:['2', '2', '2']
+
+run 1 / 5
+run 2 / 5
+run 3 / 5
+run 4 / 5
+run 5 / 5
+
+sino fwd  0.0625 s (mean) +-  0.0028 s (std)
+sino back 0.0507 s (mean) +-  0.0010 s (std)
+
+generating LM data
+
+run 1 / 5
+run 2 / 5
+run 3 / 5
+run 4 / 5
+run 5 / 5
+
+LM fwd   0.0100 s (mean) +-  0.0001 s (std)
+LM back  0.0090 s (mean) +-  0.0012 s (std)
+
+ngpus:4 counts:40000.0 nsubsets:28 n:5 tpb:64 nontof:True img_mem_order:C sino_dim_order:['0', '1', '2'] fov:wb voxsize:['2', '2', '2']
+
+run 1 / 5
+run 2 / 5
+run 3 / 5
+run 4 / 5
+run 5 / 5
+
+sino fwd  0.1394 s (mean) +-  0.0116 s (std)
+sino back 0.1010 s (mean) +-  0.0033 s (std)
+
+generating LM data
+
+run 1 / 5
+run 2 / 5
+run 3 / 5
+run 4 / 5
+run 5 / 5
+
+LM fwd   0.0422 s (mean) +-  0.0005 s (std)
+LM back  0.0350 s (mean) +-  0.0030 s (std)
+
+ngpus:4 counts:40000.0 nsubsets:28 n:5 tpb:64 nontof:False img_mem_order:C sino_dim_order:['0', '1', '2'] fov:brain voxsize:['2', '2', '2']
+
+run 1 / 5
+run 2 / 5
+run 3 / 5
+run 4 / 5
+run 5 / 5
+
+sino fwd  0.3471 s (mean) +-  0.0030 s (std)
+sino back 0.2451 s (mean) +-  0.0015 s (std)
+
+generating LM data
+
+run 1 / 5
+run 2 / 5
+run 3 / 5
+run 4 / 5
+run 5 / 5
+
+LM fwd   0.0104 s (mean) +-  0.0000 s (std)
+LM back  0.0086 s (mean) +-  0.0001 s (std)
+
+ngpus:4 counts:40000.0 nsubsets:28 n:5 tpb:64 nontof:False img_mem_order:C sino_dim_order:['0', '1', '2'] fov:wb voxsize:['2', '2', '2']
+
+run 1 / 5
+run 2 / 5
+run 3 / 5
+run 4 / 5
+run 5 / 5
+
+sino fwd  0.7328 s (mean) +-  0.0300 s (std)
+sino back 0.6140 s (mean) +-  0.0150 s (std)
+
+generating LM data
+
+run 1 / 5
+run 2 / 5
+run 3 / 5
+run 4 / 5
+run 5 / 5
+
+LM fwd   0.0400 s (mean) +-  0.0016 s (std)
+LM back  0.0449 s (mean) +-  0.0060 s (std)
+
