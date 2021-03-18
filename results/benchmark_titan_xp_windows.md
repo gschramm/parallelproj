@@ -1,11 +1,11 @@
 ## Benchmark results of 3D TOF/NONTOF Joseph projector
 
-scanner geometry: 28/5 modules with 16/9 crystals per module
-full TOF sinogram size: (357,224,2025,27) -> no spanning
-subset sino size: (357,28,2025,27)
-TOF FWHM: 60mm (400ps)
-voxel size: 2x2x2 mm
-FOV: 250mm (brain) or 600mm (WB)
+- scanner geometry: 28/5 modules with 16/9 crystals per module
+- full TOF sinogram size: (357,224,2025,27) -> no spanning
+- subset sino size: (357,8,2025,27)
+- TOF FWHM: 60mm (400ps)
+- voxel size: 2x2x2 mm
+- FOV: 250mm (brain) or 600mm (WB)
 
 
 ### NVIDIA Titan XP on Windows using CUDA 11 - approximate SIGNA geometry
