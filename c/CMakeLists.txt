@@ -1,4 +1,9 @@
-file(GLOB C_SOURCES src/*.c)
+if(PARALLELPROJ_BUILD_WITH_IDL_WRAPPERS)
+  file(GLOB C_SOURCES src/*.c wrapper/*.c)
+else()
+  file(GLOB C_SOURCES src/*.c)
+endif()
+
 add_library(parallelproj_c SHARED ${C_SOURCES})
 add_library(parallelproj::parallelproj_c ALIAS parallelproj_c)
 target_include_directories(parallelproj_c PUBLIC

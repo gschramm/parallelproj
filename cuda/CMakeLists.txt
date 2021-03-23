@@ -1,5 +1,11 @@
 enable_language(CUDA)
-file(GLOB CUDA_SOURCES src/*.cu)
+
+if(PARALLELPROJ_BUILD_WITH_IDL_WRAPPERS)
+  file(GLOB CUDA_SOURCES src/*.cu wrapper/*.cu)
+else()
+  file(GLOB CUDA_SOURCES src/*.cu)
+endif()
+
 add_library(parallelproj_cuda SHARED ${CUDA_SOURCES})
 add_library(parallelproj::parallelproj_cuda ALIAS parallelproj_cuda)
 set_target_properties(parallelproj_cuda PROPERTIES CUDA_SEPARABLE_COMPILATION ON)

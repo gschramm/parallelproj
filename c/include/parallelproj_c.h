@@ -24,14 +24,14 @@
  *  @param nlors       number of geometrical LORs
  *  @param img_dim     array with dimensions of image [n0,n1,n2]
  */
-extern "C" void joseph3d_back_2(const float *xstart, 
-                               const float *xend, 
-                               float *img,
-                               const float *img_origin, 
-                               const float *voxsize,
-                               const float *p, 
-                               long long nlors, 
-                               const int *img_dim);
+void joseph3d_back_2(const float *xstart, 
+                     const float *xend, 
+                     float *img,
+                     const float *img_origin, 
+                     const float *voxsize,
+                     const float *p, 
+                     long long nlors, 
+                     const int *img_dim);
 
 /** @brief 3D non-tof joseph back projector
  *
@@ -52,14 +52,14 @@ extern "C" void joseph3d_back_2(const float *xstart,
  *  @param nlors       number of geometrical LORs
  *  @param img_dim     array with dimensions of image [n0,n1,n2]
  */
-extern "C" void joseph3d_back(const float *xstart, 
-                              const float *xend, 
-                              float *img,
-                              const float *img_origin, 
-                              const float *voxsize,
-                              const float *p, 
-                              long long nlors, 
-                              const int *img_dim);
+void joseph3d_back(const float *xstart, 
+                   const float *xend, 
+                   float *img,
+                   const float *img_origin, 
+                   const float *voxsize,
+                   const float *p, 
+                   long long nlors, 
+                   const int *img_dim);
 
 /** @brief 3D listmode tof joseph back projector
  *
@@ -88,19 +88,19 @@ extern "C" void joseph3d_back(const float *xstart,
  *  @param n_sigmas         number of sigmas to consider for calculation of TOF kernel
  *  @param tof_bin          array containing the TOF bin of each event
  */
-extern "C" void joseph3d_back_tof_lm_2(const float *xstart, 
-                                       const float *xend, 
-                                       float *img,
-                                       const float *img_origin, 
-                                       const float *voxsize,
-                                       const float *p, 
-                                       long long nlors, 
-                                       const int *img_dim,
-                                       float tofbin_width,
-                                       const float *sigma_tof,
-                                       const float *tofcenter_offset,
-                                       float n_sigmas,
-                                       const short *tof_bin);
+void joseph3d_back_tof_lm_2(const float *xstart, 
+                            const float *xend, 
+                            float *img,
+                            const float *img_origin, 
+                            const float *voxsize,
+                            const float *p, 
+                            long long nlors, 
+                            const int *img_dim,
+                            float tofbin_width,
+                            const float *sigma_tof,
+                            const float *tofcenter_offset,
+                            float n_sigmas,
+                            const short *tof_bin);
 
 /** @brief 3D listmode tof joseph back projector
  *
@@ -129,19 +129,19 @@ extern "C" void joseph3d_back_tof_lm_2(const float *xstart,
  *  @param n_sigmas         number of sigmas to consider for calculation of TOF kernel
  *  @param tof_bin          array containing the TOF bin of each event
  */
-extern "C" void joseph3d_back_tof_lm(const float *xstart, 
-                                    const float *xend, 
-                                    float *img,
-                                    const float *img_origin, 
-                                    const float *voxsize,
-                                    const float *p, 
-                                    long long nlors, 
-                                    const int *img_dim,
-                                    float tofbin_width,
-                                    const float *sigma_tof,
-                                    const float *tofcenter_offset,
-                                    float n_sigmas,
-                                    const short *tof_bin);
+void joseph3d_back_tof_lm(const float *xstart, 
+                         const float *xend, 
+                         float *img,
+                         const float *img_origin, 
+                         const float *voxsize,
+                         const float *p, 
+                         long long nlors, 
+                         const int *img_dim,
+                         float tofbin_width,
+                         const float *sigma_tof,
+                         const float *tofcenter_offset,
+                         float n_sigmas,
+                         const short *tof_bin);
 
 /** @brief 3D sinogram tof joseph back projector
  *
@@ -170,19 +170,19 @@ extern "C" void joseph3d_back_tof_lm(const float *xstart,
  *  @param n_sigmas         number of sigmas to consider for calculation of TOF kernel
  *  @param n_tofbins        number of TOF bins
  */
-extern "C" void joseph3d_back_tof_sino_2(const float *xstart, 
-                                         const float *xend, 
-                                         float *img,
-                                         const float *img_origin, 
-                                         const float *voxsize,
-                                         const float *p, 
-                                         long long nlors, 
-                                         const int *img_dim,
-                                         float tofbin_width,
-                                         const float *sigma_tof,
-                                         const float *tofcenter_offset,
-                                         float n_sigmas,
-                                         short n_tofbins);
+void joseph3d_back_tof_sino_2(const float *xstart, 
+                              const float *xend, 
+                              float *img,
+                              const float *img_origin, 
+                              const float *voxsize,
+                              const float *p, 
+                              long long nlors, 
+                              const int *img_dim,
+                              float tofbin_width,
+                              const float *sigma_tof,
+                              const float *tofcenter_offset,
+                              float n_sigmas,
+                              short n_tofbins);
 
 /** @brief 3D sinogram tof joseph back projector
  *
@@ -211,19 +211,19 @@ extern "C" void joseph3d_back_tof_sino_2(const float *xstart,
  *  @param n_sigmas         number of sigmas to consider for calculation of TOF kernel
  *  @param n_tofbins        number of TOF bins
  */
-extern "C" void joseph3d_back_tof_sino(const float *xstart, 
-                                       const float *xend, 
-                                       float *img,
-                                       const float *img_origin, 
-                                       const float *voxsize,
-                                       const float *p, 
-                                       long long nlors, 
-                                       const int *img_dim,
-                                       float tofbin_width,
-                                       const float *sigma_tof,
-                                       const float *tofcenter_offset,
-                                       float n_sigmas,
-                                       short n_tofbins);
+void joseph3d_back_tof_sino(const float *xstart, 
+                            const float *xend, 
+                            float *img,
+                            const float *img_origin, 
+                            const float *voxsize,
+                            const float *p, 
+                            long long nlors, 
+                            const int *img_dim,
+                            float tofbin_width,
+                            const float *sigma_tof,
+                            const float *tofcenter_offset,
+                            float n_sigmas,
+                            short n_tofbins);
 
 /** @brief 3D non-tof joseph forward projector
  *
@@ -241,14 +241,14 @@ extern "C" void joseph3d_back_tof_sino(const float *xstart,
  *  @param nlors       number of geomtrical LORs
  *  @param img_dim     array with dimensions of image [n0,n1,n2]
  */
-extern "C" void joseph3d_fwd(const float *xstart, 
-                             const float *xend, 
-                             const float *img,
-                             const float *img_origin, 
-                             const float *voxsize, 
-                             float *p,
-                             long long nlors, 
-                             const int *img_dim);
+void joseph3d_fwd(const float *xstart, 
+                  const float *xend, 
+                  const float *img,
+                  const float *img_origin, 
+                  const float *voxsize, 
+                  float *p,
+                  long long nlors, 
+                  const int *img_dim);
 
 /** @brief 3D listmode tof joseph forward projector
  *
@@ -274,19 +274,19 @@ extern "C" void joseph3d_fwd(const float *xstart,
  *  @param n_sigmas         number of sigmas to consider for calculation of TOF kernel
  *  @param tof_bin          array containing the TOF bin of each event
  */
-extern "C" void joseph3d_fwd_tof_lm(const float *xstart, 
-                                   const float *xend, 
-                                   const float *img,
-                                   const float *img_origin, 
-                                   const float *voxsize, 
-                                   float *p,
-                                   long long nlors, 
-                                   const int *img_dim,
-                                   float tofbin_width,
-                                   const float *sigma_tof,
-                                   const float *tofcenter_offset,
-                                   float n_sigmas,
-                                   const short *tof_bin);
+void joseph3d_fwd_tof_lm(const float *xstart, 
+                        const float *xend, 
+                        const float *img,
+                        const float *img_origin, 
+                        const float *voxsize, 
+                        float *p,
+                        long long nlors, 
+                        const int *img_dim,
+                        float tofbin_width,
+                        const float *sigma_tof,
+                        const float *tofcenter_offset,
+                        float n_sigmas,
+                        const short *tof_bin);
 
 /** @brief 3D sinogram tof joseph forward projector
  *
@@ -312,18 +312,18 @@ extern "C" void joseph3d_fwd_tof_lm(const float *xstart,
  *  @param n_sigmas         number of sigmas to consider for calculation of TOF kernel
  *  @param n_tofbins        number of TOF bins
  */
-extern "C" void joseph3d_fwd_tof_sino(const float *xstart, 
-                                      const float *xend, 
-                                      const float *img,
-                                      const float *img_origin, 
-                                      const float *voxsize, 
-                                      float *p,
-                                      long long nlors, 
-                                      const int *img_dim,
-                                      float tofbin_width,
-                                      const float *sigma_tof,
-                                      const float *tofcenter_offset,
-                                      float n_sigmas,
-                                      short n_tofbins);
+void joseph3d_fwd_tof_sino(const float *xstart, 
+                           const float *xend, 
+                           const float *img,
+                           const float *img_origin, 
+                           const float *voxsize, 
+                           float *p,
+                           long long nlors, 
+                           const int *img_dim,
+                           float tofbin_width,
+                           const float *sigma_tof,
+                           const float *tofcenter_offset,
+                           float n_sigmas,
+                           short n_tofbins);
 
 #endif
