@@ -1,7 +1,7 @@
 import numpy
 from   .utils   import grad, div, prox_tv
 
-def cp_tv_denoise(img, weights = 2e-2, niter = 200, calccost = False, nonneg = False, verbose = False):
+def cp_tv_denoise(img, weights = 2e-2, niter = 200, cost = None, nonneg = False, verbose = False):
   """
   First-order primal dual weighted TV denoising of an image.
   Solves the problem: argmax_x( \sum_i w_i*(x_i - img_i)**2 + TV(x) )
@@ -18,7 +18,7 @@ def cp_tv_denoise(img, weights = 2e-2, niter = 200, calccost = False, nonneg = F
 
   niter    ... (int) number of iterations to run - default 200
 
-  calccost ... (bool) whether to calculated cost function - default False
+  cost     ... (1d array) 1d output array for cost calcuation - default None
  
   nonneg   ... (bool) whether to clip negative values in solution - default False
 
@@ -40,8 +40,8 @@ def cp_tv_denoise(img, weights = 2e-2, niter = 200, calccost = False, nonneg = F
   tau    = 1./ gam
   sig    = 1./(tau*Lip_sq)
   
-  if calccost: 
-    cost = numpy.zeros(niter)
+  # allocate memory for fwd model in case cost needs to be calculated
+  if cost is not None: 
     fwd_x = numpy.zeros(yshape)
   
   # start the iterations
@@ -60,7 +60,7 @@ def cp_tv_denoise(img, weights = 2e-2, niter = 200, calccost = False, nonneg = F
     
     # (4) apply proximity of G
     xnew = (xnew + weights*img*tau) / (1. + weights*tau)
-    if nonneg: xnew[xnew < 0] = 0   
+    if nonneg: xnew = numpy.clip(xnew, 0, None)  
     
     # (5) calculate the new stepsizes
     theta = 1.0 / numpy.sqrt(1 + 2*gam*tau)
@@ -72,12 +72,9 @@ def cp_tv_denoise(img, weights = 2e-2, niter = 200, calccost = False, nonneg = F
     x    = xnew.copy()
   
     # (0) store cost 
-    if calccost:
+    if cost is not None: 
       grad(x, fwd_x)
       cost[i] = 0.5*(weights*(x - img)**2).sum() + numpy.sqrt((fwd_x**2).sum(axis = 0)).sum()
       if verbose: print(cost[i])
 
-  if calccost:
-    return x, cost
-  else:
-    return x
+  return x
