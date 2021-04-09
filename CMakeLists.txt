@@ -2,7 +2,7 @@
 # https://stackoverflow.com/questions/55635294/how-to-create-packages-with-cmake
 
 cmake_minimum_required(VERSION 3.9.0)
-project(parallelproj LANGUAGES C)
+project(parallelproj LANGUAGES C VERSION 0.5.1)
 
 include(CMakePackageConfigHelpers)
 include(CheckLanguage)
@@ -13,12 +13,6 @@ include(GNUInstallDirs)
 set (CMAKE_BUILD_TYPE Release CACHE STRING "build type" FORCE)
 
 #-------------------------------------------------------------
-# define the version number
-set(VERSION_MAJOR   0)
-set(VERSION_MINOR   5)
-set(VERSION_PATCH   0-prealpha)
-
-set(parallelproj_VERSION ${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH})
 
 # define INSTALL dirs for libraries, public headers and documentation
 # by default we use the GNUInstallDirs
