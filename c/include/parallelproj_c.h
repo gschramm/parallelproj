@@ -5,6 +5,10 @@
 #ifndef __PARALLELPROJ_C_H__
 #define __PARALLELPROJ_C_H__
 
+#ifdef  __cplusplus
+extern "C" {
+#endif
+
 /** @brief 3D non-tof joseph back projector
  *
  *  All threads back project in one image using openmp's atomic add.
@@ -326,4 +330,5 @@ void joseph3d_fwd_tof_sino(const float *xstart,
                            float n_sigmas,
                            short n_tofbins);
 
+}  /* extern "C" */
 #endif
