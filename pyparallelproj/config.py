@@ -6,6 +6,8 @@ import ctypes
 import platform
 import warnings
 
+from glob import glob
+
 ar_1d_single = npct.ndpointer(dtype = ctypes.c_float, ndim = 1, flags = 'C')
 ar_1d_int    = npct.ndpointer(dtype = ctypes.c_int,   ndim = 1, flags = 'C')
 ar_1d_short  = npct.ndpointer(dtype = ctypes.c_short, ndim = 1, flags = 'C')
@@ -32,10 +34,12 @@ libname_cuda = 'parallelproj_cuda'
 if platform.system() == 'Linux':
   libprefix = 'lib'
   libfext   = 'so' 
-  sdir      = 'lib'
+  # on windows DLLs get installed in the CMAKE_INSTALL_LIBDIR which defaults to lib or lib64
+  sdir      = os.path.basename(glob(os.path.join(os.path.dirname(__file__),lib_subdir,'lib*'))[0])
 elif platform.system() == 'Windows':
   libprefix = ''
   libfext   = 'dll' 
+  # on windows DLLs get installed in the CMAKE_INSTALL_BINDIR which defaults to bin
   sdir      = 'bin'
 else:
   raise SystemError(f'{platform.system()} not supported yet.')
