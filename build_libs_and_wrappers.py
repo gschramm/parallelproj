@@ -115,7 +115,6 @@ if generate_idl_wrappers:
 #---------------------------------------------------------------------------------------------
 
 # on windows DLLs get install in CMAKE_INSTALL_BINDIR
-#cmake_options = f'-B {build_dir} -DCMAKE_INSTALL_LIBDIR={install_libdir} -DCMAKE_INSTALL_BINDIR={install_libdir} -DCMAKE_INSTALL_PREFIX={cmake_install_prefix}'
 cmake_options = f'-B {build_dir} -DCMAKE_INSTALL_PREFIX={cmake_install_prefix}'
 
 if generate_idl_wrappers:
@@ -137,7 +136,7 @@ else:
   print(f'Kept build directory {build_dir}')
 
 if generate_idl_wrappers:
-  if (not keep_idl_wrappers):
+  if not keep_idl_wrappers:
     rmtree(c_idl_wrapper_dir)
     rmtree(cuda_idl_wrapper_dir)
   else:

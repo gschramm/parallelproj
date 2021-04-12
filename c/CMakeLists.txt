@@ -23,3 +23,8 @@ install(TARGETS parallelproj_c EXPORT parallelprojTargets
         LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR} 
         ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR} 
         PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
+
+# install auto-generated IDL wrapper
+if(PARALLELPROJ_BUILD_WITH_IDL_WRAPPERS)
+  install(FILES "wrapper/parallelproj_c_idl_wrapper.c" DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
+endif()
