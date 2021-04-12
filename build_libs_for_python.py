@@ -24,6 +24,8 @@ parser.add_argument('--cmake_bin', help = 'cmake binary to use', default = 'cmak
 parser.add_argument('--install_libdir', help = 'subdir to install libs', 
                     default = f'pyparallelproj/lib_{platform.system()}_{platform.architecture()[0]}') 
 parser.add_argument('--generate_idl_wrappers', action = 'store_true')
+parser.add_argument('--keep_idl_wrappers', help = 'do not remove tempory idl wrappers', 
+                    action = 'store_true')
 args = parser.parse_args()
 
 #---------------------------------------------------------------------------------------------
@@ -40,6 +42,7 @@ dry                   = args.dry
 cmake_bin             = args.cmake_bin
 install_libdir        = args.install_libdir
 generate_idl_wrappers = args.generate_idl_wrappers
+keep_idl_wrappers     = args.keep_idl_wrappers
 
 #---------------------------------------------------------------------------------------------
 #---------------------------------------------------------------------------------------------
@@ -97,13 +100,15 @@ def generate_idl_wrapper(src_file, wrapper_file, add_extern_C = False):
 
 # generate the IDL wrappers
 if generate_idl_wrappers:
-  os.makedirs(os.path.join('c','wrapper'), exist_ok = True)
+  c_idl_wrapper_dir = os.path.join('c','wrapper')
+  os.makedirs(c_idl_wrapper_dir, exist_ok = True)
   header_file  = os.path.join('c','include','parallelproj_c.h')
   wrapper_file = os.path.join('c','wrapper',
                         f'{os.path.splitext(os.path.basename(header_file))[0]}_idl_wrapper.c')
   generate_idl_wrapper(header_file, wrapper_file)
 
-  os.makedirs(os.path.join('cuda','wrapper'), exist_ok = True)
+  cuda_idl_wrapper_dir = os.path.join('cuda','wrapper')
+  os.makedirs(cuda_idl_wrapper_dir, exist_ok = True)
   header_file_cuda  = os.path.join('cuda','include','parallelproj_cuda.h')
   wrapper_file_cuda = os.path.join('cuda','wrapper',
                         f'{os.path.splitext(os.path.basename(header_file_cuda))[0]}_idl_wrapper.cu')
@@ -118,30 +123,27 @@ if generate_idl_wrappers:
   cmake_options = f'{cmake_options} -DPARALLELPROJ_BUILD_WITH_IDL_WRAPPERS=TRUE'
 
 if platform.system() == 'Windows':
-  cmd1 = f'{cmake_bin} {cmake_options} -DCMAKE_WINDOWS_EXPORT_ALL_SYMBOLS=TRUE {source_dir}'
-  cmd2 = f'{cmake_bin} --build {build_dir} --target INSTALL --config RELEASE'
+  cmake_options = f'{cmake_options} -DCMAKE_WINDOWS_EXPORT_ALL_SYMBOLS=TRUE'
 
-  if dry:
-    print(cmd1,'\n')
-    print(cmd2)
-  else:
-    os.system(cmd1)
-    os.system(cmd2)
+cmd1 = f'{cmake_bin} {cmake_options}  {source_dir}'
+cmd2 = f'{cmake_bin} --build {build_dir} --target install --config release'
+
+if dry:
+  print(cmd1,'\n')
+  print(cmd2)
 else:
-  cmd1 = f'{cmake_bin} {cmake_options} {source_dir}'
-  cmd2 = f'{cmake_bin} --build {build_dir}'
-  cmd3 = f'{cmake_bin} --install {build_dir}'
-
-  if dry:
-    print(cmd1,'\n')
-    print(cmd2,'\n')
-    print(cmd3)
-  else:
-    os.system(cmd1)
-    os.system(cmd2)
-    os.system(cmd3)
+  os.system(cmd1)
+  os.system(cmd2)
 
 if remove_build_dir:
   rmtree(build_dir)
 else:
   print(f'Kept build directory {build_dir}')
+
+if generate_idl_wrappers:
+  if (not keep_idl_wrappers):
+    rmtree(c_idl_wrapper_dir)
+    rmtree(cuda_idl_wrapper_dir)
+  else:
+    print(f'Kept idl c wrapper directory {c_idl_wrapper_dir}')
+    print(f'Kept idl cuda wrapper directory {cuda_idl_wrapper_dir}')
