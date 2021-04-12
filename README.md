@@ -30,7 +30,7 @@ To build all libraries using cmake and install them in the directory expected by
 
 ```
 cd my_project_dir
-python build_c_libs.py
+python build_libs_and_wrappers.py
 ```
 
 where ```my_project_dir``` is the directory that contains this file and the CMakeLists.txt file.
