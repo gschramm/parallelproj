@@ -122,9 +122,6 @@ cmake_options = f'-B {build_dir} -DPARALLELPROJ_INSTALL_LIBDIR={install_libdir} 
 if generate_idl_wrappers:
   cmake_options = f'{cmake_options} -DPARALLELPROJ_BUILD_WITH_IDL_WRAPPERS=TRUE'
 
-if platform.system() == 'Windows':
-  cmake_options = f'{cmake_options} -DCMAKE_WINDOWS_EXPORT_ALL_SYMBOLS=TRUE'
-
 cmd1 = f'{cmake_bin} {cmake_options}  {source_dir}'
 cmd2 = f'{cmake_bin} --build {build_dir} --target install --config release'
 
