@@ -15,14 +15,12 @@ parser.add_argument('--build_dir', help = 'temp build directory',
 parser.add_argument('--source_dir', help = 'cmake source dir', 
                     default = os.path.dirname(os.path.abspath(__file__)))
 parser.add_argument('--cmake_install_prefix', help = 'cmake INSTALL_LIB_DIR - default: %(default)s', 
-                    default = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'pyparallelproj'))
+                    default = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'pyparallelproj',f'{platform.system()}_{platform.architecture()[0]}'))
 parser.add_argument('--keep_build_dir', help = 'do not remove tempory build dir', 
                     action = 'store_true')
 parser.add_argument('--dry', help = 'dry run - only print cmake commands', 
                     action = 'store_true')
 parser.add_argument('--cmake_bin', help = 'cmake binary to use', default = 'cmake') 
-parser.add_argument('--install_libdir', help = 'subdir to install libs', 
-                    default = f'pyparallelproj/lib_{platform.system()}_{platform.architecture()[0]}') 
 parser.add_argument('--generate_idl_wrappers', action = 'store_true')
 parser.add_argument('--keep_idl_wrappers', help = 'do not remove tempory idl wrappers', 
                     action = 'store_true')
@@ -40,7 +38,6 @@ cmake_install_prefix  = args.cmake_install_prefix
 remove_build_dir      = not args.keep_build_dir
 dry                   = args.dry
 cmake_bin             = args.cmake_bin
-install_libdir        = args.install_libdir
 generate_idl_wrappers = args.generate_idl_wrappers
 keep_idl_wrappers     = args.keep_idl_wrappers
 
@@ -117,7 +114,9 @@ if generate_idl_wrappers:
 
 #---------------------------------------------------------------------------------------------
 
-cmake_options = f'-B {build_dir} -DPARALLELPROJ_INSTALL_LIBDIR={install_libdir} -DCMAKE_INSTALL_PREFIX={cmake_install_prefix}'
+# on windows DLLs get install in CMAKE_INSTALL_BINDIR
+#cmake_options = f'-B {build_dir} -DCMAKE_INSTALL_LIBDIR={install_libdir} -DCMAKE_INSTALL_BINDIR={install_libdir} -DCMAKE_INSTALL_PREFIX={cmake_install_prefix}'
+cmake_options = f'-B {build_dir} -DCMAKE_INSTALL_PREFIX={cmake_install_prefix}'
 
 if generate_idl_wrappers:
   cmake_options = f'{cmake_options} -DPARALLELPROJ_BUILD_WITH_IDL_WRAPPERS=TRUE'

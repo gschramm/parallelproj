@@ -1,5 +1,6 @@
-lib*/*
-include/*
-bin/*
-share/*
+*/lib/*
+*/include/*
+*/bin/*
+*/share/*
+*/cmake/*
 CMAKE_INSTALL_LIBDIR__*

@@ -26,25 +26,32 @@ The installation consists of two parts:
 
 We use CMake to auto generate a Makefile / Visual Studio project file which is used to compile the libraries. Make sure that cmake and the desired C compiler are on the PATH. The CMakeLists.txt is configured to search for CUDA. If CUDA is not present, compilation of the CUDA lib is skipped.
 
-To build all libraries using cmake and install them in the directory expected by the python package, execute 
-
+To build and install the libraries execute:
+```
+cd my_project_dir
+mkdir build
+cd build
+cmake ..
+cmake --build . --target install --config release
+```
+where ```my_project_dir``` is the directory that contains this file and the CMakeLists.txt file.
+Note that for the default installation directory, you usually need admin priviledges.
+To change the install directory, replace the 1st call to cmake by
+```
+cmake -DCMAKE_INSTALL_PREFIX=/foo/bar/myinstalldir ..
+```
+In case you want to use the libraries in combination with the python frontend package,
+you can use the provided master python build script:
 ```
 cd my_project_dir
 python build_libs_and_wrappers.py
 ```
+instead, which uses the CMAKE_INSTALL_PREFIX expected by the python package.
 
-where ```my_project_dir``` is the directory that contains this file and the CMakeLists.txt file.
-After a successful build and install, the compiled libs should appear in the **my_project_dir/pyparallelproj/lib** directory. The linux libs should be called libparallelproj_c.so (and libparallelproj_cuda.so) and the Windows libs should be called parallelproj_c.dll (and parallelproj_cuda.dll).
-
-If doxygen is present, the documentation of the C and CUDA sources is rendered in html in the ```my_project_dir/doc``` directory.
-If the cmake variable ```PARALLELPROJ_INSTALL_DOCS``` is set to TRUE, the documentation is installed into```PARALLELPROJ_DOC_DIR```.
-
-(note) The step above described how to use the provided build script that builds and installs
-the libraries in the directory expected for the python package.
-In case you do only want to build the C/CUDA libraries and you are not interested in the python
-bindings, you can of course use / call cmake yourself.
-To display the commands that are called by the build script, you can use ```python build_libs_for_python.py --dry``` and probably modify / skip ```CMAKE_INSTALL_PREFIX```.
-
+To build the documentation (doxygen required) run
+```
+cmake --build . --target docs
+```
 
 ### (ii) Installation of the python package
 
@@ -55,7 +62,7 @@ The pip installation can be done via:
 cd my_project_dir
 pip install .
 ```
-which will install all python files and also copy the compiled libs to the subfolder lib in the directory specified by sys.prefix in the python sys module (e.g. the location where the virtual environment is located).
+which will install all python files and also copy the compiled libs to the directory specified by sys.prefix in the python sys module (e.g. the location where the virtual environment is located).
 
 (note) instead of installing the python package, you can also add the package directory to your
 ```PYTHONPATH``` environment variable.

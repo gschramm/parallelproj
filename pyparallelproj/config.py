@@ -13,10 +13,10 @@ ar_1d_short  = npct.ndpointer(dtype = ctypes.c_short, ndim = 1, flags = 'C')
 #---- find the compiled C / CUDA libraries
 
 # this is the default lib install dir used by the python-cmake build script
-lib_subdir = f'lib_{platform.system()}_{platform.architecture()[0]}' 
+lib_subdir = f'{platform.system()}_{platform.architecture()[0]}' 
 
 # get the version of the libs from the ConfigVersion file
-configVersion_file = os.path.abspath(os.path.join(os.path.dirname(__file__), lib_subdir, 'cmake',
+configVersion_file = os.path.abspath(os.path.join(os.path.dirname(__file__), lib_subdir,'lib','cmake',
                                                   'parallelproj', 'parallelprojConfigVersion.cmake'))
 
 version = None
@@ -32,15 +32,17 @@ libname_cuda = 'parallelproj_cuda'
 if platform.system() == 'Linux':
   libprefix = 'lib'
   libfext   = 'so' 
+  sdir      = 'lib'
 elif platform.system() == 'Windows':
   libprefix = ''
   libfext   = 'dll' 
+  sdir      = 'bin'
 else:
   raise SystemError(f'{platform.system()} not supported yet.')
 
-lib_parallelproj_c_fname    = os.path.abspath(os.path.join(os.path.dirname(__file__),lib_subdir, 
+lib_parallelproj_c_fname    = os.path.abspath(os.path.join(os.path.dirname(__file__),lib_subdir, sdir,
                                               f'{libprefix}{libname_c}.{libfext}'))
-lib_parallelproj_cuda_fname = os.path.abspath(os.path.join(os.path.dirname(__file__),lib_subdir,
+lib_parallelproj_cuda_fname = os.path.abspath(os.path.join(os.path.dirname(__file__),lib_subdir, sdir,
                                               f'{libprefix}{libname_cuda}.{libfext}'))
 
 #-------------------------------------------------------------------------------------------

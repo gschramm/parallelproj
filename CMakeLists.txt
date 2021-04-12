@@ -17,9 +17,6 @@ set (CMAKE_BUILD_TYPE Release CACHE STRING "build type" FORCE)
 # define INSTALL dirs for libraries, public headers and documentation
 # by default we use the GNUInstallDirs
 
-set(PARALLELPROJ_INSTALL_LIBDIR ${CMAKE_INSTALL_LIBDIR} CACHE PATH "install subdir for libs")
-set(PARALLELPROJ_INSTALL_INCLUDEDIR ${CMAKE_INSTALL_INCLUDEDIR} CACHE PATH "install subdir for public headers")
-
 # variable whether to build with auto-generated IDL wrappers
 set(PARALLELPROJ_BUILD_WITH_IDL_WRAPPERS FALSE CACHE BOOL "include auto-generated IDL wrapper sources in build")
 #-------------------------------------------------------------
@@ -53,7 +50,7 @@ endif()
 # install the targets
 install(
   EXPORT parallelprojTargets
-  DESTINATION ${PARALLELPROJ_INSTALL_LIBDIR}/cmake/parallelproj
+  DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/parallelproj
   NAMESPACE parallelproj::
   FILE parallelprojTargets.cmake # Not sure if this is still needed
   )
@@ -88,9 +85,9 @@ endif()
 configure_package_config_file(
   ${CMAKE_CURRENT_SOURCE_DIR}/cmake/Config.cmake.in
   ${CMAKE_CURRENT_BINARY_DIR}/parallelprojConfig.cmake
-  INSTALL_DESTINATION ${PARALLELPROJ_INSTALL_LIBDIR}/cmake/parallelproj
+  INSTALL_DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/parallelproj
   PATH_VARS
-    PARALLELPROJ_INSTALL_LIBDIR
+    CMAKE_INSTALL_LIBDIR
   )
 
 write_basic_package_version_file(
@@ -103,7 +100,7 @@ write_basic_package_version_file(
 install(
   FILES "${CMAKE_CURRENT_BINARY_DIR}/parallelprojConfig.cmake"
         "${CMAKE_CURRENT_BINARY_DIR}/parallelprojConfigVersion.cmake"
-  DESTINATION "${PARALLELPROJ_INSTALL_LIBDIR}/cmake/parallelproj"
+  DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/parallelproj"
   )
 
 # uninstall target
