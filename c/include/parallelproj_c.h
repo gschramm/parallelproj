@@ -330,5 +330,8 @@ void joseph3d_fwd_tof_sino(const float *xstart,
                            float n_sigmas,
                            short n_tofbins);
 
+#ifdef __cplusplus
 }  /* extern "C" */
+#endif
+
 #endif
