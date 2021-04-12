@@ -22,6 +22,6 @@ setuptools.setup(
     install_requires=['numpy>=1.18',
                       'matplotlib>=3.2.1',
                       'numba>=0.49',
-                      'scipy>=1.20'],
+                      'scipy>=1.2'],
     include_package_data=True
 )
