@@ -1,7 +1,7 @@
 enable_language(CUDA)
 
 if(PARALLELPROJ_BUILD_WITH_IDL_WRAPPERS)
-  file(GLOB CUDA_SOURCES src/*.cu wrapper/*.cu)
+  file(GLOB CUDA_SOURCES src/*.cu wrapper/parallelproj_cuda_idl_wrapper.cu)
 else()
   file(GLOB CUDA_SOURCES src/*.cu)
 endif()
@@ -16,14 +16,13 @@ target_include_directories(parallelproj_cuda PUBLIC
   $<INSTALL_INTERFACE:include/>
   )
 
-# we explicitly specify DESTINATION here, because otherwise DLLs on Windows
-# are installed in ${CMAKE_INSTALL_BINDIR}
 install(TARGETS parallelproj_cuda EXPORT parallelprojTargets 
         RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR} 
         LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR} 
-        ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR} 
+        ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+        PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
 
 # install auto-generated IDL wrapper
 if(PARALLELPROJ_BUILD_WITH_IDL_WRAPPERS)
   install(FILES "wrapper/parallelproj_cuda_idl_wrapper.cu" DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
-endif()       PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
+endif()

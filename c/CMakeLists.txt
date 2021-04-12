@@ -1,5 +1,5 @@
 if(PARALLELPROJ_BUILD_WITH_IDL_WRAPPERS)
-  file(GLOB C_SOURCES src/*.c wrapper/*.c)
+  file(GLOB C_SOURCES src/*.c wrapper/parallelproj_c_idl_wrapper.c)
 else()
   file(GLOB C_SOURCES src/*.c)
 endif()
@@ -16,8 +16,6 @@ set_target_properties(parallelproj_c PROPERTIES PUBLIC_HEADER "include/parallelp
 # we have to add the openmp library to be linked
 target_link_libraries(parallelproj_c PUBLIC OpenMP::OpenMP_C)
 
-# we explicitly specify DESTINATION here, because otherwise DLLs on Windows
-# are installed in ${CMAKE_INSTALL_BINDIR}
 install(TARGETS parallelproj_c EXPORT parallelprojTargets 
         RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR} 
         LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR} 
