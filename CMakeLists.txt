@@ -113,3 +113,14 @@ if(NOT TARGET uninstall)
     add_custom_target(uninstall
         COMMAND ${CMAKE_COMMAND} -P ${CMAKE_CURRENT_BINARY_DIR}/cmake_uninstall.cmake)
 endif()
+
+#packaging
+if (WIN32)
+  # requires build of Release
+  # cmake --build . --config Release
+  set(CPACK_GENERATOR NSIS)
+else()
+  set(CPACK_GENERATOR "RPM;DEB")
+  set(CPACK_DEBIAN_PACKAGE_MAINTAINER "Georg Schramm")
+endif()
+include(CPack)
