@@ -25,6 +25,14 @@ void joseph3d_fwd(const float *xstart,
   int n1 = img_dim[1];
   int n2 = img_dim[2];
 
+  float voxsize0 = voxsize[0];
+  float voxsize1 = voxsize[1];
+  float voxsize2 = voxsize[2];
+
+  float img_origin0 = img_origin[0];
+  float img_origin1 = img_origin[1];
+  float img_origin2 = img_origin[2];
+
   # pragma omp parallel for schedule(static)
   for(i = 0; i < nlors; i++)
   {
@@ -47,13 +55,6 @@ void joseph3d_fwd(const float *xstart,
     float xend1 = xend[i*3 + 1];
     float xend2 = xend[i*3 + 2];
 
-    float voxsize0 = voxsize[0];
-    float voxsize1 = voxsize[1];
-    float voxsize2 = voxsize[2];
-
-    float img_origin0 = img_origin[0];
-    float img_origin1 = img_origin[1];
-    float img_origin2 = img_origin[2];
 
     unsigned char intersec;
     float t1, t2;

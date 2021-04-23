@@ -32,6 +32,14 @@ void joseph3d_fwd_tof_sino(const float *xstart,
   int n1 = img_dim[1];
   int n2 = img_dim[2];
 
+  float voxsize0 = voxsize[0];
+  float voxsize1 = voxsize[1];
+  float voxsize2 = voxsize[2];
+
+  float img_origin0 = img_origin[0];
+  float img_origin1 = img_origin[1];
+  float img_origin2 = img_origin[2];
+
   int n_half = n_tofbins/2;
 
   # pragma omp parallel for schedule(static)
@@ -67,14 +75,6 @@ void joseph3d_fwd_tof_sino(const float *xstart,
     float xend0 = xend[i*3 + 0];
     float xend1 = xend[i*3 + 1];
     float xend2 = xend[i*3 + 2];
-
-    float voxsize0 = voxsize[0];
-    float voxsize1 = voxsize[1];
-    float voxsize2 = voxsize[2];
-
-    float img_origin0 = img_origin[0];
-    float img_origin1 = img_origin[1];
-    float img_origin2 = img_origin[2];
 
     unsigned char intersec;
     float t1, t2;
