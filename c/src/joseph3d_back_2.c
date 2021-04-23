@@ -19,51 +19,57 @@ void joseph3d_back_2(const float *xstart,
                      long long nlors, 
                      const int *img_dim)
 {
-  long long i;
-
   int n0 = img_dim[0];
   int n1 = img_dim[1];
   int n2 = img_dim[2];
 
+  float voxsize0 = voxsize[0];
+  float voxsize1 = voxsize[1];
+  float voxsize2 = voxsize[2];
+
+  float img_origin0 = img_origin[0];
+  float img_origin1 = img_origin[1];
+  float img_origin2 = img_origin[2];
+
   # pragma omp parallel
   {
-    if(p[i] != 0)
+    float d0, d1, d2, d0_sq, d1_sq, d2_sq;
+    float cs0, cs1, cs2, cf; 
+    float lsq, cos0_sq, cos1_sq, cos2_sq;
+    unsigned short direction; 
+    int i0, i1, i2;
+    int i0_floor, i1_floor, i2_floor;
+    int i0_ceil, i1_ceil, i2_ceil;
+    float x_pr0, x_pr1, x_pr2;
+    float tmp_0, tmp_1, tmp_2;
+
+    float xstart0;
+    float xstart1;
+    float xstart2;
+
+    float xend0;
+    float xend1;
+    float xend2;
+
+    unsigned char intersec;
+    float t1, t2;
+    float istart_f, iend_f, tmp;
+    int   istart, iend;
+
+    # pragma omp parallel for schedule(static, omp_get_num_threads())
+    for(long long i = 0; i < nlors; i++)
     {
-
-      float d0, d1, d2, d0_sq, d1_sq, d2_sq;
-      float cs0, cs1, cs2, cf; 
-      float lsq, cos0_sq, cos1_sq, cos2_sq;
-      unsigned short direction; 
-      int i0, i1, i2;
-      int i0_floor, i1_floor, i2_floor;
-      int i0_ceil, i1_ceil, i2_ceil;
-      float x_pr0, x_pr1, x_pr2;
-      float tmp_0, tmp_1, tmp_2;
-
-      float xstart0 = xstart[i*3 + 0];
-      float xstart1 = xstart[i*3 + 1];
-      float xstart2 = xstart[i*3 + 2];
-
-      float xend0 = xend[i*3 + 0];
-      float xend1 = xend[i*3 + 1];
-      float xend2 = xend[i*3 + 2];
-
-      float voxsize0 = voxsize[0];
-      float voxsize1 = voxsize[1];
-      float voxsize2 = voxsize[2];
-
-      float img_origin0 = img_origin[0];
-      float img_origin1 = img_origin[1];
-      float img_origin2 = img_origin[2];
-
-      unsigned char intersec;
-      float t1, t2;
-      float istart_f, iend_f, tmp;
-      int   istart, iend;
-
-      # pragma omp parallel for schedule(static)
-      for(i = 0; i < nlors; i++)
+      if(p[i] != 0)
       {
+        xstart0 = xstart[i*3 + 0];
+        xstart1 = xstart[i*3 + 1];
+        xstart2 = xstart[i*3 + 2];
+
+        xend0 = xend[i*3 + 0];
+        xend1 = xend[i*3 + 1];
+        xend2 = xend[i*3 + 2];
+
+
         // test whether the ray between the two detectors is most parallel
         // with the 0, 1, or 2 axis
         d0    = xend0 - xstart0;

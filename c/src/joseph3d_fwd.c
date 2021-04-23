@@ -19,11 +19,19 @@ void joseph3d_fwd(const float *xstart,
                   long long nlors, 
                   const int *img_dim)
 {
-  long long i;
+  //long long i;
 
   int n0 = img_dim[0];
   int n1 = img_dim[1];
   int n2 = img_dim[2];
+
+  float voxsize0 = voxsize[0];
+  float voxsize1 = voxsize[1];
+  float voxsize2 = voxsize[2];
+
+  float img_origin0 = img_origin[0];
+  float img_origin1 = img_origin[1];
+  float img_origin2 = img_origin[2];
 
   # pragma omp parallel
   {
@@ -38,30 +46,30 @@ void joseph3d_fwd(const float *xstart,
 
     float cf, toAdd;    
 
-    float xstart0 = xstart[i*3 + 0];
-    float xstart1 = xstart[i*3 + 1];
-    float xstart2 = xstart[i*3 + 2];
+    float xstart0;
+    float xstart1;
+    float xstart2;
 
-    float xend0 = xend[i*3 + 0];
-    float xend1 = xend[i*3 + 1];
-    float xend2 = xend[i*3 + 2];
-
-    float voxsize0 = voxsize[0];
-    float voxsize1 = voxsize[1];
-    float voxsize2 = voxsize[2];
-
-    float img_origin0 = img_origin[0];
-    float img_origin1 = img_origin[1];
-    float img_origin2 = img_origin[2];
+    float xend0;
+    float xend1;
+    float xend2;
 
     unsigned char intersec;
     float t1, t2;
     float istart_f, iend_f, tmp;
     int   istart, iend;
 
-    # pragma omp parallel for schedule(static)
-    for(i = 0; i < nlors; i++)
+    # pragma omp parallel for schedule(static, omp_get_num_threads())
+    for(long long i = 0; i < nlors; i++)
     {
+      xstart0 = xstart[i*3 + 0];
+      xstart1 = xstart[i*3 + 1];
+      xstart2 = xstart[i*3 + 2];
+
+      xend0 = xend[i*3 + 0];
+      xend1 = xend[i*3 + 1];
+      xend2 = xend[i*3 + 2];
+
       // initialize projection with 0
       p[i] = 0;
 

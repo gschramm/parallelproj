@@ -26,11 +26,17 @@ void joseph3d_fwd_tof_sino(const float *xstart,
                            float n_sigmas,
                            short n_tofbins)
 {
-  long long i;
-
   int n0 = img_dim[0];
   int n1 = img_dim[1];
   int n2 = img_dim[2];
+
+  float voxsize0 = voxsize[0];
+  float voxsize1 = voxsize[1];
+  float voxsize2 = voxsize[2];
+
+  float img_origin0 = img_origin[0];
+  float img_origin1 = img_origin[1];
+  float img_origin2 = img_origin[2];
 
   int n_half = n_tofbins/2;
 
@@ -56,24 +62,16 @@ void joseph3d_fwd_tof_sino(const float *xstart,
     float cf;
     float toAdd;
 
-    float sig_tof   = sigma_tof[i];
-    float tc_offset = tofcenter_offset[i];
+    float sig_tof;
+    float tc_offset;
 
-    float xstart0 = xstart[i*3 + 0];
-    float xstart1 = xstart[i*3 + 1];
-    float xstart2 = xstart[i*3 + 2];
+    float xstart0;
+    float xstart1;
+    float xstart2;
 
-    float xend0 = xend[i*3 + 0];
-    float xend1 = xend[i*3 + 1];
-    float xend2 = xend[i*3 + 2];
-
-    float voxsize0 = voxsize[0];
-    float voxsize1 = voxsize[1];
-    float voxsize2 = voxsize[2];
-
-    float img_origin0 = img_origin[0];
-    float img_origin1 = img_origin[1];
-    float img_origin2 = img_origin[2];
+    float xend0;
+    float xend1;
+    float xend2;
 
     unsigned char intersec;
     float t1, t2;
@@ -83,9 +81,20 @@ void joseph3d_fwd_tof_sino(const float *xstart,
     float istart_tof_f, iend_tof_f;
     int istart_tof, iend_tof;
 
-    # pragma omp parallel for schedule(static)
-    for(i = 0; i < nlors; i++)
+    # pragma omp parallel for schedule(static, omp_get_num_threads())
+    for(long long i = 0; i < nlors; i++)
     {
+      sig_tof   = sigma_tof[i];
+      tc_offset = tofcenter_offset[i];
+
+      xstart0 = xstart[i*3 + 0];
+      xstart1 = xstart[i*3 + 1];
+      xstart2 = xstart[i*3 + 2];
+
+      xend0 = xend[i*3 + 0];
+      xend1 = xend[i*3 + 1];
+      xend2 = xend[i*3 + 2];
+
       // initialize all TOF bins in projection along current LOR with 0
       for(it = 0; it < n_tofbins; it++){
         p[i*n_tofbins + it] = 0;

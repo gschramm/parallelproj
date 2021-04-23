@@ -26,13 +26,19 @@ void joseph3d_back_tof_lm(const float *xstart,
                           float n_sigmas,
                           const short *tof_bin)
 {
-  long long i;
-
   int n0 = img_dim[0];
   int n1 = img_dim[1];
   int n2 = img_dim[2];
 
   long nvox = n0*n1*n2;
+
+  float voxsize0 = voxsize[0];
+  float voxsize1 = voxsize[1];
+  float voxsize2 = voxsize[2];
+
+  float img_origin0 = img_origin[0];
+  float img_origin1 = img_origin[1];
+  float img_origin2 = img_origin[2];
 
   int num_threads = omp_get_max_threads();
 
@@ -58,27 +64,19 @@ void joseph3d_back_tof_lm(const float *xstart,
     float x_m0, x_m1, x_m2;    
     float x_v0, x_v1, x_v2;    
 
-    short it = tof_bin[i];
+    short it;
     float dtof, tw;
 
-    float sig_tof   = sigma_tof[i];
-    float tc_offset = tofcenter_offset[i];
+    float sig_tof;
+    float tc_offset;
 
-    float xstart0 = xstart[i*3 + 0];
-    float xstart1 = xstart[i*3 + 1];
-    float xstart2 = xstart[i*3 + 2];
+    float xstart0;
+    float xstart1;
+    float xstart2;
 
-    float xend0 = xend[i*3 + 0];
-    float xend1 = xend[i*3 + 1];
-    float xend2 = xend[i*3 + 2];
-
-    float voxsize0 = voxsize[0];
-    float voxsize1 = voxsize[1];
-    float voxsize2 = voxsize[2];
-
-    float img_origin0 = img_origin[0];
-    float img_origin1 = img_origin[1];
-    float img_origin2 = img_origin[2];
+    float xend0;
+    float xend1;
+    float xend2;
 
     unsigned char intersec;
     float t1, t2;
@@ -87,9 +85,21 @@ void joseph3d_back_tof_lm(const float *xstart,
     float istart_tof_f, iend_tof_f;
     int   istart_tof, iend_tof;
 
-    # pragma omp parallel for schedule(static)
-    for(i = 0; i < nlors; i++)
+    # pragma omp parallel for schedule(static, omp_get_num_threads())
+    for(long long i = 0; i < nlors; i++)
     {
+      it = tof_bin[i];
+      sig_tof   = sigma_tof[i];
+      tc_offset = tofcenter_offset[i];
+
+      xstart0 = xstart[i*3 + 0];
+      xstart1 = xstart[i*3 + 1];
+      xstart2 = xstart[i*3 + 2];
+
+      xend0 = xend[i*3 + 0];
+      xend1 = xend[i*3 + 1];
+      xend2 = xend[i*3 + 2];
+
       // test whether the ray between the two detectors is most parallel
       // with the 0, 1, or 2 axis
       d0    = xend0 - xstart0;
@@ -507,7 +517,7 @@ void joseph3d_back_tof_lm(const float *xstart,
 
   // sum all images back together
   # pragma omp parallel for schedule(static)
-  for(i = 0; i < nvox; i++){
+  for(long i = 0; i < nvox; i++){
     int id;
     for(id = 0; id < num_threads; id++){
       img[i] += back_imgs[i + id*nvox];
