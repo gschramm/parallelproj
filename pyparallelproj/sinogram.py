@@ -129,7 +129,7 @@ class PETSinogramParameters:
                          np.concatenate((self.spatial_dim_order,[3]))))
 
   #-------------------------------------------------------------------
-  def sinogram_to_listmode(self, sinogram, return_multi_index = False,
+  def sinogram_to_listmode(self, sinogram, return_multi_index = False, return_counts = False,
                                  subset = 0, nsubsets = 1):
     """ Convert an unsigned int sinogram to a list of events (list-mode data)
 
@@ -168,7 +168,11 @@ class PETSinogramParameters:
     # [start_crystal_id_tr, start_crystal_id_ax, end_crystal_id_tr, end_crystal_id_ax, tofbin]
     istart, iend = self.get_view_crystal_indices(np.arange(self.nviews)[subset::nsubsets])
 
-    events  = np.zeros((sinogram.sum(),5), dtype = np.int16)
+    if return_counts:
+      events  = np.zeros((sinogram.sum(),6), dtype = np.int16)
+    else:
+      events  = np.zeros((sinogram.sum(),5), dtype = np.int16)
+
     counter = 0
     
     it = np.nditer(sinogram, flags=['multi_index'])
@@ -186,6 +190,9 @@ class PETSinogramParameters:
 
         if return_multi_index:
           multi_index[counter:(counter+x),:] = it.multi_index
+
+        if return_counts:
+          events[counter:(counter+x):,5]   = x
     
         counter += x
   
