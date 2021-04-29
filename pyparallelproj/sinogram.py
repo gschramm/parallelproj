@@ -155,6 +155,7 @@ class PETSinogramParameters:
     If return_multi_index is False
       A 2D numpy int16 array of shape (nevents, 5) where each listmode event is characterized
       by 5 integer number (2 start crystals IDs, 2 end crystal IDs, tof bin)
+      In case return_counts is True, an extra 6 column containing the counts is added.
     If return_multi_index is True
       a 2D array with the sinogram multi-index of every event is returned as well
       (2 output arguments)
