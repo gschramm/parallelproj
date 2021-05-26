@@ -132,3 +132,4 @@ dmypy.json
 docs/*
 build_win/*
 wip/*
+*.qdrep
