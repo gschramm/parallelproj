@@ -7,6 +7,17 @@ import platform
 import warnings
 
 from glob import glob
+from numba import cuda
+
+#---------------------------------------------------------------------------------------
+# get the number of visible GPUs
+try:
+  n_visible_gpus = len(cuda.gpus)
+except:
+  n_visible_gpus = 0
+
+#---------------------------------------------------------------------------------------
+
 
 ar_1d_single = npct.ndpointer(dtype = ctypes.c_float, ndim = 1, flags = 'C')
 ar_1d_int    = npct.ndpointer(dtype = ctypes.c_int,   ndim = 1, flags = 'C')
