@@ -249,4 +249,25 @@ extern "C" void joseph3d_fwd_tof_sino_cuda(const float *h_xstart,
                                            int threadsperblock,
                                            int num_devices);
 
+
+
+/** @brief copy a float array to all visible cuda devices
+ *
+ *  The number of visible cuda devices is determined automatically via the CUDA API
+ *
+ *  @param    h_array   array of shape [n] on the host
+ *  @param    n         number of array elements
+ *  @return   a pointer to all devices arrays
+ */
+extern "C" float** copy_float_array_to_all_devices(const float *h_array, long long n);
+
+/** @brief free device array on all visible cuda devices
+ *
+ *  The number of visible cuda devices is determined automatically via the CUDA API
+ *
+ *  @param d_array a pointer to all devices arrays
+ */
+extern "C" void free_float_array_on_all_devices(float **d_array);
+
+
 #endif
