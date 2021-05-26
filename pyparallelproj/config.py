@@ -252,10 +252,9 @@ if os.access(lib_parallelproj_cuda_fname, os.R_OK):
                                                               ctypes.c_int]
 
 
-  lib_parallelproj_cuda.copy_float_array_to_all_devices.restype  = None
+  lib_parallelproj_cuda.copy_float_array_to_all_devices.restype  = ctypes.POINTER(ctypes.POINTER(ctypes.c_float))
   lib_parallelproj_cuda.copy_float_array_to_all_devices.argtypes = [ar_1d_single,
-                                     ctypes.c_longlong,
-                                     ctypes.POINTER(ctypes.POINTER(ctypes.c_float))] 
+                                                                    ctypes.c_longlong]
 
   lib_parallelproj_cuda.free_float_array_on_all_devices.restype  = None
   lib_parallelproj_cuda.free_float_array_on_all_devices.argtypes = [ctypes.POINTER(ctypes.POINTER(ctypes.c_float))] 

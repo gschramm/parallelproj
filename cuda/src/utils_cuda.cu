@@ -39,15 +39,16 @@ extern "C" __global__ void print_float_device_array(float* a)
 
 //////////////////////////////////////////////////////////////////////////////////////////
 
-extern "C" void copy_float_array_to_all_devices(const float *h_array,
-                                                long long n,
-                                                float **d_array)
+extern "C" float** copy_float_array_to_all_devices(const float *h_array, long long n)
 {
   cudaError_t error;  
 
   // get number of visible devices
   int num_devices;
   cudaGetDeviceCount(&num_devices);  
+
+  // create pointer to device arrays
+  float **d_array = new float * [num_devices];
 
   long long img_bytes = (n)*sizeof(float);
 
@@ -68,6 +69,8 @@ extern "C" void copy_float_array_to_all_devices(const float *h_array,
 
   // make sure that all devices are done before leaving
   cudaDeviceSynchronize();
+
+  return d_array;
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////
