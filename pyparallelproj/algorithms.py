@@ -180,9 +180,9 @@ def spdhg(em_sino, attn_sino, sens_sino, contam_sino, proj, niter,
   zbar = z.copy()
 
   # allocate arrays for gradient operations
-  x_grad      = np.zeros((T.ndim,) + img_shape, dtype = np.float32)
-  y_grad      = np.zeros((T.ndim,) + img_shape, dtype = np.float32)
-  y_grad_plus = np.zeros((T.ndim,) + img_shape, dtype = np.float32)
+  x_grad      = np.zeros((x.ndim,) + img_shape, dtype = np.float32)
+  y_grad      = np.zeros((x.ndim,) + img_shape, dtype = np.float32)
+  y_grad_plus = np.zeros((x.ndim,) + img_shape, dtype = np.float32)
 
   #--------------------------------------------------------------------------------------------
   # SPDHG iterations
@@ -219,7 +219,7 @@ def spdhg(em_sino, attn_sino, sens_sino, contam_sino, proj, niter,
         print(f'iteration {it + 1} step {iss} gradient update')
 
         grad(x, x_grad)
-        y_grad_plus = (y_grad + S_g*x_grad).reshape(T.ndim,-1)
+        y_grad_plus = (y_grad + S_g*x_grad).reshape(x.ndim,-1)
 
         # proximity operator for dual of TV
         gnorm = np.linalg.norm(y_grad_plus, axis = 0)
