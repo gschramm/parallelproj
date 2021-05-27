@@ -249,8 +249,6 @@ extern "C" void joseph3d_fwd_tof_sino_cuda(const float *h_xstart,
                                            int threadsperblock,
                                            int num_devices);
 
-
-
 /** @brief copy a float array to all visible cuda devices
  *
  *  The number of visible cuda devices is determined automatically via the CUDA API
@@ -261,6 +259,7 @@ extern "C" void joseph3d_fwd_tof_sino_cuda(const float *h_xstart,
  */
 extern "C" float** copy_float_array_to_all_devices(const float *h_array, long long n);
 
+
 /** @brief free device array on all visible cuda devices
  *
  *  The number of visible cuda devices is determined automatically via the CUDA API
@@ -269,5 +268,27 @@ extern "C" float** copy_float_array_to_all_devices(const float *h_array, long lo
  */
 extern "C" void free_float_array_on_all_devices(float **d_array);
 
+
+/** @brief sum multiple versions of an array on different devices on first device
+ *
+ *  The number of visible cuda devices is determined automatically via the CUDA API
+ *  This becomes usefule when multiple devices backproject into separate images.
+ *
+ *  @param d_array a pointer to all devices arrays
+ *  @param    n         number of array elements
+ */
+extern "C" void sum_float_arrays_on_first_device(float **d_array, long long n);
+
+
+/** @brief copy a (summed) float array from first device back to host
+ *
+ *  The number of visible cuda devices is determined automatically via the CUDA API
+ *
+ *  @param  d_array   a pointer to all devices arrays of shape [n]
+ *  @param  n         number of array elements
+ *  @param  i_dev     device number
+ *  @param  h_array   array of shape [n] on the host used for output
+ */
+extern "C" void get_float_array_from_device(float **d_array, long long n, int i_dev, float *h_array);
 
 #endif

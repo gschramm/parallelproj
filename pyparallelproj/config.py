@@ -258,3 +258,9 @@ if os.access(lib_parallelproj_cuda_fname, os.R_OK):
 
   lib_parallelproj_cuda.free_float_array_on_all_devices.restype  = None
   lib_parallelproj_cuda.free_float_array_on_all_devices.argtypes = [ctypes.POINTER(ctypes.POINTER(ctypes.c_float))] 
+
+  lib_parallelproj_cuda.sum_float_arrays_on_first_device.restype  = None
+  lib_parallelproj_cuda.sum_float_arrays_on_first_device.argtypes = [ctypes.POINTER(ctypes.POINTER(ctypes.c_float)), ctypes.c_longlong]
+
+  lib_parallelproj_cuda.get_float_array_from_device.restype  = None
+  lib_parallelproj_cuda.get_float_array_from_device.argtypes = [ctypes.POINTER(ctypes.POINTER(ctypes.c_float)), ctypes.c_longlong, ctypes.c_int, ar_1d_single]

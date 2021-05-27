@@ -50,21 +50,21 @@ extern "C" float** copy_float_array_to_all_devices(const float *h_array, long lo
   // create pointer to device arrays
   float **d_array = new float * [num_devices];
 
-  long long img_bytes = (n)*sizeof(float);
+  long long array_bytes = n*sizeof(float);
 
   # pragma omp parallel for schedule(static)
   for (int i_dev = 0; i_dev < num_devices; i_dev++) 
   {
     cudaSetDevice(i_dev);
 
-    error = cudaMalloc(&d_array[i_dev], img_bytes);
+    error = cudaMalloc(&d_array[i_dev], array_bytes);
     if (error != cudaSuccess)
     {
         printf("cudaMalloc returned error %s (code %d), line(%d)\n", cudaGetErrorString(error), 
                error, __LINE__);
         exit(EXIT_FAILURE);
     }
-    cudaMemcpyAsync(d_array[i_dev], h_array, img_bytes, cudaMemcpyHostToDevice);
+    cudaMemcpyAsync(d_array[i_dev], h_array, array_bytes, cudaMemcpyHostToDevice);
   }
 
   // make sure that all devices are done before leaving
@@ -89,5 +89,66 @@ extern "C" void free_float_array_on_all_devices(float **d_array)
   }
 
   // make sure that all devices are done before leaving
+  cudaDeviceSynchronize();
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////
+
+extern "C" void sum_float_arrays_on_first_device(float **d_array, long long n)
+{
+
+  cudaError_t error;  
+  int threadsperblock = 32;
+  dim3 block(threadsperblock);
+  int blockspergrid = (int)ceil((float)n / threadsperblock);
+  dim3 grid(blockspergrid);
+
+  int num_devices;
+  cudaGetDeviceCount(&num_devices);
+
+  float *d_array2;
+
+  long long array_bytes = n*sizeof(float);
+
+  if(num_devices > 1)
+  {
+    cudaSetDevice(0);
+
+    for (int i_dev = 0; i_dev < num_devices; i_dev++) 
+    {
+      if(i_dev == 0)
+      {
+        // allocate memory for aux array to sum arrays on device 0
+        error = cudaMalloc(&d_array2, array_bytes);
+        if (error != cudaSuccess)
+        {
+          printf("cudaMalloc returned error %s (code %d), line(%d)\n", 
+                 cudaGetErrorString(error), error, __LINE__);
+          exit(EXIT_FAILURE);
+        }
+      }
+
+      else
+      {
+        // copy array from device i_dev to device 0
+        cudaMemcpyPeer(d_array2, 0, d_array[i_dev], i_dev, array_bytes);
+
+        // call summation kernel to add d_array2 to d_array on device 0
+        add_to_first_kernel<<<grid,block>>>(d_array[0], d_array2, n);
+      }
+
+      cudaDeviceSynchronize();
+    }
+    
+    cudaFree(d_array2);
+  }
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////
+
+extern "C" void get_float_array_from_device(float **d_array, long long n, int i_dev, float *h_array)
+{
+  cudaSetDevice(i_dev);
+  cudaMemcpy(h_array, d_array[i_dev], n*sizeof(float), cudaMemcpyDeviceToHost);
   cudaDeviceSynchronize();
 }
