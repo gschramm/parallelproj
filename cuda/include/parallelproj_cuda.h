@@ -144,7 +144,8 @@ extern "C" void joseph3d_back_tof_sino_cuda(const float *h_xstart,
  *  @param h_xend   array of shape [3*nlors] with the coordinates of the end   points of the LORs.
  *                  The start coordinates of the n-th LOR are at xstart[n*3 + i] with i = 0,1,2. 
  *                  Units are the ones of voxsize.
- *  @param h_img    array of shape [n0*n1*n2] containing the 3D image to be projected.
+ *  @param d_img    Pointer to device arrays of shape [n0*n1*n2] containing the 3D image to 
+ *                  be projected.
  *                  The pixel [i,j,k] ist stored at [n1*n2*i + n2*j + k].
  *  @param h_img_origin  array [x0_0,x0_1,x0_2] of coordinates of the center of the [0,0,0] voxel
  *  @param h_voxsize     array [vs0, vs1, vs2] of the voxel sizes
@@ -156,14 +157,13 @@ extern "C" void joseph3d_back_tof_sino_cuda(const float *h_xstart,
  */
 extern "C" void joseph3d_fwd_cuda(const float *h_xstart, 
                                   const float *h_xend, 
-                                  const float *h_img,
+                                  float **d_img,
                                   const float *h_img_origin, 
                                   const float *h_voxsize, 
                                   float *h_p,
                                   long long nlors, 
                                   const int *h_img_dim,
-                                  int threadsperblock,
-                                  int num_devices);
+                                  int threadsperblock);
 
 /** @brief 3D listmode tof joseph forward projector CUDA wrapper
  *
