@@ -174,13 +174,12 @@ if os.access(lib_parallelproj_cuda_fname, os.R_OK):
   lib_parallelproj_cuda.joseph3d_back_cuda.restype  = None
   lib_parallelproj_cuda.joseph3d_back_cuda.argtypes = [ar_1d_single,
                                                        ar_1d_single,
-                                                       ar_1d_single,
+                                                       POINTER(POINTER(ctypes.c_float)),
                                                        ar_1d_single,
                                                        ar_1d_single,
                                                        ar_1d_single,
                                                        ctypes.c_longlong,
                                                        ar_1d_int,
-                                                       ctypes.c_int,
                                                        ctypes.c_int]
 
   lib_parallelproj_cuda.joseph3d_fwd_tof_sino_cuda.restype  = None

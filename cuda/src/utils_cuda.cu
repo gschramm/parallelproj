@@ -150,5 +150,4 @@ extern "C" void get_float_array_from_device(float **d_array, long long n, int i_
 {
   cudaSetDevice(i_dev);
   cudaMemcpy(h_array, d_array[i_dev], n*sizeof(float), cudaMemcpyDeviceToHost);
-  cudaDeviceSynchronize();
 }

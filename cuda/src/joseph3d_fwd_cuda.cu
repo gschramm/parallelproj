@@ -373,17 +373,6 @@ extern "C" void joseph3d_fwd_cuda(const float *h_xstart,
                                   const int *h_img_dim,
                                   int threadsperblock)
 {
-  cudaError_t error;  
-  int blockspergrid;
-
-  dim3 block(threadsperblock);
-
-  // offset for chunk of projections passed to a device 
-  long long dev_offset;
-  // number of projections to be calculated on a device
-  long long dev_nlors;
-
-  long long proj_bytes_dev;
 
   // get number of avilable CUDA devices specified as <=0 in input
   int num_devices;
@@ -398,8 +387,19 @@ extern "C" void joseph3d_fwd_cuda(const float *h_xstart,
   int   **d_img_dim        = new int * [num_devices];
 
   // we split the projections across all CUDA devices
+  # pragma omp parallel for schedule(static)
   for (int i_dev = 0; i_dev < num_devices; i_dev++) 
   {
+    cudaError_t error;  
+    int blockspergrid;
+    dim3 block(threadsperblock);
+
+    // offset for chunk of projections passed to a device 
+    long long dev_offset;
+    // number of projections to be calculated on a device
+    long long dev_nlors;
+    long long proj_bytes_dev;
+
     cudaSetDevice(i_dev);
     // () are important in integer division!
     dev_offset = i_dev*(nlors/num_devices);
