@@ -542,7 +542,7 @@ __global__ void joseph3d_fwd_tof_sino_cuda_kernel(float *xstart,
 
 extern "C" void joseph3d_fwd_tof_sino_cuda(const float *h_xstart, 
                                            const float *h_xend, 
-                                           const float *h_img,
+                                           float **d_img,
                                            const float *h_img_origin, 
                                            const float *h_voxsize, 
                                            float *h_p,
@@ -553,34 +553,15 @@ extern "C" void joseph3d_fwd_tof_sino_cuda(const float *h_xstart,
                                            const float *h_tofcenter_offset,
                                            float n_sigmas,
                                            short n_tofbins,
-                                           int threadsperblock,
-                                           int num_devices)
+                                           int threadsperblock)
 {
-  cudaError_t error;  
-  int blockspergrid;
-
-  dim3 block(threadsperblock);
-
-  // offset for chunk of projections passed to a device 
-  long long dev_offset;
-  // number of projections to be calculated on a device
-  long long dev_nlors;
-
-  int n0 = h_img_dim[0];
-  int n1 = h_img_dim[1];
-  int n2 = h_img_dim[2];
-
-  long long img_bytes = (n0*n1*n2)*sizeof(float);
-  long long proj_bytes_dev;
-
-  // get number of avilable CUDA devices specified as <=0 in input
-  if(num_devices <= 0){cudaGetDeviceCount(&num_devices);}  
+  int num_devices;
+  cudaGetDeviceCount(&num_devices);
 
   // init the dynamic arrays of device arrays
   float **d_p              = new float * [num_devices];
   float **d_xstart         = new float * [num_devices];
   float **d_xend           = new float * [num_devices];
-  float **d_img            = new float * [num_devices];
   float **d_img_origin     = new float * [num_devices];
   float **d_voxsize        = new float * [num_devices];
   int   **d_img_dim        = new int * [num_devices];
@@ -590,8 +571,20 @@ extern "C" void joseph3d_fwd_tof_sino_cuda(const float *h_xstart,
   float **d_tofcenter_offset = new float * [num_devices];
 
   // we split the projections across all CUDA devices
+  # pragma omp parallel for schedule(static)
   for (int i_dev = 0; i_dev < num_devices; i_dev++) 
   {
+    cudaError_t error;  
+    int blockspergrid;
+
+    dim3 block(threadsperblock);
+
+    // offset for chunk of projections passed to a device 
+    long long dev_offset;
+    // number of projections to be calculated on a device
+    long long dev_nlors;
+    long long proj_bytes_dev;
+
     cudaSetDevice(i_dev);
     // () are important in integer division!
     dev_offset = i_dev*(nlors/num_devices);
@@ -627,12 +620,6 @@ extern "C" void joseph3d_fwd_tof_sino_cuda(const float *h_xstart,
     cudaMemcpyAsync(d_xend[i_dev], h_xend + 3*dev_offset, 3*proj_bytes_dev, 
                     cudaMemcpyHostToDevice);
    
-    error = cudaMalloc(&d_img[i_dev], img_bytes);
-    if (error != cudaSuccess){
-        printf("cudaMalloc returned error %s (code %d), line(%d)\n", cudaGetErrorString(error), error, __LINE__);
-        exit(EXIT_FAILURE);}
-    cudaMemcpyAsync(d_img[i_dev], h_img, img_bytes, cudaMemcpyHostToDevice);
-
     error = cudaMalloc(&d_img_origin[i_dev], 3*sizeof(float));
     if (error != cudaSuccess){
         printf("cudaMalloc returned error %s (code %d), line(%d)\n", cudaGetErrorString(error), error, __LINE__);
@@ -680,7 +667,6 @@ extern "C" void joseph3d_fwd_tof_sino_cuda(const float *h_xstart,
     cudaFree(d_p[i_dev]);
     cudaFree(d_xstart[i_dev]);
     cudaFree(d_xend[i_dev]);
-    cudaFree(d_img[i_dev]);
     cudaFree(d_img_origin[i_dev]);
     cudaFree(d_img_dim[i_dev]);
     cudaFree(d_voxsize[i_dev]);
@@ -691,5 +677,5 @@ extern "C" void joseph3d_fwd_tof_sino_cuda(const float *h_xstart,
   }
 
   // make sure that all devices are done before leaving
-  for (int i_dev = 0; i_dev < num_devices; i_dev++){cudaDeviceSynchronize();}
+  cudaDeviceSynchronize();
 }
