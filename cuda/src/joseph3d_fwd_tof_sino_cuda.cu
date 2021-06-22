@@ -660,8 +660,14 @@ extern "C" void joseph3d_fwd_tof_sino_cuda(const float *h_xstart,
                                                       n_tofbins, tofbin_width, d_sigma_tof[i_dev],
                                                       d_tofcenter_offset[i_dev], n_sigmas);
 
+    // use pinned memory for projetion host array which speeds up memory transfer
+    cudaHostRegister(h_p + n_tofbins*dev_offset, n_tofbins*proj_bytes_dev, cudaHostRegisterDefault); 
+
     // copy projection back from device to host
     cudaMemcpyAsync(h_p + n_tofbins*dev_offset, d_p[i_dev], n_tofbins*proj_bytes_dev, cudaMemcpyDeviceToHost);
+
+    // unpin memory
+    cudaHostUnregister(h_p + n_tofbins*dev_offset); 
 
     // deallocate memory on device
     cudaFree(d_p[i_dev]);

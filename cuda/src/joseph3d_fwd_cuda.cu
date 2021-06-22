@@ -460,8 +460,14 @@ extern "C" void joseph3d_fwd_cuda(const float *h_xstart,
                                              d_img_origin[i_dev], d_voxsize[i_dev], 
                                              d_p[i_dev], dev_nlors, d_img_dim[i_dev]); 
 
+    // use pinned memory for projetion host array which speeds up memory transfer
+    cudaHostRegister(h_p + dev_offset, proj_bytes_dev, cudaHostRegisterDefault); 
+
     // copy projection back from device to host
     cudaMemcpyAsync(h_p + dev_offset, d_p[i_dev], proj_bytes_dev, cudaMemcpyDeviceToHost);
+
+    // unpin memory
+    cudaHostUnregister(h_p + dev_offset); 
 
     // deallocate memory on device
     cudaFree(d_p[i_dev]);
