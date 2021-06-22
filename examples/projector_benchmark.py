@@ -1,9 +1,9 @@
 # small demo for listmode TOF MLEM without subsets
 
-import os
-import matplotlib.pyplot as py
 import pyparallelproj as ppp
-from pyparallelproj.wrapper import joseph3d_fwd, joseph3d_fwd_tof, joseph3d_back, joseph3d_back_tof
+from pyparallelproj.wrapper import joseph3d_fwd, joseph3d_back
+from pyparallelproj.wrapper import joseph3d_fwd_tof_sino, joseph3d_back_tof_sino
+from pyparallelproj.wrapper import joseph3d_fwd_tof_lm, joseph3d_back_tof_lm
 from pyparallelproj.phantoms import ellipse2d_phantom
 import numpy as np
 import argparse
@@ -82,7 +82,7 @@ img_origin = (-(np.array(img.shape) / 2) +  0.5) * voxsize
 sino_params = ppp.PETSinogramParameters(scanner, ntofbins = ntofbins, tofbin_width = 23.,
                                         spatial_dim_order = spatial_dim_order)
 proj        = ppp.SinogramProjector(scanner, sino_params, img.shape, nsubsets = nsubsets, 
-                                    voxsize = voxsize, img_origin = img_origin,,
+                                    voxsize = voxsize, img_origin = img_origin,
                                     tof = tof, sigma_tof = 60./2.35, n_sigmas = 3.,
                                     threadsperblock = tpb)
 
@@ -118,15 +118,15 @@ for i in range(n+1):
 
   t0 = time()
   if tof:
-    ok = joseph3d_fwd_tof(xstart, xend, img_ravel, proj.img_origin, proj.voxsize, 
-                          img_fwd, subset_nLORs, proj.img_dim,
-                          proj.tofbin_width, sigma_tof, tofcenter_offset, 
-                          proj.nsigmas, proj.ntofbins, 
-                          threadsperblock = proj.threadsperblock, lm = False) 
+    ok = joseph3d_fwd_tof_sino(xstart, xend, img_ravel, proj.img_origin, proj.voxsize, 
+                               img_fwd, subset_nLORs, proj.img_dim,
+                               proj.tofbin_width, sigma_tof, tofcenter_offset, 
+                               proj.nsigmas, proj.ntofbins, 
+                               threadsperblock = proj.threadsperblock) 
   else:
     ok = joseph3d_fwd(xstart, xend, img_ravel, proj.img_origin, proj.voxsize, 
                       img_fwd, subset_nLORs, proj.img_dim,
-                      threadsperblock = proj.threadsperblock, ngpus = proj.ngpus, lm = False) 
+                      threadsperblock = proj.threadsperblock) 
   t1 = time()
   if i > 0:
     t_sino_fwd[i-1]  = t1 - t0
@@ -135,11 +135,11 @@ for i in range(n+1):
   back_img = np.zeros(proj.nvox, dtype = ctypes.c_float)  
   t2 = time()
   if tof:
-    ok = joseph3d_back_tof(xstart, xend, back_img, proj.img_origin, proj.voxsize, 
-                           sino, subset_nLORs, proj.img_dim,
-                           proj.tofbin_width, sigma_tof, tofcenter_offset, 
-                           proj.nsigmas, proj.ntofbins, 
-                           threadsperblock = proj.threadsperblock, lm = False) 
+    ok = joseph3d_back_tof_sino(xstart, xend, back_img, proj.img_origin, proj.voxsize, 
+                                sino, subset_nLORs, proj.img_dim,
+                                proj.tofbin_width, sigma_tof, tofcenter_offset, 
+                                proj.nsigmas, proj.ntofbins, 
+                                threadsperblock = proj.threadsperblock) 
   else:
     ok = joseph3d_back(xstart, xend, back_img, proj.img_origin, proj.voxsize, 
                        sino, subset_nLORs, proj.img_dim,
@@ -197,12 +197,11 @@ if counts > 0:
     if i > 0: print(f'run {i} / {n}')
     t0 = time()
     if tof:
-      ok = joseph3d_fwd_tof(xstart, xend, 
-                            img_ravel, lmproj.img_origin, lmproj.voxsize, 
-                            img_fwd, nevents, lmproj.img_dim,
-                            lmproj.tofbin_width, sigma_tof, tofcenter_offset, lmproj.nsigmas,
-                            tofbin, threadsperblock = lmproj.threadsperblock, 
-                            lm = True) 
+      ok = joseph3d_fwd_tof_lm(xstart, xend, 
+                               img_ravel, lmproj.img_origin, lmproj.voxsize, 
+                               img_fwd, nevents, lmproj.img_dim,
+                               lmproj.tofbin_width, sigma_tof, tofcenter_offset, lmproj.nsigmas,
+                               tofbin, threadsperblock = lmproj.threadsperblock)
     else:
       ok = joseph3d_fwd(xstart, xend, 
                         img_ravel, lmproj.img_origin, lmproj.voxsize, 
@@ -216,11 +215,11 @@ if counts > 0:
     back_img = np.zeros(lmproj.nvox, dtype = ctypes.c_float)  
     t2 = time()
     if tof:
-      ok = joseph3d_back_tof(xstart, xend, 
-                             back_img, lmproj.img_origin, lmproj.voxsize, 
-                             values, nevents, lmproj.img_dim,
-                             lmproj.tofbin_width, sigma_tof, tofcenter_offset, lmproj.nsigmas, 
-                             tofbin, threadsperblock = lmproj.threadsperblock, lm = True)
+      ok = joseph3d_back_tof_lm(xstart, xend, 
+                                back_img, lmproj.img_origin, lmproj.voxsize, 
+                                values, nevents, lmproj.img_dim,
+                                lmproj.tofbin_width, sigma_tof, tofcenter_offset, lmproj.nsigmas, 
+                                tofbin, threadsperblock = lmproj.threadsperblock)
     else:
       ok = joseph3d_back(xstart, xend, 
                          back_img, lmproj.img_origin, lmproj.voxsize, 
