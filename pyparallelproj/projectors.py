@@ -3,7 +3,8 @@ import numpy.ctypeslib as npct
 import ctypes
 import os
 
-from .wrapper import joseph3d_fwd, joseph3d_fwd_tof, joseph3d_back, joseph3d_back_tof
+from .wrapper import joseph3d_fwd, joseph3d_fwd_tof_lm, joseph3d_fwd_tof_sino 
+from .wrapper import joseph3d_back, joseph3d_back_tof_lm, joseph3d_back_tof_sino
 
 class LMProjector:
   """ TOF and non TOF 3D listmode Joseph forward and back projector
@@ -43,17 +44,11 @@ class LMProjector:
    threadsperblock: int
      threads per block to use on a CUDA GPU
      Default: 64
-
-   ngpus: int 
-     number of GPUs to use
-     0 means use CPU and openmp. 1 means 1 GPU, 2 means 2 interconnected GPUS ...
-     -1 means use CUDA to detect all available GPUs.
-     Default: 0
   """
   def __init__(self, scanner, img_dim, tof = False,
                      img_origin = None, voxsize = np.ones(3, dtype = np.float32),
                      tofbin_width = None, sigma_tof = 60./2.35,
-                     n_sigmas = 3., threadsperblock = 64, ngpus = 0):
+                     n_sigmas = 3., threadsperblock = 64):
 
     self.scanner = scanner
     
@@ -78,7 +73,6 @@ class LMProjector:
 
     # gpu parameters (not relevant when not run on gpu)
     self.threadsperblock = threadsperblock
-    self.ngpus           = ngpus
 
     self.voxsize    = self.voxsize.astype(ctypes.c_float)
     self.img_origin = self.img_origin.astype(ctypes.c_float)
@@ -102,7 +96,7 @@ class LMProjector:
       ok = joseph3d_fwd(xstart.ravel(), xend.ravel(), 
                         img.ravel(), self.img_origin, self.voxsize, 
                         img_fwd, nevents, self.img_dim,
-                        threadsperblock = self.threadsperblock, ngpus = self.ngpus) 
+                        threadsperblock = self.threadsperblock) 
     else:
       ####### TOF fwd projection 
       if sigma_tof_per_lor is None:
@@ -115,12 +109,11 @@ class LMProjector:
 
       tofbin = events[:,4].astype(ctypes.c_short)
 
-      ok = joseph3d_fwd_tof(xstart.ravel(), xend.ravel(), 
-                            img.ravel(), self.img_origin, self.voxsize, 
-                            img_fwd, nevents, self.img_dim,
-                            self.tofbin_width, sigma_tof.ravel(), tofcenter_offset, self.nsigmas,
-                            tofbin, threadsperblock = self.threadsperblock, 
-                            ngpus = self.ngpus, lm = True) 
+      ok = joseph3d_fwd_tof_lm(xstart.ravel(), xend.ravel(), 
+                               img.ravel(), self.img_origin, self.voxsize, 
+                               img_fwd, nevents, self.img_dim,
+                               self.tofbin_width, sigma_tof.ravel(), tofcenter_offset, self.nsigmas,
+                               tofbin, threadsperblock = self.threadsperblock) 
 
     return img_fwd  
 
@@ -142,7 +135,7 @@ class LMProjector:
       ok = joseph3d_back(xstart.ravel(), xend.ravel(), 
                          back_img, self.img_origin, self.voxsize, 
                          values.ravel(), nevents, self.img_dim,
-                         threadsperblock = self.threadsperblock, ngpus = self.ngpus) 
+                         threadsperblock = self.threadsperblock) 
     else:
       ####### TOF back projection 
       if sigma_tof_per_lor is None:
@@ -155,12 +148,11 @@ class LMProjector:
 
       tofbin = events[:,4].astype(ctypes.c_short)
 
-      ok = joseph3d_back_tof(xstart.ravel(), xend.ravel(), 
-                             back_img, self.img_origin, self.voxsize, 
-                             values.ravel(), nevents, self.img_dim,
-                             self.tofbin_width, sigma_tof.ravel(), tofcenter_offset, self.nsigmas, 
-                             tofbin, threadsperblock = self.threadsperblock, 
-                             ngpus = self.ngpus, lm = True) 
+      ok = joseph3d_back_tof_lm(xstart.ravel(), xend.ravel(), 
+                                back_img, self.img_origin, self.voxsize, 
+                                values.ravel(), nevents, self.img_dim,
+                                self.tofbin_width, sigma_tof.ravel(), tofcenter_offset, self.nsigmas, 
+                                tofbin, threadsperblock = self.threadsperblock) 
 
 
     return back_img.reshape(self.img_dim)
@@ -219,24 +211,18 @@ class SinogramProjector(LMProjector):
    threadsperblock: int
      threads per block to use on a CUDA GPU
      Default: 64
-
-   ngpus: int 
-     number of GPUs to use
-     0 means use CPU and openmp. 1 means 1 GPU, 2 means 2 interconnected GPUS ...
-     -1 means use CUDA to detect all available GPUs.
-     Default: 0
   """
 
   def __init__(self, scanner, sino_params, img_dim, nsubsets = 1, tof = False,
                      img_origin = None, voxsize = np.ones(3), random_subset_angles = False,
                      subset_dir = None, sigma_tof = 60./2.35, n_sigmas = 3,
-                     threadsperblock = 64, ngpus = 0):
+                     threadsperblock = 64):
     
     LMProjector.__init__(self, scanner, img_dim, tof = tof,
                          img_origin = img_origin, voxsize = voxsize,
                          tofbin_width = sino_params.tofbin_width,
                          sigma_tof = sigma_tof, 
-                         n_sigmas = n_sigmas, threadsperblock = threadsperblock, ngpus = ngpus)
+                         n_sigmas = n_sigmas, threadsperblock = threadsperblock)
 
     self.sino_params = sino_params
     self.ntofbins    = self.sino_params.ntofbins
@@ -311,7 +297,7 @@ class SinogramProjector(LMProjector):
                         self.xend[subset_slice].ravel(), 
                         img.ravel(), self.img_origin, self.voxsize, 
                         img_fwd, self.nLORs[subset], self.img_dim,
-                        threadsperblock = self.threadsperblock, ngpus = self.ngpus) 
+                        threadsperblock = self.threadsperblock) 
     else:
       ####### TOF fwd projection 
       if sigma_tof_per_lor is None:
@@ -322,13 +308,13 @@ class SinogramProjector(LMProjector):
       if not isinstance(tofcenter_offset, np.ndarray):
         tofcenter_offset = np.zeros(self.nLORs[subset], dtype = ctypes.c_float)
 
-      ok = joseph3d_fwd_tof(self.xstart[subset_slice].ravel(), 
-                            self.xend[subset_slice].ravel(), 
-                            img.ravel(), self.img_origin, self.voxsize, 
-                            img_fwd, self.nLORs[subset], self.img_dim,
-                            self.tofbin_width, sigma_tof.ravel(), tofcenter_offset.ravel(), 
-                            self.nsigmas, self.ntofbins, 
-                            threadsperblock = self.threadsperblock, ngpus = self.ngpus, lm = False) 
+      ok = joseph3d_fwd_tof_sino(self.xstart[subset_slice].ravel(), 
+                                 self.xend[subset_slice].ravel(), 
+                                 img.ravel(), self.img_origin, self.voxsize, 
+                                 img_fwd, self.nLORs[subset], self.img_dim,
+                                 self.tofbin_width, sigma_tof.ravel(), tofcenter_offset.ravel(), 
+                                 self.nsigmas, self.ntofbins, 
+                                 threadsperblock = self.threadsperblock) 
 
     return img_fwd.reshape(self.subset_sino_shapes[subset])
 
@@ -348,7 +334,7 @@ class SinogramProjector(LMProjector):
                          self.xend[subset_slice].ravel(), 
                          back_img, self.img_origin, self.voxsize, 
                          sino.ravel(), self.nLORs[subset], self.img_dim,
-                         threadsperblock = self.threadsperblock, ngpus = self.ngpus) 
+                         threadsperblock = self.threadsperblock) 
 
     else:
       ####### TOF back projection 
@@ -360,12 +346,12 @@ class SinogramProjector(LMProjector):
       if not isinstance(tofcenter_offset, np.ndarray):
         tofcenter_offset = np.zeros(self.nLORs[subset], dtype = ctypes.c_float)
 
-      ok = joseph3d_back_tof(self.xstart[subset_slice].ravel(), 
-                             self.xend[subset_slice].ravel(), 
-                             back_img, self.img_origin, self.voxsize, 
-                             sino.ravel(), self.nLORs[subset], self.img_dim,
-                             self.tofbin_width, sigma_tof.ravel(), tofcenter_offset.ravel(), 
-                             self.nsigmas, self.ntofbins, 
-                             threadsperblock = self.threadsperblock, ngpus = self.ngpus, lm = False) 
+      ok = joseph3d_back_tof_sino(self.xstart[subset_slice].ravel(), 
+                                  self.xend[subset_slice].ravel(), 
+                                  back_img, self.img_origin, self.voxsize, 
+                                  sino.ravel(), self.nLORs[subset], self.img_dim,
+                                  self.tofbin_width, sigma_tof.ravel(), tofcenter_offset.ravel(), 
+                                  self.nsigmas, self.ntofbins, 
+                                  threadsperblock = self.threadsperblock) 
 
     return back_img.reshape(self.img_dim)
