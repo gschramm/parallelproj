@@ -237,7 +237,6 @@ if os.access(lib_parallelproj_cuda_fname, os.R_OK):
                                                               ar_1d_single,
                                                               ar_1d_single,
                                                               ar_1d_single,
-                                                              ar_1d_single,
                                                               ctypes.c_longlong,
                                                               ar_1d_int,         #
                                                               ctypes.c_float,    # tofbin_width 

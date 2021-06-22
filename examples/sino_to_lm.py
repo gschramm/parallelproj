@@ -7,7 +7,6 @@ import numpy as np
 
 #---------------------------------------------------------------------------------
 
-ngpus       = 0
 nsubsets    = 1
 subset      = 0 
 counts      = 1e5
@@ -35,7 +34,7 @@ img_origin = (-(np.array(img.shape) / 2) +  0.5) * voxsize
 # generate sinogram parameters and the projector
 sino_params = ppp.PETSinogramParameters(scanner, ntofbins = 27, tofbin_width = 28.)
 proj        = ppp.SinogramProjector(scanner, sino_params, img.shape, nsubsets = nsubsets, 
-                                    voxsize = voxsize, img_origin = img_origin, ngpus = ngpus,
+                                    voxsize = voxsize, img_origin = img_origin,
                                     tof = True, sigma_tof = 60./2.35, n_sigmas = n_sigmas)
 
 img_fwd  = proj.fwd_project(img, subset = subset)
@@ -57,7 +56,7 @@ back_img = proj.back_project(noisy_sino, subset = subset)
 events = sino_params.sinogram_to_listmode(noisy_sino)
 
 ### create LM projector
-lmproj = ppp.LMProjector(scanner, img.shape, voxsize = voxsize, img_origin = img_origin, ngpus = ngpus,
+lmproj = ppp.LMProjector(scanner, img.shape, voxsize = voxsize, img_origin = img_origin,
                          tof = True, sigma_tof = proj.sigma_tof, tofbin_width = proj.tofbin_width,
                          n_sigmas = n_sigmas)
 

@@ -15,7 +15,6 @@ from time import time
 # parse the command line
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--ngpus',    help = 'number of GPUs to use', default = 0,   type = int)
 parser.add_argument('--counts',   help = 'counts to simulate',    default = 4e6, type = float)
 parser.add_argument('--nsubsets', help = 'number of subsets',     default = 28,  type = int)
 parser.add_argument('--n',        help = 'number of averages',    default = 5,   type = int)
@@ -35,7 +34,6 @@ args = parser.parse_args()
 print(' '.join([x[0] + ':' + str(x[1]) for x in args.__dict__.items()]))
 print('')
 
-ngpus         = args.ngpus
 counts        = args.counts
 nsubsets      = args.nsubsets
 n             = args.n
@@ -84,7 +82,7 @@ img_origin = (-(np.array(img.shape) / 2) +  0.5) * voxsize
 sino_params = ppp.PETSinogramParameters(scanner, ntofbins = ntofbins, tofbin_width = 23.,
                                         spatial_dim_order = spatial_dim_order)
 proj        = ppp.SinogramProjector(scanner, sino_params, img.shape, nsubsets = nsubsets, 
-                                    voxsize = voxsize, img_origin = img_origin, ngpus = ngpus,
+                                    voxsize = voxsize, img_origin = img_origin,,
                                     tof = tof, sigma_tof = 60./2.35, n_sigmas = 3.,
                                     threadsperblock = tpb)
 
@@ -124,7 +122,7 @@ for i in range(n+1):
                           img_fwd, subset_nLORs, proj.img_dim,
                           proj.tofbin_width, sigma_tof, tofcenter_offset, 
                           proj.nsigmas, proj.ntofbins, 
-                          threadsperblock = proj.threadsperblock, ngpus = proj.ngpus, lm = False) 
+                          threadsperblock = proj.threadsperblock, lm = False) 
   else:
     ok = joseph3d_fwd(xstart, xend, img_ravel, proj.img_origin, proj.voxsize, 
                       img_fwd, subset_nLORs, proj.img_dim,
@@ -141,11 +139,11 @@ for i in range(n+1):
                            sino, subset_nLORs, proj.img_dim,
                            proj.tofbin_width, sigma_tof, tofcenter_offset, 
                            proj.nsigmas, proj.ntofbins, 
-                           threadsperblock = proj.threadsperblock, ngpus = proj.ngpus, lm = False) 
+                           threadsperblock = proj.threadsperblock, lm = False) 
   else:
     ok = joseph3d_back(xstart, xend, back_img, proj.img_origin, proj.voxsize, 
                        sino, subset_nLORs, proj.img_dim,
-                       threadsperblock = proj.threadsperblock, ngpus = proj.ngpus) 
+                       threadsperblock = proj.threadsperblock) 
   t3 = time()
   if i > 0:
     t_sino_back[i-1]  = t3 - t2
@@ -173,7 +171,7 @@ if counts > 0:
   
   # create a listmode projector for the LM MLEM iterations
   lmproj = ppp.LMProjector(proj.scanner, proj.img_dim, voxsize = proj.voxsize, 
-                           img_origin = proj.img_origin, ngpus = proj.ngpus,
+                           img_origin = proj.img_origin,
                            tof = proj.tof, sigma_tof = proj.sigma_tof, 
                            tofbin_width = proj.tofbin_width,
                            n_sigmas = proj.nsigmas,
@@ -204,13 +202,12 @@ if counts > 0:
                             img_fwd, nevents, lmproj.img_dim,
                             lmproj.tofbin_width, sigma_tof, tofcenter_offset, lmproj.nsigmas,
                             tofbin, threadsperblock = lmproj.threadsperblock, 
-                            ngpus = lmproj.ngpus, lm = True) 
+                            lm = True) 
     else:
       ok = joseph3d_fwd(xstart, xend, 
                         img_ravel, lmproj.img_origin, lmproj.voxsize, 
                         img_fwd, nevents, lmproj.img_dim,
-                        threadsperblock = lmproj.threadsperblock, 
-                        ngpus = lmproj.ngpus) 
+                        threadsperblock = lmproj.threadsperblock)
     t1 = time()
     if i > 0:
       t_lm_fwd[i-1] = t1 - t0
@@ -223,14 +220,12 @@ if counts > 0:
                              back_img, lmproj.img_origin, lmproj.voxsize, 
                              values, nevents, lmproj.img_dim,
                              lmproj.tofbin_width, sigma_tof, tofcenter_offset, lmproj.nsigmas, 
-                             tofbin, threadsperblock = lmproj.threadsperblock, 
-                             ngpus = lmproj.ngpus, lm = True) 
+                             tofbin, threadsperblock = lmproj.threadsperblock, lm = True)
     else:
       ok = joseph3d_back(xstart, xend, 
                          back_img, lmproj.img_origin, lmproj.voxsize, 
                          values, nevents, lmproj.img_dim,
-                         threadsperblock = lmproj.threadsperblock, 
-                         ngpus = lmproj.ngpus) 
+                         threadsperblock = lmproj.threadsperblock)
     t3 = time()
     if i > 0:
       t_lm_back[i-1] = t3 - t2

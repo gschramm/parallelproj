@@ -14,7 +14,6 @@ FLTMAX = sys.float_info.max
 # parse the command line
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--ngpus',    help = 'number of GPUs to use', default = 0,   type = int)
 parser.add_argument('--counts',   help = 'counts to simulate',    default = 1e5, type = float)
 parser.add_argument('--niter',    help = 'number of iterations',  default = 5,   type = int)
 parser.add_argument('--nsubsets', help = 'number of subsets',     default = 28,  type = int)
@@ -24,7 +23,6 @@ args = parser.parse_args()
 
 #---------------------------------------------------------------------------------
 
-ngpus     = args.ngpus
 counts    = args.counts
 niter     = args.niter
 nsubsets  = args.nsubsets
@@ -55,7 +53,7 @@ img_origin = (-(np.array(img.shape) / 2) +  0.5) * voxsize
 # generate sinogram parameters and the projector
 sino_params = ppp.PETSinogramParameters(scanner, ntofbins = 17, tofbin_width = 15.)
 proj        = ppp.SinogramProjector(scanner, sino_params, img.shape, nsubsets = 1, 
-                                    voxsize = voxsize, img_origin = img_origin, ngpus = ngpus,
+                                    voxsize = voxsize, img_origin = img_origin,
                                     tof = True, sigma_tof = 60./2.35, n_sigmas = 3.)
 
 img_fwd  = proj.fwd_project(img, subset = 0)
@@ -118,7 +116,7 @@ sens_img = proj.back_project(sens_sino.repeat(proj.ntofbins).reshape(sens_sino.s
 
 # create a listmode projector for the LM MLEM iterations
 lmproj = ppp.LMProjector(proj.scanner, proj.img_dim, voxsize = proj.voxsize, 
-                         img_origin = proj.img_origin, ngpus = proj.ngpus,
+                         img_origin = proj.img_origin,
                          tof = proj.tof, sigma_tof = proj.sigma_tof, tofbin_width = proj.tofbin_width,
                          n_sigmas = proj.nsigmas)
 

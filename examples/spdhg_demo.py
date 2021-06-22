@@ -17,7 +17,6 @@ import argparse
 # parse the command line
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--ngpus',    help = 'number of GPUs to use', default = 0,   type = int)
 parser.add_argument('--counts',   help = 'counts to simulate',    default = 1e5, type = float)
 parser.add_argument('--niter',    help = 'number of iterations',  default = 50,  type = int)
 parser.add_argument('--niter_ref', help = 'number of ref iterations', default = 5000,  type = int)
@@ -33,7 +32,6 @@ args = parser.parse_args()
 
 #---------------------------------------------------------------------------------
 
-ngpus         = args.ngpus
 counts        = args.counts
 niter         = args.niter
 niter_ref     = args.niter_ref
@@ -91,7 +89,7 @@ att_img = (img > 0) * 0.01 * voxsize[0]
 # generate nonTOF sinogram parameters and the nonTOF projector for attenuation projection
 sino_params_nt = ppp.PETSinogramParameters(scanner)
 proj_nt        = ppp.SinogramProjector(scanner, sino_params_nt, img.shape, nsubsets = 1, 
-                                    voxsize = voxsize, img_origin = img_origin, ngpus = ngpus)
+                                    voxsize = voxsize, img_origin = img_origin)
 
 attn_sino = np.exp(-proj_nt.fwd_project(att_img))
 
@@ -101,7 +99,7 @@ sens_sino = np.ones(sino_params_nt.shape, dtype = np.float32)
 # generate TOF sinogram parameters and the TOF projector
 sino_params = ppp.PETSinogramParameters(scanner, ntofbins = 17, tofbin_width = 15.)
 proj        = ppp.SinogramProjector(scanner, sino_params, img.shape, nsubsets = 1, 
-                                    voxsize = voxsize, img_origin = img_origin, ngpus = ngpus,
+                                    voxsize = voxsize, img_origin = img_origin,
                                     tof = True, sigma_tof = 60./2.35, n_sigmas = 3.)
 
 # estimate the norm of the operator

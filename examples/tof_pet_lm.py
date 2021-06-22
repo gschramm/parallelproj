@@ -13,7 +13,6 @@ import argparse
 # parse the command line
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--ngpus',    help = 'number of GPUs to use', default = 0,   type = int)
 parser.add_argument('--counts',   help = 'counts to simulate',    default = 1e6, type = float)
 parser.add_argument('--niter',    help = 'number of iterations',  default = 4,   type = int)
 parser.add_argument('--nsubsets', help = 'number of subsets',     default = 28,  type = int)
@@ -25,7 +24,6 @@ args = parser.parse_args()
 
 #---------------------------------------------------------------------------------
 
-ngpus         = args.ngpus
 counts        = args.counts
 niter         = args.niter
 nsubsets      = args.nsubsets
@@ -74,7 +72,7 @@ att_img = (img > 0) * 0.01 * voxsize[0]
 # generate nonTOF sinogram parameters and the nonTOF projector for attenuation projection
 sino_params_nt = ppp.PETSinogramParameters(scanner)
 proj_nt        = ppp.SinogramProjector(scanner, sino_params_nt, img.shape, nsubsets = 1, 
-                                    voxsize = voxsize, img_origin = img_origin, ngpus = ngpus)
+                                    voxsize = voxsize, img_origin = img_origin)
 sino_shape_nt  = sino_params_nt.shape
 
 attn_sino = np.zeros(sino_shape_nt, dtype = np.float32)
@@ -86,7 +84,7 @@ sens_sino = np.ones(sino_shape_nt, dtype = np.float32)
 # generate TOF sinogram parameters and the TOF projector
 sino_params = ppp.PETSinogramParameters(scanner, ntofbins = 17, tofbin_width = 15.)
 proj        = ppp.SinogramProjector(scanner, sino_params, img.shape, nsubsets = 1, 
-                                    voxsize = voxsize, img_origin = img_origin, ngpus = ngpus,
+                                    voxsize = voxsize, img_origin = img_origin,
                                     tof = True, sigma_tof = 60./2.35, n_sigmas = 3.)
 
 # allocate array for the subset sinogram
@@ -136,7 +134,7 @@ attn_list   = attn_sino[multi_index[:,0],multi_index[:,1],multi_index[:,2],0]
 
 # create a listmode projector for the LM MLEM iterations
 lmproj = ppp.LMProjector(proj.scanner, proj.img_dim, voxsize = proj.voxsize, 
-                         img_origin = proj.img_origin, ngpus = proj.ngpus,
+                         img_origin = proj.img_origin,
                          tof = proj.tof, sigma_tof = proj.sigma_tof, tofbin_width = proj.tofbin_width,
                          n_sigmas = proj.nsigmas)
 
