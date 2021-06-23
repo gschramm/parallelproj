@@ -19,6 +19,7 @@ parser.add_argument('--counts',   help = 'counts to simulate',    default = 4e6,
 parser.add_argument('--nsubsets', help = 'number of subsets',     default = 28,  type = int)
 parser.add_argument('--n',        help = 'number of averages',    default = 5,   type = int)
 parser.add_argument('--tpb',      help = 'threads per block',     default = 64,  type = int)
+parser.add_argument('--chunks',   help = 'number of GPU chunks',  default = 1,   type = int)
 parser.add_argument('--nontof',   help = 'non-TOF instead of TOF', action = 'store_true')
 parser.add_argument('--img_mem_order', help = 'memory layout for image', default = 'C',
                                        choices = ['C','F'])
@@ -38,6 +39,7 @@ counts        = args.counts
 nsubsets      = args.nsubsets
 n             = args.n
 tpb           = args.tpb
+chunks        = args.chunks
 tof           = not args.nontof
 img_mem_order = args.img_mem_order
 subset        = 0
@@ -122,11 +124,11 @@ for i in range(n+1):
                                img_fwd, subset_nLORs, proj.img_dim,
                                proj.tofbin_width, sigma_tof, tofcenter_offset, 
                                proj.nsigmas, proj.ntofbins, 
-                               threadsperblock = proj.threadsperblock) 
+                               threadsperblock = proj.threadsperblock, n_chunks = chunks) 
   else:
     ok = joseph3d_fwd(xstart, xend, img_ravel, proj.img_origin, proj.voxsize, 
                       img_fwd, subset_nLORs, proj.img_dim,
-                      threadsperblock = proj.threadsperblock) 
+                      threadsperblock = proj.threadsperblock, n_chunks = chunks) 
   t1 = time()
   if i > 0:
     t_sino_fwd[i-1]  = t1 - t0
@@ -139,11 +141,11 @@ for i in range(n+1):
                                 sino, subset_nLORs, proj.img_dim,
                                 proj.tofbin_width, sigma_tof, tofcenter_offset, 
                                 proj.nsigmas, proj.ntofbins, 
-                                threadsperblock = proj.threadsperblock) 
+                                threadsperblock = proj.threadsperblock, n_chunks = chunks) 
   else:
     ok = joseph3d_back(xstart, xend, back_img, proj.img_origin, proj.voxsize, 
                        sino, subset_nLORs, proj.img_dim,
-                       threadsperblock = proj.threadsperblock) 
+                       threadsperblock = proj.threadsperblock, n_chunks = chunks) 
   t3 = time()
   if i > 0:
     t_sino_back[i-1]  = t3 - t2
@@ -201,12 +203,12 @@ if counts > 0:
                                img_ravel, lmproj.img_origin, lmproj.voxsize, 
                                img_fwd, nevents, lmproj.img_dim,
                                lmproj.tofbin_width, sigma_tof, tofcenter_offset, lmproj.nsigmas,
-                               tofbin, threadsperblock = lmproj.threadsperblock)
+                               tofbin, threadsperblock = lmproj.threadsperblock, n_chunks = chunks)
     else:
       ok = joseph3d_fwd(xstart, xend, 
                         img_ravel, lmproj.img_origin, lmproj.voxsize, 
                         img_fwd, nevents, lmproj.img_dim,
-                        threadsperblock = lmproj.threadsperblock)
+                        threadsperblock = lmproj.threadsperblock, n_chunks = chunks)
     t1 = time()
     if i > 0:
       t_lm_fwd[i-1] = t1 - t0
@@ -219,12 +221,12 @@ if counts > 0:
                                 back_img, lmproj.img_origin, lmproj.voxsize, 
                                 values, nevents, lmproj.img_dim,
                                 lmproj.tofbin_width, sigma_tof, tofcenter_offset, lmproj.nsigmas, 
-                                tofbin, threadsperblock = lmproj.threadsperblock)
+                                tofbin, threadsperblock = lmproj.threadsperblock, n_chunks = chunks)
     else:
       ok = joseph3d_back(xstart, xend, 
                          back_img, lmproj.img_origin, lmproj.voxsize, 
                          values, nevents, lmproj.img_dim,
-                         threadsperblock = lmproj.threadsperblock)
+                         threadsperblock = lmproj.threadsperblock, n_chunks = chunks)
     t3 = time()
     if i > 0:
       t_lm_back[i-1] = t3 - t2
