@@ -7,11 +7,6 @@
 
 /** @brief 3D non-tof joseph back projector CUDA wrapper
  *
- *  The array to be back projected is split accross all CUDA devices.
- *  Each device backprojects in its own image. At the end all images are
- *  transfered to device 0 and summed there. It is therefore assumed that all devices used
- *  are interconnected.
- *
  *  @param h_xstart array of shape [3*nlors] with the coordinates of the start points of the LORs.
  *                  The start coordinates of the n-th LOR are at xstart[n*3 + i] with i = 0,1,2. 
  *                  Units are the ones of voxsize.
@@ -42,11 +37,6 @@ extern "C" void joseph3d_back_cuda(const float *h_xstart,
 
 
 /** @brief 3D listmode tof joseph back projector CUDA wrapper
- *
- *  The array to be back projected is split accross all CUDA devices.
- *  Each device backprojects in its own image. At the end all images are
- *  transfered to device 0 and summed there. It is therefore assumed that all devices used
- *  are interconnected.
  *
  *  @param h_xstart array of shape [3*nlors] with the coordinates of the start points of the LORs.
  *                  The start coordinates of the n-th LOR are at xstart[n*3 + i] with i = 0,1,2. 
@@ -92,11 +82,6 @@ extern "C" void joseph3d_back_tof_lm_cuda(const float *h_xstart,
 
 /** @brief 3D sinogram tof joseph back projector CUDA wrapper
  *
- *  The array to be back projected is split accross all CUDA devices.
- *  Each device backprojects in its own image. At the end all images are
- *  transfered to device 0 and summed there. It is therefore assumed that all devices used
- *  are interconnected.
- *
  *  @param h_xstart array of shape [3*nlors] with the coordinates of the start points of the LORs.
  *                  The start coordinates of the n-th LOR are at xstart[n*3 + i] with i = 0,1,2. 
  *                  Units are the ones of voxsize.
@@ -109,8 +94,8 @@ extern "C" void joseph3d_back_tof_lm_cuda(const float *h_xstart,
  *                  The backprojector adds existing values.
  *  @param h_img_origin  array [x0_0,x0_1,x0_2] of coordinates of the center of the [0,0,0] voxel
  *  @param h_voxsize     array [vs0, vs1, vs2] of the voxel sizes
- *  @param h_p           array of length nlors containg the values to be back projected
- *  @param nlors          number of projections (length of p array)
+ *  @param h_p           array of length (nlors*n_tofbins) containg the values to be back projected
+ *  @param nlors          number of gemeometrical projections
  *  @param h_img_dim      array with dimensions of image [n0,n1,n2]
  *  @param tofbin_width       width of the TOF bins in spatial units (units of xstart and xend)
  *  @param h_sigma_tof        array of length nlors with the TOF resolution (sigma) for each LOR in
@@ -226,7 +211,7 @@ extern "C" void joseph3d_fwd_tof_lm_cuda(const float *h_xstart,
  *  @param h_img_origin  array [x0_0,x0_1,x0_2] of coordinates of the center of the [0,0,0] voxel
  *  @param h_voxsize     array [vs0, vs1, vs2] of the voxel sizes
  *  @param h_p           array of length nlors*n_tofbins (output) used to store the projections
- *  @param nlors         number of projections (length of p array)
+ *  @param nlors         number of geometrical LORs
  *  @param h_img_dim     array with dimensions of image [n0,n1,n2]
  *  @param tofbin_width     width of the TOF bins in spatial units (units of xstart and xend)
  *  @param h_sigma_tof      array of length nlors with the TOF resolution (sigma) for each LOR in
