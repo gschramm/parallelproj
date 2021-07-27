@@ -17,12 +17,8 @@ build:
 
 requirements:
   build:
+    - {{ compiler('c') }}
     - cmake
-    - libgcc-ng     # [linux]
-    - libstdcxx-ng  # [linux]
-    - _openmp_mutex # [linux]
-    - openmp        # [osx]
-    - vc 14         # [win]
 
   run:
     - python >=3.7
@@ -30,12 +26,6 @@ requirements:
     - scipy >=1.2
     - matplotlib >=3.2.1
     - numba >=0.49
-    - libgcc-ng     # [linux]
-    - libstdcxx-ng  # [linux]
-    - _openmp_mutex # [linux]
-    - openmp        # [osx]
-    - vc 14         # [win]
-    
   
 about:
   home: https://github.com/gschramm/parallelproj
