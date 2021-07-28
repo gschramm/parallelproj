@@ -113,7 +113,7 @@ def joseph3d_fwd_tof_sino(xstart, xend, img, img_origin, voxsize, img_fwd, nLORs
 
 
   else:
-    ok = lib_parallelproj.joseph3d_fwd_tof_sino(xstart, xend, img, img_origin, voxsize, 
+    ok = lib_parallelproj_c.joseph3d_fwd_tof_sino(xstart, xend, img, img_origin, voxsize, 
                                                 img_fwd, nLORs, img_dim,
                                                 tofbin_width, sigma_tof, tofcenter_offset, 
                                                 nsigmas, ntofbins) 
@@ -155,7 +155,7 @@ def joseph3d_back_tof_sino(xstart, xend, back_img, img_origin, voxsize, sino, nL
     # free image device arrays
     lib_parallelproj_cuda.free_float_array_on_all_devices(d_back_img, nvox)
   else:
-    ok = lib_parallelproj.joseph3d_back_tof_sino(xstart, xend, back_img, img_origin, voxsize, 
+    ok = lib_parallelproj_c.joseph3d_back_tof_sino(xstart, xend, back_img, img_origin, voxsize, 
                                                  sino, nLORs, img_dim,
                                                  tofbin_width, sigma_tof, tofcenter_offset, 
                                                  nsigmas, ntofbins)
@@ -193,7 +193,7 @@ def joseph3d_fwd_tof_lm(xstart, xend, img, img_origin, voxsize, img_fwd, nLORs, 
 
 
   else:
-    ok = lib_parallelproj.joseph3d_fwd_tof_lm(xstart, xend, img, img_origin, voxsize, 
+    ok = lib_parallelproj_c.joseph3d_fwd_tof_lm(xstart, xend, img, img_origin, voxsize, 
                                               img_fwd, nLORs, img_dim,
                                               tofbin_width, sigma_tof, tofcenter_offset, 
                                               nsigmas, tofbin) 
@@ -234,7 +234,7 @@ def joseph3d_back_tof_lm(xstart, xend, back_img, img_origin, voxsize, lst, nLORs
     # free image device arrays
     lib_parallelproj_cuda.free_float_array_on_all_devices(d_back_img, nvox)
   else:
-    ok = lib_parallelproj.joseph3d_back_tof_lm(xstart, xend, back_img, img_origin, voxsize, 
+    ok = lib_parallelproj_c.joseph3d_back_tof_lm(xstart, xend, back_img, img_origin, voxsize, 
                                                lst, nLORs, img_dim,
                                                tofbin_width, sigma_tof, tofcenter_offset, 
                                                nsigmas, tofbin)

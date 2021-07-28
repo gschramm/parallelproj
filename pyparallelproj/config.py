@@ -3,6 +3,7 @@ import sys
 import re
 import numpy.ctypeslib as npct
 import ctypes
+from ctypes.util import find_library
 from ctypes import POINTER
 import platform
 import warnings
@@ -26,40 +27,8 @@ ar_1d_short  = npct.ndpointer(dtype = ctypes.c_short, ndim = 1, flags = 'C')
 
 #---- find the compiled C / CUDA libraries
 
-# this is the default lib install dir used by the python-cmake build script
-lib_subdir = f'{platform.system()}_{platform.architecture()[0]}' 
-
-# get the version of the libs from the ConfigVersion file
-configVersion_file = os.path.abspath(os.path.join(os.path.dirname(__file__), lib_subdir,'lib','cmake',
-                                                  'parallelproj', 'parallelprojConfigVersion.cmake'))
-
-version = None
-if os.access(configVersion_file, os.R_OK):
-  with open(configVersion_file,'r') as f:
-    version = re.search("set\(PACKAGE_VERSION (.*)\)", f.read()).group(1).replace('"','')
-else:
-  warnings.warn("failed to read lib version from cmake config version file", UserWarning) 
-
-libname_c    = 'parallelproj_c'
-libname_cuda = 'parallelproj_cuda'
-
-if platform.system() == 'Linux':
-  libprefix = 'lib'
-  libfext   = 'so' 
-  # on windows DLLs get installed in the CMAKE_INSTALL_LIBDIR which defaults to lib or lib64
-  sdir      = os.path.basename(glob(os.path.join(os.path.dirname(__file__),lib_subdir,'lib*'))[0])
-elif platform.system() == 'Windows':
-  libprefix = ''
-  libfext   = 'dll' 
-  # on windows DLLs get installed in the CMAKE_INSTALL_BINDIR which defaults to bin
-  sdir      = 'bin'
-else:
-  raise SystemError(f'{platform.system()} not supported yet.')
-
-lib_parallelproj_c_fname    = os.path.abspath(os.path.join(os.path.dirname(__file__),lib_subdir, sdir,
-                                              f'{libprefix}{libname_c}.{libfext}'))
-lib_parallelproj_cuda_fname = os.path.abspath(os.path.join(os.path.dirname(__file__),lib_subdir, sdir,
-                                              f'{libprefix}{libname_cuda}.{libfext}'))
+lib_parallelproj_c_fname    = find_library('parallelproj_c')
+lib_parallelproj_cuda_fname = find_library('parallelproj_cuda')
 
 #-------------------------------------------------------------------------------------------
 # add the calling signature
@@ -67,10 +36,9 @@ lib_parallelproj_cuda_fname = os.path.abspath(os.path.join(os.path.dirname(__fil
 lib_parallelproj_c    = None
 lib_parallelproj_cuda = None
 
-if os.access(lib_parallelproj_c_fname, os.R_OK):
+if lib_parallelproj_c_fname is not None:
   lib_parallelproj_c = npct.load_library(os.path.basename(lib_parallelproj_c_fname),
                                        os.path.dirname(lib_parallelproj_c_fname))
-  lib_parallelproj_c.__version__ = version
   lib_parallelproj_c.__file__    = lib_parallelproj_c_fname
 
   lib_parallelproj_c.joseph3d_fwd.restype  = None
@@ -154,10 +122,9 @@ if os.access(lib_parallelproj_c_fname, os.R_OK):
                                                     ar_1d_short]       # tof bin 
   
 
-if os.access(lib_parallelproj_cuda_fname, os.R_OK):
+if lib_parallelproj_cuda_fname is not None:
   lib_parallelproj_cuda = npct.load_library(os.path.basename(lib_parallelproj_cuda_fname),
                                             os.path.dirname(lib_parallelproj_cuda_fname))
-  lib_parallelproj_cuda.__version__ = version
   lib_parallelproj_cuda.__file__    = lib_parallelproj_cuda_fname
 
   lib_parallelproj_cuda.joseph3d_fwd_cuda.restype  = None
