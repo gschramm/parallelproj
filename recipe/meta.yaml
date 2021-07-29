@@ -10,8 +10,10 @@ build:
 
 requirements:
   build:
-    - {{ compiler('c') }}
     - cmake
+    - git
+    - {{ compiler('c') }}
+    - {{ compiler('cxx') }}
 
   run:
     - python >=3.7

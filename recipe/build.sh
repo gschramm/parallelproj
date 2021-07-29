@@ -1,2 +1,6 @@
-cmake ${RECIPE_DIR}/../ -DCMAKE_BUILD_TYPE="Release" -DCMAKE_INSTALL_PREFIX=${PREFIX}
-cmake --build . --target install
+CMAKE_PLATFORM_FLAGS+=(-DCMAKE_TOOLCHAIN_FILE="${RECIPE_DIR}/cross-linux.cmake")
+
+cmake -DCMAKE_INSTALL_PREFIX=${PREFIX} ${CMAKE_PLATFORM_FLAGS[@]} -DCMAKE_BUILD_TYPE="Release" -DCMAKE_CXX_COMPILER=${BUILD_PREFIX}/bin/x86_64-conda-linux-gnu-g++ ${SRC_DIR}
+
+#cmake --build . --target install
+make VERBOSE=2
