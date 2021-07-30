@@ -12,6 +12,7 @@ requirements:
   build:
     - cmake
     - git
+    - cudatoolkit-dev
     - {{ compiler('c') }}
     - {{ compiler('cxx') }}
 
