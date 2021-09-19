@@ -1,5 +1,6 @@
 # parallelproj
 OpenMP and CUDA libraries and python bindings for 3D forward and back projectors
+for PET reconstruction including time-of-flight (TOF) modeling
 
 ## 0. Dependencies
 
