@@ -5,7 +5,7 @@ This project provided OpenMP and CUDA implementations of 3D Joseph non-TOF and T
 
 On top of the projectors we also provide a few python bindings and some basic reconstruction examples.
 
-## 0. Dependencies
+## Dependencies
 
 For the OpenMP library (CPU version):
 - cmake>=3.9 (3.9 version needed to detect CUDA correctly)
@@ -19,14 +19,12 @@ For the python bindings:
 - numpy  (tested with v.1.18.1)
 - matplotlib (tested with v.3.2.1)
 - numba (tested with v.0.49)
+- numba (tested with v.1.2)
 
-## 1. Installation
 
-The installation consists of two parts:
-1. compilation of the OpenMP (and CUDA) projector libraries
-2. Installation of the python package containing the python bindings and examples
+## Compilation of OpenMP (and CUDA libraries)
 
-### (i) Compilation of OpenMP (and CUDA libraries)
+*If you want to use the libraries together with the python bindings, skip this section and continue with the next section.*
 
 We use CMake to auto generate a Makefile / Visual Studio project file which is used to compile the libraries. Make sure that cmake and the desired C compiler are on the PATH. The CMakeLists.txt is configured to search for CUDA. If CUDA is not present, compilation of the CUDA lib is skipped.
 
@@ -44,34 +42,44 @@ To change the install directory, replace the 1st call to cmake by
 ```
 cmake -DCMAKE_INSTALL_PREFIX=/foo/bar/myinstalldir ..
 ```
-In case you want to use the libraries in combination with the python frontend package,
-you can use the provided master python build script:
-```
-cd my_project_dir
-python build_libs_and_wrappers.py
-```
-instead, which uses the CMAKE_INSTALL_PREFIX expected by the python package.
-
 To build the documentation (doxygen required) run
 ```
 cmake --build . --target docs
 ```
 
-### (ii) Installation of the python package
+## Installation of the python bindings
 
-The python package (and its dependencies) can be installed with pip. We recommend to install the package in a dedicated virtual environment if possible.
+We strongly recommend to use a virtual conda environment for the python bindings.
 
-The pip installation can be done via:
+Download and install Miniconda from <https://docs.conda.io/en/latest/miniconda.html>.
+
+Please use the ***Python 3.x*** installer and confirm that the installer
+should run ```conda init``` at the end of the installation process.
+
+To create a virtual conda environment and to install all python dependencies execute
+```
+conda create -n parallelproj "python>=3.7" "numpy>=1.18" "matplotlib>=3.2" "numba >=0.49" "scipy>=1.2" "cmake>=3.9"
+```
+
+Activate your conda environment
+```
+conda activate parallelproj
+```
+and compile the C/CUDA libraries as describe above using the environment variable ```CONDA_PREFIX``` as ```CMAKE_INSTALL_PREFIX```
 ```
 cd my_project_dir
-pip install .
+mkdir build
+cd build
+(Linux): cmake -DCMAKE_INSTALL_DIR=${CONDA_PREFIX} ..
+(Windows:) cmake -DCMAKE_INSTALL_DIR=%CONDA_PREFIX% ..
+cmake --build . --target install --config release
 ```
-which will install all python files and also copy the compiled libs to the directory specified by sys.prefix in the python sys module (e.g. the location where the virtual environment is located).
+This makes sure that the compiled libraries are installed in the correct place and will be found by the python bindings
+(using find_library from ctypes.util)
 
-(note) instead of installing the python package, you can also add the package directory to your
-```PYTHONPATH``` environment variable.
+Finally, add the package directory to your ```PYTHONPATH``` environment variable.
 
-## 3. Test the installation and run examples
+## Test the installation and run examples
 
 To test whether the python package was installed correctly run the following in python.
 ```python
