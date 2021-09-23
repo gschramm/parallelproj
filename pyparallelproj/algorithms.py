@@ -123,10 +123,9 @@ def spdhg(em_sino, attn_sino, sens_sino, contam_sino, proj, niter,
     for i in range(nsubsets):
       # get the slice for the current subset
       ss = proj.subset_slices[i]
-      tmp = (gamma*rho) / pet_fwd_model(ones_img, proj, attn_sino[ss], sens_sino[ss], i, fwhm = fwhm)
-      # clip inf values
-      tmp[tmp == np.inf] = tmp[tmp != np.inf].max()
-      S_i.append(tmp)
+      tmp =  pet_fwd_model(ones_img, proj, attn_sino[ss], sens_sino[ss], i, fwhm = fwhm)
+      tmp = np.clip(tmp, tmp[tmp > 0].min(), None)
+      S_i.append((gamma*rho) / tmp)
   else:
     for i in range(nsubsets):
       S_i.append((gamma*rho)/pet_operator_norms[i])
@@ -208,6 +207,7 @@ def spdhg(em_sino, attn_sino, sens_sino, contam_sino, proj, niter,
   
         # apply the prox for the dual of the poisson logL
         y_plus = 0.5*(y_plus + 1 - np.sqrt((y_plus - 1)**2 + 4*S_i[i]*em_sino[ss]))
+        y_plus[em_sino[ss] == 0] = 1
   
         dz = pet_back_model(y_plus - y[ss], proj, attn_sino[ss], sens_sino[ss], i, fwhm = fwhm)
   
@@ -238,6 +238,6 @@ def spdhg(em_sino, attn_sino, sens_sino, contam_sino, proj, niter,
         subset_callback(x, iteration = (it+1), subset = (i+1), **subset_callback_kwargs)
 
     if callback is not None:
-      callback(x, iteration = (it+1), subset = (i+1), **callback_kwargs)
+      callback(x, y = y, y_grad = y_grad, iteration = (it+1), subset = (i+1), **callback_kwargs)
 
-  return x
+  return x,y, y_grad
