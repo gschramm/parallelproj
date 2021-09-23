@@ -1,5 +1,9 @@
 # parallelproj
-OpenMP and CUDA libraries and python bindings for 3D forward and back projectors
+OpenMP and CUDA libraries and python bindings for 3D Joseph non-TOF and TOF forward and back projectors.
+
+This project provided OpenMP and CUDA implementations of 3D Joseph non-TOF and TOF forward and back projectors that can be e.g. used for image reconstruction. The input to the projectors are a list of start and end points for line of responses (LORs) such that they are very flexible and suitable for sinogram and listmode processing.
+
+On top of the projectors we also provide a few python bindings and some basic reconstruction examples.
 
 ## 0. Dependencies
 
