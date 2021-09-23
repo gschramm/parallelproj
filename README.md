@@ -65,7 +65,12 @@ Activate your conda environment
 ```
 conda activate parallelproj
 ```
-and compile the C/CUDA libraries as describe above using the environment variable ```CONDA_PREFIX``` as ```CMAKE_INSTALL_PREFIX```
+If an NVidia GPU is present and you want to build the CUDA libraries, install the conda cuda-toolkit package from the nvidia channel
+```
+conda install cuda-toolkit -c nvidia
+```
+
+Compile the C/CUDA libraries as describe above using the environment variable ```CONDA_PREFIX``` as ```CMAKE_INSTALL_PREFIX```
 ```
 cd my_project_dir
 mkdir build
