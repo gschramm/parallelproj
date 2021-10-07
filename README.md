@@ -75,8 +75,8 @@ Compile the C/CUDA libraries as describe above using the environment variable ``
 cd my_project_dir
 mkdir build
 cd build
-(Linux): cmake -DCMAKE_INSTALL_DIR=${CONDA_PREFIX} ..
-(Windows:) cmake -DCMAKE_INSTALL_DIR=%CONDA_PREFIX% ..
+(Linux): cmake -DCMAKE_INSTALL_PREFIX=${CONDA_PREFIX} ..
+(Windows:) cmake -DCMAKE_INSTALL_PREFIX=%CONDA_PREFIX% ..
 cmake --build . --target install --config release
 ```
 This makes sure that the compiled libraries are installed in the correct place and will be found by the python bindings
