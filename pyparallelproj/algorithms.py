@@ -240,4 +240,4 @@ def spdhg(em_sino, attn_sino, sens_sino, contam_sino, proj, niter,
     if callback is not None:
       callback(x, y = y, y_grad = y_grad, iteration = (it+1), subset = (i+1), **callback_kwargs)
 
-  return x,y, y_grad
+  return x
