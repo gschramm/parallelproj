@@ -1,6 +1,6 @@
 import numpy as np
 from pyparallelproj.models import pet_fwd_model, pet_back_model, pet_fwd_model_lm, pet_back_model_lm
-from pyparallelproj.utils import grad, div
+from pyparallelproj.utils import GradientOperator
 
 def osem(em_sino, attn_sino, sens_sino, contam_sino, proj, niter,
          fwhm = 0, verbose = False, xstart = None, 
@@ -91,10 +91,13 @@ def spdhg(em_sino, attn_sino, sens_sino, contam_sino, proj, niter,
           xstart = None, ystart = None,
           callback = None, subset_callback = None,
           callback_kwargs = None, subset_callback_kwargs = None,
-          beta = 0, pet_operator_norms = None):
+          beta = 0, pet_operator_norms = None, grad_operator = None):
  
   img_shape = tuple(proj.img_dim)
   nsubsets  = proj.nsubsets
+
+  if grad_operator is None:
+    grad_operator = GradientOperator()
 
   # setup the probabilities for doing a pet data or gradient update
   # p_g is the probablility for doing a gradient update
@@ -179,9 +182,7 @@ def spdhg(em_sino, attn_sino, sens_sino, contam_sino, proj, niter,
   zbar = z.copy()
 
   # allocate arrays for gradient operations
-  x_grad      = np.zeros((x.ndim,) + img_shape, dtype = np.float32)
   y_grad      = np.zeros((x.ndim,) + img_shape, dtype = np.float32)
-  y_grad_plus = np.zeros((x.ndim,) + img_shape, dtype = np.float32)
 
   #--------------------------------------------------------------------------------------------
   # SPDHG iterations
@@ -218,7 +219,7 @@ def spdhg(em_sino, attn_sino, sens_sino, contam_sino, proj, niter,
       else:
         print(f'iteration {it + 1} step {iss} gradient update')
 
-        grad(x, x_grad)
+        x_grad = grad_operator.fwd(x)
         y_grad_plus = (y_grad + S_g*x_grad).reshape(x.ndim,-1)
 
         # proximity operator for dual of TV
@@ -226,7 +227,7 @@ def spdhg(em_sino, attn_sino, sens_sino, contam_sino, proj, niter,
         y_grad_plus /= np.maximum(np.ones(gnorm.shape, np.float32), gnorm / beta)
         y_grad_plus = y_grad_plus.reshape(x_grad.shape)
 
-        dz = -1*div(y_grad_plus - y_grad)
+        dz = grad_operator.adjoint(y_grad_plus - y_grad)
 
         # update variables
         z = z + dz

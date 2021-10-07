@@ -368,11 +368,12 @@ class GradientOperator:
     self.e = None
     
     if joint_grad_field is not None:
-      norm   = np.linalg.norm(joint_grad_field, axis = 0)
-      self.e = np.divide(joint_grad_field, norm, out = np.zeros_like(joint_grad_field), where = (norm != 0)) 
+      norm   = numpy.linalg.norm(joint_grad_field, axis = 0)
+      self.e = numpy.divide(joint_grad_field, norm, out = numpy.zeros_like(joint_grad_field), 
+                            where = (norm != 0)) 
 
   def fwd(self, x):
-    g = np.zeros((x.ndim,) + x.shape)
+    g = numpy.zeros((x.ndim,) + x.shape)
     grad(x, g)
 
     if self.e is not None:
