@@ -345,3 +345,43 @@ def complex_div(g):
   else: raise TypeError('Invalid dimension of input') 
 
   return tmp
+
+
+class GradientOperator:
+  """
+  (directional) gradient operator and its adjoint in 2,3 or 4 dimensions
+  using finite forward / backward differences
+
+  Parameters
+  ----------
+
+  joint_gradient_field : numpy array
+    if given, only the gradient component perpenticular to the directions 
+    given in the joint gradient field are specified (default None)
+  """
+
+  def __init__(self, joint_grad_field = None):
+
+    # e is the normalized joint gradient field that
+    # we are only interested in the gradient component
+    # perpendicular to it
+    self.e = None
+    
+    if joint_grad_field is not None:
+      norm   = np.linalg.norm(joint_grad_field, axis = 0)
+      self.e = np.divide(joint_grad_field, norm, out = np.zeros_like(joint_grad_field), where = (norm != 0)) 
+
+  def fwd(self, x):
+    g = np.zeros((x.ndim,) + x.shape)
+    grad(x, g)
+
+    if self.e is not None:
+      g = g - (g*self.e).sum(0)*self.e
+
+    return g
+
+  def adjoint(self, y):
+    if self.e is not None:
+      return -div(y - (y*self.e).sum(0)*self.e)
+    else:
+      return -div(y)
