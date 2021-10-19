@@ -88,7 +88,7 @@ def osem_lm(events, attn_list, sens_list, contam_list, lmproj, sens_img, niter, 
 
 def spdhg(em_sino, attn_sino, sens_sino, contam_sino, proj, niter,
           fwhm = 0, gamma = 1., rho = 0.999, verbose = False, 
-          xstart = None, ystart = None,
+          xstart = None, ystart = None, y_grad_start = None,
           callback = None, subset_callback = None,
           callback_kwargs = None, subset_callback_kwargs = None,
           beta = 0, pet_operator_norms = None, grad_operator = None):
@@ -182,7 +182,10 @@ def spdhg(em_sino, attn_sino, sens_sino, contam_sino, proj, niter,
   zbar = z.copy()
 
   # allocate arrays for gradient operations
-  y_grad      = np.zeros((x.ndim,) + img_shape, dtype = np.float32)
+  if y_grad_start is None:
+    y_grad = np.zeros((x.ndim,) + img_shape, dtype = np.float32)
+  else:
+    y_grad = y_grad_start.copy()
 
   #--------------------------------------------------------------------------------------------
   # SPDHG iterations
