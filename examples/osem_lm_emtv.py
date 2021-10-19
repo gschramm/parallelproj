@@ -4,6 +4,8 @@
 import os
 import matplotlib.pyplot as py
 import pyparallelproj as ppp
+from pyparallelproj.algorithms import pdhg_l2_denoise
+from pyparallelproj.utils import GradientOperator, GradientNorm
 import numpy as np
 import argparse
 import sys
@@ -18,7 +20,7 @@ parser.add_argument('--counts',   help = 'counts to simulate',    default = 1e5,
 parser.add_argument('--niter',    help = 'number of iterations',  default = 5,   type = int)
 parser.add_argument('--nsubsets', help = 'number of subsets',     default = 28,  type = int)
 parser.add_argument('--likeli',   help = 'calc logLikelihood',    action  = 'store_true')
-parser.add_argument('--beta',     help = 'weight of TV prior',    default = 1., type = float)
+parser.add_argument('--beta',     help = 'weight of TV prior',    default = 1e3, type = float)
 args = parser.parse_args()
 
 #---------------------------------------------------------------------------------
@@ -123,6 +125,9 @@ lmproj = ppp.LMProjector(proj.scanner, proj.img_dim, voxsize = proj.voxsize,
 # generate an index array that enumerates all events
 ind = np.arange(events.shape[0])
 
+grad_operator = GradientOperator()
+grad_norm     = GradientNorm(beta = beta)
+
 # run OSEM iterations
 for it in range(niter):
 
@@ -135,12 +140,15 @@ for it in range(niter):
     # event numbers for the current subsets
     ind_sub = ind[i::nsubsets]
 
+    # weights for TV denoising step
+    weights = np.clip(sens_img / (recon/nsubsets), 0, 0.1*FLTMAX)
+
     exp_list = sens_list[ind_sub]*lmproj.fwd_project(recon, events[ind_sub,:]) + contam_list[ind_sub]
     recon   *= (nsubsets*lmproj.back_project(sens_list[ind_sub]/exp_list, events[ind_sub,:]) / sens_img) 
 
     # post EM TV denoise step
-    weights = np.clip(sens_img / (recon*beta/nsubsets), 0, 0.1*FLTMAX)
-    recon   = ppp.cp_tv_denoise(recon, weights = weights, niter = 10, nonneg = True)
+    recon   = pdhg_l2_denoise(recon, grad_operator, grad_norm, 
+                              weights = weights, niter = 20, nonneg = True)
 
     ir.set_data(recon[...,n2//2])
     ax[1].set_title(f'itertation {it+1} subset {i+1}')
@@ -149,7 +157,7 @@ for it in range(niter):
 
   if track_likelihood:
     exp_sino = sens_sino[...,np.newaxis]*proj.fwd_project(recon, subset = 0) + contam_sino
-    logL[it] = (exp_sino - em_sino*np.log(exp_sino)).sum()
+    logL[it] = (exp_sino - em_sino*np.log(exp_sino)).sum() + grad_norm.eval(grad_operator.fwd(recon))
     print(f'neg logL {logL[it]}')
 
 if track_likelihood:

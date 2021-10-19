@@ -245,3 +245,79 @@ def spdhg(em_sino, attn_sino, sens_sino, contam_sino, proj, niter,
       callback(x, y = y, y_grad = y_grad, iteration = (it+1), subset = (i+1), **callback_kwargs)
 
   return x
+
+
+#----------------------------------------------------------------------------------------------------
+
+def pdhg_l2_denoise(img, grad_operator, grad_norm, 
+                    weights = 2e-2, niter = 200, cost = None, nonneg = False, verbose = False):
+  """
+  First-order primal dual image denoising with weighted L2 data fidelity term.
+  Solves the problem: argmax_x( \sum_i w_i*(x_i - img_i)**2 + norm(grad_operator x) )
+
+  Argumtents
+  ----------
+
+  img           ... an nd image image
+
+  grad_operator ... gradient operator with methods fwd() and adjoint()
+
+  grad_norm     ... gradient norm with methods eval() and prox_convex_dual()
+
+  Keyword arguments
+  -----------------
+
+  weights  ... (scalar or array) with weights for data fidelity term - default 2e-2
+
+  niter    ... (int) number of iterations to run - default 200
+
+  cost     ... (1d array) 1d output array for cost calcuation - default None
+ 
+  nonneg   ... (bool) whether to clip negative values in solution - default False
+
+  verbose  ... (bool) whether to print some diagnostic output - default False
+  """
+
+  x    = img.copy().astype(np.float)
+  xbar = x.copy()
+  
+  ynew = np.zeros((x.ndim,) + x.shape)
+
+  if weights is np.array: gam = weights.min()  
+  else:                      gam = weights
+
+  tau    = 1./ gam
+  sig    = 1./(tau*4.*x.ndim)
+  
+  # start the iterations
+  for i in range(niter):
+    if verbose: print(i)
+
+    # (1) fwd model
+    ynew += sig*grad_operator.fwd(xbar)
+    
+    # (2) proximity operator
+    grad_norm.prox_convex_dual(ynew)
+    
+    # (3) back model
+    xnew = x - tau*grad_operator.adjoint(ynew)
+    
+    # (4) apply proximity of G
+    xnew = (xnew + weights*img*tau) / (1. + weights*tau)
+    if nonneg: xnew = np.clip(xnew, 0, None)  
+    
+    # (5) calculate the new stepsizes
+    theta = 1.0 / np.sqrt(1 + 2*gam*tau)
+    tau   = tau*theta
+    sig   = sig/theta 
+    
+    # (6) update variables
+    xbar = xnew + theta*(xnew  - x)
+    x    = xnew.copy()
+  
+    # (0) store cost 
+    if cost is not None: 
+      cost[i] = 0.5*(weights*(x - img)**2).sum() + grad_norm.eval(grad_operator.fwd(x))
+      if verbose: print(cost[i])
+
+  return x
