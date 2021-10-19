@@ -346,6 +346,7 @@ def complex_div(g):
 
   return tmp
 
+#----------------------------------------------------------------------------------------------------
 
 class GradientOperator:
   """
@@ -386,3 +387,42 @@ class GradientOperator:
       return -div(y - (y*self.e).sum(0)*self.e)
     else:
       return -div(y)
+
+#----------------------------------------------------------------------------------------------------
+
+class GradientNorm:
+  """ 
+  norm of a gradient field
+
+  Parameters
+  ----------
+
+  name : str
+    name of the norm
+    'l2_l1' ... mixed L2/L1 (sum of pointwise Euclidean norms in every voxel)
+
+  beta : float
+    factor multiplied to the norm (default 1)
+  """
+  def __init__(self, name = 'l2_l1', beta = 1):
+    self.name = name
+    self.beta = beta
+ 
+    if not self.name in ['l2_l1']:
+     raise NotImplementedError
+
+  def eval(self,x):
+    if self.name == 'l2_l1':
+      n = numpy.linalg.norm(x, axis = 0).sum()
+
+    if self.beta != 1: n *= self.beta
+
+    return n
+
+  def prox_convex_dual(self, x, sigma = None):
+    """ proximal operator of the convex dual of the norm
+    """
+    if self.name == 'l2_l1':
+      gnorm = numpy.linalg.norm(x, axis = 0)
+      if self.beta != 1: gnorm /= self.beta
+      x /= numpy.clip(gnorm, 1, None)
