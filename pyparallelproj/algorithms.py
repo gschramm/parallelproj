@@ -91,7 +91,8 @@ def spdhg(em_sino, attn_sino, sens_sino, contam_sino, proj, niter,
           xstart = None, ystart = None, y_grad_start = None,
           callback = None, subset_callback = None,
           callback_kwargs = None, subset_callback_kwargs = None,
-          beta = 0, pet_operator_norms = None, grad_operator = None):
+          pet_operator_norms = None, 
+          grad_operator = None, grad_norm = None):
  
   img_shape = tuple(proj.img_dim)
   nsubsets  = proj.nsubsets
@@ -99,24 +100,27 @@ def spdhg(em_sino, attn_sino, sens_sino, contam_sino, proj, niter,
   if grad_operator is None:
     grad_operator = GradientOperator()
 
+  if grad_norm is None:
+    grad_norm = GradientNorm()
+
   # setup the probabilities for doing a pet data or gradient update
   # p_g is the probablility for doing a gradient update
   # p_p is the probablility for doing a PET data subset update
 
-  if beta == 0:
+  if grad_norm.beta == 0:
     p_g = 0
   else: 
     p_g = 0.5
     # norm of the gradient operator = sqrt(ndim*4)
     ndim  = len([x for x in img_shape if x > 1])
-    grad_norm = np.sqrt(ndim*4)
+    grad_op_norm = np.sqrt(ndim*4)
 
   p_p = (1 - p_g) / nsubsets
 
   # calculate S and T for the gradient operator
   if p_g > 0:
-    S_g = (gamma*rho/grad_norm)
-    T_g = rho*p_g/(gamma*grad_norm)
+    S_g = (gamma*rho/grad_op_norm)
+    T_g = rho*p_g/(gamma*grad_op_norm)
 
   # calculate the "step sizes" S_i for the PET fwd operator
   S_i = []
@@ -222,13 +226,10 @@ def spdhg(em_sino, attn_sino, sens_sino, contam_sino, proj, niter,
       else:
         print(f'iteration {it + 1} step {iss} gradient update')
 
-        x_grad = grad_operator.fwd(x)
-        y_grad_plus = (y_grad + S_g*x_grad).reshape(x.ndim,-1)
+        y_grad_plus = (y_grad + S_g*grad_operator.fwd(x))
 
-        # proximity operator for dual of TV
-        gnorm = np.linalg.norm(y_grad_plus, axis = 0)
-        y_grad_plus /= np.maximum(np.ones(gnorm.shape, np.float32), gnorm / beta)
-        y_grad_plus = y_grad_plus.reshape(x_grad.shape)
+        # apply the prox for the gradient norm
+        grad_norm.prox_convex_dual(y_grad_plus)
 
         dz = grad_operator.adjoint(y_grad_plus - y_grad)
 
