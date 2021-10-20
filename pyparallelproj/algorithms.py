@@ -1,6 +1,6 @@
 import numpy as np
 from pyparallelproj.models import pet_fwd_model, pet_back_model, pet_fwd_model_lm, pet_back_model_lm
-from pyparallelproj.utils import GradientOperator
+from pyparallelproj.utils import GradientOperator, GradientNorm
 
 def osem(em_sino, attn_sino, sens_sino, contam_sino, proj, niter,
          fwhm = 0, verbose = False, xstart = None, 
@@ -321,3 +321,56 @@ def pdhg_l2_denoise(img, grad_operator, grad_norm,
       if verbose: print(cost[i])
 
   return x
+
+#----------------------------------------------------------------------------------------------------------
+
+def osem_lm_emtv(events, attn_list, sens_list, contam_list, lmproj, sens_img, niter, nsubsets, 
+                 fwhm = 0, verbose = False, xstart = None, callback = None, subset_callback = None,
+                 callback_kwargs = None, subset_callback_kwargs = None, niter_denoise = 20,
+                 grad_norm = None, grad_operator = None):
+
+  if grad_operator is None:
+    grad_operator = GradientOperator()
+
+  if grad_norm is None:
+    grad_norm = GradientNorm()
+
+  img_shape  = tuple(lmproj.img_dim)
+
+  # initialize recon
+  if xstart is None:
+    recon = np.full(img_shape, events.shape[0] / np.prod(img_shape), dtype = np.float32)
+  else:
+    recon = xstart.copy()
+
+  # run OSEM iterations
+  for it in range(niter):
+    for i in range(nsubsets):
+      if verbose: print(f'iteration {it+1} subset {i+1}')
+
+      # calculate the weights for weighted denoising problem that we have to solve
+      if grad_norm.beta > 0:
+        # post EM TV denoise step
+        weights = sens_img / np.clip(recon, recon[recon > 0].min(), None)
+        # clip also max of weights to avoid float overflow
+        weights = np.clip(weights, None, 0.1*np.finfo(np.float32).max)
+
+      # EM step
+      exp_list = pet_fwd_model_lm(recon, lmproj, events[i::nsubsets,:], attn_list[i::nsubsets], 
+                                      sens_list[i::nsubsets], fwhm = fwhm) + contam_list[i::nsubsets]
+
+      recon *= (pet_back_model_lm(1/exp_list, lmproj, events[i::nsubsets,:], attn_list[i::nsubsets], 
+                                  sens_list[i::nsubsets], fwhm = fwhm)*nsubsets / sens_img)
+
+      # "TV" step (weighted denoising)
+      if grad_norm.beta > 0:
+        recon = pdhg_l2_denoise(recon, grad_operator, grad_norm, 
+                                weights = weights, niter = niter_denoise, nonneg = True)
+
+      if subset_callback is not None:
+        subset_callback(recon, iteration = (it+1), subset = (i+1), **subset_callback_kwargs)
+
+    if callback is not None:
+      callback(recon, iteration = (it+1), subset = (i+1), **callback_kwargs)
+      
+  return recon
