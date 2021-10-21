@@ -163,7 +163,7 @@ class LMProjector:
 #-----------------------------------------------------------------------------------------
 
 
-class SinogramProjector(LMProjector):
+class SinogramProjector:
   """ TOF and non TOF 3D sinogram Joseph forward and back projector
 
   Parameters
@@ -217,27 +217,36 @@ class SinogramProjector(LMProjector):
                      img_origin = None, voxsize = np.ones(3), random_subset_angles = False,
                      subset_dir = None, sigma_tof = 60./2.35, n_sigmas = 3,
                      threadsperblock = 64):
-    
-    LMProjector.__init__(self, scanner, img_dim, tof = tof,
-                         img_origin = img_origin, voxsize = voxsize,
-                         tofbin_width = sino_params.tofbin_width,
-                         sigma_tof = sigma_tof, 
-                         n_sigmas = n_sigmas, threadsperblock = threadsperblock)
-
+   
+    self.scanner     = scanner
     self.sino_params = sino_params
-    self.ntofbins    = self.sino_params.ntofbins
+    self.all_views   = np.arange(self.sino_params.nviews)
+    self.tof         = tof
 
-    self.all_views = np.arange(self.sino_params.nviews)
+    self.img_dim = img_dim
+    if not isinstance(self.img_dim, np.ndarray):
+      self.img_dim = np.array(img_dim)
+    self.img_dim    = self.img_dim.astype(ctypes.c_int)
 
-    # get the crystals IDs for all views
-    self.istart, self.iend = self.sino_params.get_view_crystal_indices(self.all_views)
+    self.nvox    = np.prod(self.img_dim)
+    self.voxsize = voxsize.astype(ctypes.c_float)
 
-    # get the world coordiates for all views
-    self.xstart = self.scanner.get_crystal_coordinates(
-                    self.istart.reshape(-1,2)).reshape(self.sino_params.spatial_shape + (3,))
-    self.xend = self.scanner.get_crystal_coordinates(
-                  self.iend.reshape(-1,2)).reshape(self.sino_params.spatial_shape + (3,))
+    if img_origin is None:
+      self.img_origin = (-(self.img_dim / 2) +  0.5) * self.voxsize
+    else:
+      self.img_origin = img_origin
+    self.img_origin = self.img_origin.astype(ctypes.c_float)
 
+    # tof parameters
+    self.sigma_tof     = sigma_tof
+    self.nsigmas       = float(n_sigmas)
+    self.tofbin_width  = self.sino_params.tofbin_width
+    self.ntofbins      = self.sino_params.ntofbins
+
+    # gpu parameters (not relevant when not run on gpu)
+    self.threadsperblock = threadsperblock
+
+    # sinogram related things
     self.random_subset_angles = random_subset_angles
 
     if subset_dir is None:
@@ -270,7 +279,6 @@ class SinogramProjector(LMProjector):
       else:
         subset_slice[self.subset_dir] = slice(i,None,nsubsets)
       self.subset_slices.append(tuple(subset_slice))
-      self.nLORs.append(np.prod(self.xstart[self.subset_slices[i]].shape[:-1]).astype(np.int64))
 
       subset_shape = np.array(self.sino_params.shape)
 
@@ -279,7 +287,23 @@ class SinogramProjector(LMProjector):
       else:
         subset_shape[self.subset_dir] = int(np.ceil(subset_shape[self.subset_dir]/self.nsubsets))
 
+      self.nLORs.append(np.prod(subset_shape[:-1]).astype(np.int64))
+
       self.subset_sino_shapes.append(subset_shape)
+
+  #-----------------------------------------------------------------------------------------------
+  def get_subset_sino_coordinates(self, subset):
+    # get the world coordiates for start and end point of all LORs in a subset
+
+    subset_views = self.all_views[self.subset_slices[subset][self.subset_dir]]
+    istart, iend = self.sino_params.get_view_crystal_indices(subset_views)
+    
+    ssh = tuple(self.subset_sino_shapes[subset][:-1]) + (3,)
+
+    xstart = self.scanner.get_crystal_coordinates(istart.reshape(-1,2)).reshape(ssh)
+    xend   = self.scanner.get_crystal_coordinates(iend.reshape(-1,2)).reshape(ssh)
+
+    return xstart, xend
 
   #-----------------------------------------------------------------------------------------------
   def fwd_project(self, img, subset = 0, tofcenter_offset = None, sigma_tof_per_lor = None):
@@ -287,14 +311,12 @@ class SinogramProjector(LMProjector):
     if not isinstance(img, ctypes.c_float):
       img = img.astype(ctypes.c_float)
 
-    subset_slice = self.subset_slices[subset]
-
-    img_fwd = np.zeros(self.nLORs[subset]*self.ntofbins, dtype = ctypes.c_float)  
+    xstart, xend = self.get_subset_sino_coordinates(subset)
 
     if self.tof == False:
       ####### NONTOF fwd projection 
-      ok = joseph3d_fwd(self.xstart[subset_slice].ravel(), 
-                        self.xend[subset_slice].ravel(), 
+      img_fwd = np.zeros(self.nLORs[subset], dtype = ctypes.c_float)  
+      ok = joseph3d_fwd(xstart.ravel(), xend.ravel(), 
                         img.ravel(), self.img_origin, self.voxsize, 
                         img_fwd, self.nLORs[subset], self.img_dim,
                         threadsperblock = self.threadsperblock) 
@@ -308,15 +330,20 @@ class SinogramProjector(LMProjector):
       if not isinstance(tofcenter_offset, np.ndarray):
         tofcenter_offset = np.zeros(self.nLORs[subset], dtype = ctypes.c_float)
 
-      ok = joseph3d_fwd_tof_sino(self.xstart[subset_slice].ravel(), 
-                                 self.xend[subset_slice].ravel(), 
+      img_fwd = np.zeros(self.nLORs[subset]*self.ntofbins, dtype = ctypes.c_float)  
+      ok = joseph3d_fwd_tof_sino(xstart.ravel(), xend.ravel(), 
                                  img.ravel(), self.img_origin, self.voxsize, 
                                  img_fwd, self.nLORs[subset], self.img_dim,
                                  self.tofbin_width, sigma_tof.ravel(), tofcenter_offset.ravel(), 
                                  self.nsigmas, self.ntofbins, 
                                  threadsperblock = self.threadsperblock) 
 
-    return img_fwd.reshape(self.subset_sino_shapes[subset])
+    if self.tof:
+      img_fwd = img_fwd.reshape(self.subset_sino_shapes[subset])
+    else:
+      img_fwd = img_fwd.reshape(tuple(self.subset_sino_shapes[subset][:-1]) + (1,))
+
+    return img_fwd
 
   #-----------------------------------------------------------------------------------------------
   def back_project(self, sino, subset = 0, tofcenter_offset = None, sigma_tof_per_lor = None):
@@ -324,14 +351,13 @@ class SinogramProjector(LMProjector):
     if not isinstance(sino, ctypes.c_float):
       sino = sino.astype(ctypes.c_float)
 
-    subset_slice = self.subset_slices[subset]
+    xstart, xend = self.get_subset_sino_coordinates(subset)
 
     back_img = np.zeros(self.nvox, dtype = ctypes.c_float)  
 
     if self.tof == False:
       ####### NONTOF back projection 
-      ok = joseph3d_back(self.xstart[subset_slice].ravel(), 
-                         self.xend[subset_slice].ravel(), 
+      ok = joseph3d_back(xstart.ravel(), xend.ravel(), 
                          back_img, self.img_origin, self.voxsize, 
                          sino.ravel(), self.nLORs[subset], self.img_dim,
                          threadsperblock = self.threadsperblock) 
@@ -346,8 +372,7 @@ class SinogramProjector(LMProjector):
       if not isinstance(tofcenter_offset, np.ndarray):
         tofcenter_offset = np.zeros(self.nLORs[subset], dtype = ctypes.c_float)
 
-      ok = joseph3d_back_tof_sino(self.xstart[subset_slice].ravel(), 
-                                  self.xend[subset_slice].ravel(), 
+      ok = joseph3d_back_tof_sino(xstart.ravel(), xend.ravel(), 
                                   back_img, self.img_origin, self.voxsize, 
                                   sino.ravel(), self.nLORs[subset], self.img_dim,
                                   self.tofbin_width, sigma_tof.ravel(), tofcenter_offset.ravel(), 
