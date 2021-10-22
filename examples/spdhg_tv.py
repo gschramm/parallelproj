@@ -9,7 +9,7 @@ from pyparallelproj.phantoms   import ellipse2d_phantom, brain2d_phantom
 import numpy as np
 from scipy.ndimage import gaussian_filter
 
-from pyparallelproj.utils import GradientOperator
+from pyparallelproj.utils import GradientOperator, GradientNorm
 
 import argparse
 
@@ -18,8 +18,8 @@ import argparse
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--counts',   help = 'counts to simulate',    default = 1e6, type = float)
-parser.add_argument('--niter',    help = 'number of iterations',  default = 20,  type = int)
-parser.add_argument('--nsubsets',   help = 'number of subsets',     default = 28,  type = int)
+parser.add_argument('--niter',    help = 'number of iterations',  default = 10,  type = int)
+parser.add_argument('--nsubsets',   help = 'number of subsets',     default = 56,  type = int)
 parser.add_argument('--fwhm_mm',  help = 'psf modeling FWHM mm',  default = 4.5, type = float)
 parser.add_argument('--fwhm_data_mm',  help = 'psf for data FWHM mm',  default = 4.5, type = float)
 parser.add_argument('--phantom', help = 'phantom to use', default = 'brain2d')
@@ -71,41 +71,38 @@ elif phantom == 'brain2d':
 img_origin = (-(np.array(img.shape) / 2) +  0.5) * voxsize
 
 # setup an attenuation image
-att_img = (img > 0) * 0.01 * voxsize[0]
-
-# generate nonTOF sinogram parameters and the nonTOF projector for attenuation projection
-sino_params_nt = ppp.PETSinogramParameters(scanner)
-proj_nt        = ppp.SinogramProjector(scanner, sino_params_nt, img.shape, nsubsets = 1, 
-                                    voxsize = voxsize, img_origin = img_origin)
-
-attn_sino = np.exp(-proj_nt.fwd_project(att_img))
-
-# generate the sensitivity sinogram
-sens_sino = np.ones(sino_params_nt.shape, dtype = np.float32)
+att_img = (img > 0) * 0.01
 
 # generate TOF sinogram parameters and the TOF projector
 sino_params = ppp.PETSinogramParameters(scanner, ntofbins = 17, tofbin_width = 15.)
-proj        = ppp.SinogramProjector(scanner, sino_params, img.shape, nsubsets = 1, 
+proj        = ppp.SinogramProjector(scanner, sino_params, img.shape, nsubsets = nsubsets, 
                                     voxsize = voxsize, img_origin = img_origin,
                                     tof = True, sigma_tof = 60./2.35, n_sigmas = 3.)
+
+
+# create the attenuation sinogram
+proj.set_tof(False)
+attn_sino = np.exp(-proj.fwd_project(att_img))
+proj.set_tof(True)
+# generate the sensitivity sinogram
+sens_sino = np.ones(proj.sino_params.nontof_shape, dtype = np.float32)
 
 # estimate the norm of the operator
 test_img = np.random.rand(*img.shape)
 for i in range(10):
-  fwd  = ppp.pet_fwd_model(test_img, proj, attn_sino, sens_sino, 0, fwhm = fwhm)
-  back = ppp.pet_back_model(fwd, proj, attn_sino, sens_sino, 0, fwhm = fwhm)
+  fwd  = ppp.pet_fwd_model(test_img, proj, attn_sino, sens_sino, fwhm = fwhm)
+  back = ppp.pet_back_model(fwd, proj, attn_sino, sens_sino, fwhm = fwhm)
 
-  norm = np.linalg.norm(back)
-  print(i,norm)
+  pnsq = np.linalg.norm(back)
+  print(i,np.sqrt(pnsq))
 
-  test_img = back / norm
+  test_img = back / pnsq
 
 # normalize sensitivity sinogram to get PET forward model for 1 view with norm 1
 # this is important otherwise the step size T in SPDHG get dominated by the gradient
-sens_sino /= (np.sqrt(norm)/proj.sino_params.nviews)
-
+sens_sino /= (np.sqrt(pnsq)/np.sqrt(8))
 # forward project the image
-img_fwd= ppp.pet_fwd_model(img, proj, attn_sino, sens_sino, 0, fwhm = fwhm_data)
+img_fwd= ppp.pet_fwd_model(img, proj, attn_sino, sens_sino, fwhm = fwhm_data)
 
 # scale sum of fwd image to counts
 if counts > 0:
@@ -128,20 +125,18 @@ else:
   em_sino = img_fwd + contam_sino
 
 
-
 #-----------------------------------------------------------------------------------------------
 #-----------------------------------------------------------------------------------------------
 #-----------------------------------------------------------------------------------------------
 
 # setup joint gradient field
-G0  = GradientOperator()
-G   = GradientOperator(joint_grad_field = G0.fwd(-(img**0.5)))
-
-proj.init_subsets(nsubsets)
+G0            = GradientOperator()
+grad_operator = GradientOperator(joint_grad_field = G0.fwd(-(img**0.5)))
+grad_norm     = GradientNorm(beta = beta)
 
 recon = spdhg(em_sino, attn_sino, sens_sino, contam_sino, proj, niter,
               gamma = 1/img.max(), fwhm = fwhm, verbose = True, 
-              xstart = None, beta = beta, grad_operator = G)
+              xstart = None, grad_operator = grad_operator, grad_norm = grad_norm)
 
 fig, ax = plt.subplots(1,2, figsize = (10,5))
 ax[0].imshow(img.squeeze(), cmap = plt.cm.Greys, vmin = 0, vmax = 1.2*img.max())

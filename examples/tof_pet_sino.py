@@ -65,7 +65,7 @@ elif phantom == 'brain2d':
 img_origin = (-(np.array(img.shape) / 2) +  0.5) * voxsize
 
 # setup an attenuation image
-att_img = (img > 0) * 0.01 * voxsize[0]
+att_img = (img > 0) * 0.01
 
 # generate TOF sinogram parameters and the TOF projector
 sino_params = ppp.PETSinogramParameters(scanner, ntofbins = 17, tofbin_width = 15.)
