@@ -8,7 +8,6 @@ import numpy as np
 #---------------------------------------------------------------------------------
 
 nsubsets    = 1
-subset      = 0 
 counts      = 1e5
 
 np.random.seed(1)
@@ -37,7 +36,7 @@ proj        = ppp.SinogramProjector(scanner, sino_params, img.shape, nsubsets = 
                                     voxsize = voxsize, img_origin = img_origin,
                                     tof = True, sigma_tof = 60./2.35, n_sigmas = n_sigmas)
 
-img_fwd  = proj.fwd_project(img, subset = subset)
+img_fwd  = proj.fwd_project(img)
 
 # scale sum of fwd image to counts
 scale_fac = (counts / img_fwd.sum())
@@ -48,7 +47,7 @@ img      *= scale_fac
 noisy_sino = np.random.poisson(img_fwd)
 
 # back project noisy sinogram as reference for listmode backprojection of events
-back_img = proj.back_project(noisy_sino, subset = subset) 
+back_img = proj.back_project(noisy_sino) 
 
 # events is a list of all events
 # each event if characterize by 5 integers: 
@@ -57,7 +56,7 @@ events = sino_params.sinogram_to_listmode(noisy_sino)
 
 ### create LM projector
 lmproj = ppp.LMProjector(scanner, img.shape, voxsize = voxsize, img_origin = img_origin,
-                         tof = True, sigma_tof = proj.sigma_tof, tofbin_width = proj.tofbin_width,
+                         tof = proj.get_tof(), sigma_tof = proj.sigma_tof, tofbin_width = proj.tofbin_width,
                          n_sigmas = n_sigmas)
 
 fwd_img_lm  = lmproj.fwd_project(img, events)
