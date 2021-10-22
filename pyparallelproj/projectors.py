@@ -52,7 +52,7 @@ class LMProjector:
 
     self.scanner = scanner
     
-    self.tof      = tof
+    self.__tof      = tof
 
     self.img_dim = img_dim
     if not isinstance(self.img_dim, np.ndarray):
@@ -91,7 +91,7 @@ class LMProjector:
     xstart = self.scanner.get_crystal_coordinates(events[:,0:2])
     xend   = self.scanner.get_crystal_coordinates(events[:,2:4])
 
-    if self.tof == False:
+    if self.__tof == False:
       ####### NONTOF fwd projection 
       ok = joseph3d_fwd(xstart.ravel(), xend.ravel(), 
                         img.ravel(), self.img_origin, self.voxsize, 
@@ -130,7 +130,7 @@ class LMProjector:
     xstart = self.scanner.get_crystal_coordinates(events[:,0:2])
     xend   = self.scanner.get_crystal_coordinates(events[:,2:4])
 
-    if self.tof == False:
+    if self.__tof == False:
       ####### NONTOF back projection 
       ok = joseph3d_back(xstart.ravel(), xend.ravel(), 
                          back_img, self.img_origin, self.voxsize, 
@@ -221,7 +221,13 @@ class SinogramProjector:
     self.scanner     = scanner
     self.sino_params = sino_params
     self.all_views   = np.arange(self.sino_params.nviews)
-    self.tof         = tof
+    self.__tof       = tof
+
+    # in case the projector is created as a TOF projector, the user can self.set_tof(False)
+    # to also to non-TOF projections
+    # to prohibit that a user calls self.set_tof(True) for a projector created in non-TOF mode
+    # we have to store the original tof value
+    self.was_created_as_tof_projector = tof
 
     self.img_dim = img_dim
     if not isinstance(self.img_dim, np.ndarray):
@@ -280,7 +286,12 @@ class SinogramProjector:
         subset_slice[self.subset_dir] = slice(i,None,nsubsets)
       self.subset_slices.append(tuple(subset_slice))
 
-      subset_shape = np.array(self.sino_params.shape)
+      # if the projector was created as TOF projector, but is being used as non-TOF
+      # projector by setting self.__tof = False, sino_params.shape is still the TOF sino shape
+      if self.__tof:
+        subset_shape = np.array(self.sino_params.shape)
+      else:
+        subset_shape = np.array(self.sino_params.nontof_shape)
 
       if i == (self.nsubsets - 1):
         subset_shape[self.subset_dir] -= (self.nsubsets - 1)*int(np.ceil(subset_shape[self.subset_dir]/self.nsubsets))
@@ -306,14 +317,25 @@ class SinogramProjector:
     return xstart, xend
 
   #-----------------------------------------------------------------------------------------------
-  def fwd_project(self, img, subset = 0, tofcenter_offset = None, sigma_tof_per_lor = None):
+  def set_tof(self, tof):
+    if self.was_created_as_tof_projector:
+      self.__tof = tof
+      self.init_subsets(self.nsubsets)
+    else:
+      raise NotImplementedError('set_tof() can be only called for projectors created in TOF mode')
+
+  def get_tof(self):
+    return self.__tof
+
+  #-----------------------------------------------------------------------------------------------
+  def fwd_project_subset(self, img, subset, tofcenter_offset = None, sigma_tof_per_lor = None):
 
     if not isinstance(img, ctypes.c_float):
       img = img.astype(ctypes.c_float)
 
     xstart, xend = self.get_subset_sino_coordinates(subset)
 
-    if self.tof == False:
+    if self.__tof == False:
       ####### NONTOF fwd projection 
       img_fwd = np.zeros(self.nLORs[subset], dtype = ctypes.c_float)  
       ok = joseph3d_fwd(xstart.ravel(), xend.ravel(), 
@@ -338,15 +360,25 @@ class SinogramProjector:
                                  self.nsigmas, self.ntofbins, 
                                  threadsperblock = self.threadsperblock) 
 
-    if self.tof:
-      img_fwd = img_fwd.reshape(self.subset_sino_shapes[subset])
-    else:
-      img_fwd = img_fwd.reshape(tuple(self.subset_sino_shapes[subset][:-1]) + (1,))
+    img_fwd = img_fwd.reshape(self.subset_sino_shapes[subset])
 
     return img_fwd
 
   #-----------------------------------------------------------------------------------------------
-  def back_project(self, sino, subset = 0, tofcenter_offset = None, sigma_tof_per_lor = None):
+  def fwd_project(self, img, **kwargs):
+
+    if self.__tof:
+      img_fwd = np.zeros(self.sino_params.shape, dtype = ctypes.c_float)
+    else:
+      img_fwd = np.zeros(self.sino_params.nontof_shape, dtype = ctypes.c_float)
+
+    for i in range(self.nsubsets):
+      img_fwd[self.subset_slices[i]] = self.fwd_project_subset(img, i, **kwargs)
+
+    return img_fwd
+
+  #-----------------------------------------------------------------------------------------------
+  def back_project_subset(self, sino, subset, tofcenter_offset = None, sigma_tof_per_lor = None):
 
     if not isinstance(sino, ctypes.c_float):
       sino = sino.astype(ctypes.c_float)
@@ -355,7 +387,7 @@ class SinogramProjector:
 
     back_img = np.zeros(self.nvox, dtype = ctypes.c_float)  
 
-    if self.tof == False:
+    if self.__tof == False:
       ####### NONTOF back projection 
       ok = joseph3d_back(xstart.ravel(), xend.ravel(), 
                          back_img, self.img_origin, self.voxsize, 
@@ -380,3 +412,12 @@ class SinogramProjector:
                                   threadsperblock = self.threadsperblock) 
 
     return back_img.reshape(self.img_dim)
+
+  #-----------------------------------------------------------------------------------------------
+  def back_project(self, sino, **kwargs):
+    back_img = np.zeros(self.img_dim, dtype = ctypes.c_float)  
+
+    for i in range(self.nsubsets):
+      back_img += self.back_project_subset(sino[self.subset_slices[i]], i, **kwargs)
+
+    return back_img

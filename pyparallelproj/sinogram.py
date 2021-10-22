@@ -68,8 +68,9 @@ class PETSinogramParameters:
       self.spatial_shape = tuple(np.array([self.nrad, self.nviews, self.nplanes])[self.spatial_dim_order])
       if self.tof_dim == -1:
         self.shape = self.spatial_shape + (self.ntofbins,) 
+        self.nontof_shape = self.spatial_shape + (1,)
       else:
-        raise ValueError('TOF dim must be -1')
+        raise NotImplementedError('TOF dim must be -1')
                            
       self.istart_plane, self.iend_plane = self.get_plane_det_index()
 
