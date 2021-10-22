@@ -100,14 +100,13 @@ ones_sino = np.ones(proj.subset_sino_shapes[0], dtype = np.float32)
 t_sino_fwd  = np.zeros(n)
 t_sino_back = np.zeros(n)
 
-
-subset_slice = proj.subset_slices[subset]
- 
 sigma_tof = np.full(proj.nLORs[subset], proj.sigma_tof, dtype = ctypes.c_float).ravel()
 tofcenter_offset = np.zeros(proj.nLORs[subset], dtype = ctypes.c_float).ravel()
 
-xstart = proj.xstart[subset_slice].ravel()
-xend   = proj.xend[subset_slice].ravel()
+xstart, xend =  proj.get_subset_sino_coordinates(subset)
+xstart = xstart.ravel()
+xend   = xend.ravel()
+
 img_ravel = img.ravel(order = img_mem_order)
 subset_nLORs     = proj.nLORs[subset]
 sino     = np.ones(subset_nLORs*proj.ntofbins, dtype = ctypes.c_float)  
@@ -174,7 +173,7 @@ if counts > 0:
   # create a listmode projector for the LM MLEM iterations
   lmproj = ppp.LMProjector(proj.scanner, proj.img_dim, voxsize = proj.voxsize, 
                            img_origin = proj.img_origin,
-                           tof = proj.tof, sigma_tof = proj.sigma_tof, 
+                           tof = proj.get_tof(), sigma_tof = proj.sigma_tof, 
                            tofbin_width = proj.tofbin_width,
                            n_sigmas = proj.nsigmas,
                            threadsperblock = proj.threadsperblock)

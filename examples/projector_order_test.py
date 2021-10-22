@@ -3,7 +3,7 @@
 import os
 import matplotlib.pyplot as py
 import pyparallelproj as ppp
-from pyparallelproj.wrapper import joseph3d_fwd, joseph3d_fwd_tof, joseph3d_back, joseph3d_back_tof
+from pyparallelproj.wrapper import joseph3d_fwd, joseph3d_fwd_tof_sino, joseph3d_back, joseph3d_back_tof_sino
 import numpy as np
 import argparse
 import ctypes
@@ -14,7 +14,6 @@ from time import time
 # parse the command line
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--ngpus',    help = 'number of GPUs to use', default = 0,   type = int)
 parser.add_argument('--nsubsets', help = 'number of subsets',     default = 28,  type = int)
 parser.add_argument('--tpb',      help = 'threads per block',     default = 64,  type = int)
 parser.add_argument('--nontof',   help = 'non-TOF instead of TOF', action = 'store_true')
@@ -24,7 +23,6 @@ args = parser.parse_args()
 
 #---------------------------------------------------------------------------------
 
-ngpus     = args.ngpus
 nsubsets  = args.nsubsets
 tpb       = args.tpb
 tof       = not args.nontof
@@ -68,7 +66,7 @@ for sdo in sd:
   sino_params = ppp.PETSinogramParameters(scanner, ntofbins = ntofbins, tofbin_width = 23.,
                                           spatial_dim_order = sdo)
   proj        = ppp.SinogramProjector(scanner, sino_params, img.shape, nsubsets = nsubsets,
-                                      voxsize = voxsize, img_origin = img_origin, ngpus = ngpus,
+                                      voxsize = voxsize, img_origin = img_origin,
                                       tof = tof, sigma_tof = 60./2.35, n_sigmas = 3.,
                                       threadsperblock = tpb)
 
@@ -94,15 +92,15 @@ for sdo in sd:
   #--- time fwd projection
   t0 = time()
   if tof:
-    ok = joseph3d_fwd_tof(xstart, xend, img_ravel, proj.img_origin, proj.voxsize, 
+    ok = joseph3d_fwd_tof_sino(xstart, xend, img_ravel, proj.img_origin, proj.voxsize, 
                           img_fwd, subset_nLORs, proj.img_dim,
                           proj.tofbin_width, sigma_tof, tofcenter_offset, 
                           proj.nsigmas, proj.ntofbins, 
-                          threadsperblock = proj.threadsperblock, ngpus = proj.ngpus, lm = False) 
+                          threadsperblock = proj.threadsperblock) 
   else:
     ok = joseph3d_fwd(xstart, xend, img_ravel, proj.img_origin, proj.voxsize, 
                       img_fwd, subset_nLORs, proj.img_dim,
-                      threadsperblock = proj.threadsperblock, ngpus = proj.ngpus, lm = False) 
+                      threadsperblock = proj.threadsperblock, lm = False) 
     
   t1 = time()
 
@@ -110,15 +108,15 @@ for sdo in sd:
   #--- time back projection
   t2 = time()
   if tof:
-    ok = joseph3d_back_tof(xstart, xend, back_img, proj.img_origin, proj.voxsize, 
+    ok = joseph3d_back_tof_sino(xstart, xend, back_img, proj.img_origin, proj.voxsize, 
                            sino, subset_nLORs, proj.img_dim,
                            proj.tofbin_width, sigma_tof, tofcenter_offset, 
                            proj.nsigmas, proj.ntofbins, 
-                           threadsperblock = proj.threadsperblock, ngpus = proj.ngpus, lm = False) 
+                           threadsperblock = proj.threadsperblock) 
   else:
     ok = joseph3d_back(xstart, xend, back_img, proj.img_origin, proj.voxsize, 
-                       sino, subset_nLORs, proj.img_dim,
-                       threadsperblock = proj.threadsperblock, ngpus = proj.ngpus, lm = False) 
+                           sino, subset_nLORs, proj.img_dim,
+                           threadsperblock = proj.threadsperblock, lm = False) 
   t3 = time()
 
   print(f'{sdo} {t1-t0} {t3-t2}')
