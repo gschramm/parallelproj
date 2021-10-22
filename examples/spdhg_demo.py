@@ -17,8 +17,8 @@ import argparse
 # parse the command line
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--counts',   help = 'counts to simulate',    default = 1e5, type = float)
-parser.add_argument('--niter',    help = 'number of iterations',  default = 50,  type = int)
+parser.add_argument('--counts',   help = 'counts to simulate',    default = 1e6,  type = float)
+parser.add_argument('--niter',    help = 'number of iterations',  default = 100,  type = int)
 parser.add_argument('--niter_ref', help = 'number of ref iterations', default = 5000,  type = int)
 parser.add_argument('--nsubsets',   help = 'number of subsets',     default = 28,  type = int)
 parser.add_argument('--warm'  ,   help = 'warm start with 1 OSEM it', action = 'store_true')
@@ -45,7 +45,7 @@ seed          = args.seed
 ps_fwhm_mm    = args.ps_fwhm_mm
 beta          = 0
 
-gammas = np.array([1e5,3e5,1e6,3e6,1e7])/counts
+gammas = np.array([0.3, 1., 3.])
 
 it_early = 10
 #---------------------------------------------------------------------------------
@@ -71,7 +71,7 @@ fwhm_data = fwhm_data_mm / voxsize
 if phantom == 'ellipse2d':
   n   = 200
   img = np.zeros((n,n,n2), dtype = np.float32)
-  tmp = ellipse_phantom(n = n, c = 3)
+  tmp = ellipse2d_phantom(n = n, c = 3)
   for i2 in range(n2):
     img[:,:,i2] = tmp
 elif phantom == 'brain2d':
@@ -86,27 +86,25 @@ img_origin = (-(np.array(img.shape) / 2) +  0.5) * voxsize
 # setup an attenuation image
 att_img = (img > 0) * 0.01 * voxsize[0]
 
-# generate nonTOF sinogram parameters and the nonTOF projector for attenuation projection
-sino_params_nt = ppp.PETSinogramParameters(scanner)
-proj_nt        = ppp.SinogramProjector(scanner, sino_params_nt, img.shape, nsubsets = 1, 
-                                    voxsize = voxsize, img_origin = img_origin)
-
-attn_sino = np.exp(-proj_nt.fwd_project(att_img))
-
-# generate the sensitivity sinogram
-sens_sino = np.ones(sino_params_nt.shape, dtype = np.float32)
-
 # generate TOF sinogram parameters and the TOF projector
 sino_params = ppp.PETSinogramParameters(scanner, ntofbins = 17, tofbin_width = 15.)
-proj        = ppp.SinogramProjector(scanner, sino_params, img.shape, nsubsets = 1, 
+proj        = ppp.SinogramProjector(scanner, sino_params, img.shape, nsubsets = nsubsets, 
                                     voxsize = voxsize, img_origin = img_origin,
                                     tof = True, sigma_tof = 60./2.35, n_sigmas = 3.)
+
+
+# create the attenuation sinogram
+proj.set_tof(False)
+attn_sino = np.exp(-proj.fwd_project(att_img))
+proj.set_tof(True)
+# generate the sensitivity sinogram
+sens_sino = np.ones(proj.sino_params.nontof_shape, dtype = np.float32)
 
 # estimate the norm of the operator
 test_img = np.random.rand(*img.shape)
 for i in range(10):
-  fwd  = ppp.pet_fwd_model(test_img, proj, attn_sino, sens_sino, 0, fwhm = fwhm)
-  back = ppp.pet_back_model(fwd, proj, attn_sino, sens_sino, 0, fwhm = fwhm)
+  fwd  = ppp.pet_fwd_model(test_img, proj, attn_sino, sens_sino, fwhm = fwhm)
+  back = ppp.pet_back_model(fwd, proj, attn_sino, sens_sino, fwhm = fwhm)
 
   norm = np.linalg.norm(back)
   print(i,norm)
@@ -118,7 +116,7 @@ for i in range(10):
 sens_sino /= (np.sqrt(norm)/proj.sino_params.nviews)
 
 # forward project the image
-img_fwd= ppp.pet_fwd_model(img, proj, attn_sino, sens_sino, 0, fwhm = fwhm_data)
+img_fwd= ppp.pet_fwd_model(img, proj, attn_sino, sens_sino, fwhm = fwhm_data)
 
 # scale sum of fwd image to counts
 if counts > 0:
@@ -165,13 +163,8 @@ def update_img(x):
   plt.pause(1e-6)
 
 def calc_cost(x):
-  cost = 0
-
-  for i in range(proj.nsubsets):
-    # get the slice for the current subset
-    ss = proj.subset_slices[i]
-    exp = ppp.pet_fwd_model(x, proj, attn_sino[ss], sens_sino[ss], i, fwhm = fwhm) + contam_sino[ss]
-    cost += (exp - em_sino[ss]*np.log(exp)).sum()
+  exp  = ppp.pet_fwd_model(x, proj, attn_sino, sens_sino, fwhm = fwhm) + contam_sino
+  cost = (exp - em_sino*np.log(exp)).sum()
 
   return cost
 
@@ -211,21 +204,17 @@ if os.path.exists(ref_fname):
 else:
   ref_cost  = np.zeros(niter_ref)
 
+  proj.init_subsets(1)
   ref_recon = osem(em_sino, attn_sino, sens_sino, contam_sino, proj, niter_ref,
                    fwhm = fwhm, verbose = True, callback = _cb, callback_kwargs = {'cost': ref_cost})
+  proj.init_subsets(nsubsets)
 
   np.savez(ref_fname, ref_recon = ref_recon, ref_cost = ref_cost)
 
 ref_recon_ps = gaussian_filter(ref_recon, sig)
 
-# initialize the subsets for the projector
-proj.init_subsets(nsubsets)
-
-if warm:
-  init_recon = osem(em_sino, attn_sino, sens_sino, contam_sino, proj, 1, 
-                    fwhm = fwhm, verbose = True)
-else:
-  init_recon = None
+init_recon = osem(em_sino, attn_sino, sens_sino, contam_sino, proj, 1, 
+                  fwhm = fwhm, verbose = True)
 
 cost_osem    = np.zeros(niter)
 psnr_osem    = np.zeros(niter)
@@ -245,8 +234,7 @@ recon_osem = osem(em_sino, attn_sino, sens_sino, contam_sino, proj, niter,
 
 # SPHDG recon
 
-ystart = np.zeros(em_sino.shape, dtype = np.float32)
-ystart[em_sino == 0] = 1
+ystart = 1 - (em_sino/(ppp.pet_fwd_model(init_recon, proj, attn_sino, sens_sino, fwhm = fwhm) + contam_sino))
 
 costs_spdhg   = np.zeros((len(gammas),niter))
 psnr_spdhg    = np.zeros((len(gammas),niter))
@@ -261,8 +249,8 @@ for ig, gamma in enumerate(gammas):
          'it_early':it_early, 'x_early': recons_spdhg_early[ig,...]}
 
   recons_spdhg[ig,...] = spdhg(em_sino, attn_sino, sens_sino, contam_sino, proj, niter,
-                               gamma = gamma, fwhm = fwhm, verbose = True, 
-                               xstart = init_recon, beta = 0,
+                               gamma = gamma/img.max(), fwhm = fwhm, verbose = True, 
+                               xstart = init_recon, ystart = ystart, 
                                callback = _cb, callback_kwargs = cbs)
 
 base_str = f'{phantom}_counts_{counts:.1E}_beta_{beta:.1E}_niter_{niter_ref}_{niter}_nsub_{nsubsets}'

@@ -101,7 +101,7 @@ def spdhg(em_sino, attn_sino, sens_sino, contam_sino, proj, niter,
     grad_operator = GradientOperator()
 
   if grad_norm is None:
-    grad_norm = GradientNorm()
+    grad_norm = GradientNorm(beta = 0)
 
   # setup the probabilities for doing a pet data or gradient update
   # p_g is the probablility for doing a gradient update
