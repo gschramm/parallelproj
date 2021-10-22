@@ -76,17 +76,13 @@ for sdo in sd:
   # do a forward / back projection of subset 0 - same as img_fwd = proj.fwd_project(img, 0)
   # we just write out the single steps to time the python overhead separately
  
-  #img_fwd = proj.fwd_project(img, 0)
-  #ones_sino = np.ones(img_fwd.shape, dtype = np.float32)
-  #back = proj.back_project(ones_sino, 0)
-
-  subset_slice = proj.subset_slices[subset]
- 
   sigma_tof = np.full(proj.nLORs[subset], proj.sigma_tof, dtype = ctypes.c_float).ravel()
   tofcenter_offset = np.zeros(proj.nLORs[subset], dtype = ctypes.c_float).ravel()
 
-  xstart = proj.xstart[subset_slice].ravel()
-  xend   = proj.xend[subset_slice].ravel()
+  xstart, xend =  proj.get_subset_sino_coordinates(subset)
+  xstart = xstart.ravel()
+  xend   = xend.ravel()
+
   img_ravel = img.ravel(order = img_mem_order)
   subset_nLORs     = proj.nLORs[subset]
 
