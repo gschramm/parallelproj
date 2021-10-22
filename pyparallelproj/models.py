@@ -2,7 +2,7 @@ import numpy as np
 from scipy.ndimage import gaussian_filter
 
 #---------------------------------------------------------------------------------
-def pet_fwd_model(img, proj, attn_sino, sens_sino, isub = 0, fwhm = 0):
+def pet_fwd_model(img, proj, attn_sino, sens_sino, isub = None, fwhm = 0):
   """PET forward model
 
   Parameters
@@ -21,7 +21,7 @@ def pet_fwd_model(img, proj, attn_sino, sens_sino, isub = 0, fwhm = 0):
     containing the non-TOF subset sensivity sinogram
 
   isub : int
-    the subset number
+    the subset number, if None the complete sinogram (no subsets) is projected
 
   fwhm : float, optional
     FWHM (voxels) of Gaussian filter applied to image before projection
@@ -36,7 +36,10 @@ def pet_fwd_model(img, proj, attn_sino, sens_sino, isub = 0, fwhm = 0):
   if np.any(fwhm > 0):
     img = gaussian_filter(img, fwhm/2.35)
 
-  sino = sens_sino*attn_sino*proj.fwd_project(img, subset = isub)
+  if isub is None:
+    sino = sens_sino*attn_sino*proj.fwd_project(img)
+  else:
+    sino = sens_sino*attn_sino*proj.fwd_project_subset(img, isub)
 
   return sino
 
@@ -80,7 +83,7 @@ def pet_fwd_model_lm(img, lmproj, subset_events, attn_list, sens_list, fwhm = 0)
 
 
 #---------------------------------------------------------------------------------
-def pet_back_model(subset_sino, proj, attn_sino, sens_sino, isub = 0, fwhm = 0):
+def pet_back_model(subset_sino, proj, attn_sino, sens_sino, isub = None, fwhm = 0):
   """Adjoint of PET forward model (backward model)
 
   Parameters
@@ -99,7 +102,7 @@ def pet_back_model(subset_sino, proj, attn_sino, sens_sino, isub = 0, fwhm = 0):
     containing the non-TOF sensivity subset sinogram
 
   isub : int
-    the subset number
+    the subset number, if None the complete sinogram (no subsets) is projected
 
   fwhm : float, optional
     FWHM (voxels) of Gaussian filter applied to image after back projection
@@ -110,7 +113,10 @@ def pet_back_model(subset_sino, proj, attn_sino, sens_sino, isub = 0, fwhm = 0):
   3D numpy array containing the back projected image
   """
 
-  back_img = proj.back_project(sens_sino*attn_sino*subset_sino, subset = isub)
+  if isub is None:
+    back_img = proj.back_project(sens_sino*attn_sino*subset_sino)
+  else:
+    back_img = proj.back_project_subset(sens_sino*attn_sino*subset_sino, subset = isub)
 
   if np.any(fwhm > 0):
     back_img = gaussian_filter(back_img, fwhm/2.35)

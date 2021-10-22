@@ -135,7 +135,7 @@ attn_list   = attn_sino[multi_index[:,0],multi_index[:,1],multi_index[:,2],0]
 # create a listmode projector for the LM MLEM iterations
 lmproj = ppp.LMProjector(proj.scanner, proj.img_dim, voxsize = proj.voxsize, 
                          img_origin = proj.img_origin,
-                         tof = proj.tof, sigma_tof = proj.sigma_tof, tofbin_width = proj.tofbin_width,
+                         tof = proj.get_tof(), sigma_tof = proj.sigma_tof, tofbin_width = proj.tofbin_width,
                          n_sigmas = proj.nsigmas)
 
 
