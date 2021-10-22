@@ -69,30 +69,22 @@ img_origin = (-(np.array(img.shape) / 2) +  0.5) * voxsize
 # setup an attenuation image
 att_img = (img > 0) * 0.01
 
-# generate nonTOF sinogram parameters and the nonTOF projector for attenuation projection
-sino_params_nt = ppp.PETSinogramParameters(scanner)
-proj_nt        = ppp.SinogramProjector(scanner, sino_params_nt, img.shape, nsubsets = 1, 
-                                    voxsize = voxsize, img_origin = img_origin)
-sino_shape_nt  = sino_params_nt.shape
-
-attn_sino = np.zeros(sino_shape_nt, dtype = np.float32)
-attn_sino = np.exp(-proj_nt.fwd_project(att_img))
-
-# generate the sensitivity sinogram
-sens_sino = np.ones(sino_shape_nt, dtype = np.float32)
-
 # generate TOF sinogram parameters and the TOF projector
 sino_params = ppp.PETSinogramParameters(scanner, ntofbins = 17, tofbin_width = 15.)
-proj        = ppp.SinogramProjector(scanner, sino_params, img.shape, nsubsets = 1, 
+proj        = ppp.SinogramProjector(scanner, sino_params, img.shape, nsubsets = nsubsets, 
                                     voxsize = voxsize, img_origin = img_origin,
                                     tof = True, sigma_tof = 60./2.35, n_sigmas = 3.)
 
-# allocate array for the subset sinogram
-sino_shape = sino_params.shape
-img_fwd    = np.zeros(sino_shape, dtype = np.float32)
+# create the attenuation sinogram
+proj.set_tof(False)
+attn_sino = np.exp(-proj.fwd_project(att_img))
+proj.set_tof(True)
+# generate the sensitivity sinogram
+sens_sino = np.ones(proj.sino_params.nontof_shape, dtype = np.float32)
+
 
 # forward project the image
-img_fwd = ppp.pet_fwd_model(img, proj, attn_sino, sens_sino, 0, fwhm = fwhm_data)
+img_fwd = ppp.pet_fwd_model(img, proj, attn_sino, sens_sino, fwhm = fwhm_data)
 
 # scale sum of fwd image to counts
 if counts > 0:
@@ -116,7 +108,7 @@ else:
 
 #-------------------------------------------------------------------------------------
 # calculate the sensitivity images for each subset
-sens_img  = ppp.pet_back_model(np.ones(sino_shape, dtype = np.float32), proj, attn_sino, 
+sens_img  = ppp.pet_back_model(np.ones(proj.sino_params.shape, dtype = np.float32), proj, attn_sino, 
                                sens_sino, fwhm = fwhm)
   
 #-------------------------------------------------------------------------------------
@@ -130,13 +122,6 @@ events, multi_index = sino_params.sinogram_to_listmode(em_sino, return_multi_ind
 contam_list = contam_sino[multi_index[:,0],multi_index[:,1],multi_index[:,2], multi_index[:,3]]
 sens_list   = sens_sino[multi_index[:,0],multi_index[:,1],multi_index[:,2],0]
 attn_list   = attn_sino[multi_index[:,0],multi_index[:,1],multi_index[:,2],0]
-
-
-# create a listmode projector for the LM MLEM iterations
-lmproj = ppp.LMProjector(proj.scanner, proj.img_dim, voxsize = proj.voxsize, 
-                         img_origin = proj.img_origin,
-                         tof = proj.get_tof(), sigma_tof = proj.sigma_tof, tofbin_width = proj.tofbin_width,
-                         n_sigmas = proj.nsigmas)
 
 
 plt.ion()
@@ -159,13 +144,8 @@ def update_img(x):
   plt.pause(1e-6)
 
 def calc_cost(x):
-  cost = 0
-
-  for i in range(proj.nsubsets):
-    # get the slice for the current subset
-    ss = proj.subset_slices[i]
-    exp = ppp.pet_fwd_model(x, proj, attn_sino[ss], sens_sino[ss], i, fwhm = fwhm) + contam_sino[ss]
-    cost += (exp - em_sino[ss]*np.log(exp)).sum()
+  exp  = ppp.pet_fwd_model(x, proj, attn_sino, sens_sino, fwhm = fwhm) + contam_sino
+  cost = (exp - em_sino*np.log(exp)).sum()
 
   return cost
 
@@ -184,7 +164,7 @@ def _cb(x, **kwargs):
 cost_lmosem = np.zeros(niter)
 cbk         = {'cost':cost_lmosem}
 
-recon = osem_lm(events, attn_list, sens_list, contam_list, lmproj, sens_img, niter, nsubsets, 
+recon = osem_lm(events, attn_list, sens_list, contam_list, proj, sens_img, niter, nsubsets, 
                 fwhm = fwhm, verbose = True, callback = _cb, callback_kwargs = cbk)
 
 

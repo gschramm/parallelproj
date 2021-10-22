@@ -54,13 +54,11 @@ back_img = proj.back_project(noisy_sino)
 # [start_crystal_id_tr, start_crystal_id_ax, end_crystal_id_tr, end_crystal_id_ax, tofbin]
 events = sino_params.sinogram_to_listmode(noisy_sino)
 
-### create LM projector
-lmproj = ppp.LMProjector(scanner, img.shape, voxsize = voxsize, img_origin = img_origin,
-                         tof = proj.get_tof(), sigma_tof = proj.sigma_tof, tofbin_width = proj.tofbin_width,
-                         n_sigmas = n_sigmas)
 
-fwd_img_lm  = lmproj.fwd_project(img, events)
-back_img_lm = lmproj.back_project(np.ones(events.shape[0]), events)
+# do LM projecions
+
+fwd_img_lm  = proj.fwd_project_lm(img, events)
+back_img_lm = proj.back_project_lm(np.ones(events.shape[0]), events)
 
 
 ### debug plots

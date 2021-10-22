@@ -51,11 +51,11 @@ def osem(em_sino, attn_sino, sens_sino, contam_sino, proj, niter,
 #------------------------------------------------------------------------------------------------------
 #------------------------------------------------------------------------------------------------------
 
-def osem_lm(events, attn_list, sens_list, contam_list, lmproj, sens_img, niter, nsubsets, 
+def osem_lm(events, attn_list, sens_list, contam_list, proj, sens_img, niter, nsubsets, 
             fwhm = 0, verbose = False, xstart = None, callback = None, subset_callback = None,
             callback_kwargs = None, subset_callback_kwargs = None):
 
-  img_shape  = tuple(lmproj.img_dim)
+  img_shape  = tuple(proj.img_dim)
 
   # initialize recon
   if xstart is None:
@@ -68,10 +68,10 @@ def osem_lm(events, attn_list, sens_list, contam_list, lmproj, sens_img, niter, 
     for i in range(nsubsets):
       if verbose: print(f'iteration {it+1} subset {i+1}')
     
-      exp_list = pet_fwd_model_lm(recon, lmproj, events[i::nsubsets,:], attn_list[i::nsubsets], 
+      exp_list = pet_fwd_model_lm(recon, proj, events[i::nsubsets,:], attn_list[i::nsubsets], 
                                       sens_list[i::nsubsets], fwhm = fwhm) + contam_list[i::nsubsets]
 
-      recon *= (pet_back_model_lm(1/exp_list, lmproj, events[i::nsubsets,:], attn_list[i::nsubsets], 
+      recon *= (pet_back_model_lm(1/exp_list, proj, events[i::nsubsets,:], attn_list[i::nsubsets], 
                                   sens_list[i::nsubsets], fwhm = fwhm)*nsubsets / sens_img)
 
       if subset_callback is not None:
@@ -325,7 +325,7 @@ def pdhg_l2_denoise(img, grad_operator, grad_norm,
 
 #----------------------------------------------------------------------------------------------------------
 
-def osem_lm_emtv(events, attn_list, sens_list, contam_list, lmproj, sens_img, niter, nsubsets, 
+def osem_lm_emtv(events, attn_list, sens_list, contam_list, proj, sens_img, niter, nsubsets, 
                  fwhm = 0, verbose = False, xstart = None, callback = None, subset_callback = None,
                  callback_kwargs = None, subset_callback_kwargs = None, niter_denoise = 20,
                  grad_norm = None, grad_operator = None):
@@ -336,7 +336,7 @@ def osem_lm_emtv(events, attn_list, sens_list, contam_list, lmproj, sens_img, ni
   if grad_norm is None:
     grad_norm = GradientNorm()
 
-  img_shape  = tuple(lmproj.img_dim)
+  img_shape  = tuple(proj.img_dim)
 
   # initialize recon
   if xstart is None:
@@ -357,10 +357,10 @@ def osem_lm_emtv(events, attn_list, sens_list, contam_list, lmproj, sens_img, ni
         weights = np.clip(weights, None, 0.1*np.finfo(np.float32).max)
 
       # EM step
-      exp_list = pet_fwd_model_lm(recon, lmproj, events[i::nsubsets,:], attn_list[i::nsubsets], 
+      exp_list = pet_fwd_model_lm(recon, proj, events[i::nsubsets,:], attn_list[i::nsubsets], 
                                       sens_list[i::nsubsets], fwhm = fwhm) + contam_list[i::nsubsets]
 
-      recon *= (pet_back_model_lm(1/exp_list, lmproj, events[i::nsubsets,:], attn_list[i::nsubsets], 
+      recon *= (pet_back_model_lm(1/exp_list, proj, events[i::nsubsets,:], attn_list[i::nsubsets], 
                                   sens_list[i::nsubsets], fwhm = fwhm)*nsubsets / sens_img)
 
       # "TV" step (weighted denoising)

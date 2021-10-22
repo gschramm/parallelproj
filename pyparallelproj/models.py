@@ -44,7 +44,7 @@ def pet_fwd_model(img, proj, attn_sino, sens_sino, isub = None, fwhm = 0):
   return sino
 
 #---------------------------------------------------------------------------------
-def pet_fwd_model_lm(img, lmproj, subset_events, attn_list, sens_list, fwhm = 0):
+def pet_fwd_model_lm(img, proj, subset_events, attn_list, sens_list, fwhm = 0):
   """PET listmode forward model
 
   Parameters
@@ -53,8 +53,8 @@ def pet_fwd_model_lm(img, lmproj, subset_events, attn_list, sens_list, fwhm = 0)
   img : 3D numpy array
     containing the activity image
 
-  lmproj : projector
-    geometrical listmode TOF or non-TOF projector
+  proj : projector
+    geometrical TOF or non-TOF projector
 
   subset_events : 2D numpy array of shape [nevents per subset, 5]
     detector and TOF coordinates of the events in the subset
@@ -77,7 +77,7 @@ def pet_fwd_model_lm(img, lmproj, subset_events, attn_list, sens_list, fwhm = 0)
   if np.any(fwhm > 0):
     img = gaussian_filter(img, fwhm/2.35)
 
-  fwd_list = sens_list*attn_list*lmproj.fwd_project(img, subset_events)
+  fwd_list = sens_list*attn_list*proj.fwd_project_lm(img, subset_events)
 
   return fwd_list
 
@@ -124,7 +124,7 @@ def pet_back_model(subset_sino, proj, attn_sino, sens_sino, isub = None, fwhm = 
   return back_img
 
 #---------------------------------------------------------------------------------
-def pet_back_model_lm(lst, lmproj, subset_events, attn_list, sens_list, fwhm = 0):
+def pet_back_model_lm(lst, proj, subset_events, attn_list, sens_list, fwhm = 0):
   """Adjoint of listmode PET forward model (backward model)
 
   Parameters
@@ -133,8 +133,8 @@ def pet_back_model_lm(lst, lmproj, subset_events, attn_list, sens_list, fwhm = 0
   lst : 1D numpy array
     containing the values for each event LOR to be backprojected
 
-  lmproj : projector
-    geometrical listmode TOF or non-TOF projector
+  proj : projector
+    geometrical TOF or non-TOF projector
 
   subset_events : 2D numpy array of shape [nevents per subset, 5]
     detector and TOF coordinates of the events in the subset
@@ -154,7 +154,7 @@ def pet_back_model_lm(lst, lmproj, subset_events, attn_list, sens_list, fwhm = 0
   3D numpy array containing the back projected image
   """
 
-  back_img = lmproj.back_project(sens_list*attn_list*lst, subset_events)
+  back_img = proj.back_project_lm(sens_list*attn_list*lst, subset_events)
 
   if np.any(fwhm > 0):
     back_img = gaussian_filter(back_img, fwhm/2.35)
