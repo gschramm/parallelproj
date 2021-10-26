@@ -183,13 +183,14 @@ def spdhg(em_sino, attn_sino, sens_sino, contam_sino, proj, niter,
     if np.any(y[ss] != 0):
       z += pet_back_model(y[ss], proj, attn_sino[ss], sens_sino[ss], i, fwhm = fwhm)
 
-  zbar = z.copy()
-
   # allocate arrays for gradient operations
   if y_grad_start is None:
     y_grad = np.zeros((x.ndim,) + img_shape, dtype = np.float32)
   else:
     y_grad = y_grad_start.copy()
+    z += grad_operator.adjoint(y_grad)
+
+  zbar = z.copy()
 
   #--------------------------------------------------------------------------------------------
   # SPDHG iterations
