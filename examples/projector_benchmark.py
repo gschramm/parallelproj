@@ -1,3 +1,8 @@
+# nvidia profiler: 
+#    nsys profile -t openmp,cuda --stats=true --force-overwrite true -o my_report python projector_benchmark.py
+#    nsight-sys my_report.qdrep
+
+
 # small demo for listmode TOF MLEM without subsets
 
 import pyparallelproj as ppp
@@ -15,8 +20,8 @@ from time import time
 # parse the command line
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--counts',   help = 'counts to simulate',    default = 4e6, type = float)
-parser.add_argument('--nsubsets', help = 'number of subsets',     default = 28,  type = int)
+parser.add_argument('--counts',   help = 'counts to simulate',    default = 7e7, type = float)
+parser.add_argument('--nsubsets', help = 'number of subsets',     default = 56,  type = int)
 parser.add_argument('--n',        help = 'number of averages',    default = 5,   type = int)
 parser.add_argument('--tpb',      help = 'threads per block',     default = 64,  type = int)
 parser.add_argument('--chunks',   help = 'number of GPU chunks',  default = 1,   type = int)
@@ -35,8 +40,8 @@ args = parser.parse_args()
 print(' '.join([x[0] + ':' + str(x[1]) for x in args.__dict__.items()]))
 print('')
 
-counts        = args.counts
 nsubsets      = args.nsubsets
+counts        = args.counts / nsubsets
 n             = args.n
 tpb           = args.tpb
 chunks        = args.chunks
@@ -51,7 +56,7 @@ if args.fov == 'wb':
 elif args.fov == 'brain':
   fov_mm = 250
 
-spatial_dim_order = np.array(args.sino_dim_order, dtype = np.int)
+spatial_dim_order = np.array(args.sino_dim_order, dtype = int)
 
 if tof:
   ntofbins = 27
@@ -88,10 +93,6 @@ proj        = ppp.SinogramProjector(scanner, sino_params, img.shape, nsubsets = 
                                     tof = tof, sigma_tof = 60./2.35, n_sigmas = 3.,
                                     threadsperblock = tpb)
 
-# contamination sinogram with scatter and randoms
-# useful to avoid division by 0 in the ratio of data and exprected data
-ones_sino = np.ones(proj.subset_sino_shapes[0], dtype = np.float32)
-
 #-------------------------------------------------------------------------------------
 # time sino fwd and back projection
 # do a forward / back projection of subset 0 - same as img_fwd = proj.fwd_project(img, 0)
@@ -108,8 +109,9 @@ xstart = xstart.ravel()
 xend   = xend.ravel()
 
 img_ravel = img.ravel(order = img_mem_order)
-subset_nLORs     = proj.nLORs[subset]
-sino     = np.ones(subset_nLORs*proj.ntofbins, dtype = ctypes.c_float)  
+subset_nLORs = proj.nLORs[subset]
+sino  = np.full(subset_nLORs*proj.ntofbins, counts/(subset_nLORs*proj.ntofbins), dtype = ctypes.c_float)  
+sino  = np.random.poisson(sino).astype(ctypes.c_float)
 
 #--- time fwd projection
 for i in range(n+1):
@@ -162,21 +164,13 @@ back_img = back_img.reshape((n0,n1,n2))
 if counts > 0:
   print('\ngenerating LM data\n')
   # generate list mode events and the corresponting values in the contamination and sensitivity
-  scale_fac = (counts / img_fwd.sum())
-  img_fwd  *= scale_fac 
+  scale_fac = (counts/img_fwd.sum())
+  img_fwd  *= scale_fac
   
   em_sino = np.random.poisson(img_fwd.reshape(proj.subset_sino_shapes[subset]))
   
   events = sino_params.sinogram_to_listmode(em_sino, subset = subset, 
                                             nsubsets = nsubsets)
-  
-  # create a listmode projector for the LM MLEM iterations
-  lmproj = ppp.LMProjector(proj.scanner, proj.img_dim, voxsize = proj.voxsize, 
-                           img_origin = proj.img_origin,
-                           tof = proj.get_tof(), sigma_tof = proj.sigma_tof, 
-                           tofbin_width = proj.tofbin_width,
-                           n_sigmas = proj.nsigmas,
-                           threadsperblock = proj.threadsperblock)
   
   values = np.ones(events.shape[0], dtype = np.float32)
   
@@ -185,11 +179,11 @@ if counts > 0:
 
   nevents = events.shape[0]
 
-  xstart = lmproj.scanner.get_crystal_coordinates(events[:,0:2]).ravel()
-  xend   = lmproj.scanner.get_crystal_coordinates(events[:,2:4]).ravel()
+  xstart = proj.scanner.get_crystal_coordinates(events[:,0:2]).ravel()
+  xend   = proj.scanner.get_crystal_coordinates(events[:,2:4]).ravel()
   tofbin = events[:,4].astype(ctypes.c_short)
 
-  sigma_tof = np.full(nevents, lmproj.sigma_tof, dtype = ctypes.c_float)
+  sigma_tof = np.full(nevents, proj.sigma_tof, dtype = ctypes.c_float)
   tofcenter_offset = np.zeros(nevents, dtype = ctypes.c_float)
 
   # time LM fwd projection
@@ -199,33 +193,33 @@ if counts > 0:
     t0 = time()
     if tof:
       ok = joseph3d_fwd_tof_lm(xstart, xend, 
-                               img_ravel, lmproj.img_origin, lmproj.voxsize, 
-                               img_fwd, nevents, lmproj.img_dim,
-                               lmproj.tofbin_width, sigma_tof, tofcenter_offset, lmproj.nsigmas,
-                               tofbin, threadsperblock = lmproj.threadsperblock, n_chunks = chunks)
+                               img_ravel, proj.img_origin, proj.voxsize, 
+                               img_fwd, nevents, proj.img_dim,
+                               proj.tofbin_width, sigma_tof, tofcenter_offset, proj.nsigmas,
+                               tofbin, threadsperblock = proj.threadsperblock, n_chunks = chunks)
     else:
       ok = joseph3d_fwd(xstart, xend, 
-                        img_ravel, lmproj.img_origin, lmproj.voxsize, 
-                        img_fwd, nevents, lmproj.img_dim,
-                        threadsperblock = lmproj.threadsperblock, n_chunks = chunks)
+                        img_ravel, proj.img_origin, proj.voxsize, 
+                        img_fwd, nevents, proj.img_dim,
+                        threadsperblock = proj.threadsperblock, n_chunks = chunks)
     t1 = time()
     if i > 0:
       t_lm_fwd[i-1] = t1 - t0
 
 
-    back_img = np.zeros(lmproj.nvox, dtype = ctypes.c_float)  
+    back_img = np.zeros(proj.nvox, dtype = ctypes.c_float)  
     t2 = time()
     if tof:
       ok = joseph3d_back_tof_lm(xstart, xend, 
-                                back_img, lmproj.img_origin, lmproj.voxsize, 
-                                values, nevents, lmproj.img_dim,
-                                lmproj.tofbin_width, sigma_tof, tofcenter_offset, lmproj.nsigmas, 
-                                tofbin, threadsperblock = lmproj.threadsperblock, n_chunks = chunks)
+                                back_img, proj.img_origin, proj.voxsize, 
+                                values, nevents, proj.img_dim,
+                                proj.tofbin_width, sigma_tof, tofcenter_offset, proj.nsigmas, 
+                                tofbin, threadsperblock = proj.threadsperblock, n_chunks = chunks)
     else:
       ok = joseph3d_back(xstart, xend, 
-                         back_img, lmproj.img_origin, lmproj.voxsize, 
-                         values, nevents, lmproj.img_dim,
-                         threadsperblock = lmproj.threadsperblock, n_chunks = chunks)
+                         back_img, proj.img_origin, proj.voxsize, 
+                         values, nevents, proj.img_dim,
+                         threadsperblock = proj.threadsperblock, n_chunks = chunks)
     t3 = time()
     if i > 0:
       t_lm_back[i-1] = t3 - t2
