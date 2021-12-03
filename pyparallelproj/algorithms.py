@@ -36,8 +36,9 @@ def osem(em_sino, attn_sino, sens_sino, contam_sino, proj, niter,
       exp_sino = pet_fwd_model(recon, proj, attn_sino[ss], sens_sino[ss], i, 
                                fwhm = fwhm) + contam_sino[ss]
       ratio  = em_sino[ss] / exp_sino
-      recon *= (pet_back_model(ratio, proj, attn_sino[ss], sens_sino[ss], i, 
-                               fwhm = fwhm) / sens_img[i,...]) 
+      recon *= np.divide(pet_back_model(ratio, proj, attn_sino[ss], sens_sino[ss], i, fwhm = fwhm), 
+                         sens_img[i,...], out = np.zeros_like(sens_img[i,...]), 
+                         where = (sens_img[i,...] != 0)) 
     
       if subset_callback is not None:
         subset_callback(recon, iteration = (it+1), subset = (i+1), **subset_callback_kwargs)
@@ -71,8 +72,10 @@ def osem_lm(events, attn_list, sens_list, contam_list, proj, sens_img, niter, ns
       exp_list = pet_fwd_model_lm(recon, proj, events[i::nsubsets,:], attn_list[i::nsubsets], 
                                       sens_list[i::nsubsets], fwhm = fwhm) + contam_list[i::nsubsets]
 
-      recon *= (pet_back_model_lm(1/exp_list, proj, events[i::nsubsets,:], attn_list[i::nsubsets], 
-                                  sens_list[i::nsubsets], fwhm = fwhm)*nsubsets / sens_img)
+      recon *= np.divide(pet_back_model_lm(1/exp_list, proj, events[i::nsubsets,:], 
+                                           attn_list[i::nsubsets], 
+                                           sens_list[i::nsubsets], fwhm = fwhm)*nsubsets, 
+                         sens_img, out = np.zeros_like(sens_img), where = (sens_img != 0))
 
       if subset_callback is not None:
         subset_callback(recon, iteration = (it+1), subset = (i+1), **subset_callback_kwargs)
@@ -361,8 +364,10 @@ def osem_lm_emtv(events, attn_list, sens_list, contam_list, proj, sens_img, nite
       exp_list = pet_fwd_model_lm(recon, proj, events[i::nsubsets,:], attn_list[i::nsubsets], 
                                       sens_list[i::nsubsets], fwhm = fwhm) + contam_list[i::nsubsets]
 
-      recon *= (pet_back_model_lm(1/exp_list, proj, events[i::nsubsets,:], attn_list[i::nsubsets], 
-                                  sens_list[i::nsubsets], fwhm = fwhm)*nsubsets / sens_img)
+      recon *= np.divide(pet_back_model_lm(1/exp_list, proj, events[i::nsubsets,:], 
+                                           attn_list[i::nsubsets], sens_list[i::nsubsets], 
+                                           fwhm = fwhm)*nsubsets, 
+                         sens_img, out = np.zeros_like(sens_img), where = (sens_img != 0))
 
       # "TV" step (weighted denoising)
       if grad_norm.beta > 0:

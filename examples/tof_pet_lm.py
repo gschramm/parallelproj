@@ -42,8 +42,6 @@ scanner = ppp.RegularPolygonPETScanner(ncrystals_per_module = np.array([16,1]),
 
 # setup a test image
 voxsize = np.array([2.,2.,2.])
-n0      = 120
-n1      = 120
 n2      = max(1,int((scanner.xc2.max() - scanner.xc2.min()) / voxsize[2]))
 
 # convert fwhm from mm to pixels
