@@ -348,6 +348,16 @@ def osem_lm_emtv(events, attn_list, sens_list, contam_list, proj, sens_img, nite
   else:
     recon = xstart.copy()
 
+  # construct a mask that shows which area is inside the scanner
+  # needed to avoid weights getting 0 which causes gam = inft in PDHG accel. denoising
+  x0 = (np.arange(img_shape[0]) - img_shape[0]/2 + 0.5)*proj.voxsize[0]
+  x1 = (np.arange(img_shape[1]) - img_shape[1]/2 + 0.5)*proj.voxsize[1]
+  X0,X1 = np.meshgrid(x0, x1, indexing = 'ij')
+  RHO   = np.sqrt(X0**2 + X1**2)
+
+  mask = RHO < 0.95*proj.scanner.R
+  mask = np.dstack([mask]*img_shape[2])
+
   # run OSEM iterations
   for it in range(niter):
     for i in range(nsubsets):
@@ -357,8 +367,9 @@ def osem_lm_emtv(events, attn_list, sens_list, contam_list, proj, sens_img, nite
       if grad_norm.beta > 0:
         # post EM TV denoise step
         weights = sens_img / np.clip(recon, recon[recon > 0].min(), None)
-        # clip also max of weights to avoid float overflow
-        weights = np.clip(weights, None, 0.1*np.finfo(np.float32).max)
+        # clip also max of weights to avoid float overflow and division by 0
+        weights = np.clip(weights, weights[mask == 1].min(), 0.1*np.finfo(np.float32).max)
+         
 
       # EM step
       exp_list = pet_fwd_model_lm(recon, proj, events[i::nsubsets,:], attn_list[i::nsubsets], 
