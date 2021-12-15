@@ -95,7 +95,7 @@ def spdhg(em_sino, attn_sino, sens_sino, contam_sino, proj, niter,
           callback = None, subset_callback = None,
           callback_kwargs = None, subset_callback_kwargs = None,
           pet_operator_norms = None, 
-          grad_operator = None, grad_norm = None):
+          grad_operator = None, grad_norm = None, beta = 0):
  
   img_shape = tuple(proj.img_dim)
   nsubsets  = proj.nsubsets
@@ -104,13 +104,13 @@ def spdhg(em_sino, attn_sino, sens_sino, contam_sino, proj, niter,
     grad_operator = GradientOperator()
 
   if grad_norm is None:
-    grad_norm = GradientNorm(beta = 0)
+    grad_norm = GradientNorm()
 
   # setup the probabilities for doing a pet data or gradient update
   # p_g is the probablility for doing a gradient update
   # p_p is the probablility for doing a PET data subset update
 
-  if grad_norm.beta == 0:
+  if beta == 0:
     p_g = 0
   else: 
     p_g = 0.5
@@ -233,7 +233,7 @@ def spdhg(em_sino, attn_sino, sens_sino, contam_sino, proj, niter,
         y_grad_plus = (y_grad + S_g*grad_operator.fwd(x))
 
         # apply the prox for the gradient norm
-        grad_norm.prox_convex_dual(y_grad_plus)
+        y_grad_plus = beta*grad_norm.prox_convex_dual(y_grad_plus/beta, sigma = S_g/beta)
 
         dz = grad_operator.adjoint(y_grad_plus - y_grad)
 
@@ -302,7 +302,7 @@ def pdhg_l2_denoise(img, grad_operator, grad_norm,
     ynew += sig*grad_operator.fwd(xbar)
     
     # (2) proximity operator
-    grad_norm.prox_convex_dual(ynew)
+    ynew = grad_norm.prox_convex_dual(ynew, sigma = sig)
     
     # (3) back model
     xnew = x - tau*grad_operator.adjoint(ynew)
@@ -332,7 +332,7 @@ def pdhg_l2_denoise(img, grad_operator, grad_norm,
 def osem_lm_emtv(events, attn_list, sens_list, contam_list, proj, sens_img, niter, nsubsets, 
                  fwhm = 0, verbose = False, xstart = None, callback = None, subset_callback = None,
                  callback_kwargs = None, subset_callback_kwargs = None, niter_denoise = 20,
-                 grad_norm = None, grad_operator = None):
+                 grad_norm = None, grad_operator = None, beta = 0):
 
   if grad_operator is None:
     grad_operator = GradientOperator()
@@ -364,9 +364,9 @@ def osem_lm_emtv(events, attn_list, sens_list, contam_list, proj, sens_img, nite
       if verbose: print(f'iteration {it+1} subset {i+1}')
 
       # calculate the weights for weighted denoising problem that we have to solve
-      if grad_norm.beta > 0:
-        # post EM TV denoise step
-        weights = sens_img / np.clip(recon, recon[recon > 0].min(), None)
+      if beta > 0:
+        # wegihts post EM TV denoise step
+        weights = sens_img / (beta*np.clip(recon, recon[recon > 0].min(), None))
         # clip also max of weights to avoid float overflow and division by 0
         weights = np.clip(weights, weights[mask == 1].min(), 0.1*np.finfo(np.float32).max)
          
@@ -381,7 +381,7 @@ def osem_lm_emtv(events, attn_list, sens_list, contam_list, proj, sens_img, nite
                          sens_img, out = np.zeros_like(sens_img), where = (sens_img != 0))
 
       # "TV" step (weighted denoising)
-      if grad_norm.beta > 0:
+      if beta > 0:
         recon = pdhg_l2_denoise(recon, grad_operator, grad_norm, 
                                 weights = weights, niter = niter_denoise, nonneg = True)
 

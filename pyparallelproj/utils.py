@@ -404,9 +404,8 @@ class GradientNorm:
   beta : float
     factor multiplied to the norm (default 1)
   """
-  def __init__(self, name = 'l2_l1', beta = 1):
+  def __init__(self, name = 'l2_l1'):
     self.name = name
-    self.beta = beta
  
     if not self.name in ['l2_l1']:
      raise NotImplementedError
@@ -415,8 +414,6 @@ class GradientNorm:
     if self.name == 'l2_l1':
       n = numpy.linalg.norm(x, axis = 0).sum()
 
-    if self.beta != 1: n *= self.beta
-
     return n
 
   def prox_convex_dual(self, x, sigma = None):
@@ -424,5 +421,6 @@ class GradientNorm:
     """
     if self.name == 'l2_l1':
       gnorm = numpy.linalg.norm(x, axis = 0)
-      if self.beta != 1: gnorm /= self.beta
-      x /= numpy.clip(gnorm, 1, None)
+      r = x /numpy.clip(gnorm, 1, None)
+
+    return r

@@ -112,7 +112,7 @@ if counts > 0:
 
   # contamination sinogram with scatter and randoms
   # useful to avoid division by 0 in the ratio of data and exprected data
-  contam_sino = np.full(img_fwd.shape, 0.2*img_fwd.mean(), dtype = np.float32)
+  contam_sino = np.full(img_fwd.shape, 0.75*img_fwd.mean(), dtype = np.float32)
   
   em_sino = np.random.poisson(img_fwd + contam_sino)
 else:
@@ -120,7 +120,7 @@ else:
 
   # contamination sinogram with sctter and randoms
   # useful to avoid division by 0 in the ratio of data and exprected data
-  contam_sino = np.full(img_fwd.shape, 0.2*img_fwd.mean(), dtype = np.float32)
+  contam_sino = np.full(img_fwd.shape, 0.75*img_fwd.mean(), dtype = np.float32)
 
   em_sino = img_fwd + contam_sino
 
@@ -132,14 +132,40 @@ else:
 # setup joint gradient field
 G0            = GradientOperator()
 grad_operator = GradientOperator(joint_grad_field = G0.fwd(-(img**0.5)))
-grad_norm     = GradientNorm(beta = beta)
+grad_norm     = GradientNorm()
+
+#-----------------------------------------------------------------------------------------------------
+# callback function to calculate cost after every iteration
+
+def calc_cost(x):
+  exp  = ppp.pet_fwd_model(x, proj, attn_sino, sens_sino, fwhm = fwhm) + contam_sino
+  cost = (exp - em_sino*np.log(exp)).sum()
+
+  if beta > 0:
+    cost += beta*grad_norm.eval(grad_operator.fwd(x))
+
+  return cost
+
+def _cb(x, **kwargs):
+  it = kwargs.get('iteration',0)
+  if 'cost' in kwargs:
+    kwargs['cost'][it-1] = calc_cost(x)
+#-----------------------------------------------------------------------------------------------------
+
+cost = np.zeros(niter)
 
 recon = spdhg(em_sino, attn_sino, sens_sino, contam_sino, proj, niter,
               gamma = 1/img.max(), fwhm = fwhm, verbose = True, 
-              xstart = None, grad_operator = grad_operator, grad_norm = grad_norm)
+              xstart = None, grad_operator = grad_operator, grad_norm = grad_norm, beta = beta,
+              callback = _cb, callback_kwargs = {'cost': cost})
 
-fig, ax = plt.subplots(1,2, figsize = (10,5))
+fig, ax = plt.subplots(1,3, figsize = (12,5))
 ax[0].imshow(img.squeeze(), cmap = plt.cm.Greys, vmin = 0, vmax = 1.2*img.max())
 ax[1].imshow(recon.squeeze(), cmap = plt.cm.Greys, vmin = 0, vmax = 1.2*img.max())
+ax[2].semilogy(np.arange(1,niter+1), cost)
+ax[2].grid(ls = ':')
+ax[2].set_xlabel('iteration')
+ax[2].set_ylabel('cost')
+ax[2].set_ylim(cost.min(), cost[2:].max())
 fig.tight_layout()
 fig.show()
