@@ -400,6 +400,7 @@ class GradientNorm:
   name : str
     name of the norm
     'l2_l1' ... mixed L2/L1 (sum of pointwise Euclidean norms in every voxel)
+    'l2_sq' ... squared l2 norm (sum of pointwise squared Euclidean norms in every voxel)
 
   beta : float
     factor multiplied to the norm (default 1)
@@ -407,12 +408,14 @@ class GradientNorm:
   def __init__(self, name = 'l2_l1'):
     self.name = name
  
-    if not self.name in ['l2_l1']:
+    if not self.name in ['l2_l1', 'l2_sq']:
      raise NotImplementedError
 
-  def eval(self,x):
+  def eval(self, x):
     if self.name == 'l2_l1':
       n = numpy.linalg.norm(x, axis = 0).sum()
+    elif self.name == 'l2_sq':
+      n = (x**2).sum()
 
     return n
 
@@ -421,6 +424,8 @@ class GradientNorm:
     """
     if self.name == 'l2_l1':
       gnorm = numpy.linalg.norm(x, axis = 0)
-      r = x /numpy.clip(gnorm, 1, None)
+      r = x/numpy.clip(gnorm, 1, None)
+    elif self.name == 'l2_sq':
+      r = x/(1+sigma)
 
     return r

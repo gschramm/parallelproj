@@ -24,7 +24,11 @@ parser.add_argument('--fwhm_mm',  help = 'psf modeling FWHM mm',  default = 4.5,
 parser.add_argument('--fwhm_data_mm',  help = 'psf for data FWHM mm',  default = 4.5, type = float)
 parser.add_argument('--phantom', help = 'phantom to use', default = 'brain2d')
 parser.add_argument('--seed',    help = 'seed for random generator', default = 1, type = int)
+parser.add_argument('--rel_gamma', help = 'relative step size ratio',  default = 3, type = float)
 parser.add_argument('--beta',  help = 'prior strength',  default = 0.1, type = float)
+parser.add_argument('--norm',  help = 'name of gradient norm',  default = 'l2_l1', 
+                               choices = ['l2_sq', 'l2_l1'])
+parser.add_argument('--use_structure',  help = 'use structural info for prior',  action = 'store_true')
 args = parser.parse_args()
 
 #---------------------------------------------------------------------------------
@@ -37,6 +41,9 @@ fwhm_data_mm  = args.fwhm_data_mm
 phantom       = args.phantom
 seed          = args.seed
 beta          = args.beta
+norm          = args.norm
+use_structure = args.use_structure
+rel_gamma     = args.rel_gamma
 
 #---------------------------------------------------------------------------------
 
@@ -89,7 +96,7 @@ sens_sino = np.ones(proj.sino_params.nontof_shape, dtype = np.float32)
 
 # estimate the norm of the operator
 test_img = np.random.rand(*img.shape)
-for i in range(10):
+for i in range(5):
   fwd  = ppp.pet_fwd_model(test_img, proj, attn_sino, sens_sino, fwhm = fwhm)
   back = ppp.pet_back_model(fwd, proj, attn_sino, sens_sino, fwhm = fwhm)
 
@@ -130,9 +137,13 @@ else:
 #-----------------------------------------------------------------------------------------------
 
 # setup joint gradient field
-G0            = GradientOperator()
-grad_operator = GradientOperator(joint_grad_field = G0.fwd(-(img**0.5)))
-grad_norm     = GradientNorm()
+if use_structure:
+  G0            = GradientOperator()
+  grad_operator = GradientOperator(joint_grad_field = G0.fwd(-(img**0.5)))
+else:
+  grad_operator = GradientOperator()
+
+grad_norm = GradientNorm(name = norm)
 
 #-----------------------------------------------------------------------------------------------------
 # callback function to calculate cost after every iteration
@@ -150,22 +161,29 @@ def _cb(x, **kwargs):
   it = kwargs.get('iteration',0)
   if 'cost' in kwargs:
     kwargs['cost'][it-1] = calc_cost(x)
+  if 'xm' in kwargs:
+    kwargs['xm'].append(x)
 #-----------------------------------------------------------------------------------------------------
 
 cost = np.zeros(niter)
+xm   = [] 
 
 recon = spdhg(em_sino, attn_sino, sens_sino, contam_sino, proj, niter,
-              gamma = 1/img.max(), fwhm = fwhm, verbose = True, 
+              gamma = rel_gamma/img.max(), fwhm = fwhm, verbose = True, 
               xstart = None, grad_operator = grad_operator, grad_norm = grad_norm, beta = beta,
-              callback = _cb, callback_kwargs = {'cost': cost})
+              callback = _cb, callback_kwargs = {'cost': cost, 'xm':xm})
+
+xm = np.array(xm)
+
+#--- visualization
 
 fig, ax = plt.subplots(1,3, figsize = (12,5))
 ax[0].imshow(img.squeeze(), cmap = plt.cm.Greys, vmin = 0, vmax = 1.2*img.max())
 ax[1].imshow(recon.squeeze(), cmap = plt.cm.Greys, vmin = 0, vmax = 1.2*img.max())
-ax[2].semilogy(np.arange(1,niter+1), cost)
+ax[2].plot(np.arange(1,niter+1), cost)
 ax[2].grid(ls = ':')
 ax[2].set_xlabel('iteration')
 ax[2].set_ylabel('cost')
-ax[2].set_ylim(cost.min(), cost[2:].max())
+ax[2].set_ylim(cost.min(), cost[3:].max())
 fig.tight_layout()
 fig.show()
