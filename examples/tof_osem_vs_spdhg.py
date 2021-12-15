@@ -22,7 +22,6 @@ parser.add_argument('--niter',    help = 'number of iterations',  default = 100,
 parser.add_argument('--niter_ref', help = 'number of ref iterations', default = 5000,  type = int)
 parser.add_argument('--nsubsets',   help = 'number of subsets',     default = 28,  type = int)
 parser.add_argument('--warm'  ,   help = 'warm start with 1 OSEM it', action = 'store_true')
-parser.add_argument('--interactive', help = 'show recons updates', action = 'store_true')
 parser.add_argument('--fwhm_mm',  help = 'psf modeling FWHM mm',  default = 4.5, type = float)
 parser.add_argument('--fwhm_data_mm',  help = 'psf for data FWHM mm',  default = 4.5, type = float)
 parser.add_argument('--ps_fwhm_mm',  help = 'FWHM mm of Gaussian for post-smoothing',  default = 8., type = float)
@@ -39,7 +38,6 @@ nsubsets      = args.nsubsets
 fwhm_mm       = args.fwhm_mm
 fwhm_data_mm  = args.fwhm_data_mm
 warm          = args.warm
-interactive   = args.interactive
 phantom       = args.phantom
 seed          = args.seed
 ps_fwhm_mm    = args.ps_fwhm_mm
@@ -102,18 +100,18 @@ sens_sino = np.ones(proj.sino_params.nontof_shape, dtype = np.float32)
 
 # estimate the norm of the operator
 test_img = np.random.rand(*img.shape)
-for i in range(10):
+for i in range(5):
   fwd  = ppp.pet_fwd_model(test_img, proj, attn_sino, sens_sino, fwhm = fwhm)
   back = ppp.pet_back_model(fwd, proj, attn_sino, sens_sino, fwhm = fwhm)
 
-  norm = np.linalg.norm(back)
-  print(i,norm)
+  pnsq = np.linalg.norm(back)
+  print(i,np.sqrt(pnsq))
 
-  test_img = back / norm
+  test_img = back / pnsq
 
 # normalize sensitivity sinogram to get PET forward model for 1 view with norm 1
 # this is important otherwise the step size T in SPDHG get dominated by the gradient
-sens_sino /= (np.sqrt(norm)/proj.sino_params.nviews)
+sens_sino /= (np.sqrt(pnsq)/np.sqrt(8))
 
 # forward project the image
 img_fwd= ppp.pet_fwd_model(img, proj, attn_sino, sens_sino, fwhm = fwhm_data)
@@ -126,7 +124,7 @@ if counts > 0:
 
   # contamination sinogram with scatter and randoms
   # useful to avoid division by 0 in the ratio of data and exprected data
-  contam_sino = np.full(img_fwd.shape, 0.2*img_fwd.mean(), dtype = np.float32)
+  contam_sino = np.full(img_fwd.shape, 0.75*img_fwd.mean(), dtype = np.float32)
   
   em_sino = np.random.poisson(img_fwd + contam_sino)
 else:
@@ -134,33 +132,13 @@ else:
 
   # contamination sinogram with sctter and randoms
   # useful to avoid division by 0 in the ratio of data and exprected data
-  contam_sino = np.full(img_fwd.shape, 0.2*img_fwd.mean(), dtype = np.float32)
+  contam_sino = np.full(img_fwd.shape, 0.75*img_fwd.mean(), dtype = np.float32)
 
   em_sino = img_fwd + contam_sino
 
 #-------------------------------------------------------------------------------------
 #-------------------------------------------------------------------------------------
-
-if interactive:
-  fig, ax = plt.subplots(1,3, figsize = (12,4))
-  ax[0].imshow(img[...,n2//2],   vmin = 0, vmax = 1.3*img.max(), cmap = plt.cm.Greys)
-  ax[0].set_title('ground truth')
-  ir = ax[1].imshow(0*img[...,n2//2], vmin = 0, vmax = 1.3*img.max(), cmap = plt.cm.Greys)
-  ax[1].set_title('recon')
-  ib = ax[2].imshow(img[...,n2//2] - img[...,n2//2], vmin = -0.2*img.max(), vmax = 0.2*img.max(), 
-                    cmap = plt.cm.bwr)
-  ax[2].set_title('bias')
-  fig.tight_layout()
-  plt.pause(1e-6)
-
-
-#-----------------------------------------------------------------------------------------------
 # callback functions to calculate likelihood and show recon updates
-
-def update_img(x):
-  ir.set_data(x[...,n2//2])
-  ib.set_data(x[...,n2//2] - img[...,n2//2])
-  plt.pause(1e-6)
 
 def calc_cost(x):
   exp  = ppp.pet_fwd_model(x, proj, attn_sino, sens_sino, fwhm = fwhm) + contam_sino
@@ -176,8 +154,6 @@ def _cb(x, **kwargs):
     if 'x_early' in kwargs:
       kwargs['x_early'][:] = x
 
-  if interactive: 
-    update_img(x)
   if 'cost' in kwargs:
     kwargs['cost'][it-1] = calc_cost(x)
   if 'psnr' in kwargs:
