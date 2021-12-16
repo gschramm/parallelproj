@@ -21,7 +21,6 @@ parser.add_argument('--counts',   help = 'counts to simulate',    default = 1e6,
 parser.add_argument('--niter',    help = 'number of iterations',  default = 100,  type = int)
 parser.add_argument('--niter_ref', help = 'number of ref iterations', default = 5000,  type = int)
 parser.add_argument('--nsubsets',   help = 'number of subsets',     default = 28,  type = int)
-parser.add_argument('--warm'  ,   help = 'warm start with 1 OSEM it', action = 'store_true')
 parser.add_argument('--fwhm_mm',  help = 'psf modeling FWHM mm',  default = 4.5, type = float)
 parser.add_argument('--fwhm_data_mm',  help = 'psf for data FWHM mm',  default = 4.5, type = float)
 parser.add_argument('--ps_fwhm_mm',  help = 'FWHM mm of Gaussian for post-smoothing',  default = 8., type = float)
@@ -37,13 +36,12 @@ niter_ref     = args.niter_ref
 nsubsets      = args.nsubsets
 fwhm_mm       = args.fwhm_mm
 fwhm_data_mm  = args.fwhm_data_mm
-warm          = args.warm
 phantom       = args.phantom
 seed          = args.seed
 ps_fwhm_mm    = args.ps_fwhm_mm
 beta          = 0
 
-gammas = np.array([0.3, 1., 3.])
+gammas = np.array([0.3, 1., 3., 10., 30., 100., 300.])
 
 it_early = 10
 #---------------------------------------------------------------------------------
@@ -187,10 +185,14 @@ else:
 
   np.savez(ref_fname, ref_recon = ref_recon, ref_cost = ref_cost)
 
+#----------
+
 ref_recon_ps = gaussian_filter(ref_recon, sig)
 
+proj.init_subsets(28)
 init_recon = osem(em_sino, attn_sino, sens_sino, contam_sino, proj, 1, 
                   fwhm = fwhm, verbose = True)
+proj.init_subsets(nsubsets)
 
 cost_osem    = np.zeros(niter)
 psnr_osem    = np.zeros(niter)
@@ -219,7 +221,17 @@ psnr_ps_spdhg = np.zeros((len(gammas),niter))
 recons_spdhg        = np.zeros((len(gammas),) + img.shape, dtype = np.float32)
 recons_spdhg_early  = np.zeros((len(gammas),) + img.shape, dtype = np.float32)
 
+costs_spdhg2   = np.zeros((len(gammas),niter))
+psnr_spdhg2    = np.zeros((len(gammas),niter))
+psnr_ps_spdhg2 = np.zeros((len(gammas),niter))
+
+recons_spdhg2        = np.zeros((len(gammas),) + img.shape, dtype = np.float32)
+recons_spdhg_early2  = np.zeros((len(gammas),) + img.shape, dtype = np.float32)
+
+
+
 for ig, gamma in enumerate(gammas):
+  # SPDHG with warm start
   cbs = {'cost':costs_spdhg[ig,:], 'xref':ref_recon, 'psnr':psnr_spdhg[ig,:],
          'xref_ps':ref_recon_ps, 'psnr_ps':psnr_ps_spdhg[ig,:], 'sig':sig,
          'it_early':it_early, 'x_early': recons_spdhg_early[ig,...]}
@@ -229,11 +241,23 @@ for ig, gamma in enumerate(gammas):
                                xstart = init_recon, ystart = ystart, 
                                callback = _cb, callback_kwargs = cbs)
 
+  # SPDHG with cold start
+  cbs2 = {'cost':costs_spdhg2[ig,:], 'xref':ref_recon, 'psnr':psnr_spdhg2[ig,:],
+         'xref_ps':ref_recon_ps, 'psnr_ps':psnr_ps_spdhg2[ig,:], 'sig':sig,
+         'it_early':it_early, 'x_early': recons_spdhg_early2[ig,...]}
+
+  recons_spdhg2[ig,...] = spdhg(em_sino, attn_sino, sens_sino, contam_sino, proj, niter,
+                                gamma = gamma/img.max(), fwhm = fwhm, verbose = True, 
+                                callback = _cb, callback_kwargs = cbs2)
+
+
+#-----------------------------------------------------------------------------------------------------
+
 base_str = f'{phantom}_counts_{counts:.1E}_beta_{beta:.1E}_niter_{niter_ref}_{niter}_nsub_{nsubsets}'
 
 ofile = os.path.join('figs',f'{base_str}.npz')
 
-c0   = (contam_sino - em_sino*np.log(contam_sino)).sum()
+c0   = calc_cost(init_recon)
 cref = ref_cost[-1]
 
 # save the results
@@ -250,15 +274,17 @@ fig2, ax2 = plt.subplots(3, len(gammas), figsize = (len(gammas)*2,6),
 
 for ig, gamma in enumerate(gammas):
   ax2[0,ig].semilogy(it,(cost_osem-cref)/(c0-cref), label = 'OSEM', color = 'tab:green')
-  ax2[0,ig].semilogy(it,(costs_spdhg[ig,:]-cref)/(c0-cref), 
-                     label = f'SPDHG', color = 'tab:blue')
+  ax2[0,ig].semilogy(it,(costs_spdhg[ig,:]-cref)/(c0-cref), label = f'SPDHG warm', color = 'tab:orange')
+  ax2[0,ig].semilogy(it,(costs_spdhg2[ig,:]-cref)/(c0-cref), label = f'SPDHG cold', color = 'tab:blue')
   ax2[0,ig].set_title(f'Gamma {gamma:.1E}', fontsize = 'medium')
 
   ax2[1,ig].plot(it,psnr_osem, label = 'OSEM', color = 'tab:green')
-  ax2[1,ig].plot(it,psnr_spdhg[ig,:], label = f'SPDHG', color = 'tab:blue')
+  ax2[1,ig].plot(it,psnr_spdhg[ig,:], label = f'SPDHG warm', color = 'tab:orange')
+  ax2[1,ig].plot(it,psnr_spdhg2[ig,:], label = f'SPDHG cold', color = 'tab:blue')
 
   ax2[2,ig].plot(it,psnr_ps_osem, label = 'OSEM', color = 'tab:green')
-  ax2[2,ig].plot(it,psnr_ps_spdhg[ig,:], label = f'SPDHG', color = 'tab:blue')
+  ax2[2,ig].plot(it,psnr_ps_spdhg[ig,:], label = f'SPDHG warm', color = 'tab:orange')
+  ax2[2,ig].plot(it,psnr_ps_spdhg2[ig,:], label = f'SPDHG cold', color = 'tab:blue')
   ax2[2,0].set_ylabel('PSNR ps')
 
 ax2[0,0].set_ylabel('relative cost')
@@ -277,7 +303,7 @@ fig2.savefig(os.path.join('figs',f'{base_str}_metrics.png'))
 fig2.show()            
 
 # show the reconstructions
-fig3, ax3 = plt.subplots(2,len(gammas) + 2, figsize = ((len(gammas)+2)*2,4), squeeze = False)
+fig3, ax3 = plt.subplots(4,len(gammas) + 2, figsize = ((len(gammas)+2)*2,8), squeeze = False)
 
 vmax = 1.5*img.max()
 
@@ -292,10 +318,14 @@ ax3[1,1].set_title('ps OSEM', fontsize = 'small')
 
 for ig, gamma in enumerate(gammas):
   ax3[0,ig+2].imshow(recons_spdhg[ig,...], vmax = vmax, cmap = plt.cm.Greys)
-  ax3[0,ig+2].set_title(f'SPDHG {gamma:.1E}', fontsize = 'small')
-
+  ax3[0,ig+2].set_title(f'SPDHGw {gamma:.1E}', fontsize = 'small')
   ax3[1,ig+2].imshow(gaussian_filter(recons_spdhg[ig,...],sig), vmax = vmax, cmap = plt.cm.Greys)
-  ax3[1,ig+2].set_title(f'ps SPDHG {gamma:.1E}', fontsize = 'small')
+  ax3[1,ig+2].set_title(f'ps SPDHGw {gamma:.1E}', fontsize = 'small')
+
+  ax3[2,ig+2].imshow(recons_spdhg2[ig,...], vmax = vmax, cmap = plt.cm.Greys)
+  ax3[2,ig+2].set_title(f'SPDHGc {gamma:.1E}', fontsize = 'small')
+  ax3[3,ig+2].imshow(gaussian_filter(recons_spdhg2[ig,...],sig), vmax = vmax, cmap = plt.cm.Greys)
+  ax3[3,ig+2].set_title(f'ps SPDHGc {gamma:.1E}', fontsize = 'small')
 
 for axx in ax3.flatten():
   axx.set_axis_off()
@@ -305,7 +335,7 @@ fig3.savefig(os.path.join('figs',f'{base_str}.png'))
 fig3.show()
 
 # show the early reconstructions
-fig4, ax4 = plt.subplots(2,len(gammas) + 2, figsize = ((len(gammas)+2)*2,4), squeeze = False)
+fig4, ax4 = plt.subplots(4,len(gammas) + 2, figsize = ((len(gammas)+2)*2,8), squeeze = False)
 
 vmax = 1.5*img.max()
 
@@ -320,10 +350,14 @@ ax4[1,1].set_title('ps OSEM', fontsize = 'small')
 
 for ig, gamma in enumerate(gammas):
   ax4[0,ig+2].imshow(recons_spdhg_early[ig,...], vmax = vmax, cmap = plt.cm.Greys)
-  ax4[0,ig+2].set_title(f'SPDHG {gamma:.1E}', fontsize = 'small')
-
+  ax4[0,ig+2].set_title(f'SPDHGw {gamma:.1E}', fontsize = 'small')
   ax4[1,ig+2].imshow(gaussian_filter(recons_spdhg_early[ig,...],sig), vmax = vmax, cmap = plt.cm.Greys)
-  ax4[1,ig+2].set_title(f'ps SPDHG {gamma:.1E}', fontsize = 'small')
+  ax4[1,ig+2].set_title(f'ps SPDHGw {gamma:.1E}', fontsize = 'small')
+
+  ax4[2,ig+2].imshow(recons_spdhg_early2[ig,...], vmax = vmax, cmap = plt.cm.Greys)
+  ax4[2,ig+2].set_title(f'SPDHGc {gamma:.1E}', fontsize = 'small')
+  ax4[3,ig+2].imshow(gaussian_filter(recons_spdhg_early2[ig,...],sig), vmax = vmax, cmap = plt.cm.Greys)
+  ax4[3,ig+2].set_title(f'ps SPDHGc {gamma:.1E}', fontsize = 'small')
 
 for axx in ax4.flatten():
   axx.set_axis_off()
