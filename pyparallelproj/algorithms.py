@@ -94,8 +94,10 @@ def spdhg(em_sino, attn_sino, sens_sino, contam_sino, proj, niter,
           xstart = None, ystart = None, y_grad_start = None,
           callback = None, subset_callback = None,
           callback_kwargs = None, subset_callback_kwargs = None,
-          pet_operator_norms = None, 
           grad_operator = None, grad_norm = None, beta = 0):
+
+  if not isinstance(gamma, (list,tuple,np.ndarray)):
+    gamma = np.full(niter, gamma, dtype = np.float32)
  
   img_shape = tuple(proj.img_dim)
   nsubsets  = proj.nsubsets
@@ -122,50 +124,39 @@ def spdhg(em_sino, attn_sino, sens_sino, contam_sino, proj, niter,
 
   # calculate S and T for the gradient operator
   if p_g > 0:
-    S_g = (gamma*rho/grad_op_norm)
-    T_g = rho*p_g/(gamma*grad_op_norm)
+    S_g = (gamma[0]*rho/grad_op_norm)
+    T_g = rho*p_g/(gamma[0]*grad_op_norm)
 
   # calculate the "step sizes" S_i for the PET fwd operator
   S_i = []
-  if pet_operator_norms is None:
-    ones_img = np.ones(img_shape, dtype = np.float32)
+  ones_img = np.ones(img_shape, dtype = np.float32)
 
-    for i in range(nsubsets):
-      # get the slice for the current subset
-      ss = proj.subset_slices[i]
-      tmp =  pet_fwd_model(ones_img, proj, attn_sino[ss], sens_sino[ss], i, fwhm = fwhm)
-      tmp = np.clip(tmp, tmp[tmp > 0].min(), None)
-      S_i.append((gamma*rho) / tmp)
-  else:
-    for i in range(nsubsets):
-      S_i.append((gamma*rho)/pet_operator_norms[i])
+  for i in range(nsubsets):
+    # get the slice for the current subset
+    ss = proj.subset_slices[i]
+    tmp =  pet_fwd_model(ones_img, proj, attn_sino[ss], sens_sino[ss], i, fwhm = fwhm)
+    tmp = np.clip(tmp, tmp[tmp > 0].min(), None)
+    S_i.append((gamma[0]*rho) / tmp)
 
 
-  T_i = []
-  if pet_operator_norms is None:
-    for i in range(nsubsets):
-      # get the slice for the current subset
-      ss = proj.subset_slices[i]
-      # generate a subset sinogram full of ones
-      ones_sino = np.ones(proj.subset_sino_shapes[i] , dtype = np.float32)
+  T_i = np.zeros((nsubsets,) + img_shape)
 
-      tmp = pet_back_model(ones_sino, proj, attn_sino[ss], sens_sino[ss], i, fwhm = fwhm)
-      T_i.append((rho*p_p/gamma) / tmp)
-  else:
-    for i in range(nsubsets):
-      T_i.append((rho*p_p/gamma) / pet_operator_norms[i])
+  for i in range(nsubsets):
+    # get the slice for the current subset
+    ss = proj.subset_slices[i]
+    # generate a subset sinogram full of ones
+    ones_sino = np.ones(proj.subset_sino_shapes[i] , dtype = np.float32)
 
+    tmp = pet_back_model(ones_sino, proj, attn_sino[ss], sens_sino[ss], i, fwhm = fwhm)
+    T_i[i,...] = (rho*p_p/gamma[0]) / tmp
 
-  if p_g > 0:
-    if isinstance(T_i[0],np.ndarray):
-      T_i.append(np.full(T_i[0].shape, T_g, dtype = T_i[0].dtype))
-    else:
-      T_i.append(T_g)
-
-  T_i = np.array(T_i)
-    
   # take the element-wise min of the T_i's of all subsets
   T = T_i.min(axis = 0)
+
+  del T_i
+
+  if p_g > 0:
+    T = np.clip(T, None, T_g)
 
   #--------------------------------------------------------------------------------------------
   # initialize variables
@@ -201,8 +192,14 @@ def spdhg(em_sino, attn_sino, sens_sino, contam_sino, proj, niter,
   for it in range(niter):
     subset_sequence = np.random.permutation(np.arange(int(nsubsets/(1-p_g))))
 
+    # update the step sizes (since step size ratio can change over iterations
+    if it > 0:
+      if not gamma[it] == gamma[it-1]:
+        T *= (gamma[it-1]/gamma[it])
+        for S in S_i:
+          S *= (gamma[it]/gamma[it-1])
+
     for iss in range(subset_sequence.shape[0]):
-      
       # select a random subset
       i = subset_sequence[iss]
 
@@ -219,7 +216,6 @@ def spdhg(em_sino, attn_sino, sens_sino, contam_sino, proj, niter,
   
         # apply the prox for the dual of the poisson logL
         y_plus = 0.5*(y_plus + 1 - np.sqrt((y_plus - 1)**2 + 4*S_i[i]*em_sino[ss]))
-        y_plus[em_sino[ss] == 0] = 1
   
         dz = pet_back_model(y_plus - y[ss], proj, attn_sino[ss], sens_sino[ss], i, fwhm = fwhm)
   
