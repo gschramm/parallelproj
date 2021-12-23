@@ -90,7 +90,7 @@ def osem_lm(events, attn_list, sens_list, contam_list, proj, sens_img, niter, ns
 #------------------------------------------------------------------------------------------------------
 
 def spdhg(em_sino, attn_sino, sens_sino, contam_sino, proj, niter,
-          fwhm = 0, gamma = 1., rho = 0.999, verbose = False, 
+          fwhm = 0, gamma = 1., rho = 0.999, rho_grad = 0.999, verbose = False, 
           xstart = None, ystart = None, y_grad_start = None,
           callback = None, subset_callback = None,
           callback_kwargs = None, subset_callback_kwargs = None,
@@ -122,8 +122,8 @@ def spdhg(em_sino, attn_sino, sens_sino, contam_sino, proj, niter,
 
   # calculate S and T for the gradient operator
   if p_g > 0:
-    S_g = gamma*rho/grad_op_norm
-    T_g = rho*p_g/(grad_op_norm*gamma)
+    S_g = gamma*rho_grad/grad_op_norm
+    T_g = rho_grad*p_g/(grad_op_norm*gamma)
 
   # calculate the "step sizes" S_i for the PET fwd operator
   S_i = []
@@ -140,7 +140,6 @@ def spdhg(em_sino, attn_sino, sens_sino, contam_sino, proj, niter,
       S_i.append(gamma*rho/tmp)
     else:
       S_i.append(gamma*rho/(grad_op_norm/np.sqrt(nsubsets)))
-      #S_i.append(gamma*rho/(grad_op_norm/nsubsets))
 
   T_i = np.zeros((nsubsets,) + img_shape)
 
@@ -155,7 +154,6 @@ def spdhg(em_sino, attn_sino, sens_sino, contam_sino, proj, niter,
       T_i[i,...] = rho*p_p/(gamma*tmp)
     else:
       T_i[i,...] = rho*p_p/(gamma*grad_op_norm/np.sqrt(nsubsets))
-      #T_i[i,...] = rho*p_p/(gamma*grad_op_norm/nsubsets)
 
   # take the element-wise min of the T_i's of all subsets
   T = T_i.min(axis = 0)
