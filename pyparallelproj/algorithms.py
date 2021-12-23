@@ -94,11 +94,8 @@ def spdhg(em_sino, attn_sino, sens_sino, contam_sino, proj, niter,
           xstart = None, ystart = None, y_grad_start = None,
           callback = None, subset_callback = None,
           callback_kwargs = None, subset_callback_kwargs = None,
-          grad_operator = None, grad_norm = None, beta = 0):
+          grad_operator = None, grad_norm = None, beta = 0, precond = True):
 
-  if not isinstance(gamma, (list,tuple,np.ndarray)):
-    gamma = np.full(niter, gamma, dtype = np.float32)
- 
   img_shape = tuple(proj.img_dim)
   nsubsets  = proj.nsubsets
 
@@ -116,39 +113,49 @@ def spdhg(em_sino, attn_sino, sens_sino, contam_sino, proj, niter,
     p_g = 0
   else: 
     p_g = 0.5
-    # norm of the gradient operator = sqrt(ndim*4)
-    ndim  = len([x for x in img_shape if x > 1])
-    grad_op_norm = np.sqrt(ndim*4)
+
+  # norm of the gradient operator = sqrt(ndim*4)
+  ndim  = len([x for x in img_shape if x > 1])
+  grad_op_norm = np.sqrt(ndim*4)
 
   p_p = (1 - p_g) / nsubsets
 
   # calculate S and T for the gradient operator
   if p_g > 0:
-    S_g = rho/grad_op_norm
-    T_g = rho*p_g/grad_op_norm
+    S_g = gamma*rho/grad_op_norm
+    T_g = rho*p_g/(grad_op_norm*gamma)
 
   # calculate the "step sizes" S_i for the PET fwd operator
   S_i = []
   ones_img = np.ones(img_shape, dtype = np.float32)
 
-  for i in range(nsubsets):
-    # get the slice for the current subset
-    ss = proj.subset_slices[i]
-    tmp =  pet_fwd_model(ones_img, proj, attn_sino[ss], sens_sino[ss], i, fwhm = fwhm)
-    tmp = np.clip(tmp, tmp[tmp > 0].min(), None)
-    S_i.append(rho/tmp)
+  pet_op_norms = np.zeros(nsubsets)
 
+  for i in range(nsubsets):
+    if precond:
+      ss = proj.subset_slices[i]
+      # get the slice for the current subset
+      tmp =  pet_fwd_model(ones_img, proj, attn_sino[ss], sens_sino[ss], i, fwhm = fwhm)
+      tmp = np.clip(tmp, tmp[tmp > 0].min(), None)
+      S_i.append(gamma*rho/tmp)
+    else:
+      S_i.append(gamma*rho/(grad_op_norm/np.sqrt(nsubsets)))
+      #S_i.append(gamma*rho/(grad_op_norm/nsubsets))
 
   T_i = np.zeros((nsubsets,) + img_shape)
 
   for i in range(nsubsets):
-    # get the slice for the current subset
-    ss = proj.subset_slices[i]
-    # generate a subset sinogram full of ones
-    ones_sino = np.ones(proj.subset_sino_shapes[i] , dtype = np.float32)
+    if precond:
+      # get the slice for the current subset
+      ss = proj.subset_slices[i]
+      # generate a subset sinogram full of ones
+      ones_sino = np.ones(proj.subset_sino_shapes[i] , dtype = np.float32)
 
-    tmp = pet_back_model(ones_sino, proj, attn_sino[ss], sens_sino[ss], i, fwhm = fwhm)
-    T_i[i,...] = rho*p_p/tmp
+      tmp = pet_back_model(ones_sino, proj, attn_sino[ss], sens_sino[ss], i, fwhm = fwhm)
+      T_i[i,...] = rho*p_p/(gamma*tmp)
+    else:
+      T_i[i,...] = rho*p_p/(gamma*grad_op_norm/np.sqrt(nsubsets))
+      #T_i[i,...] = rho*p_p/(gamma*grad_op_norm/nsubsets)
 
   # take the element-wise min of the T_i's of all subsets
   T = T_i.min(axis = 0)
@@ -193,6 +200,8 @@ def spdhg(em_sino, attn_sino, sens_sino, contam_sino, proj, niter,
     subset_sequence = np.random.permutation(np.arange(int(nsubsets/(1-p_g))))
 
     for iss in range(subset_sequence.shape[0]):
+      x = np.clip(x - T*zbar, 0, None)
+
       # select a random subset
       i = subset_sequence[iss]
 
@@ -202,13 +211,11 @@ def spdhg(em_sino, attn_sino, sens_sino, contam_sino, proj, niter,
         # get the slice for the current subset
         ss = proj.subset_slices[i]
   
-        x = np.clip(x - T*zbar/gamma[it], 0, None)
-  
-        y_plus = y[ss] + gamma[it]*S_i[i]*(pet_fwd_model(x, proj, attn_sino[ss], sens_sino[ss], i, 
+        y_plus = y[ss] + S_i[i]*(pet_fwd_model(x, proj, attn_sino[ss], sens_sino[ss], i, 
                                                fwhm = fwhm) + contam_sino[ss])
   
         # apply the prox for the dual of the poisson logL
-        y_plus = 0.5*(y_plus + 1 - np.sqrt((y_plus - 1)**2 + 4*gamma[it]*S_i[i]*em_sino[ss]))
+        y_plus = 0.5*(y_plus + 1 - np.sqrt((y_plus - 1)**2 + 4*S_i[i]*em_sino[ss]))
   
         dz = pet_back_model(y_plus - y[ss], proj, attn_sino[ss], sens_sino[ss], i, fwhm = fwhm)
   
@@ -219,10 +226,10 @@ def spdhg(em_sino, attn_sino, sens_sino, contam_sino, proj, niter,
       else:
         print(f'iteration {it + 1} step {iss} gradient update')
 
-        y_grad_plus = (y_grad + gamma[it]*S_g*grad_operator.fwd(x))
+        y_grad_plus = (y_grad + S_g*grad_operator.fwd(x))
 
         # apply the prox for the gradient norm
-        y_grad_plus = beta*grad_norm.prox_convex_dual(y_grad_plus/beta, sigma = gamma[it]*S_g/beta)
+        y_grad_plus = beta*grad_norm.prox_convex_dual(y_grad_plus/beta, sigma = S_g/beta)
 
         dz = grad_operator.adjoint(y_grad_plus - y_grad)
 
