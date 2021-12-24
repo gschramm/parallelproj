@@ -95,6 +95,7 @@ def spdhg(em_sino, attn_sino, sens_sino, contam_sino, proj, niter,
           callback = None, subset_callback = None,
           callback_kwargs = None, subset_callback_kwargs = None,
           grad_operator = None, grad_norm = None, beta = 0, precond = True):
+  """ SPDHG for PET recon with gradient-based prior """
 
   img_shape = tuple(proj.img_dim)
   nsubsets  = proj.nsubsets
@@ -128,8 +129,6 @@ def spdhg(em_sino, attn_sino, sens_sino, contam_sino, proj, niter,
   # calculate the "step sizes" S_i for the PET fwd operator
   S_i = []
   ones_img = np.ones(img_shape, dtype = np.float32)
-
-  pet_op_norms = np.zeros(nsubsets)
 
   for i in range(nsubsets):
     if precond:
@@ -244,6 +243,120 @@ def spdhg(em_sino, attn_sino, sens_sino, contam_sino, proj, niter,
       callback(x, y = y, y_grad = y_grad, iteration = (it+1), subset = (i+1), **callback_kwargs)
 
   return x
+
+#------------------------------------------------------------------------------------------------------
+#------------------------------------------------------------------------------------------------------
+#------------------------------------------------------------------------------------------------------
+
+def pdhg(em_sino, attn_sino, sens_sino, contam_sino, proj, niter,
+         fwhm = 0, gamma = 1., rho = 0.999, rho_grad = 0.999, verbose = False, 
+         xstart = None, ystart = None, y_grad_start = None,
+         callback = None, callback_kwargs = None,
+         grad_operator = None, grad_norm = None, beta = 0, precond = True):
+  """ PDHG for PET recon with gradient-based prior """
+
+  img_shape = tuple(proj.img_dim)
+  if proj.nsubsets != 1:
+    raise ValueError('For PDHG a projector with 1 subset is needed.')
+
+  if grad_operator is None:
+    grad_operator = GradientOperator()
+
+  if grad_norm is None:
+    grad_norm = GradientNorm()
+
+  # norm of the gradient operator = sqrt(ndim*4)
+  ndim  = len([x for x in img_shape if x > 1])
+  grad_op_norm = np.sqrt(ndim*4)
+
+  S_g = gamma*rho_grad/grad_op_norm
+  T_g = rho_grad/(grad_op_norm*gamma)
+
+  # calculate the "step sizes" S_i for the PET fwd operator
+  ones_img = np.ones(img_shape, dtype = np.float32)
+
+  if precond:
+    # get the slice for the current subset
+    tmp =  pet_fwd_model(ones_img, proj, attn_sino, sens_sino, fwhm = fwhm)
+    tmp = np.clip(tmp, tmp[tmp > 0].min(), None)
+    S = gamma*rho/tmp
+  else:
+    S = gamma*rho/grad_op_norm
+
+  if precond:
+    # generate a subset sinogram full of ones
+    ones_sino = np.ones(em_sino.shape , dtype = np.float32)
+
+    tmp = pet_back_model(ones_sino, proj, attn_sino, sens_sino, fwhm = fwhm)
+    T = rho/(gamma*tmp)
+  else:
+    T = rho/(gamma*grad_op_norm)
+
+  if beta > 0:
+    T = np.clip(T, None, T_g)
+
+  #--------------------------------------------------------------------------------------------
+  # initialize variables
+  if xstart is None:
+    x = np.zeros(img_shape, dtype = np.float32)
+  else:
+    x = xstart.copy()
+
+  if ystart is None:
+    y = np.zeros(em_sino.shape, dtype = np.float32)
+  else:
+    y = ystart.copy()
+
+  z = np.zeros(img_shape, dtype = np.float32)
+  if np.any(y != 0):
+    z = pet_back_model(y, proj, attn_sino, sens_sino, fwhm = fwhm)
+
+  # allocate arrays for gradient operations
+  if beta > 0:
+    if y_grad_start is None:
+      y_grad = np.zeros((x.ndim,) + img_shape, dtype = np.float32)
+    else:
+      y_grad = y_grad_start.copy()
+      z += grad_operator.adjoint(y_grad)
+
+  #--------------------------------------------------------------------------------------------
+  # PDHG iterations
+
+  for it in range(niter):
+    x = np.clip(x - T*z, 0, None)
+
+    # PET subset update
+    print(f'iteration {it + 1}')
+
+    # get the slice for the current subset
+    y_plus = y + S*(pet_fwd_model(x, proj, attn_sino, sens_sino, fwhm = fwhm) + contam_sino)
+  
+    # apply the prox for the dual of the poisson logL
+    y_plus = 0.5*(y_plus + 1 - np.sqrt((y_plus - 1)**2 + 4*S*em_sino))
+  
+    z += pet_back_model(y_plus - y, proj, attn_sino, sens_sino, fwhm = fwhm)
+  
+    # update variables
+    y = y_plus.copy()
+
+    if beta > 0:
+      print(f'iteration {it + 1} gradient update')
+      y_grad_plus = (y_grad + S_g*grad_operator.fwd(x))
+
+      # apply the prox for the gradient norm
+      y_grad_plus = beta*grad_norm.prox_convex_dual(y_grad_plus/beta, sigma = S_g/beta)
+
+      z += grad_operator.adjoint(y_grad_plus - y_grad)
+
+      # update variables
+      y_grad = y_grad_plus.copy()
+
+
+    if callback is not None:
+      callback(x, y = y, y_grad = y_grad, iteration = (it+1), **callback_kwargs)
+
+  return x
+
 
 
 #----------------------------------------------------------------------------------------------------
