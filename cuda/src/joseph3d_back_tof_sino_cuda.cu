@@ -27,12 +27,22 @@
  *  @param img_dim     array with dimensions of image [n0,n1,n2]
  *  @param n_tofbins        number of TOF bins
  *  @param tofbin_width     width of the TOF bins in spatial units (units of xstart and xend)
- *  @param sigma_tof        array of length nlors with the TOF resolution (sigma) for each LOR in
+ *  @param sigma_tof        array of length 1 or nlors (depending on lor_dependent_sigma_tof)
+ *                          with the TOF resolution (sigma) for each LOR in
  *                          spatial units (units of xstart and xend) 
- *  @param tofcenter_offset array of length nlors with the offset of the central TOF bin from the 
+ *  @param tofcenter_offset array of length 1 or nlors (depending on lor_dependent_tofcenter_offset)
+ *                          with the offset of the central TOF bin from the 
  *                          midpoint of each LOR in spatial units (units of xstart and xend). 
  *                          A positive value means a shift towards the end point of the LOR.
  *  @param n_sigmas         number of sigmas to consider for calculation of TOF kernel
+ *  @params lor_dependent_sigma_tof unsigned char 0 or 1
+ *                                  1 means that the TOF sigmas are LOR dependent
+ *                                  any other value means that the first value in the sigma_tof
+ *                                  array is used for all LORs
+ *  @params lor_dependent_tofcenter_offset unsigned char 0 or 1
+ *                                         1 means that the TOF center offsets are LOR dependent
+ *                                         any other value means that the first value in the tofcenter_offset
+ *                                         array is used for all LORs
  */
 __global__ void joseph3d_back_tof_sino_cuda_kernel(float *xstart, 
                                                    float *xend, 
@@ -46,7 +56,9 @@ __global__ void joseph3d_back_tof_sino_cuda_kernel(float *xstart,
                                                    float tofbin_width,
                                                    float *sigma_tof,
                                                    float *tofcenter_offset,
-                                                   float n_sigmas)
+                                                   float n_sigmas,
+                                                   unsigned char lor_dependent_sigma_tof,
+                                                   unsigned char lor_dependent_tofcenter_offset)
 {
   long long i = blockDim.x * blockIdx.x + threadIdx.x;
   //long long i = blockIdx.x + threadIdx.x * gridDim.x;
@@ -76,8 +88,8 @@ __global__ void joseph3d_back_tof_sino_cuda_kernel(float *xstart,
     int it, it1, it2;
     float dtof, tw;
 
-    float sig_tof   = sigma_tof[i];
-    float tc_offset = tofcenter_offset[i];
+    float sig_tof   = (lor_dependent_sigma_tof == 1) ? sigma_tof[i] : sigma_tof[0];
+    float tc_offset = (lor_dependent_tofcenter_offset == 1) ? tofcenter_offset[i] : tofcenter_offset[0];
 
     float xstart0 = xstart[i*3 + 0];
     float xstart1 = xstart[i*3 + 1];
@@ -555,6 +567,8 @@ extern "C" void joseph3d_back_tof_sino_cuda(const float *h_xstart,
                                             const float *h_tofcenter_offset,
                                             float n_sigmas,
                                             short n_tofbins,
+                                            unsigned char lor_dependent_sigma_tof,
+                                            unsigned char lor_dependent_tofcenter_offset,
                                             int threadsperblock)
 {
   // get number of avilable CUDA devices
@@ -645,25 +659,43 @@ extern "C" void joseph3d_back_tof_sino_cuda(const float *h_xstart,
 
 
     // send TOF arrays to device
-    error = cudaMalloc(&d_sigma_tof[i_dev], proj_bytes_dev);
-    if (error != cudaSuccess){
-        printf("cudaMalloc returned error %s (code %d), line(%d)\n", cudaGetErrorString(error), error, __LINE__);
-        exit(EXIT_FAILURE);}
-    cudaMemcpyAsync(d_sigma_tof[i_dev], h_sigma_tof + dev_offset, proj_bytes_dev, cudaMemcpyHostToDevice);
+    if (lor_dependent_sigma_tof == 1){
+      error = cudaMalloc(&d_sigma_tof[i_dev], proj_bytes_dev);
+      if (error != cudaSuccess){
+          printf("cudaMalloc returned error %s (code %d), line(%d)\n", cudaGetErrorString(error), error, __LINE__);
+          exit(EXIT_FAILURE);}
+      cudaMemcpyAsync(d_sigma_tof[i_dev], h_sigma_tof + dev_offset, proj_bytes_dev, cudaMemcpyHostToDevice);
+    }
+    else{
+      error = cudaMalloc(&d_sigma_tof[i_dev], sizeof(float));
+      if (error != cudaSuccess){
+          printf("cudaMalloc returned error %s (code %d), line(%d)\n", cudaGetErrorString(error), error, __LINE__);
+          exit(EXIT_FAILURE);}
+      cudaMemcpyAsync(d_sigma_tof[i_dev], h_sigma_tof, sizeof(float), cudaMemcpyHostToDevice);
+    }
 
-    error = cudaMalloc(&d_tofcenter_offset[i_dev], proj_bytes_dev);
-    if (error != cudaSuccess){
-        printf("cudaMalloc returned error %s (code %d), line(%d)\n", cudaGetErrorString(error), error, __LINE__);
-        exit(EXIT_FAILURE);}
-    cudaMemcpyAsync(d_tofcenter_offset[i_dev], h_tofcenter_offset + dev_offset, proj_bytes_dev, 
-                    cudaMemcpyHostToDevice);
+    if (lor_dependent_tofcenter_offset == 1){
+      error = cudaMalloc(&d_tofcenter_offset[i_dev], proj_bytes_dev);
+      if (error != cudaSuccess){
+          printf("cudaMalloc returned error %s (code %d), line(%d)\n", cudaGetErrorString(error), error, __LINE__);
+          exit(EXIT_FAILURE);}
+      cudaMemcpyAsync(d_tofcenter_offset[i_dev], h_tofcenter_offset + dev_offset, proj_bytes_dev, cudaMemcpyHostToDevice);
+    }
+    else{
+      error = cudaMalloc(&d_tofcenter_offset[i_dev], sizeof(float));
+      if (error != cudaSuccess){
+          printf("cudaMalloc returned error %s (code %d), line(%d)\n", cudaGetErrorString(error), error, __LINE__);
+          exit(EXIT_FAILURE);}
+      cudaMemcpyAsync(d_tofcenter_offset[i_dev], h_tofcenter_offset, sizeof(float), cudaMemcpyHostToDevice);
+    }
 
     // call the kernel
     joseph3d_back_tof_sino_cuda_kernel<<<grid,block>>>(d_xstart[i_dev], d_xend[i_dev], d_img[i_dev],
                                                        d_img_origin[i_dev], d_voxsize[i_dev], 
                                                        d_p[i_dev], dev_nlors, d_img_dim[i_dev],
                                                        n_tofbins, tofbin_width, d_sigma_tof[i_dev],
-                                                       d_tofcenter_offset[i_dev], n_sigmas);
+                                                       d_tofcenter_offset[i_dev], n_sigmas,
+                                                       lor_dependent_sigma_tof, lor_dependent_tofcenter_offset);
 
     // deallocate memory on device
     cudaFree(d_p[i_dev]);

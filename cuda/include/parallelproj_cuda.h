@@ -54,13 +54,23 @@ extern "C" void joseph3d_back_cuda(const float *h_xstart,
  *  @param nlors         number of projections (length of p array)
  *  @param h_img_dim     array with dimensions of image [n0,n1,n2]
  *  @param tofbin_width     width of the TOF bins in spatial units (units of xstart and xend)
- *  @param h_sigma_tof      array of length nlors with the TOF resolution (sigma) for each LOR in
+ *  @param h_sigma_tof      array of length 1 or nlors (depending on lor_dependent_sigma_tof)
+ *                          with the TOF resolution (sigma) for each LOR in
  *                          spatial units (units of xstart and xend) 
- *  @param h_tofcenter_offset  array of length nlors with the offset of the central TOF bin from the 
- *                             midpoint of each LOR in spatial units (units of xstart and xend). 
- *                             A positive value means a shift towards the end point of the LOR.
+ *  @param h_tofcenter_offset array of length 1 or nlors (depending on lor_dependent_tofcenter_offset)
+ *                            with the offset of the central TOF bin from the 
+ *                            midpoint of each LOR in spatial units (units of xstart and xend). 
+ *                            A positive value means a shift towards the end point of the LOR.
  *  @param n_sigmas        number of sigmas to consider for calculation of TOF kernel
  *  @param h_tof_bin       array containing the TOF bin of each event
+ *  @params lor_dependent_sigma_tof unsigned char 0 or 1
+ *                                  1 means that the TOF sigmas are LOR dependent
+ *                                  any other value means that the first value in the sigma_tof
+ *                                  array is used for all LORs
+ *  @params lor_dependent_tofcenter_offset unsigned char 0 or 1
+ *                                         1 means that the TOF center offsets are LOR dependent
+ *                                         any other value means that the first value in the tofcenter_offset
+ *                                         array is used for all LORs
  *  @param threadsperblock number of threads per block
  */
 extern "C" void joseph3d_back_tof_lm_cuda(const float *h_xstart,
@@ -76,6 +86,8 @@ extern "C" void joseph3d_back_tof_lm_cuda(const float *h_xstart,
                                           const float *h_tofcenter_offset,
                                           float n_sigmas,
                                           const short *h_tof_bin,
+                                          unsigned char lor_dependent_sigma_tof,
+                                          unsigned char lor_dependent_tofcenter_offset,
                                           int threadsperblock);
 
 
@@ -94,17 +106,32 @@ extern "C" void joseph3d_back_tof_lm_cuda(const float *h_xstart,
  *                  The backprojector adds existing values.
  *  @param h_img_origin  array [x0_0,x0_1,x0_2] of coordinates of the center of the [0,0,0] voxel
  *  @param h_voxsize     array [vs0, vs1, vs2] of the voxel sizes
- *  @param h_p           array of length (nlors*n_tofbins) containg the values to be back projected
+ *  @param h_p           array of length nlors*n_tofbins with the values to be back projected
+ *                       the order of the array is 
+ *                       [LOR0-TOFBIN-0, LOR0-TOFBIN-1, ... LOR0_TOFBIN-(n-1), 
+ *                        LOR1-TOFBIN-0, LOR1-TOFBIN-1, ... LOR1_TOFBIN-(n-1), 
+ *                        ...
+ *                        LOR(N-1)-TOFBIN-0, LOR(N-1)-TOFBIN-1, ... LOR(N-1)_TOFBIN-(n-1)] 
  *  @param nlors          number of gemeometrical projections
  *  @param h_img_dim      array with dimensions of image [n0,n1,n2]
- *  @param tofbin_width       width of the TOF bins in spatial units (units of xstart and xend)
- *  @param h_sigma_tof        array of length nlors with the TOF resolution (sigma) for each LOR in
- *                            spatial units (units of xstart and xend) 
- *  @param h_tofcenter_offset  array of length nlors with the offset of the central TOF bin from the 
- *                             midpoint of each LOR in spatial units (units of xstart and xend). 
- *                             A positive value means a shift towards the end point of the LOR.
+ *  @param tofbin_width     width of the TOF bins in spatial units (units of xstart and xend)
+ *  @param h_sigma_tof      array of length 1 or nlors (depending on lor_dependent_sigma_tof)
+ *                          with the TOF resolution (sigma) for each LOR in
+ *                          spatial units (units of xstart and xend) 
+ *  @param h_tofcenter_offset array of length 1 or nlors (depending on lor_dependent_tofcenter_offset)
+ *                            with the offset of the central TOF bin from the 
+ *                            midpoint of each LOR in spatial units (units of xstart and xend). 
+ *                            A positive value means a shift towards the end point of the LOR.
  *  @param n_sigmas           number of sigmas to consider for calculation of TOF kernel
  *  @param n_tofbins          number of TOF bins
+ *  @params lor_dependent_sigma_tof unsigned char 0 or 1
+ *                                  1 means that the TOF sigmas are LOR dependent
+ *                                  any other value means that the first value in the sigma_tof
+ *                                  array is used for all LORs
+ *  @params lor_dependent_tofcenter_offset unsigned char 0 or 1
+ *                                         1 means that the TOF center offsets are LOR dependent
+ *                                         any other value means that the first value in the tofcenter_offset
+ *                                         array is used for all LORs
  *  @param threadsperblock number of threads per block
  */
 extern "C" void joseph3d_back_tof_sino_cuda(const float *h_xstart, 
@@ -120,6 +147,8 @@ extern "C" void joseph3d_back_tof_sino_cuda(const float *h_xstart,
                                             const float *h_tofcenter_offset,
                                             float n_sigmas,
                                             short n_tofbins,
+                                            unsigned char lor_dependent_sigma_tof,
+                                            unsigned char lor_dependent_tofcenter_offset,
                                             int threadsperblock);
 
 
@@ -170,14 +199,24 @@ extern "C" void joseph3d_fwd_cuda(const float *h_xstart,
  *  @param h_p           array of length nlors (output) used to store the projections
  *  @param nlors         number of projections (length of p array)
  *  @param h_img_dim     array with dimensions of image [n0,n1,n2]
- *  @param tofbin_width     width of the TOF bins in spatial units (units of xstart and xend)
- *  @param h_sigma_tof      array of length nlors with the TOF resolution (sigma) for each LOR in
- *                          spatial units (units of xstart and xend) 
- *  @param h_tofcenter_offset  array of length nlors with the offset of the central TOF bin from the 
- *                             midpoint of each LOR in spatial units (units of xstart and xend). 
- *                             A positive value means a shift towards the end point of the LOR.
+ *  @param tofbin_width  width of the TOF bins in spatial units (units of xstart and xend)
+ *  @param h_sigma_tof   array of length 1 or nlors (depending on lor_dependent_sigma_tof)
+ *                       with the TOF resolution (sigma) for each LOR in
+ *                       spatial units (units of xstart and xend) 
+ *  @param h_tofcenter_offset array of length 1 or nlors (depending on lor_dependent_tofcenter_offset)
+ *                            with the offset of the central TOF bin from the 
+ *                            midpoint of each LOR in spatial units (units of xstart and xend). 
+ *                            A positive value means a shift towards the end point of the LOR.
  *  @param n_sigmas           number of sigmas to consider for calculation of TOF kernel
  *  @param h_tof_bin          array of length nlors with the tofbin of every event 
+ *  @params lor_dependent_sigma_tof unsigned char 0 or 1
+ *                                  1 means that the TOF sigmas are LOR dependent
+ *                                  any other value means that the first value in the sigma_tof
+ *                                  array is used for all LORs
+ *  @params lor_dependent_tofcenter_offset unsigned char 0 or 1
+ *                                         1 means that the TOF center offsets are LOR dependent
+ *                                         any other value means that the first value in the tofcenter_offset
+ *                                         array is used for all LORs
  *  @param threadsperblock    number of threads per block
  */
 extern "C" void joseph3d_fwd_tof_lm_cuda(const float *h_xstart, 
@@ -193,6 +232,8 @@ extern "C" void joseph3d_fwd_tof_lm_cuda(const float *h_xstart,
                                          const float *h_tofcenter_offset,
                                          float n_sigmas,
                                          const short *h_tof_bin,
+                                         unsigned char lor_dependent_sigma_tof,
+                                         unsigned char lor_dependent_tofcenter_offset,
                                          int threadsperblock);
 
 
@@ -211,16 +252,31 @@ extern "C" void joseph3d_fwd_tof_lm_cuda(const float *h_xstart,
  *  @param h_img_origin  array [x0_0,x0_1,x0_2] of coordinates of the center of the [0,0,0] voxel
  *  @param h_voxsize     array [vs0, vs1, vs2] of the voxel sizes
  *  @param h_p           array of length nlors*n_tofbins (output) used to store the projections
+ *                       the order of the array is
+ *                       [LOR0-TOFBIN-0, LOR0-TOFBIN-1, ... LOR0_TOFBIN-(n-1), 
+ *                        LOR1-TOFBIN-0, LOR1-TOFBIN-1, ... LOR1_TOFBIN-(n-1), 
+ *                        ...
+ *                        LOR(N-1)-TOFBIN-0, LOR(N-1)-TOFBIN-1, ... LOR(N-1)_TOFBIN-(n-1)] 
  *  @param nlors         number of geometrical LORs
  *  @param h_img_dim     array with dimensions of image [n0,n1,n2]
- *  @param tofbin_width     width of the TOF bins in spatial units (units of xstart and xend)
- *  @param h_sigma_tof      array of length nlors with the TOF resolution (sigma) for each LOR in
- *                          spatial units (units of xstart and xend) 
- *  @param h_tofcenter_offset  array of length nlors with the offset of the central TOF bin from the 
- *                             midpoint of each LOR in spatial units (units of xstart and xend) 
- *                             A positive value means a shift towards the end point of the LOR.
+ *  @param tofbin_width  width of the TOF bins in spatial units (units of xstart and xend)
+ *  @param h_sigma_tof   array of length 1 or nlors (depending on lor_dependent_sigma_tof)
+ *                       with the TOF resolution (sigma) for each LOR in
+ *                       spatial units (units of xstart and xend) 
+ *  @param h_tofcenter_offset array of length 1 or nlors (depending on lor_dependent_tofcenter_offset)
+ *                            with the offset of the central TOF bin from the 
+ *                            midpoint of each LOR in spatial units (units of xstart and xend). 
+ *                            A positive value means a shift towards the end point of the LOR.
  *  @param n_sigmas           number of sigmas to consider for calculation of TOF kernel
  *  @param n_tofbins          number of TOF bins
+ *  @params lor_dependent_sigma_tof unsigned char 0 or 1
+ *                                  1 means that the TOF sigmas are LOR dependent
+ *                                  any other value means that the first value in the sigma_tof
+ *                                  array is used for all LORs
+ *  @params lor_dependent_tofcenter_offset unsigned char 0 or 1
+ *                                         1 means that the TOF center offsets are LOR dependent
+ *                                         any other value means that the first value in the tofcenter_offset
+ *                                         array is used for all LORs
  *  @param threadsperblock    number of threads per block
  */
 extern "C" void joseph3d_fwd_tof_sino_cuda(const float *h_xstart, 
@@ -236,6 +292,8 @@ extern "C" void joseph3d_fwd_tof_sino_cuda(const float *h_xstart,
                                            const float *h_tofcenter_offset,
                                            float n_sigmas,
                                            short n_tofbins,
+                                           unsigned char lor_dependent_sigma_tof,
+                                           unsigned char lor_dependent_tofcenter_offset,
                                            int threadsperblock);
 
 
