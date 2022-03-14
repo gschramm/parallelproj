@@ -24,7 +24,9 @@ void joseph3d_fwd_tof_sino(const float *xstart,
                            const float *sigma_tof,
                            const float *tofcenter_offset,
                            float n_sigmas,
-                           short n_tofbins)
+                           short n_tofbins,
+                           unsigned char lor_dependent_sigma_tof,
+                           unsigned char lor_dependent_tofcenter_offset)
 {
   long long i;
 
@@ -65,8 +67,8 @@ void joseph3d_fwd_tof_sino(const float *xstart,
     float cf;
     float toAdd;
 
-    float sig_tof   = sigma_tof[i];
-    float tc_offset = tofcenter_offset[i];
+    float sig_tof   = (lor_dependent_sigma_tof == 1) ? sigma_tof[i] : sigma_tof[0];
+    float tc_offset = (lor_dependent_tofcenter_offset == 1) ? tofcenter_offset[i] : tofcenter_offset[0];
 
     float xstart0 = xstart[i*3 + 0];
     float xstart1 = xstart[i*3 + 1];
