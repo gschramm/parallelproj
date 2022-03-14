@@ -1,5 +1,5 @@
 /**
- * @file joseph3d_back.c
+ * @file joseph3d_back_2.c
  */
 
 #include<stdio.h>
@@ -10,22 +10,20 @@
 #include "ray_cube_intersection.h"
 
 
-void joseph3d_back(const float *xstart, 
-                   const float *xend, 
-                   float *img,
-                   const float *img_origin, 
-                   const float *voxsize,
-                   const float *p, 
-                   long long nlors, 
-                   const int *img_dim)
+void joseph3d_back_2(const float *xstart, 
+                     const float *xend, 
+                     float *img,
+                     const float *img_origin, 
+                     const float *voxsize,
+                     const float *p, 
+                     long long nlors, 
+                     const int *img_dim)
 {
   long long i;
 
   int n0 = img_dim[0];
   int n1 = img_dim[1];
   int n2 = img_dim[2];
-
-  long nvox = n0*n1*n2;
 
   float voxsize0 = voxsize[0];
   float voxsize1 = voxsize[1];
@@ -35,16 +33,11 @@ void joseph3d_back(const float *xstart,
   float img_origin1 = img_origin[1];
   float img_origin2 = img_origin[2];
 
-  int num_threads = omp_get_max_threads();
-
-  float* back_imgs = calloc(nvox*num_threads, sizeof(float)); 
-
   # pragma omp parallel for schedule(static)
   for(i = 0; i < nlors; i++)
   {
     if(p[i] != 0)
     {
-      int tid = omp_get_thread_num();
 
       float d0, d1, d2, d0_sq, d1_sq, d2_sq;
       float cs0, cs1, cs2, cf; 
@@ -69,7 +62,6 @@ void joseph3d_back(const float *xstart,
       float istart_f, iend_f, tmp;
       int   istart, iend;
 
-
       // test whether the ray between the two detectors is most parallel
       // with the 0, 1, or 2 axis
       d0    = xend0 - xstart0;
@@ -82,6 +74,7 @@ void joseph3d_back(const float *xstart,
                                      img_origin0 - 1*voxsize0, img_origin1 - 1*voxsize1, img_origin2 - 1*voxsize2,
                                      img_origin0 + n0*voxsize0, img_origin1 + n1*voxsize1, img_origin2 + n2*voxsize2,
                                      d0, d1, d2, &t1, &t2);
+
       if (intersec == 1)
       {
         d0_sq = d0*d0; 
@@ -128,7 +121,6 @@ void joseph3d_back(const float *xstart,
     
           istart = (int)floor(istart_f);
           iend   = (int)ceil(iend_f);
-
           if (istart < 0){istart = 0;}
           if (iend >= n0){iend = n0;}
 
@@ -169,19 +161,23 @@ void joseph3d_back(const float *xstart,
   
             if ((i1_floor >= 0) && (i1_floor < n1) && (i2_floor >= 0) && (i2_floor < n2))
             {
-              back_imgs[n1*n2*i0 + n2*i1_floor + i2_floor + tid*nvox] += (p[i] * (1 - tmp_1) * (1 - tmp_2) * cf);
+              #pragma omp atomic
+              img[n1*n2*i0 + n2*i1_floor + i2_floor] += (p[i] * (1 - tmp_1) * (1 - tmp_2) * cf);
             }
             if ((i1_ceil >= 0) && (i1_ceil < n1) && (i2_floor >= 0) && (i2_floor < n2))
             {
-              back_imgs[n1*n2*i0 + n2*i1_ceil + i2_floor + tid*nvox] += (p[i] * tmp_1 * (1 - tmp_2) * cf);
+              #pragma omp atomic
+              img[n1*n2*i0 + n2*i1_ceil + i2_floor] += (p[i] * tmp_1 * (1 - tmp_2) * cf);
             }
             if ((i1_floor >= 0) && (i1_floor < n1) && (i2_ceil >= 0) && (i2_ceil < n2))
             {
-              back_imgs[n1*n2*i0 + n2*i1_floor + i2_ceil + tid*nvox] += (p[i] * (1 - tmp_1) * tmp_2 * cf);
+              #pragma omp atomic
+              img[n1*n2*i0 + n2*i1_floor + i2_ceil] += (p[i] * (1 - tmp_1) * tmp_2 * cf);
             }
             if ((i1_ceil >= 0) && (i1_ceil < n1) && (i2_ceil >= 0) && (i2_ceil < n2))
             {
-              back_imgs[n1*n2*i0 + n2*i1_ceil + i2_ceil + tid*nvox] += (p[i] * tmp_1 * tmp_2 * cf);
+              #pragma omp atomic
+              img[n1*n2*i0 + n2*i1_ceil + i2_ceil] += (p[i] * tmp_1 * tmp_2 * cf);
             }
           }
         }  
@@ -246,19 +242,23 @@ void joseph3d_back(const float *xstart,
   
             if ((i0_floor >= 0) && (i0_floor < n0) && (i2_floor >= 0) && (i2_floor < n2)) 
             {
-              back_imgs[n1*n2*i0_floor + n2*i1 + i2_floor + tid*nvox] += (p[i] * (1 - tmp_0) * (1 - tmp_2) * cf);
+              #pragma omp atomic
+              img[n1*n2*i0_floor + n2*i1 + i2_floor] += (p[i] * (1 - tmp_0) * (1 - tmp_2) * cf);
             }
             if ((i0_ceil >= 0) && (i0_ceil < n0) && (i2_floor >= 0) && (i2_floor < n2))
             {
-              back_imgs[n1*n2*i0_ceil + n2*i1 + i2_floor + tid*nvox] += (p[i] * tmp_0 * (1 - tmp_2) * cf);
+              #pragma omp atomic
+              img[n1*n2*i0_ceil + n2*i1 + i2_floor] += (p[i] * tmp_0 * (1 - tmp_2) * cf);
             }
             if ((i0_floor >= 0) && (i0_floor < n0) && (i2_ceil >= 0) && (i2_ceil < n2))
             {
-              back_imgs[n1*n2*i0_floor + n2*i1 + i2_ceil + tid*nvox] += (p[i] * (1 - tmp_0) * tmp_2 * cf);
+              #pragma omp atomic
+              img[n1*n2*i0_floor + n2*i1 + i2_ceil] += (p[i] * (1 - tmp_0) * tmp_2 * cf);
             }
             if((i0_ceil >= 0) && (i0_ceil < n0) && (i2_ceil >= 0) && (i2_ceil < n2))
             {
-              back_imgs[n1*n2*i0_ceil + n2*i1 + i2_ceil + tid*nvox] += (p[i] * tmp_0 * tmp_2 * cf);
+              #pragma omp atomic
+              img[n1*n2*i0_ceil + n2*i1 + i2_ceil] += (p[i] * tmp_0 * tmp_2 * cf);
             }
           }
         }
@@ -323,33 +323,27 @@ void joseph3d_back(const float *xstart,
   
             if ((i0_floor >= 0) && (i0_floor < n0) && (i1_floor >= 0) && (i1_floor < n1))
             {
-              back_imgs[n1*n2*i0_floor +  n2*i1_floor + i2 + tid*nvox] += (p[i] * (1 - tmp_0) * (1 - tmp_1) * cf);
+              #pragma omp atomic
+              img[n1*n2*i0_floor +  n2*i1_floor + i2] += (p[i] * (1 - tmp_0) * (1 - tmp_1) * cf);
             }
             if ((i0_ceil >= 0) && (i0_ceil < n0) && (i1_floor >= 0) && (i1_floor < n1))
             {
-              back_imgs[n1*n2*i0_ceil + n2*i1_floor + i2 + tid*nvox] += (p[i] * tmp_0 * (1 - tmp_1) * cf);
+              #pragma omp atomic
+              img[n1*n2*i0_ceil + n2*i1_floor + i2] += (p[i] * tmp_0 * (1 - tmp_1) * cf);
             }
             if ((i0_floor >= 0) && (i0_floor < n0) && (i1_ceil >= 0) && (i1_ceil < n1))
             {
-              back_imgs[n1*n2*i0_floor + n2*i1_ceil + i2 + tid*nvox] += (p[i] * (1 - tmp_0) * tmp_1 * cf);
+              #pragma omp atomic
+              img[n1*n2*i0_floor + n2*i1_ceil + i2] += (p[i] * (1 - tmp_0) * tmp_1 * cf);
             }
             if ((i0_ceil >= 0) && (i0_ceil < n0) && (i1_ceil >= 0) && (i1_ceil < n1))
             {
-              back_imgs[n1*n2*i0_ceil + n2*i1_ceil + i2 + tid*nvox] += (p[i] * tmp_0 * tmp_1 * cf);
+              #pragma omp atomic
+              img[n1*n2*i0_ceil + n2*i1_ceil + i2] += (p[i] * tmp_0 * tmp_1 * cf);
             }
           }
         }
       }
     }
   }
-
-  // sum all images back together
-  # pragma omp parallel for schedule(static)
-  for(i = 0; i < nvox; i++){
-    int id;
-    for(id = 0; id < num_threads; id++){
-      img[i] += back_imgs[i + id*nvox];
-    }
-  }
-
 }

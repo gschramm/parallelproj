@@ -1,5 +1,5 @@
 /**
- * @file joseph3d_back_tof_lm.c
+ * @file joseph3d_back_tof_lm_2.c
  */
 
 #include<stdio.h>
@@ -12,29 +12,28 @@
 #include "ray_cube_intersection.h"
 
 
-void joseph3d_back_tof_lm(const float *xstart, 
-                          const float *xend, 
-                          float *img,
-                          const float *img_origin, 
-                          const float *voxsize,
-                          const float *p, 
-                          long long nlors, 
-                          const int *img_dim,
-                          float tofbin_width,
-                          const float *sigma_tof,
-                          const float *tofcenter_offset,
-                          float n_sigmas,
-                          const short *tof_bin,
-                          unsigned char lor_dependent_sigma_tof,
-                          unsigned char lor_dependent_tofcenter_offset)
+void joseph3d_back_tof_lm_2(const float *xstart, 
+                            const float *xend, 
+                            float *img,
+                            const float *img_origin, 
+                            const float *voxsize,
+                            const float *p, 
+                            long long nlors, 
+                            const int *img_dim,
+                            float tofbin_width,
+                            const float *sigma_tof,
+                            const float *tofcenter_offset,
+                            float n_sigmas,
+                            const short *tof_bin,
+                            unsigned char lor_dependent_sigma_tof,
+                            unsigned char lor_dependent_tofcenter_offset)
+
 {
   long long i;
 
   int n0 = img_dim[0];
   int n1 = img_dim[1];
   int n2 = img_dim[2];
-
-  long nvox = n0*n1*n2;
 
   float voxsize0 = voxsize[0];
   float voxsize1 = voxsize[1];
@@ -44,17 +43,9 @@ void joseph3d_back_tof_lm(const float *xstart,
   float img_origin1 = img_origin[1];
   float img_origin2 = img_origin[2];
 
-  int num_threads = omp_get_max_threads();
-
-  // create a separate image for the backprojection
-  // for each thread to avoid race conditions
-  float* back_imgs = calloc(nvox*num_threads, sizeof(float)); 
-
   # pragma omp parallel for schedule(static)
   for(i = 0; i < nlors; i++)
   {
-    int tid = omp_get_thread_num();
-
     float d0, d1, d2, d0_sq, d1_sq, d2_sq;
     float cs0, cs1, cs2, cf; 
     float lsq, cos0_sq, cos1_sq, cos2_sq;
@@ -203,6 +194,7 @@ void joseph3d_back_tof_lm(const float *xstart,
         if(iend_tof   < iend){iend = iend_tof;}
         //-----------
 
+
         if (istart < 0){istart = 0;}
         if (iend >= n0){iend = n0;}
         //---
@@ -242,22 +234,26 @@ void joseph3d_back_tof_lm(const float *xstart,
 
             if ((i1_floor >= 0) && (i1_floor < n1) && (i2_floor >= 0) && (i2_floor < n2))
             {
-              back_imgs[n1*n2*i0 + n2*i1_floor + i2_floor + tid*nvox] += 
+              #pragma omp atomic
+              img[n1*n2*i0 + n2*i1_floor + i2_floor] += 
                         (tw * p[i] * (1 - tmp_1) * (1 - tmp_2) * cf);
             }
             if ((i1_ceil >= 0) && (i1_ceil < n1) && (i2_floor >= 0) && (i2_floor < n2))
             {
-              back_imgs[n1*n2*i0 + n2*i1_ceil + i2_floor + tid*nvox] += 
+              #pragma omp atomic
+              img[n1*n2*i0 + n2*i1_ceil + i2_floor] += 
                         (tw * p[i] * tmp_1 * (1 - tmp_2) * cf);
             }
             if ((i1_floor >= 0) && (i1_floor < n1) && (i2_ceil >= 0) && (i2_ceil < n2))
             {
-              back_imgs[n1*n2*i0 + n2*i1_floor + i2_ceil + tid*nvox] += 
+              #pragma omp atomic
+              img[n1*n2*i0 + n2*i1_floor + i2_ceil] += 
                         (tw * p[i] * (1 - tmp_1) * tmp_2*cf);
             }
             if ((i1_ceil >= 0) && (i1_ceil < n1) && (i2_ceil >= 0) && (i2_ceil < n2))
             {
-              back_imgs[n1*n2*i0 + n2*i1_ceil + i2_ceil + tid*nvox] += 
+              #pragma omp atomic
+              img[n1*n2*i0 + n2*i1_ceil + i2_ceil] += 
                         (tw * p[i] * tmp_1 * tmp_2 * cf);
             }
           }
@@ -361,22 +357,26 @@ void joseph3d_back_tof_lm(const float *xstart,
 
             if ((i0_floor >= 0) && (i0_floor < n0) && (i2_floor >= 0) && (i2_floor < n2)) 
             {
-              back_imgs[n1*n2*i0_floor + n2*i1 + i2_floor + tid*nvox] += 
+              #pragma omp atomic
+              img[n1*n2*i0_floor + n2*i1 + i2_floor] += 
                         (tw * p[i] * (1 - tmp_0) * (1 - tmp_2) * cf);
             }
             if ((i0_ceil >= 0) && (i0_ceil < n0) && (i2_floor >= 0) && (i2_floor < n2))
             {
-              back_imgs[n1*n2*i0_ceil + n2*i1 + i2_floor + tid*nvox] += 
+              #pragma omp atomic
+              img[n1*n2*i0_ceil + n2*i1 + i2_floor] += 
                         (tw * p[i] * tmp_0 * (1 - tmp_2) * cf);
             }
             if ((i0_floor >= 0) && (i0_floor < n0) && (i2_ceil >= 0) && (i2_ceil < n2))
             {
-              back_imgs[n1*n2*i0_floor + n2*i1 + i2_ceil + tid*nvox] += 
+              #pragma omp atomic
+              img[n1*n2*i0_floor + n2*i1 + i2_ceil] += 
                         (tw * p[i] * (1 - tmp_0) * tmp_2 * cf);
             }
             if((i0_ceil >= 0) && (i0_ceil < n0) && (i2_ceil >= 0) && (i2_ceil < n2))
             {
-              back_imgs[n1*n2*i0_ceil + n2*i1 + i2_ceil + tid*nvox] += 
+              #pragma omp atomic
+              img[n1*n2*i0_ceil + n2*i1 + i2_ceil] += 
                         (tw * p[i] * tmp_0 * tmp_2 * cf);
             }
           }
@@ -404,10 +404,6 @@ void joseph3d_back_tof_lm(const float *xstart,
         istart = (int)floor(istart_f);
         iend   = (int)ceil(iend_f);
 
-        // check in which "plane" the start and end points are
-        // we have to do this to avoid that we include voxels
-        // that are "outside" the line segment bewteen xstart and xend
-        
         // !! for these calculations we overwrite the istart_f and iend_f variables !!
         istart_f = (xstart2 - img_origin2) / voxsize2;
         iend_f   = (xend2   - img_origin2) / voxsize2;
@@ -420,6 +416,11 @@ void joseph3d_back_tof_lm(const float *xstart,
 
         if (istart < (int)floor(istart_f)){istart = (int)floor(istart_f);}
         if (iend >= (int)ceil(iend_f)){iend = (int)ceil(iend_f);}
+
+        //-- check where we should start and stop according to the TOF kernel
+        //-- the tof weights outside +- 3 sigma will be close to 0 so we can
+        //-- ignore them         
+        istart_tof_f = (x_m1 + (it*tofbin_width - n_sigmas*sig_tof)*u1 - img_origin1) / voxsize1;
 
         //-- check where we should start and stop according to the TOF kernel
         //-- the tof weights outside +- 3 sigma will be close to 0 so we can
@@ -480,22 +481,26 @@ void joseph3d_back_tof_lm(const float *xstart,
 
             if ((i0_floor >= 0) && (i0_floor < n0) && (i1_floor >= 0) && (i1_floor < n1))
             {
-              back_imgs[n1*n2*i0_floor +  n2*i1_floor + i2 + tid*nvox] += 
+              #pragma omp atomic
+              img[n1*n2*i0_floor +  n2*i1_floor + i2] += 
                         (tw * p[i] * (1 - tmp_0) * (1 - tmp_1) * cf);
             }
             if ((i0_ceil >= 0) && (i0_ceil < n0) && (i1_floor >= 0) && (i1_floor < n1))
             {
-              back_imgs[n1*n2*i0_ceil + n2*i1_floor + i2 + tid*nvox] += 
+              #pragma omp atomic
+              img[n1*n2*i0_ceil + n2*i1_floor + i2] += 
                         (tw * p[i] * tmp_0 * (1 - tmp_1) * cf);
             }
             if ((i0_floor >= 0) && (i0_floor < n0) && (i1_ceil >= 0) && (i1_ceil < n1))
             {
-              back_imgs[n1*n2*i0_floor + n2*i1_ceil + i2 + tid*nvox] +=
+              #pragma omp atomic
+              img[n1*n2*i0_floor + n2*i1_ceil + i2] +=
                         (tw * p[i] * (1 - tmp_0) * tmp_1 * cf);
             }
             if ((i0_ceil >= 0) && (i0_ceil < n0) && (i1_ceil >= 0) && (i1_ceil < n1))
             {
-              back_imgs[n1*n2*i0_ceil + n2*i1_ceil + i2 + tid*nvox] +=
+              #pragma omp atomic
+              img[n1*n2*i0_ceil + n2*i1_ceil + i2] +=
                         (tw * p[i] * tmp_0 * tmp_1 * cf);
             }
           }
@@ -503,15 +508,4 @@ void joseph3d_back_tof_lm(const float *xstart,
       }
     }
   }
-
-  // sum all images back together
-  # pragma omp parallel for schedule(static)
-  for(i = 0; i < nvox; i++){
-    int id;
-    for(id = 0; id < num_threads; id++){
-      img[i] += back_imgs[i + id*nvox];
-    }
-  }
-
-  free(back_imgs);
 }
