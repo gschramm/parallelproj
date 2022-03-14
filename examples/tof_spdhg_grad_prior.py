@@ -24,7 +24,7 @@ parser.add_argument('--fwhm_mm',  help = 'psf modeling FWHM mm',  default = 4.5,
 parser.add_argument('--fwhm_data_mm',  help = 'psf for data FWHM mm',  default = 4.5, type = float)
 parser.add_argument('--phantom', help = 'phantom to use', default = 'brain2d')
 parser.add_argument('--seed',    help = 'seed for random generator', default = 1, type = int)
-parser.add_argument('--rel_gamma', help = 'relative step size ratio',  default = 3, type = float)
+parser.add_argument('--rel_gamma', help = 'relative step size ratio',  default = 30, type = float)
 parser.add_argument('--beta',  help = 'prior strength',  default = 0.1, type = float)
 parser.add_argument('--norm',  help = 'name of gradient norm',  default = 'l2_l1', 
                                choices = ['l2_sq', 'l2_l1'])
@@ -167,23 +167,97 @@ def _cb(x, **kwargs):
 
 cost = np.zeros(niter)
 xm   = [] 
-
 recon = spdhg(em_sino, attn_sino, sens_sino, contam_sino, proj, niter,
-              gamma = rel_gamma/img.max(), fwhm = fwhm, verbose = True, 
+              gamma = rel_gamma/img.max(), fwhm = fwhm, verbose = True, rho = 1,
               xstart = None, grad_operator = grad_operator, grad_norm = grad_norm, beta = beta,
               callback = _cb, callback_kwargs = {'cost': cost, 'xm':xm})
-
 xm = np.array(xm)
 
-#--- visualization
+cost2 = np.zeros(niter)
+xm2   = [] 
+recon2 = spdhg(em_sino, attn_sino, sens_sino, contam_sino, proj, niter,
+              gamma = rel_gamma/img.max(), fwhm = fwhm, verbose = True, rho = 4./3,
+              xstart = None, grad_operator = grad_operator, grad_norm = grad_norm, beta = beta,
+              callback = _cb, callback_kwargs = {'cost': cost2, 'xm':xm2})
+xm2 = np.array(xm2)
 
-fig, ax = plt.subplots(1,3, figsize = (12,5))
-ax[0].imshow(img.squeeze(), cmap = plt.cm.Greys, vmin = 0, vmax = 1.2*img.max())
-ax[1].imshow(recon.squeeze(), cmap = plt.cm.Greys, vmin = 0, vmax = 1.2*img.max())
-ax[2].plot(np.arange(1,niter+1), cost)
-ax[2].grid(ls = ':')
-ax[2].set_xlabel('iteration')
-ax[2].set_ylabel('cost')
-ax[2].set_ylim(cost.min(), cost[3:].max())
+cost3 = np.zeros(niter)
+xm3   = [] 
+recon3 = spdhg(em_sino, attn_sino, sens_sino, contam_sino, proj, niter,
+              gamma = rel_gamma/img.max(), fwhm = fwhm, verbose = True, rho = 4.,
+              xstart = None, grad_operator = grad_operator, grad_norm = grad_norm, beta = beta,
+              callback = _cb, callback_kwargs = {'cost': cost3, 'xm':xm3})
+xm3 = np.array(xm3)
+
+cost4 = np.zeros(niter)
+xm4   = [] 
+recon4 = spdhg(em_sino, attn_sino, sens_sino, contam_sino, proj, niter,
+              gamma = rel_gamma/img.max(), fwhm = fwhm, verbose = True, rho = 16.,
+              xstart = None, grad_operator = grad_operator, grad_norm = grad_norm, beta = beta,
+              callback = _cb, callback_kwargs = {'cost': cost4, 'xm':xm4})
+xm4 = np.array(xm4)
+
+
+
+
+
+#--- visualization
+ims_kwargs = dict(cmap = plt.cm.Greys, vmin = 0, vmax = 1.2*img.max())
+
+fig, ax = plt.subplots(3,4, figsize = (12,9))
+ax[0,0].imshow(img.squeeze(), **ims_kwargs)
+ax[0,0].set_title(f'ground truth')
+
+ymin = min(cost.min(), cost2.min(), cost3.min(), cost4.min())
+ymax = cost[3:].max()
+
+ax[0,1].plot(np.arange(1,niter+1), cost,  label = 'rho = 1')
+ax[0,1].plot(np.arange(1,niter+1), cost2, label = 'rho = 4/3')
+ax[0,1].plot(np.arange(1,niter+1), cost3, label = 'rho = 4')
+ax[0,1].plot(np.arange(1,niter+1), cost4, label = 'rho = 16')
+ax[0,1].grid(ls = ':')
+ax[0,1].set_xlabel('epoch')
+ax[0,1].set_ylabel('cost')
+ax[0,1].set_ylim(ymin, ymax)
+ax[0,1].legend()
+
+ax[0,2].plot(np.arange(1,21), cost[:20],  label = 'rho = 1')
+ax[0,2].plot(np.arange(1,21), cost2[:20], label = 'rho = 4/3')
+ax[0,2].plot(np.arange(1,21), cost3[:20], label = 'rho = 4')
+ax[0,2].plot(np.arange(1,21), cost4[:20], label = 'rho = 16')
+ax[0,2].grid(ls = ':')
+ax[0,2].set_xlabel('epoch')
+ax[0,2].set_ylabel('cost')
+ax[0,2].set_ylim(ymin, ymax)
+ax[0,2].legend()
+
+ax[0,3].plot(np.arange(niter + 1 - 5,niter+1), cost[-5:],  label = 'rho = 1')
+ax[0,3].plot(np.arange(niter + 1 - 5,niter+1), cost2[-5:], label = 'rho = 4/3')
+ax[0,3].plot(np.arange(niter + 1 - 5,niter+1), cost3[-5:], label = 'rho = 4')
+ax[0,3].plot(np.arange(niter + 1 - 5,niter+1), cost4[-5:], label = 'rho = 16')
+ax[0,3].grid(ls = ':')
+ax[0,3].set_xlabel('epoch')
+ax[0,3].set_ylabel('cost')
+ax[0,3].set_ylim(ymin, cost[-5:].max())
+ax[0,3].legend()
+
+ax[1,0].imshow(recon.squeeze(),  **ims_kwargs)
+ax[1,1].imshow(recon2.squeeze(), **ims_kwargs)
+ax[1,2].imshow(recon3.squeeze(), **ims_kwargs)
+ax[1,3].imshow(recon4.squeeze(), **ims_kwargs)
+ax[1,0].set_title(f'rho = 1, {niter} ep., {nsubsets} ss')
+ax[1,1].set_title(f'rho = 4/3, {niter} ep., {nsubsets} ss')
+ax[1,2].set_title(f'rho = 4, {niter} ep., {nsubsets} ss')
+ax[1,3].set_title(f'rho = 16, {niter} ep., {nsubsets} ss')
+
+ax[2,0].imshow(xm[10,...].squeeze(),  **ims_kwargs)
+ax[2,1].imshow(xm2[10,...].squeeze(), **ims_kwargs)
+ax[2,2].imshow(xm3[10,...].squeeze(), **ims_kwargs)
+ax[2,3].imshow(xm4[10,...].squeeze(), **ims_kwargs)
+ax[2,0].set_title(f'rho = 1, 10 ep., {nsubsets} ss')
+ax[2,1].set_title(f'rho = 4/3, 10 ep., {nsubsets} ss')
+ax[2,2].set_title(f'rho = 4, 10 ep., {nsubsets} ss')
+ax[2,3].set_title(f'rho = 16, 10 ep., {nsubsets} ss')
+
 fig.tight_layout()
 fig.show()
