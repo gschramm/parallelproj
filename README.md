@@ -15,11 +15,11 @@ For the CUDA library (optional):
 - CUDA (tested with 10.1.105)
 
 For the python bindings:
-- python (tested with v.3.7.6)
-- numpy  (tested with v.1.18.1)
-- matplotlib (tested with v.3.2.1)
-- numba (tested with v.0.49)
-- numba (tested with v.1.2)
+- python (tested with  >= 3.7.6)
+- numpy  (tested with  >= 1.18.1)
+- matplotlib (tested with >= 3.2.1)
+- numba (tested with >= 0.53)
+- scipy (tested with >= 1.2)
 
 
 ## Compilation of OpenMP (and CUDA libraries)
@@ -103,17 +103,12 @@ import pyparallelproj as ppp
 print(ppp.config.lib_parallelproj_cuda)
 ``` 
 
-In the examples sub directory you can find a few demo script that show how to use the projectors. Good examples to start with are ```fwd_back.py```, ```tof_pet_sino.py``` and ```tof_pet_lm.py``` which demonstrate a simple forward and back projection, a short sinogram and listmode OS-MLEM reconstruction on simulated data. To run them without a a GPU and CUDA, execute:
-
+In the examples sub directory you can find a few demo script that show how to use the projectors. Good examples to start with are ```fwd_back.py```, ```tof_pet_sino.py``` and ```tof_pet_lm.py``` which demonstrate a simple forward and back projection, a short sinogram and listmode OS-MLEM reconstruction on simulated data. You can run them via
 ```
 python fwd_back.py
 python tof_pet_sino.py
 python tof_pet_lm.py
 ```
-To use the CUDA GPU projector on a single GPU run
-```
-python fwd_back.py --ngpus 1
-python tof_pet_sino.py --ngpus 1
-python tof_pet_lm.py --ngpus 1
-```
-The "ngpus" option specifies on many GPUs should be used. If set to -1, CUDA will auto determine the number of available inter-connected GPUs. The default value 0 means that the OpenMP-based CPU projectors are used.
+When imported, pyparallelproj will test whether a CUDA GPU is available or not and run all projections on the GPU using the CUDA libs if possible.
+
+If you want to explicitely disable all visible GPUs (e.g. to test the OpenMP libraries) or you want to use a specific CUDA device, set the enviroment variable ```CUDA_VISIBLE_DEVICES```
