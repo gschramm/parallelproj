@@ -74,7 +74,9 @@ if lib_parallelproj_c_fname is not None:
                                                      ar_1d_single,      # sigma tof
                                                      ar_1d_single,      # tofcenter_offset
                                                      ctypes.c_float,    # n_sigmas 
-                                                     ctypes.c_short]    # n_tofbins
+                                                     ctypes.c_short,    # n_tofbins
+                                                     ctypes.c_ubyte,    # LOR dep. TOF sigma
+                                                     ctypes.c_ubyte]    # LOR dep. TOF center offset
   
   lib_parallelproj_c.joseph3d_back_tof_sino.restype  = None
   lib_parallelproj_c.joseph3d_back_tof_sino.argtypes = [ar_1d_single,
@@ -89,7 +91,9 @@ if lib_parallelproj_c_fname is not None:
                                                       ar_1d_single,      # sigma tof
                                                       ar_1d_single,      # tofcenter_offset
                                                       ctypes.c_float,    # n_sigmas 
-                                                      ctypes.c_short]    # n_tofbins
+                                                      ctypes.c_short,    # n_tofbins
+                                                      ctypes.c_ubyte,    # LOR dep. TOF sigma
+                                                      ctypes.c_ubyte]    # LOR dep. TOF center offset
 
   lib_parallelproj_c.joseph3d_fwd_tof_lm.restype  = None
   lib_parallelproj_c.joseph3d_fwd_tof_lm.argtypes = [ar_1d_single,
@@ -104,7 +108,9 @@ if lib_parallelproj_c_fname is not None:
                                                    ar_1d_single,      # sigma tof
                                                    ar_1d_single,      # tofcenter_offset
                                                    ctypes.c_float,    # n_sigmas 
-                                                   ar_1d_short]       # tof bin 
+                                                   ar_1d_short,       # tof bin 
+                                                   ctypes.c_ubyte,    # LOR dep. TOF sigma
+                                                   ctypes.c_ubyte]    # LOR dep. TOF center offset
   
   lib_parallelproj_c.joseph3d_back_tof_lm.restype  = None
   lib_parallelproj_c.joseph3d_back_tof_lm.argtypes = [ar_1d_single,
@@ -119,7 +125,9 @@ if lib_parallelproj_c_fname is not None:
                                                     ar_1d_single,      # sigma tof
                                                     ar_1d_single,      # tofcenter_offset
                                                     ctypes.c_float,    # n_sigmas 
-                                                    ar_1d_short]       # tof bin 
+                                                    ar_1d_short,       # tof bin 
+                                                    ctypes.c_ubyte,    # LOR dep. TOF sigma
+                                                    ctypes.c_ubyte]    # LOR dep. TOF center offset
   
 
 if lib_parallelproj_cuda_fname is not None:
@@ -163,6 +171,8 @@ if lib_parallelproj_cuda_fname is not None:
                                                                ar_1d_single,      # tofcenter_offset
                                                                ctypes.c_float,    # n_sigmas 
                                                                ctypes.c_short,    # n_tofbins
+                                                               ctypes.c_ubyte,    # LOR dep. TOF sigma
+                                                               ctypes.c_ubyte,    # LOR dep. TOF center offset
                                                                ctypes.c_int]      # threads per block
   
   lib_parallelproj_cuda.joseph3d_back_tof_sino_cuda.restype  = None
@@ -179,6 +189,8 @@ if lib_parallelproj_cuda_fname is not None:
                                                                 ar_1d_single,      # tofcenter_offset
                                                                 ctypes.c_float,    # n_sigmas 
                                                                 ctypes.c_short,    # n_tofbins
+                                                                ctypes.c_ubyte,    # LOR dep.TOF sigma
+                                                                ctypes.c_ubyte,    # LOR dep.TOF center offset
                                                                 ctypes.c_int]      # threads per block
 
   lib_parallelproj_cuda.joseph3d_fwd_tof_lm_cuda.restype  = None
@@ -195,6 +207,8 @@ if lib_parallelproj_cuda_fname is not None:
                                                              ar_1d_single,      # tofcenter_offset
                                                              ctypes.c_float,    # n_sigmas 
                                                              ar_1d_short,       # tof bin 
+                                                             ctypes.c_ubyte,    # LOR dep. TOF sigma
+                                                             ctypes.c_ubyte,    # LOR dep. TOF center offset
                                                              ctypes.c_int]      # threads per block
   
   lib_parallelproj_cuda.joseph3d_back_tof_lm_cuda.restype  = None
@@ -211,6 +225,8 @@ if lib_parallelproj_cuda_fname is not None:
                                                               ar_1d_single,      # tofcenter_offset
                                                               ctypes.c_float,    # n_sigmas 
                                                               ar_1d_short,       # tof bin 
+                                                              ctypes.c_ubyte,    # LOR dep. TOF sigma
+                                                              ctypes.c_ubyte,    # LOR dep. TOF center offset
                                                               ctypes.c_int]      # threads per block
 
 

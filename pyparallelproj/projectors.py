@@ -188,12 +188,12 @@ class SinogramProjector:
     else:
       ####### TOF fwd projection 
       if sigma_tof_per_lor is None:
-        sigma_tof = np.full(self.nLORs[subset], self.sigma_tof, dtype = ctypes.c_float)
+        sigma_tof = np.array([self.sigma_tof], dtype = ctypes.c_float)
       else:
         sigma_tof = sigma_tof_per_lor.astype(ctypes.c_float)
 
       if not isinstance(tofcenter_offset, np.ndarray):
-        tofcenter_offset = np.zeros(self.nLORs[subset], dtype = ctypes.c_float)
+        tofcenter_offset = np.zeros(1, dtype = ctypes.c_float)
 
       img_fwd = np.zeros(self.nLORs[subset]*self.ntofbins, dtype = ctypes.c_float)  
       ok = joseph3d_fwd_tof_sino(xstart.ravel(), xend.ravel(), 
@@ -240,12 +240,12 @@ class SinogramProjector:
     else:
       ####### TOF back projection 
       if sigma_tof_per_lor is None:
-        sigma_tof = np.full(self.nLORs[subset], self.sigma_tof, dtype = ctypes.c_float)
+        sigma_tof = np.array([self.sigma_tof], dtype = ctypes.c_float)
       else:
         sigma_tof = sigma_tof_per_lor.astype(ctypes.c_float)
 
       if not isinstance(tofcenter_offset, np.ndarray):
-        tofcenter_offset = np.zeros(self.nLORs[subset], dtype = ctypes.c_float)
+        tofcenter_offset = np.zeros(1, dtype = ctypes.c_float)
 
       ok = joseph3d_back_tof_sino(xstart.ravel(), xend.ravel(), 
                                   back_img, self.img_origin, self.voxsize, 
@@ -287,12 +287,12 @@ class SinogramProjector:
     else:
       ####### TOF fwd projection 
       if sigma_tof_per_lor is None:
-        sigma_tof = np.full(nevents, self.sigma_tof, dtype = ctypes.c_float)
+        sigma_tof = np.array([self.sigma_tof], dtype = ctypes.c_float)
       else:
         sigma_tof = sigma_tof_per_lor.astype(ctypes.c_float)
 
       if not isinstance(tofcenter_offset, np.ndarray):
-        tofcenter_offset = np.zeros(nevents, dtype = ctypes.c_float)
+        tofcenter_offset = np.zeros(1, dtype = ctypes.c_float)
 
       tofbin = events[:,4].astype(ctypes.c_short)
 
@@ -326,12 +326,12 @@ class SinogramProjector:
     else:
       ####### TOF back projection 
       if sigma_tof_per_lor is None:
-        sigma_tof = np.full(nevents, self.sigma_tof, dtype = ctypes.c_float)
+        sigma_tof = np.array([self.sigma_tof], dtype = ctypes.c_float)
       else:
         sigma_tof = sigma_tof_per_lor.astype(ctypes.c_float)
 
       if not isinstance(tofcenter_offset, np.ndarray):
-        tofcenter_offset = np.zeros(nevents, dtype = ctypes.c_float)
+        tofcenter_offset = np.zeros(1, dtype = ctypes.c_float)
 
       tofbin = events[:,4].astype(ctypes.c_short)
 

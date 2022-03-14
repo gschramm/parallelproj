@@ -88,6 +88,9 @@ def joseph3d_fwd_tof_sino(xstart, xend, img, img_origin, voxsize, img_fwd, nLORs
                           tofbin_width, sigma_tof, tofcenter_offset, nsigmas, ntofbins,
                           threadsperblock = 64, n_chunks = 1): 
 
+  lor_dependent_sigma_tof = int(sigma_tof.shape[0] == nLORs)
+  lor_dependent_tofcenter_offset = int(tofcenter_offset.shape[0] == nLORs)
+
   if n_visible_gpus > 0:
 
     nvox = ctypes.c_longlong(img_dim[0]*img_dim[1]*img_dim[2])
@@ -99,14 +102,29 @@ def joseph3d_fwd_tof_sino(xstart, xend, img, img_origin, voxsize, img_fwd, nLORs
     ic = calc_chunks(nLORs, n_chunks)
 
     for i in range(n_chunks):
+      if lor_dependent_sigma_tof:
+        isig0 = ic[i]
+        isig1 = ic[i+1]
+      else:
+        isig0 = 0
+        isig1 = 1
+
+      if lor_dependent_tofcenter_offset:
+        ioff0 = ic[i]
+        ioff1 = ic[i+1]
+      else:
+        ioff0 = 0
+        ioff1 = 1
+
       ok = lib_parallelproj_cuda.joseph3d_fwd_tof_sino_cuda(xstart[(3*ic[i]):(3*ic[i+1])], 
                                                             xend[(3*ic[i]):(3*ic[i+1])], 
                                                             d_img, img_origin, voxsize, 
                                                             img_fwd[(ntofbins*ic[i]):(ntofbins*ic[i+1])], 
-                                                            ic[i+1] - ic[i], img_dim,
-                                                            tofbin_width, sigma_tof[ic[i]:ic[i+1]], 
-                                                            tofcenter_offset[ic[i]:ic[i+1]], 
-                                                            nsigmas, ntofbins, threadsperblock) 
+                                                            ic[i+1] - ic[i], img_dim, tofbin_width, 
+                                                            sigma_tof[isig0:isig1], tofcenter_offset[ioff0:ioff1], 
+                                                            nsigmas, ntofbins, 
+                                                            lor_dependent_sigma_tof, lor_dependent_tofcenter_offset,
+                                                            threadsperblock) 
 
     # free image device arrays
     lib_parallelproj_cuda.free_float_array_on_all_devices(d_img, nvox)
@@ -114,9 +132,10 @@ def joseph3d_fwd_tof_sino(xstart, xend, img, img_origin, voxsize, img_fwd, nLORs
 
   else:
     ok = lib_parallelproj_c.joseph3d_fwd_tof_sino(xstart, xend, img, img_origin, voxsize, 
-                                                img_fwd, nLORs, img_dim,
-                                                tofbin_width, sigma_tof, tofcenter_offset, 
-                                                nsigmas, ntofbins) 
+                                                  img_fwd, nLORs, img_dim,
+                                                  tofbin_width, sigma_tof, tofcenter_offset, 
+                                                  nsigmas, ntofbins,
+                                                  lor_dependent_sigma_tof, lor_dependent_tofcenter_offset)
 
   return ok
 
@@ -125,6 +144,9 @@ def joseph3d_fwd_tof_sino(xstart, xend, img, img_origin, voxsize, img_fwd, nLORs
 def joseph3d_back_tof_sino(xstart, xend, back_img, img_origin, voxsize, sino, nLORs, img_dim,
                            tofbin_width, sigma_tof, tofcenter_offset, nsigmas, ntofbins,
                            threadsperblock = 64, n_chunks = 1): 
+
+  lor_dependent_sigma_tof = int(sigma_tof.shape[0] == nLORs)
+  lor_dependent_tofcenter_offset = int(tofcenter_offset.shape[0] == nLORs)
 
   if n_visible_gpus > 0:
 
@@ -137,14 +159,29 @@ def joseph3d_back_tof_sino(xstart, xend, back_img, img_origin, voxsize, sino, nL
     ic = calc_chunks(nLORs, n_chunks)
 
     for i in range(n_chunks):
+      if lor_dependent_sigma_tof:
+        isig0 = ic[i]
+        isig1 = ic[i+1]
+      else:
+        isig0 = 0
+        isig1 = 1
+
+      if lor_dependent_tofcenter_offset:
+        ioff0 = ic[i]
+        ioff1 = ic[i+1]
+      else:
+        ioff0 = 0
+        ioff1 = 1
+
       ok = lib_parallelproj_cuda.joseph3d_back_tof_sino_cuda(xstart[(3*ic[i]):(3*ic[i+1])], 
                                                              xend[(3*ic[i]):(3*ic[i+1])], 
                                                              d_back_img, img_origin, voxsize, 
                                                              sino[(ntofbins*ic[i]):(ntofbins*ic[i+1])], 
-                                                             ic[i+1] - ic[i], img_dim,
-                                                             tofbin_width, sigma_tof[ic[i]:ic[i+1]], 
-                                                             tofcenter_offset[ic[i]:ic[i+1]], 
-                                                             nsigmas, ntofbins, threadsperblock) 
+                                                             ic[i+1] - ic[i], img_dim, tofbin_width, 
+                                                             sigma_tof[isig0:isig1], tofcenter_offset[ioff0:ioff1], 
+                                                             nsigmas, ntofbins, 
+                                                             lor_dependent_sigma_tof, lor_dependent_tofcenter_offset,
+                                                             threadsperblock) 
 
     # sum all device arrays in the first device
     lib_parallelproj_cuda.sum_float_arrays_on_first_device(d_back_img, nvox) 
@@ -156,9 +193,10 @@ def joseph3d_back_tof_sino(xstart, xend, back_img, img_origin, voxsize, sino, nL
     lib_parallelproj_cuda.free_float_array_on_all_devices(d_back_img, nvox)
   else:
     ok = lib_parallelproj_c.joseph3d_back_tof_sino(xstart, xend, back_img, img_origin, voxsize, 
-                                                 sino, nLORs, img_dim,
-                                                 tofbin_width, sigma_tof, tofcenter_offset, 
-                                                 nsigmas, ntofbins)
+                                                  sino, nLORs, img_dim,
+                                                  tofbin_width, sigma_tof, tofcenter_offset, 
+                                                  nsigmas, ntofbins,
+                                                  lor_dependent_sigma_tof, lor_dependent_tofcenter_offset)
 
   return ok 
 
@@ -168,6 +206,9 @@ def joseph3d_back_tof_sino(xstart, xend, back_img, img_origin, voxsize, sino, nL
 def joseph3d_fwd_tof_lm(xstart, xend, img, img_origin, voxsize, img_fwd, nLORs, img_dim,
                         tofbin_width, sigma_tof, tofcenter_offset, nsigmas, tofbin,
                         threadsperblock = 64, n_chunks = 1): 
+
+  lor_dependent_sigma_tof = int(sigma_tof.shape[0] == nLORs)
+  lor_dependent_tofcenter_offset = int(tofcenter_offset.shape[0] == nLORs)
 
   if n_visible_gpus > 0:
 
@@ -180,13 +221,28 @@ def joseph3d_fwd_tof_lm(xstart, xend, img, img_origin, voxsize, img_fwd, nLORs, 
     ic = calc_chunks(nLORs, n_chunks)
 
     for i in range(n_chunks):
+      if lor_dependent_sigma_tof:
+        isig0 = ic[i]
+        isig1 = ic[i+1]
+      else:
+        isig0 = 0
+        isig1 = 1
+
+      if lor_dependent_tofcenter_offset:
+        ioff0 = ic[i]
+        ioff1 = ic[i+1]
+      else:
+        ioff0 = 0
+        ioff1 = 1
+
       ok = lib_parallelproj_cuda.joseph3d_fwd_tof_lm_cuda(xstart[(3*ic[i]):(3*ic[i+1])], 
                                                           xend[(3*ic[i]):(3*ic[i+1])], 
                                                           d_img, img_origin, voxsize, 
-                                                          img_fwd[ic[i]:ic[i+1]], ic[i+1] - ic[i], img_dim,
-                                                          tofbin_width, sigma_tof[ic[i]:ic[i+1]], 
-                                                          tofcenter_offset[ic[i]:ic[i+1]], 
-                                                          nsigmas, tofbin[ic[i]:ic[i+1]], threadsperblock) 
+                                                          img_fwd[ic[i]:ic[i+1]], ic[i+1] - ic[i], img_dim, tofbin_width,  
+                                                          sigma_tof[isig0:isig1], tofcenter_offset[ioff0:ioff1], 
+                                                          nsigmas, tofbin[ic[i]:ic[i+1]], 
+                                                          lor_dependent_sigma_tof, lor_dependent_tofcenter_offset,
+                                                          threadsperblock) 
 
     # free image device arrays
     lib_parallelproj_cuda.free_float_array_on_all_devices(d_img, nvox)
@@ -196,7 +252,8 @@ def joseph3d_fwd_tof_lm(xstart, xend, img, img_origin, voxsize, img_fwd, nLORs, 
     ok = lib_parallelproj_c.joseph3d_fwd_tof_lm(xstart, xend, img, img_origin, voxsize, 
                                               img_fwd, nLORs, img_dim,
                                               tofbin_width, sigma_tof, tofcenter_offset, 
-                                              nsigmas, tofbin) 
+                                              nsigmas, tofbin,
+                                              lor_dependent_sigma_tof, lor_dependent_tofcenter_offset)
 
   return ok
 
@@ -205,6 +262,9 @@ def joseph3d_fwd_tof_lm(xstart, xend, img, img_origin, voxsize, img_fwd, nLORs, 
 def joseph3d_back_tof_lm(xstart, xend, back_img, img_origin, voxsize, lst, nLORs, img_dim,
                          tofbin_width, sigma_tof, tofcenter_offset, nsigmas, tofbin,
                          threadsperblock = 64, n_chunks = 1): 
+
+  lor_dependent_sigma_tof = int(sigma_tof.shape[0] == nLORs)
+  lor_dependent_tofcenter_offset = int(tofcenter_offset.shape[0] == nLORs)
 
   if n_visible_gpus > 0:
 
@@ -217,13 +277,28 @@ def joseph3d_back_tof_lm(xstart, xend, back_img, img_origin, voxsize, lst, nLORs
     ic = calc_chunks(nLORs, n_chunks)
 
     for i in range(n_chunks):
+      if lor_dependent_sigma_tof:
+        isig0 = ic[i]
+        isig1 = ic[i+1]
+      else:
+        isig0 = 0
+        isig1 = 1
+
+      if lor_dependent_tofcenter_offset:
+        ioff0 = ic[i]
+        ioff1 = ic[i+1]
+      else:
+        ioff0 = 0
+        ioff1 = 1
+
       ok = lib_parallelproj_cuda.joseph3d_back_tof_lm_cuda(xstart[(3*ic[i]):(3*ic[i+1])], 
                                                            xend[(3*ic[i]):(3*ic[i+1])], 
                                                            d_back_img, img_origin, voxsize, 
-                                                           lst[ic[i]:ic[i+1]], ic[i+1] - ic[i], img_dim,
-                                                           tofbin_width, sigma_tof[ic[i]:ic[i+1]], 
-                                                           tofcenter_offset[ic[i]:ic[i+1]], 
-                                                           nsigmas, tofbin[ic[i]:ic[i+1]], threadsperblock) 
+                                                           lst[ic[i]:ic[i+1]], ic[i+1] - ic[i], img_dim,tofbin_width, 
+                                                           sigma_tof[isig0:isig1], tofcenter_offset[ioff0:ioff1], 
+                                                           nsigmas, tofbin[ic[i]:ic[i+1]], 
+                                                           lor_dependent_sigma_tof, lor_dependent_tofcenter_offset,
+                                                           threadsperblock) 
 
     # sum all device arrays in the first device
     lib_parallelproj_cuda.sum_float_arrays_on_first_device(d_back_img, nvox) 
@@ -235,8 +310,9 @@ def joseph3d_back_tof_lm(xstart, xend, back_img, img_origin, voxsize, lst, nLORs
     lib_parallelproj_cuda.free_float_array_on_all_devices(d_back_img, nvox)
   else:
     ok = lib_parallelproj_c.joseph3d_back_tof_lm(xstart, xend, back_img, img_origin, voxsize, 
-                                               lst, nLORs, img_dim,
-                                               tofbin_width, sigma_tof, tofcenter_offset, 
-                                               nsigmas, tofbin)
+                                                 lst, nLORs, img_dim,
+                                                 tofbin_width, sigma_tof, tofcenter_offset, 
+                                                 nsigmas, tofbin,
+                                                 lor_dependent_sigma_tof, lor_dependent_tofcenter_offset)
 
   return ok 
