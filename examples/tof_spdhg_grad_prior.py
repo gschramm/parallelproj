@@ -18,7 +18,7 @@ import argparse
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--counts',   help = 'counts to simulate',    default = 1e6, type = float)
-parser.add_argument('--niter',    help = 'number of iterations',  default = 10,  type = int)
+parser.add_argument('--niter',    help = 'number of iterations',  default = 20,  type = int)
 parser.add_argument('--nsubsets',   help = 'number of subsets',     default = 56,  type = int)
 parser.add_argument('--fwhm_mm',  help = 'psf modeling FWHM mm',  default = 4.5, type = float)
 parser.add_argument('--fwhm_data_mm',  help = 'psf for data FWHM mm',  default = 4.5, type = float)
