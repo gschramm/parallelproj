@@ -6,13 +6,6 @@
 #include<stdlib.h>
 #include<omp.h>
 
-/** @brief CUDA kernel to add array b to array a
- * 
- *  @param a first array of length n
- *  @param b first array of length n
- *  @param n length of vectors
- *
-*/ 
 extern "C" __global__ void add_to_first_kernel(float* a, float* b, unsigned long long n)
 {
 // add a vector b onto a vector a both of length n
@@ -25,12 +18,14 @@ extern "C" __global__ void add_to_first_kernel(float* a, float* b, unsigned long
   }
 }
 
+//////////////////////////////////////////////////////////////////////////////////////////
 extern "C" __global__ void print_int_device_array(int* a)
 {
   unsigned long long i = blockDim.x * blockIdx.x + threadIdx.x;
   printf("%lld %d\n", i, a[i]);
 }
 
+//////////////////////////////////////////////////////////////////////////////////////////
 extern "C" __global__ void print_float_device_array(float* a)
 {
   unsigned long long i = blockDim.x * blockIdx.x + threadIdx.x;
@@ -38,7 +33,6 @@ extern "C" __global__ void print_float_device_array(float* a)
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////
-
 extern "C" float** copy_float_array_to_all_devices(const float *h_array, long long n)
 {
   cudaError_t error;  
@@ -74,7 +68,6 @@ extern "C" float** copy_float_array_to_all_devices(const float *h_array, long lo
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////
-
 extern "C" void free_float_array_on_all_devices(float **d_array)
 {
 
@@ -93,7 +86,6 @@ extern "C" void free_float_array_on_all_devices(float **d_array)
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////
-
 extern "C" void sum_float_arrays_on_first_device(float **d_array, long long n)
 {
 
@@ -145,7 +137,6 @@ extern "C" void sum_float_arrays_on_first_device(float **d_array, long long n)
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////
-
 extern "C" void get_float_array_from_device(float **d_array, long long n, int i_dev, float *h_array)
 {
   cudaSetDevice(i_dev);
