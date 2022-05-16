@@ -4,6 +4,7 @@ import numpy as np
 import argparse
 
 nsubsets = 1
+np.random.seed(1)
 
 # setup a scanner
 scanner = ppp.RegularPolygonPETScanner(ncrystals_per_module = np.array([16,1]),
