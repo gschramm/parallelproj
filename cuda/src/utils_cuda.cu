@@ -3,7 +3,6 @@
  */
 
 #include<stdio.h>
-#include<stdlib.h>
 #include<omp.h>
 
 extern "C" __global__ void add_to_first_kernel(float* a, float* b, unsigned long long n)

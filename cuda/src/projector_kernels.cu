@@ -2,10 +2,6 @@
  * @file projector_kernels.cu
  */
 
-#include<stdio.h>
-#include<stdlib.h>
-#include<math.h>
-
 extern "C" __device__ unsigned char ray_cube_intersection_cuda(float orig0,
                                                                float orig1,
                                                                float orig2,
