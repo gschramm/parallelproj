@@ -4,7 +4,7 @@
 
 #include<stdio.h>
 #include<stdlib.h>
-#include "tof_utils_cuda.h"
+#include<math.h>
 
 extern "C" __device__ unsigned char ray_cube_intersection_cuda(float orig0,
                                                                float orig1,
@@ -70,6 +70,49 @@ extern "C" __device__ unsigned char ray_cube_intersection_cuda(float orig0,
 }
 
 
+//------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------
+extern "C" __device__ void relevant_tof_bins_cuda(float x_m0,
+                                                  float x_m1, 
+                                                  float x_m2, 
+                                                  float x_v0, 
+                                                  float x_v1, 
+                                                  float x_v2, 
+                                                  float u0,
+                                                  float u1,
+                                                  float u2,
+                                                  float tofbin_width,
+                                                  float tofcenter_offset,
+                                                  float sigma_tof,
+                                                  float n_sigmas,
+                                                  int n_half,
+                                                  int *it1,
+                                                  int *it2)
+{
+  float b1, b2;
+
+  // calculate which TOF bins it1 and it2 are within +- n_sigmas
+  // the tof bin numbers run from -n_tofbins//2 ... 0 ... n_tofbins//2
+  b1 = (((x_v0 - x_m0)*u0 + (x_v1 - x_m1)*u1 + (x_v2 - x_m2)*u2) - 
+            tofcenter_offset + n_sigmas*sigma_tof) / tofbin_width;
+  b2 = (((x_v0 - x_m0)*u0 + (x_v1 - x_m1)*u1 + (x_v2 - x_m2)*u2) - 
+            tofcenter_offset - n_sigmas*sigma_tof) / tofbin_width;
+
+  if(b1 <= b2){
+    *it1 = (int)floor(b1);
+    *it2 = (int)ceil(b2);
+  }
+  else{
+    *it1 = (int)floor(b2);
+    *it2 = (int)ceil(b1);
+  }
+
+  if(*it1 < -n_half){*it1 = -n_half;}
+  if(*it2 < -n_half){*it2 = -n_half;}
+  if(*it1 > n_half){*it1 = n_half;}
+  if(*it2 > n_half){*it2 = n_half;}
+}
 
 //------------------------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------

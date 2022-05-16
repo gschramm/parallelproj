@@ -44,6 +44,45 @@ extern "C" __device__ unsigned char ray_cube_intersection_cuda(float orig0,
 
 
 
+/**
+ * @brief Calculate the TOF bins along an LOR to which a voxel contributes
+ *
+ * @param x_m0   0-component of center of LOR
+ * @param x_m1   1-component of center of LOR
+ * @param x_m2   2-component of center of LOR
+ * @param x_v0   0-component of voxel
+ * @param x_v1   1-component of voxel
+ * @param x_v2   2-component of voxel
+ * @param u0     0-component of unit vector that points from start to end of LOR 
+ * @param u1     1-component of unit vector that points from start to end of LOR 
+ * @param u2     2-component of unit vector that points from start to end of LOR 
+ * @param tofbin_width      width of the TOF bins in spatial units
+ * @param tofcenter_offset  offset of the central tofbin from the midpoint of the LOR in spatial units
+ * @param sigma_tof         TOF resolution in spatial coordinates
+ * @param n_sigmas          number of sigmas considered to be relevant
+ * @param n_half            n_tofbins // 2
+ * @param it1 (output)      lower relevant tof bin
+ * @param it2 (output)      upper relevant tof bin
+ */
+extern "C" __device__ void relevant_tof_bins_cuda(float x_m0,
+                                                  float x_m1, 
+                                                  float x_m2, 
+                                                  float x_v0, 
+                                                  float x_v1, 
+                                                  float x_v2, 
+                                                  float u0,
+                                                  float u1,
+                                                  float u2,
+                                                  float tofbin_width,
+                                                  float tofcenter_offset,
+                                                  float sigma_tof,
+                                                  float n_sigmas,
+                                                  int n_half,
+                                                  int *it1,
+                                                  int *it2);
+
+
+
 /** @brief 3D non-tof joseph back projector CUDA kernel
  *
  *  @param xstart array of shape [3*nlors] with the coordinates of the start points of the LORs.
