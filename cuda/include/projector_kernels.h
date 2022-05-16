@@ -1,6 +1,49 @@
 #ifndef __PARALLELPROJ_CUDA_PROJECTOR_KERNELS_H__
 #define __PARALLELPROJ_CUDA_PROJECTOR_KERNELS_H__
 
+/** @brief Calculate whether a ray and a cube intersect and the possible intersection points
+ *
+ *  The ray is given by origin + t*rdir (vector notation)
+ *  if the ray intersects the cube, the two t values t1 and t2
+ *  for the intersection points are computed.
+ *
+ *  This algorithm assumes that the IEEE floating point arithmetic standard 754 is followed 
+ *  which handles divions by 0 and -0 correctly.
+ *
+ *  @param orig0       ...  0 cordinate of the ray origin
+ *  @param orig1       ...  1 cordinate of the ray origin
+ *  @param orig2       ...  2 cordinate of the ray origin
+ *  @param bounds0_min ...  0 cordinate of the start of the cube bounding box
+ *  @param bounds1_min ...  1 cordinate of the start of the cube bounding box
+ *  @param bounds2_min ...  2 cordinate of the start of the cube bounding box
+ *  @param bounds0_max ...  0 cordinate of the end   of the cube bounding box
+ *  @param bounds1_max ...  1 cordinate of the end   of the cube bounding box
+ *  @param bounds2_max ...  2 cordinate of the end   of the cube bounding box
+ *  @param rdir0       ...  0 cordinate of the ray directional vector
+ *  @param rdir1       ...  1 cordinate of the ray directional vector
+ *  @param rdir2       ...  2 cordinate of the ray directional vector
+ *  @param t1          ...  (output) ray parameter of 1st intersection point
+ *  @param t2          ...  (output) ray parameter of 2nd intersection point
+ *
+ *  @return            ...  unsigned char (0 or 1) whether ray intersects cube 
+ */
+extern "C" __device__ unsigned char ray_cube_intersection_cuda(float orig0,
+                                                               float orig1,
+                                                               float orig2,
+                                                               float bounds0_min,
+                                                               float bounds1_min,
+                                                               float bounds2_min,
+                                                               float bounds0_max,
+                                                               float bounds1_max,
+                                                               float bounds2_max,
+                                                               float rdir0,
+                                                               float rdir1,
+                                                               float rdir2,
+                                                               float* t1,
+                                                               float* t2);
+
+
+
 /** @brief 3D non-tof joseph back projector CUDA kernel
  *
  *  @param xstart array of shape [3*nlors] with the coordinates of the start points of the LORs.
