@@ -1,5 +1,7 @@
 import numpy as np
-import matplotlib.pyplot as py
+import matplotlib.pyplot as plt
+try:
+  import cupy as cp
 
 class RegularPolygonPETScanner:
   """Geometry defition of a cylindical PET scanner with pixelized detectors aranged in module
@@ -28,7 +30,10 @@ class RegularPolygonPETScanner:
                ncrystals_per_module = np.array([16,9]),
                crystal_size         = np.array([4.,5.]),
                nmodules             = np.array([28,5]),
-               module_gap_axial     = 5.):
+               module_gap_axial     = 5.,
+               on_gpu               = False):
+
+    self.on_gpu = on_gpu
 
     self.R = R
     self.ncrystals_per_module = ncrystals_per_module
@@ -65,12 +70,28 @@ class RegularPolygonPETScanner:
     # shift center in x2 direction to 0
     self.xc2 -= 0.5*self.xc2.max()
 
-  def show_crystal_config(self, show_crystal_numbers = False):
-    fig, ax = py.subplots(1, 2, figsize = (12,7))
-    ax[0].plot(self.xc0, self.xc1, 'r.')
+    # move crystal coordinate arrays to GPU
+    if self.on_gpu:
+      self.xc0 = cp.asarray(self.xc0)
+      self.xc1 = cp.asarray(self.xc1)
+      self.xc2 = cp.asarray(self.xc2)
 
-    ax[1].plot(self.xc2, np.full(self.ncrystals_axial, self.xc1.max()), 'r.')
-    ax[1].plot(self.xc2, np.full(self.ncrystals_axial, self.xc1.min()), 'r.')
+  def show_crystal_config(self, show_crystal_numbers = False):
+
+    if self.on_gpu:
+      xc0 = cp.asnumpy(self.xc0)
+      xc1 = cp.asnumpy(self.xc1)
+      xc2 = cp.asnumpy(self.xc2)
+    else:
+      xc0 = self.xc0
+      xc1 = self.xc1
+      xc2 = self.xc2
+
+    fig, ax = plt.subplots(1, 2, figsize = (12,7))
+    ax[0].plot(xc0, xc1, 'r.')
+
+    ax[1].plot(xc2, np.full(self.ncrystals_axial, xc1.max()), 'r.')
+    ax[1].plot(xc2, np.full(self.ncrystals_axial, xc1.min()), 'r.')
 
     ax[0].set_xlabel('xc0')
     ax[0].set_ylabel('xc1')
@@ -84,10 +105,10 @@ class RegularPolygonPETScanner:
 
     if show_crystal_numbers:
       for i in range(self.ncrystals_per_plane):
-        ax[0].text(self.xc0[i], self.xc1[i], str(i))
+        ax[0].text(xc0[i], xc1[i], str(i))
       for i in range(self.ncrystals_axial):
-        ax[1].text(self.xc2[i], self.xc1.max(), str(i))
-        ax[1].text(self.xc2[i], self.xc1.min(), str(i))
+        ax[1].text(xc2[i], xc1.max(), str(i))
+        ax[1].text(xc2[i], xc1.min(), str(i))
 
     fig.tight_layout()
     fig.show()
@@ -106,10 +127,11 @@ class RegularPolygonPETScanner:
 
         Returns
         -------
-        2D numpy array of shape (n,3) containing the three world coordinates of the detectors
+        2D numpy or cupy array of shape (n,3) containing the three world coordinates of the detectors
     """
-    return np.dstack((self.xc0[crystal_inds[:,0]], self.xc1[crystal_inds[:,0]], self.xc2[crystal_inds[:,1]])).squeeze()
+    if self.on_gpu:
+      return cp.dstack((self.xc0[crystal_inds[:,0]], self.xc1[crystal_inds[:,0]], self.xc2[crystal_inds[:,1]])).squeeze()
+    else:
+      return np.dstack((self.xc0[crystal_inds[:,0]], self.xc1[crystal_inds[:,0]], self.xc2[crystal_inds[:,1]])).squeeze()
 
 #-----------------------------------------------------------------------------------------------
-
-
