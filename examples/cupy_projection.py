@@ -86,6 +86,7 @@ subset_nLORs = proj.nLORs[subset]
 
 # send arrays to device
 
+print('Copying data to GPU')
 xstart_d      = cp.asarray(xstart)
 xend_d        = cp.asarray(xend)
 img_ravel_d   = cp.asarray(img_ravel)
@@ -102,6 +103,7 @@ end_gpu   = cp.cuda.Event()
 start_gpu.record()
 start_cpu = time.perf_counter()
 
+print('Projecting on GPU')
 joseph3d_fwd_cuda_kernel((blocks_per_grid,), (threads_per_block,), (xstart_d, xend_d, img_ravel_d, img_origin_d, voxsize_d, img_fwd_d, subset_nLORs, img_dim_d))
 
 joseph3d_back_cuda_kernel((blocks_per_grid,), (threads_per_block,), (xstart_d, xend_d, bimg_ravel_d, img_origin_d, voxsize_d, img_fwd_d, subset_nLORs, img_dim_d))
@@ -114,5 +116,15 @@ t_cpu = end_cpu - start_cpu
 
 #-----------------------------------------------------------------------------------
 
+print('Retrieving data from GPU')
 img_fwd = cp.asnumpy(img_fwd_d).reshape(proj.subset_sino_shapes[subset])
 bimg    = cp.asnumpy(bimg_ravel_d).reshape((n0,n1,n2))
+
+#-----------------------------------------------------------------------------------
+
+print('Hybrid projection')
+t0 = time.time()
+img_fwd2 = proj.fwd_project(img)
+bimg2    = proj.back_project(img_fwd2)
+t1 = time.time()
+
