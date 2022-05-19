@@ -11,12 +11,30 @@ import warnings
 from glob import glob
 from numba import cuda
 
+try:
+  import cupy as cp
+  cupy_available = True
+except:
+  cupy_available = False
+
 #---------------------------------------------------------------------------------------
 # get the number of visible GPUs
 try:
   n_visible_gpus = len(cuda.gpus)
 except:
   n_visible_gpus = 0
+
+#---------------------------------------------------------------------------------------
+
+# load a kernel defined in a external file
+if cupy_available:
+  with open('../cuda/src/projector_kernels.cu','r') as f:
+    lines = f.read()
+    joseph3d_fwd_cuda_kernel  = cp.RawKernel(lines, 'joseph3d_fwd_cuda_kernel')
+    joseph3d_back_cuda_kernel = cp.RawKernel(lines, 'joseph3d_back_cuda_kernel')
+else:
+  joseph3d_fwd_cuda_kernel  = None
+  joseph3d_back_cuda_kernel = None
 
 #---------------------------------------------------------------------------------------
 

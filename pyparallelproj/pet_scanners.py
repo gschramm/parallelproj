@@ -2,6 +2,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 try:
   import cupy as cp
+except:
+  import numpy as np
 
 class RegularPolygonPETScanner:
   """Geometry defition of a cylindical PET scanner with pixelized detectors aranged in module
@@ -33,7 +35,7 @@ class RegularPolygonPETScanner:
                module_gap_axial     = 5.,
                on_gpu               = False):
 
-    self.on_gpu = on_gpu
+    self._on_gpu = on_gpu
 
     self.R = R
     self.ncrystals_per_module = ncrystals_per_module
@@ -71,14 +73,14 @@ class RegularPolygonPETScanner:
     self.xc2 -= 0.5*self.xc2.max()
 
     # move crystal coordinate arrays to GPU
-    if self.on_gpu:
+    if self._on_gpu:
       self.xc0 = cp.asarray(self.xc0)
       self.xc1 = cp.asarray(self.xc1)
       self.xc2 = cp.asarray(self.xc2)
 
   def show_crystal_config(self, show_crystal_numbers = False):
 
-    if self.on_gpu:
+    if self._on_gpu:
       xc0 = cp.asnumpy(self.xc0)
       xc1 = cp.asnumpy(self.xc1)
       xc2 = cp.asnumpy(self.xc2)
@@ -129,7 +131,7 @@ class RegularPolygonPETScanner:
         -------
         2D numpy or cupy array of shape (n,3) containing the three world coordinates of the detectors
     """
-    if self.on_gpu:
+    if self._on_gpu:
       return cp.dstack((self.xc0[crystal_inds[:,0]], self.xc1[crystal_inds[:,0]], self.xc2[crystal_inds[:,1]])).squeeze()
     else:
       return np.dstack((self.xc0[crystal_inds[:,0]], self.xc1[crystal_inds[:,0]], self.xc2[crystal_inds[:,1]])).squeeze()
