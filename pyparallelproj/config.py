@@ -32,9 +32,17 @@ if cupy_available:
     lines = f.read()
     joseph3d_fwd_cuda_kernel  = cp.RawKernel(lines, 'joseph3d_fwd_cuda_kernel')
     joseph3d_back_cuda_kernel = cp.RawKernel(lines, 'joseph3d_back_cuda_kernel')
+    joseph3d_fwd_tof_sino_cuda_kernel  = cp.RawKernel(lines, 'joseph3d_fwd_tof_sino_cuda_kernel')
+    joseph3d_back_tof_sino_cuda_kernel = cp.RawKernel(lines, 'joseph3d_back_tof_sino_cuda_kernel')
+    joseph3d_fwd_tof_lm_cuda_kernel    = cp.RawKernel(lines, 'joseph3d_fwd_tof_lm_cuda_kernel')
+    joseph3d_back_tof_lm_cuda_kernel   = cp.RawKernel(lines, 'joseph3d_back_tof_lm_cuda_kernel')
 else:
-  joseph3d_fwd_cuda_kernel  = None
-  joseph3d_back_cuda_kernel = None
+  joseph3d_fwd_cuda_kernel           = None
+  joseph3d_back_cuda_kernel          = None
+  joseph3d_fwd_tof_sino_cuda_kernel  = None
+  joseph3d_back_tof_sino_cuda_kernel = None 
+  joseph3d_fwd_tof_lm_cuda_kernel    = None    
+  joseph3d_back_tof_lm_cuda_kernel   = None   
 
 #---------------------------------------------------------------------------------------
 

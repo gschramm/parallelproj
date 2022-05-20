@@ -12,7 +12,7 @@ except:
 from .wrapper import joseph3d_fwd, joseph3d_fwd_tof_lm, joseph3d_fwd_tof_sino 
 from .wrapper import joseph3d_back, joseph3d_back_tof_lm, joseph3d_back_tof_sino
 
-from .config import joseph3d_fwd_cuda_kernel, joseph3d_back_cuda_kernel
+from .config import joseph3d_fwd_cuda_kernel, joseph3d_back_cuda_kernel, joseph3d_fwd_tof_sino_cuda_kernel, joseph3d_back_tof_sino_cuda_kernel, joseph3d_fwd_tof_lm_cuda_kernel, joseph3d_back_tof_lm_cuda_kernel
 
 class SinogramProjector:
   """ TOF and non TOF 3D sinogram Joseph forward and back projector
@@ -198,7 +198,8 @@ class SinogramProjector:
       if self.scanner._on_gpu:
         joseph3d_fwd_cuda_kernel((math.ceil(self.nLORs[subset]/self.threadsperblock),), (self.threadsperblock,), 
                                  (xstart.ravel(), xend.ravel(), img.ravel(), cp.asarray(self.img_origin), 
-                                  cp.asarray(self.voxsize), img_fwd, int(self.nLORs[subset]), cp.asarray(self.img_dim)))
+                                  cp.asarray(self.voxsize), img_fwd, np.int64(self.nLORs[subset]), 
+                                  cp.asarray(self.img_dim)))
 
       else:
         ok = joseph3d_fwd(xstart.ravel(), xend.ravel(), 
@@ -215,13 +216,26 @@ class SinogramProjector:
       if not isinstance(tofcenter_offset, self._xp.ndarray):
         tofcenter_offset = self._xp.zeros(1, dtype = self._xp.float32)
 
-      img_fwd = np.zeros(self.nLORs[subset]*self.ntofbins, dtype = self._xp.float32)  
-      ok = joseph3d_fwd_tof_sino(xstart.ravel(), xend.ravel(), 
-                                 img.ravel(), self.img_origin, self.voxsize, 
-                                 img_fwd, self.nLORs[subset], self.img_dim,
-                                 self.tofbin_width, sigma_tof.ravel(), tofcenter_offset.ravel(), 
-                                 self.nsigmas, self.ntofbins, 
-                                 threadsperblock = self.threadsperblock) 
+      img_fwd = self._xp.zeros(int(self.nLORs[subset])*self.ntofbins, dtype = self._xp.float32)  
+
+      if self.scanner._on_gpu:
+        lor_dependent_sigma_tof = np.uint8(sigma_tof.shape[0] == self.nLORs[subset])
+        lor_dependent_tofcenter_offset = np.uint8(tofcenter_offset.shape[0] == self.nLORs[subset])
+
+        joseph3d_fwd_tof_sino_cuda_kernel((math.ceil(self.nLORs[subset]/self.threadsperblock),), 
+                                          (self.threadsperblock,), 
+                                          (xstart.ravel(), xend.ravel(), img.ravel(), cp.asarray(self.img_origin), 
+                                  cp.asarray(self.voxsize), img_fwd, np.int64(self.nLORs[subset]), cp.asarray(self.img_dim),
+                                  np.int16(self.ntofbins), np.float32(self.tofbin_width), 
+                                  cp.asarray(sigma_tof).ravel(), cp.asarray(tofcenter_offset).ravel(), 
+                                  np.float32(self.nsigmas), lor_dependent_sigma_tof, lor_dependent_tofcenter_offset))
+      else:
+        ok = joseph3d_fwd_tof_sino(xstart.ravel(), xend.ravel(), 
+                                   img.ravel(), self.img_origin, self.voxsize, 
+                                   img_fwd, self.nLORs[subset], self.img_dim,
+                                   self.tofbin_width, sigma_tof.ravel(), tofcenter_offset.ravel(), 
+                                   self.nsigmas, self.ntofbins, 
+                                   threadsperblock = self.threadsperblock) 
 
     img_fwd = img_fwd.reshape(self.subset_sino_shapes[subset])
 
@@ -231,9 +245,9 @@ class SinogramProjector:
   def fwd_project(self, img, **kwargs):
 
     if self.__tof:
-      img_fwd = np.zeros(self.sino_params.shape, dtype = np.float32)
+      img_fwd = self._xp.zeros(self.sino_params.shape, dtype = self._xp.float32)
     else:
-      img_fwd = np.zeros(self.sino_params.nontof_shape, dtype = np.float32)
+      img_fwd = self._xp.zeros(self.sino_params.nontof_shape, dtype = self._xp.float32)
 
     for i in range(self.nsubsets):
       img_fwd[self.subset_slices[i]] = self.fwd_project_subset(img, i, **kwargs)
