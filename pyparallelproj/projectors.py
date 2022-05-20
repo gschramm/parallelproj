@@ -257,42 +257,61 @@ class SinogramProjector:
   #-----------------------------------------------------------------------------------------------
   def back_project_subset(self, sino, subset, tofcenter_offset = None, sigma_tof_per_lor = None):
 
-    if not isinstance(sino, np.float32):
-      sino = sino.astype(np.float32)
+    if not sino.dtype is self._xp.dtype('float32'):
+      sino = sino.astype(self._xp.float32)
 
     xstart, xend = self.get_subset_sino_coordinates(subset)
 
-    back_img = np.zeros(self.nvox, dtype = np.float32)  
+    back_img = self._xp.zeros(int(self.nvox), dtype = self._xp.float32)  
 
     if self.__tof == False:
       ####### NONTOF back projection 
-      ok = joseph3d_back(xstart.ravel(), xend.ravel(), 
-                         back_img, self.img_origin, self.voxsize, 
-                         sino.ravel(), self.nLORs[subset], self.img_dim,
-                         threadsperblock = self.threadsperblock) 
+      if self.scanner._on_gpu:
+        joseph3d_back_cuda_kernel((math.ceil(self.nLORs[subset]/self.threadsperblock),), (self.threadsperblock,), 
+                                  (xstart.ravel(), xend.ravel(), back_img, cp.asarray(self.img_origin), 
+                                   cp.asarray(self.voxsize), sino.ravel(), np.int64(self.nLORs[subset]), 
+                                   cp.asarray(self.img_dim)))
+      else:
+        ok = joseph3d_back(xstart.ravel(), xend.ravel(), 
+                           back_img, self.img_origin, self.voxsize, 
+                           sino.ravel(), self.nLORs[subset], self.img_dim,
+                           threadsperblock = self.threadsperblock) 
 
     else:
       ####### TOF back projection 
       if sigma_tof_per_lor is None:
-        sigma_tof = np.array([self.sigma_tof], dtype = np.float32)
+        sigma_tof = self._xp.array([self.sigma_tof], dtype = self._xp.float32)
       else:
-        sigma_tof = sigma_tof_per_lor.astype(np.float32)
+        sigma_tof = sigma_tof_per_lor.astype(self._xp.float32)
 
-      if not isinstance(tofcenter_offset, np.ndarray):
-        tofcenter_offset = np.zeros(1, dtype = np.float32)
+      if not isinstance(tofcenter_offset, self._xp.ndarray):
+        tofcenter_offset = self._xp.zeros(1, dtype = self._xp.float32)
 
-      ok = joseph3d_back_tof_sino(xstart.ravel(), xend.ravel(), 
-                                  back_img, self.img_origin, self.voxsize, 
-                                  sino.ravel(), self.nLORs[subset], self.img_dim,
-                                  self.tofbin_width, sigma_tof.ravel(), tofcenter_offset.ravel(), 
-                                  self.nsigmas, self.ntofbins, 
-                                  threadsperblock = self.threadsperblock) 
+      if self.scanner._on_gpu:
+        lor_dependent_sigma_tof = np.uint8(sigma_tof.shape[0] == self.nLORs[subset])
+        lor_dependent_tofcenter_offset = np.uint8(tofcenter_offset.shape[0] == self.nLORs[subset])
+
+        joseph3d_back_tof_sino_cuda_kernel((math.ceil(self.nLORs[subset]/self.threadsperblock),), 
+                                          (self.threadsperblock,), 
+                                          (xstart.ravel(), xend.ravel(), back_img, cp.asarray(self.img_origin), 
+                                  cp.asarray(self.voxsize), sino.ravel(), 
+                                  np.int64(self.nLORs[subset]), cp.asarray(self.img_dim),
+                                  np.int16(self.ntofbins), np.float32(self.tofbin_width), 
+                                  cp.asarray(sigma_tof).ravel(), cp.asarray(tofcenter_offset).ravel(), 
+                                  np.float32(self.nsigmas), lor_dependent_sigma_tof, lor_dependent_tofcenter_offset))
+      else:
+        ok = joseph3d_back_tof_sino(xstart.ravel(), xend.ravel(), 
+                                    back_img, self.img_origin, self.voxsize, 
+                                    sino.ravel(), self.nLORs[subset], self.img_dim,
+                                    self.tofbin_width, sigma_tof.ravel(), tofcenter_offset.ravel(), 
+                                    self.nsigmas, self.ntofbins, 
+                                    threadsperblock = self.threadsperblock) 
 
     return back_img.reshape(self.img_dim)
 
   #-----------------------------------------------------------------------------------------------
   def back_project(self, sino, **kwargs):
-    back_img = np.zeros(self.img_dim, dtype = np.float32)  
+    back_img = self._xp.zeros(self.img_dim, dtype = self._xp.float32)  
 
     for i in range(self.nsubsets):
       back_img += self.back_project_subset(sino[self.subset_slices[i]], i, **kwargs)
