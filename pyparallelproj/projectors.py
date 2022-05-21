@@ -321,51 +321,70 @@ class SinogramProjector:
   #--------------------------------------------------------------------
   def fwd_project_lm(self, img, events, tofcenter_offset = None, sigma_tof_per_lor = None):
 
-    if not isinstance(img, np.float32):
-      img = img.astype(np.float32)
+    if not img.dtype is self._xp.dtype('float32'):
+      img = img.astype(self._xp.float32)
 
     nevents = events.shape[0]
 
-    img_fwd = np.zeros(nevents, dtype = np.float32)  
+    img_fwd = self._xp.zeros(nevents, dtype = self._xp.float32)  
 
     xstart = self.scanner.get_crystal_coordinates(events[:,0:2])
     xend   = self.scanner.get_crystal_coordinates(events[:,2:4])
 
     if self.__tof == False:
       ####### NONTOF fwd projection 
-      ok = joseph3d_fwd(xstart.ravel(), xend.ravel(), 
-                        img.ravel(), self.img_origin, self.voxsize, 
-                        img_fwd, nevents, self.img_dim,
-                        threadsperblock = self.threadsperblock) 
+      if self.scanner._on_gpu:
+        joseph3d_fwd_cuda_kernel((math.ceil(nevents/self.threadsperblock),), (self.threadsperblock,), 
+                                 (xstart.ravel(), xend.ravel(), img.ravel(), cp.asarray(self.img_origin), 
+                                  cp.asarray(self.voxsize), img_fwd, np.int64(nevents), 
+                                  cp.asarray(self.img_dim)))
+
+      else:
+        ok = joseph3d_fwd(xstart.ravel(), xend.ravel(), 
+                          img.ravel(), self.img_origin, self.voxsize, 
+                          img_fwd, nevents, self.img_dim,
+                          threadsperblock = self.threadsperblock) 
     else:
       ####### TOF fwd projection 
       if sigma_tof_per_lor is None:
-        sigma_tof = np.array([self.sigma_tof], dtype = np.float32)
+        sigma_tof = self._xp.array([self.sigma_tof], dtype = self._xp.float32)
       else:
-        sigma_tof = sigma_tof_per_lor.astype(np.float32)
+        sigma_tof = sigma_tof_per_lor.astype(self._xp.float32)
 
-      if not isinstance(tofcenter_offset, np.ndarray):
-        tofcenter_offset = np.zeros(1, dtype = np.float32)
+      if not isinstance(tofcenter_offset, self._xp.ndarray):
+        tofcenter_offset = self._xp.zeros(1, dtype = self._xp.float32)
 
-      tofbin = events[:,4].astype(ctypes.c_short)
+      tofbin = events[:,4].astype(self._xp.int16)
 
-      ok = joseph3d_fwd_tof_lm(xstart.ravel(), xend.ravel(), 
-                               img.ravel(), self.img_origin, self.voxsize, 
-                               img_fwd, nevents, self.img_dim,
-                               self.tofbin_width, sigma_tof.ravel(), tofcenter_offset, self.nsigmas,
-                               tofbin, threadsperblock = self.threadsperblock) 
+      if self.scanner._on_gpu:
+        lor_dependent_sigma_tof = np.uint8(sigma_tof.shape[0] == nevents)
+        lor_dependent_tofcenter_offset = np.uint8(tofcenter_offset.shape[0] == nevents)
+
+        joseph3d_fwd_tof_lm_cuda_kernel((math.ceil(nevents/self.threadsperblock),), (self.threadsperblock,), 
+                                 (xstart.ravel(), xend.ravel(), img.ravel(), cp.asarray(self.img_origin), 
+                                  cp.asarray(self.voxsize), img_fwd, np.int64(nevents), 
+                                  cp.asarray(self.img_dim),
+                                  np.float32(self.tofbin_width), cp.asarray(sigma_tof).ravel(), 
+                                  cp.asarray(tofcenter_offset).ravel(), np.float32(self.nsigmas), 
+                                  tofbin, lor_dependent_sigma_tof, lor_dependent_tofcenter_offset))
+      else:
+        ok = joseph3d_fwd_tof_lm(xstart.ravel(), xend.ravel(), 
+                                 img.ravel(), self.img_origin, self.voxsize, 
+                                 img_fwd, nevents, self.img_dim,
+                                 self.tofbin_width, sigma_tof.ravel(), tofcenter_offset, self.nsigmas,
+                                 tofbin, threadsperblock = self.threadsperblock) 
 
     return img_fwd  
 
   #--------------------------------------------------------------------
   def back_project_lm(self, values, events, tofcenter_offset = None, sigma_tof_per_lor = None):
 
-    if not isinstance(values, np.float32):
-      values = values.astype(np.float32)
+    if not values.dtype is self._xp.dtype('float32'):
+      values = values.astype(self._xp.float32)
 
     nevents = events.shape[0]
 
-    back_img = np.zeros(self.nvox, dtype = np.float32)  
+    back_img = self._xp.zeros(int(self.nvox), dtype = self._xp.float32)  
 
     xstart = self.scanner.get_crystal_coordinates(events[:,0:2])
     xend   = self.scanner.get_crystal_coordinates(events[:,2:4])
@@ -379,20 +398,32 @@ class SinogramProjector:
     else:
       ####### TOF back projection 
       if sigma_tof_per_lor is None:
-        sigma_tof = np.array([self.sigma_tof], dtype = np.float32)
+        sigma_tof = self._xp.array([self.sigma_tof], dtype = self._xp.float32)
       else:
-        sigma_tof = sigma_tof_per_lor.astype(np.float32)
+        sigma_tof = sigma_tof_per_lor.astype(self._xp.float32)
 
-      if not isinstance(tofcenter_offset, np.ndarray):
-        tofcenter_offset = np.zeros(1, dtype = np.float32)
+      if not isinstance(tofcenter_offset, self._xp.ndarray):
+        tofcenter_offset = self._xp.zeros(1, dtype = self._xp.float32)
 
-      tofbin = events[:,4].astype(ctypes.c_short)
+      tofbin = events[:,4].astype(self._xp.int16)
 
-      ok = joseph3d_back_tof_lm(xstart.ravel(), xend.ravel(), 
-                                back_img, self.img_origin, self.voxsize, 
-                                values.ravel(), nevents, self.img_dim,
-                                self.tofbin_width, sigma_tof.ravel(), tofcenter_offset, self.nsigmas, 
-                                tofbin, threadsperblock = self.threadsperblock) 
+      if self.scanner._on_gpu:
+        lor_dependent_sigma_tof = np.uint8(sigma_tof.shape[0] == nevents)
+        lor_dependent_tofcenter_offset = np.uint8(tofcenter_offset.shape[0] == nevents)
+
+        joseph3d_back_tof_lm_cuda_kernel((math.ceil(nevents/self.threadsperblock),), (self.threadsperblock,), 
+                                 (xstart.ravel(), xend.ravel(), back_img, cp.asarray(self.img_origin), 
+                                  cp.asarray(self.voxsize), values, np.int64(nevents), 
+                                  cp.asarray(self.img_dim),
+                                  np.float32(self.tofbin_width), cp.asarray(sigma_tof).ravel(), 
+                                  cp.asarray(tofcenter_offset).ravel(), np.float32(self.nsigmas), 
+                                  tofbin, lor_dependent_sigma_tof, lor_dependent_tofcenter_offset))
+      else:
+        ok = joseph3d_back_tof_lm(xstart.ravel(), xend.ravel(), 
+                                  back_img, self.img_origin, self.voxsize, 
+                                  values.ravel(), nevents, self.img_dim,
+                                  self.tofbin_width, sigma_tof.ravel(), tofcenter_offset, self.nsigmas, 
+                                  tofbin, threadsperblock = self.threadsperblock) 
 
 
     return back_img.reshape(self.img_dim)
