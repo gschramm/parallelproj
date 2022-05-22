@@ -8,6 +8,161 @@ import cupyx.scipy.ndimage as ndi_cupy
 import scipy.ndimage as ndi
 
 from pathlib import Path
+from time import time
+
+def cupy_unique_axis0(ar, return_index = False, return_inverse = False, return_counts=False):
+  """ analogon of numpy's unique() for 2D arrays for axis = 0
+  """
+
+  if len(ar.shape) != 2:
+    raise ValueError("Input array must be 2D.")
+
+  perm     = cp.lexsort(ar.T[::-2])
+  aux      = ar[perm]
+  mask     = cp.empty(ar.shape[0], dtype=cp.bool_)
+  mask[0]  = True
+  mask[1:] = cp.any(aux[1:] != aux[:-1], axis=1)
+
+  ret = aux[mask]
+  if not return_index and not return_inverse and not return_counts:
+    return ret
+
+  ret = ret,
+
+  if return_index:
+    ret += perm[mask],
+  if return_inverse:
+    imask = cp.cumsum(mask) - 1
+    inv_idx = cp.empty(mask.shape, dtype = cp.intp)
+    inv_idx[perm] = imask
+    ret += inv_idx,
+  if return_counts:
+    nonzero = cp.nonzero(mask)[0]  # may synchronize
+    idx = cp.empty((nonzero.size + 1,), nonzero.dtype)
+    idx[:-1] = nonzero
+    idx[-1] = mask.size
+    ret += idx[1:] - idx[:-1],
+
+  return ret
+
+def count_event_multiplicity(events):
+  """ Count the multiplicity of events in an LM file
+
+  Parameters
+  ----------
+
+  events : 2D numpy array
+    of LM events of shape (n_events, 5) where the second axis encodes the event 
+    (e.g. detectors numbers and TOF bins)
+  """
+
+  if not isinstance(events, cp.ndarray):
+    events_d = cp.array(events)
+  else:
+    events_d = events
+
+  tmp_d    = cupy_unique_axis0(events_d, return_counts = True, return_inverse = True)
+  mu_d     = tmp_d[2][tmp_d[1]]
+
+  if not isinstance(events, cp.ndarray):
+    mu_d = cp.asnumpy(mu_d)
+
+  return mu_d
+
+
+class GradientNorm:
+  """ 
+  norm of a gradient field
+
+  Parameters
+  ----------
+
+  name : str
+    name of the norm
+    'l2_l1' ... mixed L2/L1 (sum of pointwise Euclidean norms in every voxel)
+    'l2_sq' ... squared l2 norm (sum of pointwise squared Euclidean norms in every voxel)
+
+  beta : float
+    factor multiplied to the norm (default 1)
+  """
+  def __init__(self, xp, name = 'l2_l1'):
+    self.name = name
+    self._xp  = xp
+ 
+    if not self.name in ['l2_l1', 'l2_sq']:
+     raise NotImplementedError
+
+  def eval(self, x):
+    if self.name == 'l2_l1':
+      n = self._xp.linalg.norm(x, axis = 0).sum()
+    elif self.name == 'l2_sq':
+      n = (x**2).sum()
+
+    return n
+
+  def prox_convex_dual(self, x, sigma = None):
+    """ proximal operator of the convex dual of the norm
+    """
+    if self.name == 'l2_l1':
+      gnorm = self._xp.linalg.norm(x, axis = 0)
+      r = x/self._xp.clip(gnorm, 1, None)
+    elif self.name == 'l2_sq':
+      r = x/(1+sigma)
+
+    return r
+
+#------------------------------------------------------------------------------------------------------
+
+class GradientOperator:
+  """
+  (directional) gradient operator and its adjoint in 2,3 or 4 dimensions
+  using finite forward / backward differences
+
+  Parameters
+  ----------
+
+  joint_gradient_field : numpy array
+    if given, only the gradient component perpenticular to the directions 
+    given in the joint gradient field are specified (default None)
+  """
+
+  def __init__(self, xp, joint_grad_field = None):
+    self._xp = xp
+
+    # e is the normalized joint gradient field that
+    # we are only interested in the gradient component
+    # perpendicular to it
+    self.e = None
+    
+    if joint_grad_field is not None:
+      norm   = self._xp.linalg.norm(joint_grad_field, axis = 0)
+      self.e = joint_grad_field / norm
+
+  def fwd(self, x):
+    g = []
+    for i in range(x.ndim):
+      g.append(self._xp.diff(x, axis = i, append = self._xp.take(x, [-1], i)))
+    g = self._xp.array(g)
+
+    if self.e is not None:
+      g = g - (g*self.e).sum(0)*self.e
+
+    return g
+
+  def adjoint(self, y):
+    d = self._xp.zeros(y[0,...].shape, dtype = y.dtype)
+
+    if self.e is not None:
+      y2 = y - (y*self.e).sum(0)*self.e
+    else:
+      y2 = y
+
+    for i in range(y.shape[0]):
+      d -= self._xp.diff(y2[i,...], axis = i, prepend = self._xp.take(y2[i,...], [0], i))
+
+    return d
+
+#------------------------------------------------------------------------------------------------------
 
 class LMPETAcqModel:
   def __init__(self, proj, events, attn_list, sens_list, fwhm = 0):
@@ -81,8 +236,7 @@ verbose   = True
 fwhm  = 4.5 / (2.35*voxsize)
 
 # prior strength
-beta = 6
-
+beta     = 6
 niter    = 100
 nsubsets = 224
 
@@ -181,6 +335,136 @@ if on_gpu:
 
 #--------------------------------------------------------------------------------------------
 
-paq = LMPETAcqModel(proj, events, atten_list, sens_list, fwhm = fwhm)
+lm_acq_model = LMPETAcqModel(proj, events, atten_list, sens_list, fwhm = fwhm)
 
-recon = osem_lm(paq, contam_list, sens_img, 2, 28)
+t0 = time()
+x0 = osem_lm(lm_acq_model, contam_list, sens_img, 2, 28)
+t1 = time()
+print(f'recon time: {(t1-t0):.2f}s')
+
+#import pymirc.viewer as pv
+#vi = pv.ThreeAxisViewer(ndi.gaussian_filter(cp.asnumpy(x0),0.7), imshow_kwargs = {'vmax':0.4})
+
+
+#--------------------------------------------------------------------------------------------
+
+niter         = 5
+nsubsets      = 56
+gamma         = 3. / ndi.gaussian_filter(cp.asnumpy(x0),2.).max()
+rho           = 0.999 
+rho_grad      = 0.999 
+verbose       = True 
+grad_norm     = GradientNorm(xp)
+grad_operator = GradientOperator(xp)
+beta          = 6
+
+# count the "multiplicity" of every event in the list
+# if an event occurs n times in the list of events, the multiplicity is n
+mu = count_event_multiplicity(events)
+
+img_shape = tuple(proj.img_dim)
+
+# setup the probabilities for doing a pet data or gradient update
+# p_g is the probablility for doing a gradient update
+# p_p is the probablility for doing a PET data subset update
+
+if beta == 0:
+  p_g = 0
+else: 
+  p_g = 0.5
+  # norm of the gradient operator = sqrt(ndim*4)
+  ndim  = len([x for x in img_shape if x > 1])
+  grad_op_norm = xp.sqrt(ndim*4)
+
+p_p = (1 - p_g) / nsubsets
+
+ # initialize variables
+if x0 is None:
+  x = xp.zeros(img_shape, dtype = np.float32)
+else:
+  x = x0.copy()
+
+# initialize y for data
+y = 1 - (mu / (lm_acq_model.fwd(x) + contam_list))
+
+z = sens_img + lm_acq_model.back((y - 1) / mu)
+zbar = z.copy()
+
+
+# calculate S for the gradient operator
+if p_g > 0:
+  S_g = gamma*rho_grad/grad_op_norm
+  T_g = p_g*rho_grad/(gamma*grad_op_norm)
+
+# calculate the "step sizes" S_i for the PET fwd operator
+S_i = []
+
+ones_img = xp.ones(img_shape, dtype = np.float32)
+
+for i in range(nsubsets):
+  ss = slice(i,None,nsubsets)
+  # clip inf values
+  tmp = lm_acq_model.fwd(ones_img, i, nsubsets)
+  tmp = np.clip(tmp, tmp[tmp > 0].min(), None)
+  S_i.append(gamma*rho/tmp)
+
+
+# calculate the step size T
+tmp = sens_img / nsubsets
+T   = p_p*rho / (gamma*tmp)
+
+if p_g > 0:
+  T = np.clip(T, None, T_g)
+
+# allocate arrays for gradient operations
+y_grad = xp.zeros((len(img_shape),) + img_shape, dtype = xp.float32)
+
+#--------------------------------------------------------------------------------------------
+# SPDHG iterations
+
+for it in range(niter):
+  subset_sequence = np.random.permutation(np.arange(int(nsubsets/(1-p_g))))
+
+  for iss in range(subset_sequence.shape[0]):
+    x = np.clip(x - T*zbar, 0, None)
+
+    # select a random subset
+    i = subset_sequence[iss]
+
+    if i < nsubsets:
+      # PET subset update
+      print(f'iteration {it + 1} step {iss} subset {i+1}')
+
+      ss = slice(i,None,nsubsets)
+
+      y_plus = y[ss] + S_i[i]*(lm_acq_model.fwd(x, i, nsubsets) + contam_list[ss])
+
+      # apply the prox for the dual of the poisson logL
+      y_plus = 0.5*(y_plus + 1 - np.sqrt((y_plus - 1)**2 + 4*S_i[i]*mu[ss]))
+
+      dz = lm_acq_model.back((y_plus - y[ss])/mu[ss], i, nsubsets)
+
+      # update variables
+      z = z + dz
+      y[ss] = y_plus.copy()
+      zbar = z + dz/p_p
+    else:
+      print(f'iteration {it + 1} step {iss} gradient update')
+      y_grad_plus = (y_grad + S_g*grad_operator.fwd(x))
+
+      # apply the prox for the gradient norm
+      y_grad_plus = beta*grad_norm.prox_convex_dual(y_grad_plus/beta, sigma = S_g/beta)
+
+      dz = grad_operator.adjoint(y_grad_plus - y_grad)
+
+      # update variables
+      z = z + dz
+      y_grad = y_grad_plus.copy()
+      zbar = z + dz/p_g
+
+#----------------------------------------------------------------------------------------------
+#----------------------------------------------------------------------------------------------
+#----------------------------------------------------------------------------------------------
+
+import pymirc.viewer as pv
+vi = pv.ThreeAxisViewer(cp.asnumpy(x), imshow_kwargs = {'vmax':0.4})
