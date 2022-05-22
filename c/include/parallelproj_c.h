@@ -281,7 +281,7 @@ void joseph3d_fwd_tof_sino(const float *xstart,
                            const float *sigma_tof,
                            const float *tofcenter_offset,
                            float n_sigmas,
-                           short n_tofbins;
+                           short n_tofbins,
                            unsigned char lor_dependent_sigma_tof,
                            unsigned char lor_dependent_tofcenter_offset);
 
