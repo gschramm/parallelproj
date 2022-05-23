@@ -45,29 +45,37 @@ def cupy_unique_axis0(ar, return_index = False, return_inverse = False, return_c
 
   return ret
 
-def count_event_multiplicity(events):
+def count_event_multiplicity(events, xp):
   """ Count the multiplicity of events in an LM file
 
   Parameters
   ----------
 
-  events : 2D numpy array
+  events : 2D numpy/cupy array
     of LM events of shape (n_events, 5) where the second axis encodes the event 
     (e.g. detectors numbers and TOF bins)
+
+  xp : numpy or cupy module to use
   """
 
-  if not isinstance(events, cp.ndarray):
-    events_d = cp.array(events)
-  else:
-    events_d = events
+  if xp.__name__ == 'cupy':
+    if not isinstance(events, xp.ndarray):
+      events_d = xp.array(events)
+    else:
+      events_d = events
 
-  tmp_d    = cupy_unique_axis0(events_d, return_counts = True, return_inverse = True)
-  mu_d     = tmp_d[2][tmp_d[1]]
+    tmp_d    = cupy_unique_axis0(events_d, return_counts = True, return_inverse = True)
+    mu_d     = tmp_d[2][tmp_d[1]]
 
-  if not isinstance(events, cp.ndarray):
-    mu_d = cp.asnumpy(mu_d)
+    if not isinstance(events, xp.ndarray):
+      mu = xp.asnumpy(mu_d)
+    else:
+      mu = mu_d
+  elif xp.__name__ == 'numpy':
+    tmp = xp.unique(events, axis = 0, return_counts = True, return_inverse = True)
+    mu  = tmp[2][tmp[1]]
 
-  return mu_d
+  return mu
 
 
 class GradientNorm:
@@ -196,7 +204,6 @@ class LMPETAcqModel:
     return back_img
 
 #--------------------------------------------------------------------------------------------
-
 def osem_lm(lm_acq_model, contam_list, sens_img, niter, nsubsets, xstart = None, verbose = True):
 
   if isinstance(lm_acq_model.events, np.ndarray):
@@ -222,6 +229,123 @@ def osem_lm(lm_acq_model, contam_list, sens_img, niter, nsubsets, xstart = None,
       recon   *= (lm_acq_model.back(nsubsets/exp_list, i, nsubsets) / sens_img)
 
   return recon
+
+#--------------------------------------------------------------------------------------------
+def lm_spdhg(lm_acq_model, contam_list, grad_operator, grad_norm, 
+             x0 = None, beta = 6, niter = 5, nusbsets = 56, gamma = 1., 
+             rho = 0.999, rho_grad = 0.999, verbose = True):
+
+  if isinstance(lm_acq_model.events, np.ndarray):
+    xp = np
+  else:
+    xp = cp
+
+  # count the "multiplicity" of every event in the list
+  # if an event occurs n times in the list of events, the multiplicity is n
+  mu = count_event_multiplicity(lm_acq_model.events, xp)
+  
+  img_shape = tuple(proj.img_dim)
+  
+  # setup the probabilities for doing a pet data or gradient update
+  # p_g is the probablility for doing a gradient update
+  # p_p is the probablility for doing a PET data subset update
+  
+  if beta == 0:
+    p_g = 0
+  else: 
+    p_g = 0.5
+    # norm of the gradient operator = sqrt(ndim*4)
+    ndim  = len([x for x in img_shape if x > 1])
+    grad_op_norm = xp.sqrt(ndim*4)
+  
+  p_p = (1 - p_g) / nsubsets
+  
+   # initialize variables
+  if x0 is None:
+    x = xp.zeros(img_shape, dtype = np.float32)
+  else:
+    x = x0.copy()
+  
+  # initialize y for data
+  y = 1 - (mu / (lm_acq_model.fwd(x) + contam_list))
+  
+  z = sens_img + lm_acq_model.back((y - 1) / mu)
+  zbar = z.copy()
+  
+  
+  # calculate S for the gradient operator
+  if p_g > 0:
+    S_g = gamma*rho_grad/grad_op_norm
+    T_g = p_g*rho_grad/(gamma*grad_op_norm)
+  
+  # calculate the "step sizes" S_i for the PET fwd operator
+  S_i = []
+  
+  ones_img = xp.ones(img_shape, dtype = np.float32)
+  
+  for i in range(nsubsets):
+    ss = slice(i,None,nsubsets)
+    # clip inf values
+    tmp = lm_acq_model.fwd(ones_img, i, nsubsets)
+    tmp = np.clip(tmp, tmp[tmp > 0].min(), None)
+    S_i.append(gamma*rho/tmp)
+  
+  
+  # calculate the step size T
+  tmp = sens_img / nsubsets
+  T   = p_p*rho / (gamma*tmp)
+  
+  if p_g > 0:
+    T = np.clip(T, None, T_g)
+  
+  # allocate arrays for gradient operations
+  y_grad = xp.zeros((len(img_shape),) + img_shape, dtype = xp.float32)
+  
+  #--------------------------------------------------------------------------------------------
+  # SPDHG iterations
+  
+  for it in range(niter):
+    subset_sequence = np.random.permutation(np.arange(int(nsubsets/(1-p_g))))
+  
+    for iss in range(subset_sequence.shape[0]):
+      x = np.clip(x - T*zbar, 0, None)
+  
+      # select a random subset
+      i = subset_sequence[iss]
+  
+      if i < nsubsets:
+        # PET subset update
+        print(f'iteration {it + 1} step {iss} subset {i+1}')
+  
+        ss = slice(i,None,nsubsets)
+  
+        y_plus = y[ss] + S_i[i]*(lm_acq_model.fwd(x, i, nsubsets) + contam_list[ss])
+  
+        # apply the prox for the dual of the poisson logL
+        y_plus = 0.5*(y_plus + 1 - np.sqrt((y_plus - 1)**2 + 4*S_i[i]*mu[ss]))
+  
+        dz = lm_acq_model.back((y_plus - y[ss])/mu[ss], i, nsubsets)
+  
+        # update variables
+        z = z + dz
+        y[ss] = y_plus.copy()
+        zbar = z + dz/p_p
+      else:
+        print(f'iteration {it + 1} step {iss} gradient update')
+        y_grad_plus = (y_grad + S_g*grad_operator.fwd(x))
+  
+        # apply the prox for the gradient norm
+        y_grad_plus = beta*grad_norm.prox_convex_dual(y_grad_plus/beta, sigma = S_g/beta)
+  
+        dz = grad_operator.adjoint(y_grad_plus - y_grad)
+  
+        # update variables
+        z = z + dz
+        y_grad = y_grad_plus.copy()
+        zbar = z + dz/p_g
+
+  return x
+
 
 
 #--------------------------------------------------------------------------------------------
@@ -327,6 +451,7 @@ atten_list  = atten_list[ie]
 contam_list = contam_list[ie]
 
 if on_gpu:
+  print('copying data to GPU')
   events      = cp.asarray(events)
   sens_img    = cp.asarray(sens_img)
   sens_list   = cp.asarray(sens_list)
@@ -334,136 +459,26 @@ if on_gpu:
   contam_list = cp.asarray(contam_list)
 
 #--------------------------------------------------------------------------------------------
-
+# OSEM as intializer
 lm_acq_model = LMPETAcqModel(proj, events, atten_list, sens_list, fwhm = fwhm)
+
+print('OSEM')
 
 t0 = time()
 x0 = osem_lm(lm_acq_model, contam_list, sens_img, 2, 28)
 t1 = time()
 print(f'recon time: {(t1-t0):.2f}s')
 
-#import pymirc.viewer as pv
-#vi = pv.ThreeAxisViewer(ndi.gaussian_filter(cp.asnumpy(x0),0.7), imshow_kwargs = {'vmax':0.4})
-
-
 #--------------------------------------------------------------------------------------------
+# LM-SPDHG
 
-niter         = 5
-nsubsets      = 56
-gamma         = 3. / ndi.gaussian_filter(cp.asnumpy(x0),2.).max()
-rho           = 0.999 
-rho_grad      = 0.999 
-verbose       = True 
-grad_norm     = GradientNorm(xp)
-grad_operator = GradientOperator(xp)
-beta          = 6
+print('LM-SPDHG')
+grad_op   = GradientOperator(xp)
+grad_norm = GradientNorm(xp) 
 
-# count the "multiplicity" of every event in the list
-# if an event occurs n times in the list of events, the multiplicity is n
-mu = count_event_multiplicity(events)
+x = lm_spdhg(lm_acq_model, contam_list, grad_op, grad_norm, x0 = x0, beta = 6, 
+             niter = 20, nusbsets = 56, gamma =  3. / ndi.gaussian_filter(cp.asnumpy(x0),2.).max())
 
-img_shape = tuple(proj.img_dim)
-
-# setup the probabilities for doing a pet data or gradient update
-# p_g is the probablility for doing a gradient update
-# p_p is the probablility for doing a PET data subset update
-
-if beta == 0:
-  p_g = 0
-else: 
-  p_g = 0.5
-  # norm of the gradient operator = sqrt(ndim*4)
-  ndim  = len([x for x in img_shape if x > 1])
-  grad_op_norm = xp.sqrt(ndim*4)
-
-p_p = (1 - p_g) / nsubsets
-
- # initialize variables
-if x0 is None:
-  x = xp.zeros(img_shape, dtype = np.float32)
-else:
-  x = x0.copy()
-
-# initialize y for data
-y = 1 - (mu / (lm_acq_model.fwd(x) + contam_list))
-
-z = sens_img + lm_acq_model.back((y - 1) / mu)
-zbar = z.copy()
-
-
-# calculate S for the gradient operator
-if p_g > 0:
-  S_g = gamma*rho_grad/grad_op_norm
-  T_g = p_g*rho_grad/(gamma*grad_op_norm)
-
-# calculate the "step sizes" S_i for the PET fwd operator
-S_i = []
-
-ones_img = xp.ones(img_shape, dtype = np.float32)
-
-for i in range(nsubsets):
-  ss = slice(i,None,nsubsets)
-  # clip inf values
-  tmp = lm_acq_model.fwd(ones_img, i, nsubsets)
-  tmp = np.clip(tmp, tmp[tmp > 0].min(), None)
-  S_i.append(gamma*rho/tmp)
-
-
-# calculate the step size T
-tmp = sens_img / nsubsets
-T   = p_p*rho / (gamma*tmp)
-
-if p_g > 0:
-  T = np.clip(T, None, T_g)
-
-# allocate arrays for gradient operations
-y_grad = xp.zeros((len(img_shape),) + img_shape, dtype = xp.float32)
-
-#--------------------------------------------------------------------------------------------
-# SPDHG iterations
-
-for it in range(niter):
-  subset_sequence = np.random.permutation(np.arange(int(nsubsets/(1-p_g))))
-
-  for iss in range(subset_sequence.shape[0]):
-    x = np.clip(x - T*zbar, 0, None)
-
-    # select a random subset
-    i = subset_sequence[iss]
-
-    if i < nsubsets:
-      # PET subset update
-      print(f'iteration {it + 1} step {iss} subset {i+1}')
-
-      ss = slice(i,None,nsubsets)
-
-      y_plus = y[ss] + S_i[i]*(lm_acq_model.fwd(x, i, nsubsets) + contam_list[ss])
-
-      # apply the prox for the dual of the poisson logL
-      y_plus = 0.5*(y_plus + 1 - np.sqrt((y_plus - 1)**2 + 4*S_i[i]*mu[ss]))
-
-      dz = lm_acq_model.back((y_plus - y[ss])/mu[ss], i, nsubsets)
-
-      # update variables
-      z = z + dz
-      y[ss] = y_plus.copy()
-      zbar = z + dz/p_p
-    else:
-      print(f'iteration {it + 1} step {iss} gradient update')
-      y_grad_plus = (y_grad + S_g*grad_operator.fwd(x))
-
-      # apply the prox for the gradient norm
-      y_grad_plus = beta*grad_norm.prox_convex_dual(y_grad_plus/beta, sigma = S_g/beta)
-
-      dz = grad_operator.adjoint(y_grad_plus - y_grad)
-
-      # update variables
-      z = z + dz
-      y_grad = y_grad_plus.copy()
-      zbar = z + dz/p_g
-
-#----------------------------------------------------------------------------------------------
-#----------------------------------------------------------------------------------------------
 #----------------------------------------------------------------------------------------------
 
 import pymirc.viewer as pv
