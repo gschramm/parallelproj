@@ -10,7 +10,7 @@ import scipy.ndimage as ndi
 from pathlib import Path
 from time import time
 
-def cupy_unique_axis0(ar, return_index = False, return_inverse = False, return_counts=False):
+def cupy_unique_axis0(ar, return_index = False, return_inverse = False, return_counts = False):
   """ analogon of numpy's unique() for 2D arrays for axis = 0
   """
 
@@ -19,7 +19,7 @@ def cupy_unique_axis0(ar, return_index = False, return_inverse = False, return_c
 
   perm     = cp.lexsort(ar.T[::-2])
   aux      = ar[perm]
-  mask     = cp.empty(ar.shape[0], dtype=cp.bool_)
+  mask     = cp.empty(ar.shape[0], dtype = cp.bool_)
   mask[0]  = True
   mask[1:] = cp.any(aux[1:] != aux[:-1], axis=1)
 
@@ -32,16 +32,16 @@ def cupy_unique_axis0(ar, return_index = False, return_inverse = False, return_c
   if return_index:
     ret += perm[mask],
   if return_inverse:
-    imask = cp.cumsum(mask) - 1
-    inv_idx = cp.empty(mask.shape, dtype = cp.intp)
-    inv_idx[perm] = imask
-    ret += inv_idx,
+    imask          = cp.cumsum(mask) - 1
+    inv_idx        = cp.empty(mask.shape, dtype = cp.intp)
+    inv_idx[perm]  = imask
+    ret           += inv_idx,
   if return_counts:
-    nonzero = cp.nonzero(mask)[0]  # may synchronize
-    idx = cp.empty((nonzero.size + 1,), nonzero.dtype)
+    nonzero  = cp.nonzero(mask)[0]  # may synchronize
+    idx      = cp.empty((nonzero.size + 1,), nonzero.dtype)
     idx[:-1] = nonzero
-    idx[-1] = mask.size
-    ret += idx[1:] - idx[:-1],
+    idx[-1]  = mask.size
+    ret     += idx[1:] - idx[:-1],
 
   return ret
 
@@ -171,7 +171,6 @@ class GradientOperator:
     return d
 
 #------------------------------------------------------------------------------------------------------
-
 class LMPETAcqModel:
   def __init__(self, proj, events, attn_list, sens_list, fwhm = 0):
     self.proj        = proj
@@ -204,174 +203,180 @@ class LMPETAcqModel:
     return back_img
 
 #--------------------------------------------------------------------------------------------
-def osem_lm(lm_acq_model, contam_list, sens_img, niter, nsubsets, xstart = None, verbose = True):
+class LM_OSEM:
+  def __init__(self, lm_acq_model, contam_list, verbose = True):
+    self.lm_acq_model = lm_acq_model
+    self.contam_list  = contam_list
+    self.img_shape    = tuple(self.lm_acq_model.proj.img_dim)
+    self.verbose      = True
 
-  if isinstance(lm_acq_model.events, np.ndarray):
-    xp = np
-  else:
-    xp = cp
+    if isinstance(self.lm_acq_model.events, np.ndarray):
+      self._xp = np
+    else:
+      self._xp = cp
+  
+  def init(self, sens_img, nsubsets, x = None):
+    self.epoch_counter = 0
+    self.sens_img      = sens_img
+    self.nsubsets      = nsubsets
 
-  img_shape  = tuple(proj.img_dim)
+    if x is None:
+      self.x = self._xp.full(img_shape, 1., dtype = self._xp.float32)
+    else:
+      self.x = x.copy()
 
-  # initialize recon
-  if xstart is None:
-    recon = xp.full(img_shape, 1., dtype = xp.float32)
-  else:
-    recon = xstart.copy()
+  def run_update(self, isub):
+    exp_list = self.lm_acq_model.fwd(self.x, isub, self.nsubsets) + self.contam_list[isub::self.nsubsets] 
+    self.x  *= (self.lm_acq_model.back(self.nsubsets/exp_list, isub, self.nsubsets) / self.sens_img)
 
-  # run OSEM iterations
-  for it in range(niter):
-    for i in range(nsubsets):
-      if verbose: print(f'iteration {it+1} subset {i+1}')
-    
-      exp_list = lm_acq_model.fwd(recon, i, nsubsets) + contam_list[i::nsubsets] 
-
-      recon   *= (lm_acq_model.back(nsubsets/exp_list, i, nsubsets) / sens_img)
-
-  return recon
+  def run(self, niter):
+    for it in range(niter):
+      for isub in range(self.nsubsets):
+        if self.verbose: print(f'iteration {self.epoch_counter+1} subset {isub+1}')
+        self.run_update(isub)
+      self.epoch_counter += 1
 
 #--------------------------------------------------------------------------------------------
-def lm_spdhg(lm_acq_model, contam_list, grad_operator, grad_norm, 
-             x0 = None, beta = 6, niter = 5, nsubsets = 56, gamma = 1., 
-             rho = 0.999, rho_grad = 0.999, verbose = True):
+class LM_SPDHG:
+  def __init__(self, lm_acq_model, contam_list, grad_operator, grad_norm, beta):
+    self.lm_acq_model  = lm_acq_model
+    self.contam_list   = contam_list
+    self.img_shape     = tuple(self.lm_acq_model.proj.img_dim)
+    self.verbose       = True
+    self.grad_operator = grad_operator
+    self.grad_norm     = grad_norm
+    self.beta          = beta
 
-  if isinstance(lm_acq_model.events, np.ndarray):
-    xp = np
-  else:
-    xp = cp
+    if isinstance(self.lm_acq_model.events, np.ndarray):
+      self._xp = np
+    else:
+      self._xp = cp
 
-  # count the "multiplicity" of every event in the list
-  # if an event occurs n times in the list of events, the multiplicity is n
-  mu = count_event_multiplicity(lm_acq_model.events, xp)
-  
-  img_shape = tuple(proj.img_dim)
-  
-  # setup the probabilities for doing a pet data or gradient update
-  # p_g is the probablility for doing a gradient update
-  # p_p is the probablility for doing a PET data subset update
-  
-  if beta == 0:
-    p_g = 0
-  else: 
-    p_g = 0.5
-    # norm of the gradient operator = sqrt(ndim*4)
-    ndim  = len([x for x in img_shape if x > 1])
-    grad_op_norm = xp.sqrt(ndim*4)
-  
-  p_p = (1 - p_g) / nsubsets
-  
-   # initialize variables
-  if x0 is None:
-    x = xp.zeros(img_shape, dtype = np.float32)
-  else:
-    x = x0.copy()
-  
-  # initialize y for data
-  y = 1 - (mu / (lm_acq_model.fwd(x) + contam_list))
-  
-  z = sens_img + lm_acq_model.back((y - 1) / mu)
-  zbar = z.copy()
-  
-  
-  # calculate S for the gradient operator
-  if p_g > 0:
-    S_g = gamma*rho_grad/grad_op_norm
-    T_g = p_g*rho_grad/(gamma*grad_op_norm)
-  
-  # calculate the "step sizes" S_i for the PET fwd operator
-  S_i = []
-  
-  ones_img = xp.ones(img_shape, dtype = np.float32)
-  
-  for i in range(nsubsets):
-    ss = slice(i,None,nsubsets)
-    # clip inf values
-    tmp = lm_acq_model.fwd(ones_img, i, nsubsets)
-    tmp = np.clip(tmp, tmp[tmp > 0].min(), None)
-    S_i.append(gamma*rho/tmp)
-  
-  
-  # calculate the step size T
-  T = xp.zeros_like(sens_img)
-  i = xp.where(sens_img > 0)
-  T[i] = nsubsets*p_p*rho / (gamma*sens_img[i])
-  
-  if p_g > 0:
-    T = np.clip(T, None, T_g)
-  
-  # allocate arrays for gradient operations
-  y_grad = xp.zeros((len(img_shape),) + img_shape, dtype = xp.float32)
-  
-  #--------------------------------------------------------------------------------------------
-  # SPDHG iterations
-  
-  zero_sens_inds = xp.where(sens_img == 0)
+  def init(self, sens_img, nsubsets, x = None, gamma = 1, rho = 0.999, rho_grad = 0.999):
+    self.epoch_counter = 0
+    self.sens_img      = sens_img
+    self.gamma         = gamma
+    self.rho           = rho
+    self.rho_grad      = rho_grad
+    self.nsubsets      = nsubsets
 
-  for it in range(niter):
-    subset_sequence = np.random.permutation(np.arange(int(nsubsets/(1-p_g))))
-  
-    for iss in range(subset_sequence.shape[0]):
-      x = np.clip(x - T*zbar, 0, None)
-  
-      # select a random subset
-      i = subset_sequence[iss]
+    if x is None:
+      self.x = self._xp.full(img_shape, 1., dtype = self._xp.float32)
+    else:
+      self.x = x.copy()
 
-      x[zero_sens_inds]    = 0
-      zbar[zero_sens_inds] = 0
-      z[zero_sens_inds]    = 0
-  
-      if i < nsubsets:
-        # PET subset update
-        print(f'iteration {it + 1} step {iss} subset {i+1}')
-  
-        ss = slice(i,None,nsubsets)
-  
-        y_plus = y[ss] + S_i[i]*(lm_acq_model.fwd(x, i, nsubsets) + contam_list[ss])
-  
-        # apply the prox for the dual of the poisson logL
-        y_plus = 0.5*(y_plus + 1 - np.sqrt((y_plus - 1)**2 + 4*S_i[i]*mu[ss]))
-  
-        dz = lm_acq_model.back((y_plus - y[ss])/mu[ss], i, nsubsets)
-  
-        # update variables
-        z = z + dz
-        y[ss] = y_plus.copy()
-        zbar = z + dz/p_p
-      else:
-        print(f'iteration {it + 1} step {iss} gradient update')
-        y_grad_plus = (y_grad + S_g*grad_operator.fwd(x))
-  
-        # apply the prox for the gradient norm
-        y_grad_plus = beta*grad_norm.prox_convex_dual(y_grad_plus/beta, sigma = S_g/beta)
-  
-        dz = grad_operator.adjoint(y_grad_plus - y_grad)
-        dz[zero_sens_inds] = 0
-  
-        # update variables
-        z = z + dz
-        y_grad = y_grad_plus.copy()
-        zbar = z + dz/p_g
+    self.mu = count_event_multiplicity(lm_acq_model.events, self._xp)
 
-  return x
+    if self.beta == 0:
+      self.p_g = 0
+    else: 
+      self.p_g = 0.5
+      # norm of the gradient operator = sqrt(ndim*4)
+      ndim  = len([x for x in self.img_shape if x > 1])
+      self.grad_op_norm = self._xp.sqrt(ndim*4)
+    
+    self.p_p = (1 - self.p_g) / self.nsubsets
+  
+
+    # initialize y for data, z and zbar
+    self.y    = 1 - (self.mu / (self.lm_acq_model.fwd(self.x) + self.contam_list))
+    self.z    = self.sens_img + self.lm_acq_model.back((self.y - 1) / self.mu)
+    self.zbar = self.z.copy()
+
+    # calculate S for the gradient operator
+    if self.p_g > 0:
+      self.S_g = self.gamma*self.rho_grad/self.grad_op_norm
+      self.T_g = self.p_g*self.rho_grad/(self.gamma*self.grad_op_norm)
+
+    # calculate the "step sizes" S_i for the PET fwd operator
+    self.S_i = []
+    ones_img = self._xp.ones(img_shape, dtype = self._xp.float32)
+    
+    for i in range(self.nsubsets):
+      ss = slice(i, None, nsubsets)
+      tmp = self.lm_acq_model.fwd(ones_img, i, self.nsubsets)
+      tmp = np.clip(tmp, tmp[tmp > 0].min(), None) # clip 0 values before division
+      self.S_i.append(self.gamma*self.rho/tmp)
+ 
+    # calculate the step size T
+    self.T = self._xp.zeros_like(sens_img)
+    inds = self._xp.where(self.sens_img > 0)
+    self.T[inds] = self.nsubsets*self.p_p*self.rho / (self.gamma*self.sens_img[inds])
+    
+    if self.p_g > 0:
+      self.T = self._xp.clip(self.T, None, self.T_g)
+    
+    # allocate arrays for gradient operations
+    self.y_grad = self._xp.zeros((len(img_shape),) + img_shape, dtype = self._xp.float32)
+  
+    # indices where sensitivity is 0 (e.g. outside ring)
+    self.zero_sens_inds = self._xp.where(self.sens_img == 0)
+
+    # intitial subset sequence
+    self.subset_sequence = np.random.permutation(np.arange(int(self.nsubsets/(1-self.p_g))))
+
+
+  def run_update(self, isub):
+    self.x = np.clip(self.x - self.T*self.zbar, 0, None)
+  
+    # select a random subset
+    i = self.subset_sequence[isub]
+
+    self.x[self.zero_sens_inds]    = 0
+    self.zbar[self.zero_sens_inds] = 0
+    self.z[self.zero_sens_inds]    = 0
+  
+    if i < self.nsubsets:
+      # PET subset update
+      if self.verbose: print(f'iteration step {isub} subset {i+1}')
+      ss = slice(i, None, self.nsubsets)
+  
+      y_plus = self.y[ss] + self.S_i[i]*(self.lm_acq_model.fwd(self.x, i, self.nsubsets) + self.contam_list[ss])
+  
+      # apply the prox for the dual of the poisson logL
+      y_plus = 0.5*(y_plus + 1 - np.sqrt((y_plus - 1)**2 + 4*self.S_i[i]*self.mu[ss]))
+      dz     = self.lm_acq_model.back((y_plus - self.y[ss])/self.mu[ss], i, self.nsubsets)
+  
+      # update variables
+      self.z    += dz
+      self.y[ss] = y_plus.copy()
+      self.zbar  = self.z + dz/self.p_p
+    else:
+      print(f'step {isub} gradient update')
+      y_grad_plus = (self.y_grad + self.S_g*self.grad_operator.fwd(self.x))
+  
+      # apply the prox for the gradient norm
+      y_grad_plus = self.beta*self.grad_norm.prox_convex_dual(y_grad_plus/self.beta, sigma = self.S_g/self.beta)
+  
+      dz = self.grad_operator.adjoint(y_grad_plus - self.y_grad)
+      dz[self.zero_sens_inds] = 0
+  
+      # update variables
+      self.z     += dz
+      self.y_grad = y_grad_plus.copy()
+      self.zbar   = self.z + dz/self.p_g
+
+
+  def run(self, niter):
+    for it in range(niter):
+      self.subset_sequence = np.random.permutation(np.arange(int(self.nsubsets/(1-self.p_g))))
+      for isub in range(self.subset_sequence.shape[0]):
+        if self.verbose: print(f'iteration {self.epoch_counter+1}', end = ' ')
+        self.run_update(isub)
+      self.epoch_counter += 1
 
 
 
 #--------------------------------------------------------------------------------------------
 
 if __name__ == '__main__':
-  on_gpu = True
-  
+  on_gpu    = True
   voxsize   = np.array([2., 2., 2.], dtype = np.float32)
   img_shape = (166,166,94)
   verbose   = True
   
   # FHHM for resolution model in voxel
   fwhm  = 4.5 / (2.35*voxsize)
-  
-  # prior strength
-  beta     = 6
-  niter    = 100
-  nsubsets = 224
   
   np.random.seed(1)
   
@@ -458,7 +463,14 @@ if __name__ == '__main__':
   sens_list   = sens_list[ie]
   atten_list  = atten_list[ie]  
   contam_list = contam_list[ie]
-  
+ 
+  #ne = 10000000
+
+  #sens_list = sens_list[:ne]
+  #atten_list = atten_list[:ne]
+  #contam_list = contam_list[:ne]*(ne/events.shape[0])
+  #events = events[:ne,:]
+ 
   if on_gpu:
     print('copying data to GPU')
     events      = cp.asarray(events)
@@ -474,7 +486,9 @@ if __name__ == '__main__':
   print('OSEM')
   
   t0 = time()
-  x0 = osem_lm(lm_acq_model, contam_list, sens_img, 2, 28)
+  lm_osem = LM_OSEM(lm_acq_model, contam_list)
+  lm_osem.init(sens_img, 28)
+  lm_osem.run(2)
   t1 = time()
   print(f'recon time: {(t1-t0):.2f}s')
   
@@ -484,11 +498,20 @@ if __name__ == '__main__':
   print('LM-SPDHG')
   grad_op   = GradientOperator(xp)
   grad_norm = GradientNorm(xp) 
-  
-  x = lm_spdhg(lm_acq_model, contam_list, grad_op, grad_norm, x0 = x0, beta = 6, 
-               niter = 50, nsubsets = 112, gamma =  3. / ndi.gaussian_filter(cp.asnumpy(x0),2.).max())
-  
+
+  img_norm = float(ndi_cupy.gaussian_filter(lm_osem.x,2).max())
+
+  lm_spdhg = LM_SPDHG(lm_acq_model, contam_list, grad_op, grad_norm, 6)
+  lm_spdhg.init(sens_img, 56, x = lm_osem.x, gamma = 30. / img_norm, rho = 1)
+
+  niter = 50
+  r = xp.zeros((niter,) + img_shape, dtype = xp.float32)
+
+  for i in range(niter):
+    lm_spdhg.run(1)
+    r[i,...] = lm_spdhg.x.copy() 
+
   #----------------------------------------------------------------------------------------------
   
   import pymirc.viewer as pv
-  vi = pv.ThreeAxisViewer(cp.asnumpy(x), imshow_kwargs = {'vmax':0.4})
+  vi = pv.ThreeAxisViewer(cp.asnumpy(r), imshow_kwargs = {'vmax':0.4})
