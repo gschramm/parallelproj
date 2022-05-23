@@ -232,7 +232,7 @@ def osem_lm(lm_acq_model, contam_list, sens_img, niter, nsubsets, xstart = None,
 
 #--------------------------------------------------------------------------------------------
 def lm_spdhg(lm_acq_model, contam_list, grad_operator, grad_norm, 
-             x0 = None, beta = 6, niter = 5, nusbsets = 56, gamma = 1., 
+             x0 = None, beta = 6, niter = 5, nsubsets = 56, gamma = 1., 
              rho = 0.999, rho_grad = 0.999, verbose = True):
 
   if isinstance(lm_acq_model.events, np.ndarray):
@@ -477,7 +477,7 @@ grad_op   = GradientOperator(xp)
 grad_norm = GradientNorm(xp) 
 
 x = lm_spdhg(lm_acq_model, contam_list, grad_op, grad_norm, x0 = x0, beta = 6, 
-             niter = 20, nusbsets = 56, gamma =  3. / ndi.gaussian_filter(cp.asnumpy(x0),2.).max())
+             niter = 50, nsubsets = 112, gamma =  3. / ndi.gaussian_filter(cp.asnumpy(x0),2.).max())
 
 #----------------------------------------------------------------------------------------------
 

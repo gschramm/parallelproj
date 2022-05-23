@@ -70,7 +70,7 @@ sino_params = ppp.PETSinogramParameters(scanner, ntofbins = ntofbins, tofbin_wid
                                         spatial_dim_order = spatial_dim_order)
 proj        = ppp.SinogramProjector(scanner, sino_params, img.shape, nsubsets = nsubsets, 
                                     voxsize = voxsize, img_origin = img_origin,
-                                    tof = False, sigma_tof = 60./2.35, n_sigmas = 3.,
+                                    tof = tof, sigma_tof = 60./2.35, n_sigmas = 3.,
                                     threadsperblock = threads_per_block)
 
 #---------------------------------------------------------------------------------
