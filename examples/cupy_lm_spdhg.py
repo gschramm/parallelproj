@@ -4,8 +4,8 @@ import numpy as np
 import cupy as cp
 import matplotlib.pyplot as plt
 
-import cupyx.scipy.ndimage as ndi_cupy
 import scipy.ndimage as ndi
+import cupyx.scipy.ndimage as ndi_cupy
 
 from pathlib import Path
 from time import time
@@ -170,38 +170,6 @@ class GradientOperator:
 
     return d
 
-#------------------------------------------------------------------------------------------------------
-class LMPETAcqModel:
-  def __init__(self, proj, events, attn_list, sens_list, fwhm = 0):
-    self.proj        = proj
-    self.events      = events
-    self.attn_list   = attn_list
-    self.sens_list   = sens_list
-    self.fwhm        = fwhm
-
-    if isinstance(attn_list, np.ndarray):
-      self._ndi = ndi
-    else:
-      self._ndi = ndi_cupy
-
-  def fwd(self, img, isub = 0, nsubsets = 1):
-    if np.any(fwhm > 0):
-      img = self._ndi.gaussian_filter(img, fwhm/2.35)
-
-    ss = slice(isub, None, nsubsets)
-    img_fwd = self.sens_list[ss]*self.attn_list[ss]*self.proj.fwd_project_lm(img, self.events[ss])
-
-    return img_fwd
-
-  def back(self, values, isub = 0, nsubsets = 1):
-    ss = slice(isub, None, nsubsets)
-    back_img = self.proj.back_project_lm(self.sens_list[ss]*self.attn_list[ss]*values, self.events[ss])
-
-    if np.any(fwhm > 0):
-      back_img = self._ndi.gaussian_filter(back_img, fwhm/2.35)
-
-    return back_img
-
 #--------------------------------------------------------------------------------------------
 class LM_OSEM:
   def __init__(self, lm_acq_model, contam_list, verbose = True):
@@ -226,8 +194,8 @@ class LM_OSEM:
       self.x = x.copy()
 
   def run_update(self, isub):
-    exp_list = self.lm_acq_model.fwd(self.x, isub, self.nsubsets) + self.contam_list[isub::self.nsubsets] 
-    self.x  *= (self.lm_acq_model.back(self.nsubsets/exp_list, isub, self.nsubsets) / self.sens_img)
+    exp_list = self.lm_acq_model.forward(self.x, isub, self.nsubsets) + self.contam_list[isub::self.nsubsets] 
+    self.x  *= (self.lm_acq_model.adjoint(self.nsubsets/exp_list, isub, self.nsubsets) / self.sens_img)
 
   def run(self, niter):
     for it in range(niter):
@@ -279,8 +247,8 @@ class LM_SPDHG:
   
 
     # initialize y for data, z and zbar
-    self.y    = 1 - (self.mu / (self.lm_acq_model.fwd(self.x) + self.contam_list))
-    self.z    = self.sens_img + self.lm_acq_model.back((self.y - 1) / self.mu)
+    self.y    = 1 - (self.mu / (self.lm_acq_model.forward(self.x) + self.contam_list))
+    self.z    = self.sens_img + self.lm_acq_model.adjoint((self.y - 1) / self.mu)
     self.zbar = self.z.copy()
 
     # calculate S for the gradient operator
@@ -294,7 +262,7 @@ class LM_SPDHG:
     
     for i in range(self.nsubsets):
       ss = slice(i, None, nsubsets)
-      tmp = self.lm_acq_model.fwd(ones_img, i, self.nsubsets)
+      tmp = self.lm_acq_model.forward(ones_img, i, self.nsubsets)
       tmp = np.clip(tmp, tmp[tmp > 0].min(), None) # clip 0 values before division
       self.S_i.append(self.gamma*self.rho/tmp)
  
@@ -331,11 +299,11 @@ class LM_SPDHG:
       if self.verbose: print(f'iteration step {isub} subset {i+1}')
       ss = slice(i, None, self.nsubsets)
   
-      y_plus = self.y[ss] + self.S_i[i]*(self.lm_acq_model.fwd(self.x, i, self.nsubsets) + self.contam_list[ss])
+      y_plus = self.y[ss] + self.S_i[i]*(self.lm_acq_model.forward(self.x, i, self.nsubsets) + self.contam_list[ss])
   
       # apply the prox for the dual of the poisson logL
       y_plus = 0.5*(y_plus + 1 - np.sqrt((y_plus - 1)**2 + 4*self.S_i[i]*self.mu[ss]))
-      dz     = self.lm_acq_model.back((y_plus - self.y[ss])/self.mu[ss], i, self.nsubsets)
+      dz     = self.lm_acq_model.adjoint((y_plus - self.y[ss])/self.mu[ss], i, self.nsubsets)
   
       # update variables
       self.z    += dz
@@ -384,8 +352,10 @@ if __name__ == '__main__':
   
   if on_gpu:
     xp = cp
+    ndimage_module = ndi_cupy
   else:
     xp = np
+    ndimage_module = ndi
   
   #--------------------------------------------------------------------------------------------
   # setup scanner and projector
@@ -481,7 +451,9 @@ if __name__ == '__main__':
   
   #--------------------------------------------------------------------------------------------
   # OSEM as intializer
-  lm_acq_model = LMPETAcqModel(proj, events, atten_list, sens_list, fwhm = fwhm)
+
+  res_model    = ppp.ImageBasedResolutionModel(fwhm, ndimage_module = ndimage_module) 
+  lm_acq_model = ppp.LMPETAcqModel(proj, events, atten_list, sens_list, image_based_res_model = res_model)
   
   print('OSEM')
   
@@ -499,19 +471,28 @@ if __name__ == '__main__':
   grad_op   = GradientOperator(xp)
   grad_norm = GradientNorm(xp) 
 
-  img_norm = float(ndi_cupy.gaussian_filter(lm_osem.x,2).max())
+  if xp.__name__ == 'numpy':
+    img_norm = float(ndi.gaussian_filter(lm_osem.x,2).max())
+  else:
+    img_norm = float(ndi_cupy.gaussian_filter(lm_osem.x,2).max())
 
   lm_spdhg = LM_SPDHG(lm_acq_model, contam_list, grad_op, grad_norm, 6)
   lm_spdhg.init(sens_img, 56, x = lm_osem.x, gamma = 30. / img_norm, rho = 1)
 
-  niter = 50
+  niter = 2
   r = xp.zeros((niter,) + img_shape, dtype = xp.float32)
 
+  t2 = time()
   for i in range(niter):
     lm_spdhg.run(1)
     r[i,...] = lm_spdhg.x.copy() 
+  t3 = time()
+  print(f'recon time: {(t3-t2):.2f}s')
 
   #----------------------------------------------------------------------------------------------
   
   import pymirc.viewer as pv
-  vi = pv.ThreeAxisViewer(cp.asnumpy(r), imshow_kwargs = {'vmax':0.4})
+  if xp.__name__ == 'numpy':
+    vi = pv.ThreeAxisViewer([lm_osem.x, lm_spdhg.x], imshow_kwargs = {'vmax':0.4})
+  else:
+    vi = pv.ThreeAxisViewer([cp.asnumpy(lm_osem.x), cp.asnumpy(lm_spdhg.x)], imshow_kwargs = {'vmax':0.4})

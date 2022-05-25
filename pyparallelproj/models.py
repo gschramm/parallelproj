@@ -1,5 +1,5 @@
 import numpy as np
-from scipy.ndimage import gaussian_filter
+import scipy.ndimage as ndi
 
 #---------------------------------------------------------------------------------
 def pet_fwd_model(img, proj, attn_sino, sens_sino, isub = None, fwhm = 0):
@@ -34,7 +34,7 @@ def pet_fwd_model(img, proj, attn_sino, sens_sino, isub = None, fwhm = 0):
   """
 
   if np.any(fwhm > 0):
-    img = gaussian_filter(img, fwhm/2.35)
+    img = ndi.gaussian_filter(img, fwhm/2.35)
 
   if isub is None:
     sino = sens_sino*attn_sino*proj.fwd_project(img)
@@ -75,7 +75,7 @@ def pet_fwd_model_lm(img, proj, subset_events, attn_list, sens_list, fwhm = 0):
   """
 
   if np.any(fwhm > 0):
-    img = gaussian_filter(img, fwhm/2.35)
+    img = ndi.gaussian_filter(img, fwhm/2.35)
 
   fwd_list = sens_list*attn_list*proj.fwd_project_lm(img, subset_events)
 
@@ -119,7 +119,7 @@ def pet_back_model(subset_sino, proj, attn_sino, sens_sino, isub = None, fwhm = 
     back_img = proj.back_project_subset(sens_sino*attn_sino*subset_sino, subset = isub)
 
   if np.any(fwhm > 0):
-    back_img = gaussian_filter(back_img, fwhm/2.35)
+    back_img = ndi.gaussian_filter(back_img, fwhm/2.35)
 
   return back_img
 
@@ -157,8 +157,50 @@ def pet_back_model_lm(lst, proj, subset_events, attn_list, sens_list, fwhm = 0):
   back_img = proj.back_project_lm(sens_list*attn_list*lst, subset_events)
 
   if np.any(fwhm > 0):
-    back_img = gaussian_filter(back_img, fwhm/2.35)
+    back_img = ndi.gaussian_filter(back_img, fwhm/2.35)
 
   return back_img
 
+#------------------------------------------------------------------------------------------------------
+class LMPETAcqModel:
+  def __init__(self, proj, events, attn_list, sens_list, image_based_res_model = None):
+    self.proj        = proj         # parllelproj PET projector
+    self.events      = events       # numpy / cupy event 2D event array
+    self.attn_list   = attn_list    # numpy / cupy 1D array with attenuation values 
+    self.sens_list   = sens_list    # numpy / cupy 1D array with sensitivity values
 
+    self.image_based_res_model = image_based_res_model # image-based resolution model
+
+  def forward(self, img, isub = 0, nsubsets = 1):
+    if self.image_based_res_model is not None:
+      img = self.image_based_res_model.forward(img)
+
+    ss = slice(isub, None, nsubsets)
+    img_fwd = self.sens_list[ss]*self.attn_list[ss]*self.proj.fwd_project_lm(img, self.events[ss])
+
+    return img_fwd
+
+  def adjoint(self, values, isub = 0, nsubsets = 1):
+    ss = slice(isub, None, nsubsets)
+    back_img = self.proj.back_project_lm(self.sens_list[ss]*self.attn_list[ss]*values, self.events[ss])
+
+    if self.image_based_res_model is not None:
+      back_img = self.image_based_res_model.adjoint(back_img)
+
+    return back_img
+
+#------------------------------------------------------------------------------------------------------
+class ImageBasedResolutionModel:
+  def __init__(self, fwhm, ndimage_module = None):
+    self.fwhm  = fwhm         # numpy array with Gauss FWHM (in voxels) for resolution model
+
+    if ndimage_module is None:
+      self._ndi = ndi
+    else:
+      self._ndi = ndimage_module
+
+  def forward(self, img):
+    return self._ndi.gaussian_filter(img, self.fwhm / 2.35)
+
+  def adjoint(self, img):
+    return self._ndi.gaussian_filter(img, self.fwhm / 2.35)

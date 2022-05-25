@@ -1,7 +1,7 @@
 from .pet_scanners  import RegularPolygonPETScanner
 from .projectors    import SinogramProjector
 from .sinogram      import PETSinogramParameters
-from .models        import pet_fwd_model, pet_back_model, pet_fwd_model_lm, pet_back_model_lm
+from .models        import pet_fwd_model, pet_back_model, pet_fwd_model_lm, pet_back_model_lm, LMPETAcqModel, ImageBasedResolutionModel 
 
 # this is needed to get the package version at runtime
 from pkg_resources import get_distribution, DistributionNotFound
