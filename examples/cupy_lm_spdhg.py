@@ -16,8 +16,15 @@ voxsize   = np.array([2., 2., 2.], dtype = np.float32)
 img_shape = (166,166,94)
 verbose   = True
 
-# FHHM for resolution model in voxels
-fwhm      = 4.5 / (2.35*voxsize)
+fwhm      = 4.5 / (2.35*voxsize) # FHHM for resolution model in voxels
+
+niter     = 10
+beta      = 12
+nsubsets  = 56
+rho       = 4.
+
+nevents   = 10000000
+norm_name = 'l2_l1'
 
 #--------------------------------------------------------------------------------------------
 np.random.seed(1)
@@ -45,7 +52,7 @@ scanner = ppp.RegularPolygonPETScanner(
 # speed of light in mm/ns
 speed_of_light = 300.
 
-# time resolution FWHM in ns
+# time resolution FWHM of the DMI in ns
 time_res_FWHM = 0.385
 
 # sigma TOF in mm
@@ -103,11 +110,12 @@ sens_list   = sens_list[ie]
 atten_list  = atten_list[ie]  
 contam_list = contam_list[ie]
 
-#ne = 10000000
-#sens_list = sens_list[:ne]
-#atten_list = atten_list[:ne]
-#contam_list = contam_list[:ne]*(ne/events.shape[0])
-#events = events[:ne,:]
+## use only part of the events
+if nevents is not None:
+  sens_list = sens_list[:nevents]
+  atten_list = atten_list[:nevents]
+  contam_list = contam_list[:nevents]*(nevents/events.shape[0])
+  events = events[:nevents,:]
 
 if on_gpu:
   print('copying data to GPU')
@@ -136,7 +144,7 @@ print(f'recon time: {(t1-t0):.2f}s')
 # LM-SPDHG
 
 print('LM-SPDHG')
-prior         = ppp.GradientBasedPrior(ppp.GradientOperator(xp), ppp.GradientNorm(xp), 12)
+prior         = ppp.GradientBasedPrior(ppp.GradientOperator(xp), ppp.GradientNorm(xp, name = norm_name), beta)
 event_counter = ppp.EventMultiplicityCounter(xp)
 
 if xp.__name__ == 'numpy':
@@ -145,9 +153,8 @@ else:
   img_norm = float(ndi_cupy.gaussian_filter(lm_osem.x,2).max())
 
 lm_spdhg = ppp.LM_SPDHG(lm_acq_model, contam_list, event_counter, prior, xp)
-lm_spdhg.init(sens_img, 56, x = lm_osem.x, gamma = 30. / img_norm, rho = 1.)
+lm_spdhg.init(sens_img, nsubsets, x = lm_osem.x, gamma = 30. / img_norm, rho = rho)
 
-niter = 20
 r = xp.zeros((niter,) + img_shape, dtype = xp.float32)
 
 t2 = time()
@@ -161,6 +168,6 @@ print(f'recon time: {(t3-t2):.2f}s')
 
 import pymirc.viewer as pv
 if xp.__name__ == 'numpy':
-  vi = pv.ThreeAxisViewer([lm_osem.x, lm_spdhg.x], imshow_kwargs = {'vmax':0.4})
+  vi = pv.ThreeAxisViewer([lm_osem.x, lm_spdhg.x], imshow_kwargs = {'vmax':img_norm})
 else:
-  vi = pv.ThreeAxisViewer([cp.asnumpy(lm_osem.x), cp.asnumpy(lm_spdhg.x)], imshow_kwargs = {'vmax':0.4})
+  vi = pv.ThreeAxisViewer([cp.asnumpy(lm_osem.x), cp.asnumpy(lm_spdhg.x)], imshow_kwargs = {'vmax':img_norm})
