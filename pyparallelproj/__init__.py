@@ -1,8 +1,9 @@
 from .pet_scanners  import RegularPolygonPETScanner
 from .projectors    import SinogramProjector
 from .sinogram      import PETSinogramParameters
-from .models        import pet_fwd_model, pet_back_model, pet_fwd_model_lm, pet_back_model_lm, LMPETAcqModel, ImageBasedResolutionModel, GradientNorm, GradientOperator, GradientBasedPrior
+from .models        import LMPETAcqModel, ImageBasedResolutionModel, GradientNorm, GradientOperator, GradientBasedPrior
 from .utils         import EventMultiplicityCounter
+from .algorithms    import LM_OSEM, LM_SPDHG
 
 # this is needed to get the package version at runtime
 from pkg_resources import get_distribution, DistributionNotFound
