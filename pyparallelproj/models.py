@@ -204,3 +204,95 @@ class ImageBasedResolutionModel:
 
   def adjoint(self, img):
     return self._ndi.gaussian_filter(img, self.fwhm / 2.35)
+
+#------------------------------------------------------------------------------------------------------
+class GradientNorm:
+  """ 
+  norm of a gradient field
+
+  Parameters
+  ----------
+
+  name : str
+    name of the norm
+    'l2_l1' ... mixed L2/L1 (sum of pointwise Euclidean norms in every voxel)
+    'l2_sq' ... squared l2 norm (sum of pointwise squared Euclidean norms in every voxel)
+
+  beta : float
+    factor multiplied to the norm (default 1)
+  """
+  def __init__(self, xp, name = 'l2_l1'):
+    self.name = name
+    self._xp  = xp
+ 
+    if not self.name in ['l2_l1', 'l2_sq']:
+     raise NotImplementedError
+
+  def eval(self, x):
+    if self.name == 'l2_l1':
+      n = self._xp.linalg.norm(x, axis = 0).sum()
+    elif self.name == 'l2_sq':
+      n = (x**2).sum()
+
+    return n
+
+  def prox_convex_dual(self, x, sigma = None):
+    """ proximal operator of the convex dual of the norm
+    """
+    if self.name == 'l2_l1':
+      gnorm = self._xp.linalg.norm(x, axis = 0)
+      r = x/self._xp.clip(gnorm, 1, None)
+    elif self.name == 'l2_sq':
+      r = x/(1+sigma)
+
+    return r
+
+#------------------------------------------------------------------------------------------------------
+class GradientOperator:
+  """
+  (directional) gradient operator and its adjoint in 2,3 or 4 dimensions
+  using finite forward / backward differences
+
+  Parameters
+  ----------
+
+  joint_gradient_field : numpy array
+    if given, only the gradient component perpenticular to the directions 
+    given in the joint gradient field are specified (default None)
+  """
+
+  def __init__(self, xp, joint_grad_field = None):
+    self._xp = xp
+
+    # e is the normalized joint gradient field that
+    # we are only interested in the gradient component
+    # perpendicular to it
+    self.e = None
+    
+    if joint_grad_field is not None:
+      norm   = self._xp.linalg.norm(joint_grad_field, axis = 0)
+      self.e = joint_grad_field / norm
+
+  def forward(self, x):
+    g = []
+    for i in range(x.ndim):
+      g.append(self._xp.diff(x, axis = i, append = self._xp.take(x, [-1], i)))
+    g = self._xp.array(g)
+
+    if self.e is not None:
+      g = g - (g*self.e).sum(0)*self.e
+
+    return g
+
+  def adjoint(self, y):
+    d = self._xp.zeros(y[0,...].shape, dtype = y.dtype)
+
+    if self.e is not None:
+      y2 = y - (y*self.e).sum(0)*self.e
+    else:
+      y2 = y
+
+    for i in range(y.shape[0]):
+      d -= self._xp.diff(y2[i,...], axis = i, prepend = self._xp.take(y2[i,...], [0], i))
+
+    return d
