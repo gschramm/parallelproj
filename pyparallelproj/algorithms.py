@@ -4,43 +4,6 @@ import numpy as np
 ##------------------------------------------------------------------------------------------------------
 ##------------------------------------------------------------------------------------------------------
 #
-#def osem_lm(events, attn_list, sens_list, contam_list, proj, sens_img, niter, nsubsets, 
-#            fwhm = 0, verbose = False, xstart = None, callback = None, subset_callback = None,
-#            callback_kwargs = None, subset_callback_kwargs = None):
-#
-#  img_shape  = tuple(proj.img_dim)
-#
-#  # initialize recon
-#  if xstart is None:
-#    recon = np.full(img_shape, events.shape[0] / np.prod(img_shape), dtype = np.float32)
-#  else:
-#    recon = xstart.copy()
-#
-#  # run OSEM iterations
-#  for it in range(niter):
-#    for i in range(nsubsets):
-#      if verbose: print(f'iteration {it+1} subset {i+1}')
-#    
-#      exp_list = pet_fwd_model_lm(recon, proj, events[i::nsubsets,:], attn_list[i::nsubsets], 
-#                                      sens_list[i::nsubsets], fwhm = fwhm) + contam_list[i::nsubsets]
-#
-#      recon *= np.divide(pet_back_model_lm(1/exp_list, proj, events[i::nsubsets,:], 
-#                                           attn_list[i::nsubsets], 
-#                                           sens_list[i::nsubsets], fwhm = fwhm)*nsubsets, 
-#                         sens_img, out = np.zeros_like(sens_img), where = (sens_img != 0))
-#
-#      if subset_callback is not None:
-#        subset_callback(recon, iteration = (it+1), subset = (i+1), **subset_callback_kwargs)
-#
-#    if callback is not None:
-#      callback(recon, iteration = (it+1), subset = (i+1), **callback_kwargs)
-#      
-#  return recon
-#
-##------------------------------------------------------------------------------------------------------
-##------------------------------------------------------------------------------------------------------
-##------------------------------------------------------------------------------------------------------
-#
 #def spdhg(em_sino, attn_sino, sens_sino, contam_sino, proj, niter,
 #          fwhm = 0, gamma = 1., rho = 0.999, rho_grad = 0.999, verbose = False, 
 #          xstart = None, ystart = None, y_grad_start = None,
@@ -366,7 +329,7 @@ class PDHG_L2_Denoise:
 
     self.y       = self._xp.zeros((self.x.ndim,) + self.x.shape, dtype = self._xp.float32)
   
-    if weights is self._xp.array: 
+    if isinstance(weights,self._xp.ndarray): 
       self.gam = self.weights.min() 
     else: 
       self.gam = self.weights
