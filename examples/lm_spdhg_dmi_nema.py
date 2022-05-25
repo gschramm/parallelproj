@@ -131,7 +131,7 @@ if on_gpu:
 res_model    = ppp.ImageBasedResolutionModel(fwhm, ndimage_module = ndimage_module) 
 lm_acq_model = ppp.LMPETAcqModel(proj, events, atten_list, sens_list, image_based_res_model = res_model)
 
-print('OSEM')
+print('LM-OSEM')
 
 t0 = time()
 lm_osem = ppp.LM_OSEM(lm_acq_model, contam_list, xp)
@@ -140,11 +140,20 @@ lm_osem.run(2)
 t1 = time()
 print(f'recon time: {(t1-t0):.2f}s')
 
+#----------------------------------------------------------------------------------------------
+# LM OSEM-TV
+
+print('LM-OSEM-EMTV')
+prior = ppp.GradientBasedPrior(ppp.GradientOperator(xp), ppp.GradientNorm(xp, name = norm_name), beta)
+
+lm_osem_emtv = ppp.LM_OSEM_EMTV(lm_acq_model, contam_list, prior, xp)
+lm_osem_emtv.init(sens_img, 28, x = lm_osem.x)
+lm_osem_emtv.run(10)
+
 #--------------------------------------------------------------------------------------------
 # LM-SPDHG
 
 print('LM-SPDHG')
-prior         = ppp.GradientBasedPrior(ppp.GradientOperator(xp), ppp.GradientNorm(xp, name = norm_name), beta)
 event_counter = ppp.EventMultiplicityCounter(xp)
 
 if xp.__name__ == 'numpy':

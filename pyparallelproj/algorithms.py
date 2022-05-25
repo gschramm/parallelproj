@@ -453,8 +453,7 @@ class OSEM_EMTV(OSEM):
     self.prior = prior
 
     self.denoiser = PDHG_L2_Denoise(self.prior, self._xp, verbose = False, nonneg = True)
-
-    self.tiny = self._xp.finfo(self._xp.float32).tiny
+    self.tiny     = self._xp.finfo(self._xp.float32).tiny
 
   def run_EMTV_update(self, isub, niter_denoise):
     # the denominator for the weights (image*beta) can be 0
@@ -523,6 +522,43 @@ class LM_OSEM:
         if self.verbose: print(f'subset {isub+1}', end  = '\r')
         self.run_EM_update(isub)
       self.epoch_counter += 1
+
+
+#--------------------------------------------------------------------------------------------
+class LM_OSEM_EMTV(LM_OSEM):
+  def __init__(self, lm_acq_model, contam_list, prior, xp, verbose = True):
+    super().__init__(lm_acq_model, contam_list, xp, verbose = verbose)
+    self.prior = prior
+
+    self.denoiser = PDHG_L2_Denoise(self.prior, self._xp, verbose = False, nonneg = True)
+    self.fmax     = self._xp.finfo(self._xp.float32).max
+    self.tiny     = self._xp.finfo(self._xp.float32).tiny
+
+  def run_EMTV_update(self, isub, niter_denoise):
+    # the denominator for the weights (image*beta) can be 0
+    # we clip "tiny" values to make sure that weights.max() stays finite
+    denom   = self._xp.clip(self.prior.beta*self.x, self.tiny, None)
+    weights = self.sens_img / denom  
+    # we also have to make sure that the weights.min() > 0 since gam = weights.min() and tau = 1 / gamma
+    weights = self._xp.clip(weights, 10*self.tiny, 0.1*self.fmax)
+
+    # LM_OSEM update
+    super().run_EM_update(isub)
+
+    # weighted denoising step
+    self.denoiser.init(self.x, weights)
+    self.denoiser.run(niter_denoise, calculate_cost = False)
+
+    self.x = self.denoiser.x.copy()
+
+  def run(self, niter, niter_denoise = 30, calculate_cost = False):
+    for it in range(niter):
+      if self.verbose: print(f'iteration {self.epoch_counter+1}')
+      for isub in range(self.nsubsets):
+        if self.verbose: print(f'subset {isub+1}', end  = '\r')
+        self.run_EMTV_update(isub, niter_denoise)
+      self.epoch_counter += 1
+
 
 #--------------------------------------------------------------------------------------------
 class LM_SPDHG:
@@ -612,7 +648,7 @@ class LM_SPDHG:
   
     if i < self.nsubsets:
       # PET subset update
-      if self.verbose: print(f'iteration step {isub} subset {i+1}', end = '\r')
+      if self.verbose: print(f'step {isub} subset {i+1}', end = '\r')
       ss = slice(i, None, self.nsubsets)
   
       y_plus = self.y[ss] + self.S_i[i]*(self.lm_acq_model.forward(self.x, i, self.nsubsets) + self.contam_list[ss])
@@ -626,7 +662,7 @@ class LM_SPDHG:
       self.y[ss] = y_plus.copy()
       self.zbar  = self.z + dz/self.p_p
     else:
-      print(f'step {isub} gradient update')
+      print(f'step {isub} gradient update', end = '\r')
       y_grad_plus = (self.y_grad + self.S_g*self.prior.gradient_operator.forward(self.x))
   
       # apply the prox for the gradient norm
@@ -644,7 +680,7 @@ class LM_SPDHG:
   def run(self, niter):
     for it in range(niter):
       self.subset_sequence = np.random.permutation(np.arange(int(self.nsubsets/(1-self.p_g))))
-      if self.verbose: print(f'iteration {self.epoch_counter+1}')
+      if self.verbose: print(f'\niteration {self.epoch_counter+1}')
       for isub in range(self.subset_sequence.shape[0]):
         self.run_update(isub)
       self.epoch_counter += 1
