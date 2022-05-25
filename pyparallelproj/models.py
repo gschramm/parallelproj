@@ -333,7 +333,7 @@ class GradientOperator:
 
 #------------------------------------------------------------------------------------------------------
 class GradientBasedPrior:
-  def __init__(self, gradient_operator, gradient_norm, beta):
+  def __init__(self, gradient_operator, gradient_norm, beta = 1.):
     self.gradient_operator = gradient_operator
     self.gradient_norm     = gradient_norm
     self.beta              = beta

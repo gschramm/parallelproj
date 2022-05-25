@@ -312,80 +312,118 @@ import numpy as np
 #
 #
 ##----------------------------------------------------------------------------------------------------
-#
-#def pdhg_l2_denoise(img, grad_operator, grad_norm, 
-#                    weights = 2e-2, niter = 200, cost = None, nonneg = False, verbose = False):
-#  """
-#  First-order primal dual image denoising with weighted L2 data fidelity term.
-#  Solves the problem: argmax_x( \sum_i w_i*(x_i - img_i)**2 + norm(grad_operator x) )
-#
-#  Argumtents
-#  ----------
-#
-#  img           ... an nd image image
-#
-#  grad_operator ... gradient operator with methods fwd() and adjoint()
-#
-#  grad_norm     ... gradient norm with methods eval() and prox_convex_dual()
-#
-#  Keyword arguments
-#  -----------------
-#
-#  weights  ... (scalar or array) with weights for data fidelity term - default 2e-2
-#
-#  niter    ... (int) number of iterations to run - default 200
-#
-#  cost     ... (1d array) 1d output array for cost calcuation - default None
-# 
-#  nonneg   ... (bool) whether to clip negative values in solution - default False
-#
-#  verbose  ... (bool) whether to print some diagnostic output - default False
-#  """
-#
-#  x    = img.copy().astype(np.float)
-#  xbar = x.copy()
-#  
-#  ynew = np.zeros((x.ndim,) + x.shape)
-#
-#  if weights is np.array: gam = weights.min()  
-#  else:                      gam = weights
-#
-#  tau    = 1./ gam
-#  sig    = 1./(tau*4.*x.ndim)
-#  
-#  # start the iterations
-#  for i in range(niter):
-#    if verbose: print(i)
-#
-#    # (1) fwd model
-#    ynew += sig*grad_operator.fwd(xbar)
-#    
-#    # (2) proximity operator
-#    ynew = grad_norm.prox_convex_dual(ynew, sigma = sig)
-#    
-#    # (3) back model
-#    xnew = x - tau*grad_operator.adjoint(ynew)
-#    
-#    # (4) apply proximity of G
-#    xnew = (xnew + weights*img*tau) / (1. + weights*tau)
-#    if nonneg: xnew = np.clip(xnew, 0, None)  
-#    
-#    # (5) calculate the new stepsizes
-#    theta = 1.0 / np.sqrt(1 + 2*gam*tau)
-#    tau   = tau*theta
-#    sig   = sig/theta 
-#    
-#    # (6) update variables
-#    xbar = xnew + theta*(xnew  - x)
-#    x    = xnew.copy()
-#  
-#    # (0) store cost 
-#    if cost is not None: 
-#      cost[i] = 0.5*(weights*(x - img)**2).sum() + grad_norm.eval(grad_operator.fwd(x))
-#      if verbose: print(cost[i])
-#
-#  return x
-#
+
+class PDHG_L2_Denoise:
+  """
+  First-order primal dual image denoising with weighted L2 data fidelity term.
+  Solves the problem: argmax_x( \sum_i w_i*(x_i - img_i)**2 + norm(grad_operator x) )
+
+  Arguments
+  ---------
+
+  prior ... gradient-based prior
+
+  xp    ... numpy / cupy module to use
+
+  Keyword arguments
+  -----------------
+
+  nonneg   ... (bool) whether to clip negative values in solution - default False
+
+  verbose  ... (bool) whether to print some diagnostic output - default False
+  """
+
+  """
+
+  Keyword arguments
+  -----------------
+
+
+  niter    ... (int) number of iterations to run - default 200
+
+  cost     ... (1d array) 1d output array for cost calcuation - default None
+ 
+  """
+  def __init__(self, prior, xp, nonneg = False, verbose = False):
+    self.prior   = prior
+    self._xp     = xp
+    self.nonneg  = nonneg
+    self.verbose = verbose
+
+  def init(self, img, weights):
+    """
+    Arguments
+    ---------
+
+    img      ... (numpy/cupy array) with the image to be denoised
+
+    weights  ... (scalar or numpy/cupy array) with weights for data fidelity term 
+    """
+    self.img     = img
+    self.x       = self.img.copy()
+    self.xbar    = self.img.copy()
+    self.weights = weights
+
+    self.y       = self._xp.zeros((self.x.ndim,) + self.x.shape, dtype = self._xp.float32)
+  
+    if weights is self._xp.array: 
+      self.gam = self.weights.min() 
+    else: 
+      self.gam = self.weights
+
+    self.ndim  = len([x for x in self.img.shape if x > 1])
+    self.grad_op_norm = self._xp.sqrt(self.ndim*4)
+  
+    self.tau    = 1./ self.gam
+    self.sig    = 1./(self.tau*self.grad_op_norm**2)
+
+    self.epoch_counter = 0
+    self.cost = np.array([], dtype = np.float32)
+
+
+  def run_update(self):
+    # (1) forward model
+    self.y += self.sig*self.prior.gradient_operator.forward(self.xbar)
+    
+    # (2) proximity operator
+    self.y = self.prior.gradient_norm.prox_convex_dual(self.y, sigma = self.sig)
+    
+    # (3) adjoint model
+    xnew = self.x - self.tau*self.prior.gradient_operator.adjoint(self.y)
+    
+    # (4) apply proximity of G
+    xnew = (xnew + self.weights*self.img*self.tau) / (1. + self.weights*self.tau)
+    if self.nonneg: xnew = self._xp.clip(xnew, 0, None)  
+    
+    # (5) calculate the new stepsizes
+    self.theta = 1.0 / np.sqrt(1 + 2*self.gam*self.tau)
+    self.tau  *= self.theta
+    self.sig  /= self.theta 
+    
+    # (6) update variables
+    self.xbar = xnew + self.theta*(xnew  - self.x)
+    self.x    = xnew.copy()
+
+
+  def run(self, niter, calculate_cost = False):
+    cost  = np.zeros(niter, dtype = np.float32)
+
+    for it in range(niter):
+      if self.verbose: print(f'epoch {self.epoch_counter+1}')
+      self.run_update()
+
+      if calculate_cost:
+        cost[it] = self.calculate_cost()
+     
+      self.epoch_counter += 1
+
+    self.cost = np.concatenate((self.cost, cost)) 
+
+
+  def calculate_cost(self):
+    return 0.5*(self.weights*(self.x - self.img)**2).sum() + self.prior.eval(self.x)
+
+
 ##----------------------------------------------------------------------------------------------------------
 #
 #def osem_lm_emtv(events, attn_list, sens_list, contam_list, proj, sens_img, niter, nsubsets, 
@@ -571,8 +609,8 @@ class LM_SPDHG:
     else: 
       self.p_g = 0.5
       # norm of the gradient operator = sqrt(ndim*4)
-      ndim  = len([x for x in self.img_shape if x > 1])
-      self.grad_op_norm = self._xp.sqrt(ndim*4)
+      self.ndim  = len([x for x in self.img_shape if x > 1])
+      self.grad_op_norm = self._xp.sqrt(self.ndim*4)
     
     self.p_p = (1 - self.p_g) / self.nsubsets
   
