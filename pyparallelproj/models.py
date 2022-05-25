@@ -162,6 +162,39 @@ def pet_back_model_lm(lst, proj, subset_events, attn_list, sens_list, fwhm = 0):
   return back_img
 
 #------------------------------------------------------------------------------------------------------
+class PETAcqModel:
+  def __init__(self, proj, attn_sino, sens_sino, image_based_res_model = None):
+    self.proj        = proj         # parllelproj PET projector
+    self.attn_sino   = attn_sino    # numpy / cupy array with attenuation sinogram
+    self.sens_sino   = sens_sino    # numpy / cupy array with sensitivity sinogram
+
+    self.image_based_res_model = image_based_res_model # image-based resolution model
+
+  def forward(self, img, isub = None):
+    if self.image_based_res_model is not None:
+      img = self.image_based_res_model.forward(img)
+
+    if isub is None:
+      img_fwd = self.sens_sino*self.attn_sino*self.proj.fwd_project(img)
+    else:
+      ss = self.proj.subset_slices[isub]
+      img_fwd = self.sens_sino[ss]*self.attn_sino[ss]*self.proj.fwd_project_subset(img, isub)
+
+    return img_fwd
+
+  def adjoint(self, sino, isub = 0):
+    if isub is None:
+      back_img = self.proj.back_project(self.sens_sino*self.attn_sino*sino)
+    else:
+      ss = self.proj.subset_slices[isub]
+      back_img = self.proj.back_project_subset(self.sens_sino[ss]*self.attn_sino[ss]*sino, isub)
+
+    if self.image_based_res_model is not None:
+      back_img = self.image_based_res_model.adjoint(back_img)
+
+    return back_img
+
+#------------------------------------------------------------------------------------------------------
 class LMPETAcqModel:
   def __init__(self, proj, events, attn_list, sens_list, image_based_res_model = None):
     self.proj        = proj         # parllelproj PET projector

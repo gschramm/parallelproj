@@ -1,53 +1,5 @@
 import numpy as np
-#from pyparallelproj.models import pet_fwd_model, pet_back_model, pet_fwd_model_lm, pet_back_model_lm
-#from pyparallelproj.utils import GradientOperator, GradientNorm
-#
-#def osem(em_sino, attn_sino, sens_sino, contam_sino, proj, niter,
-#         fwhm = 0, verbose = False, xstart = None, 
-#         callback = None, subset_callback = None,
-#         callback_kwargs = None, subset_callback_kwargs = None):
-#
-#  img_shape  = tuple(proj.img_dim)
-#
-#  # calculate the sensitivity images for each subset
-#  sens_img  = np.zeros((proj.nsubsets,) + img_shape, dtype = np.float32)
-# 
-#  for i in range(proj.nsubsets):
-#    # get the slice for the current subset
-#    ss        = proj.subset_slices[i]
-#    # generate a subset sinogram full of ones
-#    ones_sino = np.ones(proj.subset_sino_shapes[i] , dtype = np.float32)
-#    sens_img[i,...] = pet_back_model(ones_sino, proj, attn_sino[ss], sens_sino[ss], i, fwhm = fwhm)
-#  
-#  # initialize recon
-#  if xstart is None:
-#    recon = np.full(img_shape, em_sino.sum() / np.prod(img_shape), dtype = np.float32)
-#  else:
-#    recon = xstart.copy()
-#
-#  # run OSEM iterations
-#  for it in range(niter):
-#    for i in range(proj.nsubsets):
-#      if verbose: print(f'iteration {it+1} subset {i+1}')
-#
-#      # get the slice for the current subset
-#      ss        = proj.subset_slices[i]
-#
-#      exp_sino = pet_fwd_model(recon, proj, attn_sino[ss], sens_sino[ss], i, 
-#                               fwhm = fwhm) + contam_sino[ss]
-#      ratio  = em_sino[ss] / exp_sino
-#      recon *= np.divide(pet_back_model(ratio, proj, attn_sino[ss], sens_sino[ss], i, fwhm = fwhm), 
-#                         sens_img[i,...], out = np.zeros_like(sens_img[i,...]), 
-#                         where = (sens_img[i,...] != 0)) 
-#    
-#      if subset_callback is not None:
-#        subset_callback(recon, iteration = (it+1), subset = (i+1), **subset_callback_kwargs)
-#
-#    if callback is not None:
-#      callback(recon, iteration = (it+1), subset = (i+1), **callback_kwargs)
-#      
-#  return recon
-#
+
 ##------------------------------------------------------------------------------------------------------
 ##------------------------------------------------------------------------------------------------------
 ##------------------------------------------------------------------------------------------------------
@@ -499,6 +451,62 @@ import numpy as np
 #      callback(recon, iteration = (it+1), subset = (i+1), **callback_kwargs)
 #      
 #  return recon
+
+#-----------------------------------------------------------------------------------------------------------------
+class OSEM:
+  def __init__(self, em_sino, acq_model, contam_sino, xp, verbose = True):
+    self.em_sino     = em_sino
+    self.acq_model   = acq_model
+    self.contam_sino = contam_sino
+    self.img_shape   = tuple(self.acq_model.proj.img_dim)
+    self.verbose     = True
+    self._xp         = xp
+  
+  def init(self, x = None):
+    self.epoch_counter = 0
+    self.cost = np.array([], dtype = np.float32)
+
+    if x is None:
+      self.x = self._xp.full(self.img_shape, 1., dtype = self._xp.float32)
+    else:
+      self.x = x.copy()
+
+    # calculate the sensitivity images
+    self.sens_imgs = self._xp.zeros((self.acq_model.proj.nsubsets,) + self.img_shape, dtype = self._xp.float32)
+
+    for isub in range(self.acq_model.proj.nsubsets):
+      if self.verbose: print(f'calculating sensitivity image {isub}')
+      self.sens_imgs[isub,...] = self.acq_model.adjoint(self._xp.ones(self.acq_model.proj.subset_sino_shapes[isub]), 
+                                                        isub = isub) 
+
+  def run_update(self, isub):
+    ss       = self.acq_model.proj.subset_slices[isub]
+    exp_sino = self.acq_model.forward(self.x, isub) + self.contam_sino[ss] 
+    self.x  *= (self.acq_model.adjoint(self.em_sino[ss]/exp_sino, isub) / self.sens_imgs[isub,...])
+
+  def run(self, niter, calculate_cost = False):
+    cost  = np.zeros(niter, dtype = np.float32)
+
+    for it in range(niter):
+      for isub in range(self.acq_model.proj.nsubsets):
+        if self.verbose: print(f'iteration {self.epoch_counter+1} subset {isub+1}')
+        self.run_update(isub)
+
+      if calculate_cost:
+        cost[it] = self.eval_neg_poisson_logL()
+     
+      self.epoch_counter += 1
+
+    self.cost = np.concatenate((self.cost, cost)) 
+
+  def eval_neg_poisson_logL(self):
+    cost = 0
+    for isub in range(self.acq_model.proj.nsubsets):
+      ss       = self.acq_model.proj.subset_slices[isub]
+      exp_sino = self.acq_model.forward(self.x, isub) + self.contam_sino[ss] 
+      cost    += float((exp_sino - self.em_sino[ss]*self._xp.log(exp_sino)).sum())
+
+    return cost
 
 
 #-----------------------------------------------------------------------------------------------------------------
