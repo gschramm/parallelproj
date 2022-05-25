@@ -47,15 +47,13 @@ class LM_OSEM:
 
 #--------------------------------------------------------------------------------------------
 class LM_SPDHG:
-  def __init__(self, lm_acq_model, contam_list, event_counter, grad_operator, grad_norm, beta):
+  def __init__(self, lm_acq_model, contam_list, event_counter, prior):
     self.lm_acq_model  = lm_acq_model
     self.contam_list   = contam_list
     self.event_counter = event_counter
+    self.prior         = prior
     self.img_shape     = tuple(self.lm_acq_model.proj.img_dim)
     self.verbose       = True
-    self.grad_operator = grad_operator
-    self.grad_norm     = grad_norm
-    self.beta          = beta
 
     if isinstance(self.lm_acq_model.events, np.ndarray):
       self._xp = np
@@ -77,7 +75,7 @@ class LM_SPDHG:
 
     self.mu = self.event_counter.count(self.lm_acq_model.events)
 
-    if self.beta == 0:
+    if self.prior.beta == 0:
       self.p_g = 0
     else: 
       self.p_g = 0.5
@@ -153,12 +151,12 @@ class LM_SPDHG:
       self.zbar  = self.z + dz/self.p_p
     else:
       print(f'step {isub} gradient update')
-      y_grad_plus = (self.y_grad + self.S_g*self.grad_operator.forward(self.x))
+      y_grad_plus = (self.y_grad + self.S_g*self.prior.gradient_operator.forward(self.x))
   
       # apply the prox for the gradient norm
-      y_grad_plus = self.beta*self.grad_norm.prox_convex_dual(y_grad_plus/self.beta, sigma = self.S_g/self.beta)
+      y_grad_plus = self.prior.beta*self.prior.gradient_norm.prox_convex_dual(y_grad_plus/self.prior.beta, sigma = self.S_g/self.prior.beta)
   
-      dz = self.grad_operator.adjoint(y_grad_plus - self.y_grad)
+      dz = self.prior.gradient_operator.adjoint(y_grad_plus - self.y_grad)
       dz[self.zero_sens_inds] = 0
   
       # update variables
@@ -309,9 +307,7 @@ if __name__ == '__main__':
   # LM-SPDHG
   
   print('LM-SPDHG')
-  grad_op   = ppp.GradientOperator(xp)
-  grad_norm = ppp.GradientNorm(xp) 
-
+  prior         = ppp.GradientBasedPrior(ppp.GradientOperator(xp), ppp.GradientNorm(xp), 12)
   event_counter = ppp.EventMultiplicityCounter(xp)
 
   if xp.__name__ == 'numpy':
@@ -319,10 +315,10 @@ if __name__ == '__main__':
   else:
     img_norm = float(ndi_cupy.gaussian_filter(lm_osem.x,2).max())
 
-  lm_spdhg = LM_SPDHG(lm_acq_model, contam_list, event_counter, grad_op, grad_norm, 6)
-  lm_spdhg.init(sens_img, 56, x = lm_osem.x, gamma = 30. / img_norm, rho = 1)
+  lm_spdhg = LM_SPDHG(lm_acq_model, contam_list, event_counter, prior)
+  lm_spdhg.init(sens_img, 56, x = lm_osem.x, gamma = 30. / img_norm, rho = 4.)
 
-  niter = 2
+  niter = 20
   r = xp.zeros((niter,) + img_shape, dtype = xp.float32)
 
   t2 = time()

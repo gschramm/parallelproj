@@ -296,3 +296,15 @@ class GradientOperator:
       d -= self._xp.diff(y2[i,...], axis = i, prepend = self._xp.take(y2[i,...], [0], i))
 
     return d
+
+
+#------------------------------------------------------------------------------------------------------
+class GradientBasedPrior:
+  def __init__(self, gradient_operator, gradient_norm, beta):
+    self.gradient_operator = gradient_operator
+    self.gradient_norm     = gradient_norm
+    self.beta              = beta
+
+  def eval(self, x):
+    return float(self.beta*self.gradient_norm.eval(self.gradient_operator.forward(x)))
+
