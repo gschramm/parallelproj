@@ -150,6 +150,15 @@ osem = ppp.OSEM(em_sino, acq_model, contam_sino, xp)
 osem.init() # initialize OSEM (e.g. calculate the sensivity image for every subset)
 osem.run(niter, calculate_cost = True)
 
+##-----------------------------------------------------------------------------------------------------------
+## OSEM EMTV recon with prior
+#
+#prior      = ppp.GradientBasedPrior(ppp.GradientOperator(xp), ppp.GradientNorm(xp, name = 'l2_l1'), 3e-2)
+#osem_emtv  = ppp.OSEM_EMTV(em_sino, acq_model, contam_sino, prior, xp)
+#osem_emtv.init()
+#
+#osem_emtv.run(30, calculate_cost = True)
+
 #-----------------------------------------------------------------------------------------------------------
 # visualizations
 

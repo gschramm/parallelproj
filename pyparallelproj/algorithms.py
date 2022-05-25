@@ -387,72 +387,6 @@ class PDHG_L2_Denoise:
     return 0.5*(self.weights*(self.x - self.img)**2).sum() + self.prior.eval(self.x)
 
 
-##----------------------------------------------------------------------------------------------------------
-#
-#def osem_lm_emtv(events, attn_list, sens_list, contam_list, proj, sens_img, niter, nsubsets, 
-#                 fwhm = 0, verbose = False, xstart = None, callback = None, subset_callback = None,
-#                 callback_kwargs = None, subset_callback_kwargs = None, niter_denoise = 20,
-#                 grad_norm = None, grad_operator = None, beta = 0):
-#
-#  if grad_operator is None:
-#    grad_operator = GradientOperator()
-#
-#  if grad_norm is None:
-#    grad_norm = GradientNorm()
-#
-#  img_shape  = tuple(proj.img_dim)
-#
-#  # initialize recon
-#  if xstart is None:
-#    recon = np.full(img_shape, events.shape[0] / np.prod(img_shape), dtype = np.float32)
-#  else:
-#    recon = xstart.copy()
-#
-#  # construct a mask that shows which area is inside the scanner
-#  # needed to avoid weights getting 0 which causes gam = inft in PDHG accel. denoising
-#  x0 = (np.arange(img_shape[0]) - img_shape[0]/2 + 0.5)*proj.voxsize[0]
-#  x1 = (np.arange(img_shape[1]) - img_shape[1]/2 + 0.5)*proj.voxsize[1]
-#  X0,X1 = np.meshgrid(x0, x1, indexing = 'ij')
-#  RHO   = np.sqrt(X0**2 + X1**2)
-#
-#  mask = RHO < 0.95*proj.scanner.R
-#  mask = np.dstack([mask]*img_shape[2])
-#
-#  # run OSEM iterations
-#  for it in range(niter):
-#    for i in range(nsubsets):
-#      if verbose: print(f'iteration {it+1} subset {i+1}')
-#
-#      # calculate the weights for weighted denoising problem that we have to solve
-#      if beta > 0:
-#        # wegihts post EM TV denoise step
-#        weights = sens_img / (beta*np.clip(recon, recon[recon > 0].min(), None))
-#        # clip also max of weights to avoid float overflow and division by 0
-#        weights = np.clip(weights, weights[mask == 1].min(), 0.1*np.finfo(np.float32).max)
-#         
-#
-#      # EM step
-#      exp_list = pet_fwd_model_lm(recon, proj, events[i::nsubsets,:], attn_list[i::nsubsets], 
-#                                      sens_list[i::nsubsets], fwhm = fwhm) + contam_list[i::nsubsets]
-#
-#      recon *= np.divide(pet_back_model_lm(1/exp_list, proj, events[i::nsubsets,:], 
-#                                           attn_list[i::nsubsets], sens_list[i::nsubsets], 
-#                                           fwhm = fwhm)*nsubsets, 
-#                         sens_img, out = np.zeros_like(sens_img), where = (sens_img != 0))
-#
-#      # "TV" step (weighted denoising)
-#      if beta > 0:
-#        recon = pdhg_l2_denoise(recon, grad_operator, grad_norm, 
-#                                weights = weights, niter = niter_denoise, nonneg = True)
-#
-#      if subset_callback is not None:
-#        subset_callback(recon, iteration = (it+1), subset = (i+1), **subset_callback_kwargs)
-#
-#    if callback is not None:
-#      callback(recon, iteration = (it+1), subset = (i+1), **callback_kwargs)
-#      
-#  return recon
-
 #-----------------------------------------------------------------------------------------------------------------
 class OSEM:
   def __init__(self, em_sino, acq_model, contam_sino, xp, verbose = True):
@@ -476,11 +410,12 @@ class OSEM:
     self.sens_imgs = self._xp.zeros((self.acq_model.proj.nsubsets,) + self.img_shape, dtype = self._xp.float32)
 
     for isub in range(self.acq_model.proj.nsubsets):
-      if self.verbose: print(f'calculating sensitivity image {isub}')
+      if self.verbose: print(f'calculating sensitivity image {isub}', end = '\r')
       self.sens_imgs[isub,...] = self.acq_model.adjoint(self._xp.ones(self.acq_model.proj.subset_sino_shapes[isub]), 
                                                         isub = isub) 
+    if self.verbose: print('')
 
-  def run_update(self, isub):
+  def run_EM_update(self, isub):
     ss       = self.acq_model.proj.subset_slices[isub]
     exp_sino = self.acq_model.forward(self.x, isub) + self.contam_sino[ss] 
     self.x  *= (self.acq_model.adjoint(self.em_sino[ss]/exp_sino, isub) / self.sens_imgs[isub,...])
@@ -489,9 +424,10 @@ class OSEM:
     cost  = np.zeros(niter, dtype = np.float32)
 
     for it in range(niter):
+      if self.verbose: print(f'iteration {self.epoch_counter+1}')
       for isub in range(self.acq_model.proj.nsubsets):
-        if self.verbose: print(f'iteration {self.epoch_counter+1} subset {isub+1}')
-        self.run_update(isub)
+        if self.verbose: print(f'subset {isub+1}', end  = '\r')
+        self.run_EM_update(isub)
 
       if calculate_cost:
         cost[it] = self.eval_neg_poisson_logL()
@@ -508,6 +444,53 @@ class OSEM:
       cost    += float((exp_sino - self.em_sino[ss]*self._xp.log(exp_sino)).sum())
 
     return cost
+
+
+#-----------------------------------------------------------------------------------------------------------------
+class OSEM_EMTV(OSEM):
+  def __init__(self, em_sino, acq_model, contam_sino, prior, xp, verbose = True):
+    super().__init__(em_sino, acq_model, contam_sino, xp, verbose = verbose)
+    self.prior = prior
+
+    self.denoiser = PDHG_L2_Denoise(self.prior, self._xp, verbose = False, nonneg = True)
+
+    self.tiny = self._xp.finfo(self._xp.float32).tiny
+
+  def run_EMTV_update(self, isub, niter_denoise):
+    # the denominator for the weights (image*beta) can be 0
+    # we clip "tiny" values to make sure that weights.max() stays finite
+    denom   = self._xp.clip(self.prior.beta*self.x, 10*self.tiny, None)
+    weights = self.sens_imgs[isub,...] / denom  
+    # we also have to make sure that the weights.min() > 0 since gam = weights.min() and tau = 1 / gamma
+    weights = self._xp.clip(weights, 10*self.tiny, None)
+
+    # OSEM update
+    super().run_EM_update(isub)
+
+    # weighted denoising step
+    self.denoiser.init(self.x, weights)
+    self.denoiser.run(niter_denoise, calculate_cost = False)
+
+    self.x = self.denoiser.x.copy()
+
+  def run(self, niter, niter_denoise = 30, calculate_cost = False):
+    cost  = np.zeros(niter, dtype = np.float32)
+
+    for it in range(niter):
+      if self.verbose: print(f'iteration {self.epoch_counter+1}')
+      for isub in range(self.acq_model.proj.nsubsets):
+        if self.verbose: print(f'subset {isub+1}', end  = '\r')
+        self.run_EMTV_update(isub, niter_denoise)
+
+      if calculate_cost:
+        cost[it] = self.eval_cost()
+     
+      self.epoch_counter += 1
+
+    self.cost = np.concatenate((self.cost, cost)) 
+
+  def eval_cost(self):
+    return super().eval_neg_poisson_logL() + self.prior.eval(self.x)
 
 
 #-----------------------------------------------------------------------------------------------------------------
@@ -529,15 +512,16 @@ class LM_OSEM:
     else:
       self.x = x.copy()
 
-  def run_update(self, isub):
+  def run_EM_update(self, isub):
     exp_list = self.lm_acq_model.forward(self.x, isub, self.nsubsets) + self.contam_list[isub::self.nsubsets] 
     self.x  *= (self.lm_acq_model.adjoint(self.nsubsets/exp_list, isub, self.nsubsets) / self.sens_img)
 
   def run(self, niter):
     for it in range(niter):
+      if self.verbose: print(f'iteration {self.epoch_counter+1}')
       for isub in range(self.nsubsets):
-        if self.verbose: print(f'iteration {self.epoch_counter+1} subset {isub+1}')
-        self.run_update(isub)
+        if self.verbose: print(f'subset {isub+1}', end  = '\r')
+        self.run_EM_update(isub)
       self.epoch_counter += 1
 
 #--------------------------------------------------------------------------------------------
@@ -628,7 +612,7 @@ class LM_SPDHG:
   
     if i < self.nsubsets:
       # PET subset update
-      if self.verbose: print(f'iteration step {isub} subset {i+1}')
+      if self.verbose: print(f'iteration step {isub} subset {i+1}', end = '\r')
       ss = slice(i, None, self.nsubsets)
   
       y_plus = self.y[ss] + self.S_i[i]*(self.lm_acq_model.forward(self.x, i, self.nsubsets) + self.contam_list[ss])
@@ -660,7 +644,7 @@ class LM_SPDHG:
   def run(self, niter):
     for it in range(niter):
       self.subset_sequence = np.random.permutation(np.arange(int(self.nsubsets/(1-self.p_g))))
+      if self.verbose: print(f'iteration {self.epoch_counter+1}')
       for isub in range(self.subset_sequence.shape[0]):
-        if self.verbose: print(f'iteration {self.epoch_counter+1}', end = ' ')
         self.run_update(isub)
       self.epoch_counter += 1
