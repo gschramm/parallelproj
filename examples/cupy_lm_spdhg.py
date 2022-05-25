@@ -10,73 +10,6 @@ import cupyx.scipy.ndimage as ndi_cupy
 from pathlib import Path
 from time import time
 
-def cupy_unique_axis0(ar, return_index = False, return_inverse = False, return_counts = False):
-  """ analogon of numpy's unique() for 2D arrays for axis = 0
-  """
-
-  if len(ar.shape) != 2:
-    raise ValueError("Input array must be 2D.")
-
-  perm     = cp.lexsort(ar.T[::-2])
-  aux      = ar[perm]
-  mask     = cp.empty(ar.shape[0], dtype = cp.bool_)
-  mask[0]  = True
-  mask[1:] = cp.any(aux[1:] != aux[:-1], axis=1)
-
-  ret = aux[mask]
-  if not return_index and not return_inverse and not return_counts:
-    return ret
-
-  ret = ret,
-
-  if return_index:
-    ret += perm[mask],
-  if return_inverse:
-    imask          = cp.cumsum(mask) - 1
-    inv_idx        = cp.empty(mask.shape, dtype = cp.intp)
-    inv_idx[perm]  = imask
-    ret           += inv_idx,
-  if return_counts:
-    nonzero  = cp.nonzero(mask)[0]  # may synchronize
-    idx      = cp.empty((nonzero.size + 1,), nonzero.dtype)
-    idx[:-1] = nonzero
-    idx[-1]  = mask.size
-    ret     += idx[1:] - idx[:-1],
-
-  return ret
-
-def count_event_multiplicity(events, xp):
-  """ Count the multiplicity of events in an LM file
-
-  Parameters
-  ----------
-
-  events : 2D numpy/cupy array
-    of LM events of shape (n_events, 5) where the second axis encodes the event 
-    (e.g. detectors numbers and TOF bins)
-
-  xp : numpy or cupy module to use
-  """
-
-  if xp.__name__ == 'cupy':
-    if not isinstance(events, xp.ndarray):
-      events_d = xp.array(events)
-    else:
-      events_d = events
-
-    tmp_d    = cupy_unique_axis0(events_d, return_counts = True, return_inverse = True)
-    mu_d     = tmp_d[2][tmp_d[1]]
-
-    if not isinstance(events, xp.ndarray):
-      mu = xp.asnumpy(mu_d)
-    else:
-      mu = mu_d
-  elif xp.__name__ == 'numpy':
-    tmp = xp.unique(events, axis = 0, return_counts = True, return_inverse = True)
-    mu  = tmp[2][tmp[1]]
-
-  return mu
-
 
 #--------------------------------------------------------------------------------------------
 class LM_OSEM:
@@ -114,9 +47,10 @@ class LM_OSEM:
 
 #--------------------------------------------------------------------------------------------
 class LM_SPDHG:
-  def __init__(self, lm_acq_model, contam_list, grad_operator, grad_norm, beta):
+  def __init__(self, lm_acq_model, contam_list, event_counter, grad_operator, grad_norm, beta):
     self.lm_acq_model  = lm_acq_model
     self.contam_list   = contam_list
+    self.event_counter = event_counter
     self.img_shape     = tuple(self.lm_acq_model.proj.img_dim)
     self.verbose       = True
     self.grad_operator = grad_operator
@@ -141,7 +75,7 @@ class LM_SPDHG:
     else:
       self.x = x.copy()
 
-    self.mu = count_event_multiplicity(lm_acq_model.events, self._xp)
+    self.mu = self.event_counter.count(self.lm_acq_model.events)
 
     if self.beta == 0:
       self.p_g = 0
@@ -343,7 +277,6 @@ if __name__ == '__main__':
   contam_list = contam_list[ie]
  
   #ne = 10000000
-
   #sens_list = sens_list[:ne]
   #atten_list = atten_list[:ne]
   #contam_list = contam_list[:ne]*(ne/events.shape[0])
@@ -379,12 +312,14 @@ if __name__ == '__main__':
   grad_op   = ppp.GradientOperator(xp)
   grad_norm = ppp.GradientNorm(xp) 
 
+  event_counter = ppp.EventMultiplicityCounter(xp)
+
   if xp.__name__ == 'numpy':
     img_norm = float(ndi.gaussian_filter(lm_osem.x,2).max())
   else:
     img_norm = float(ndi_cupy.gaussian_filter(lm_osem.x,2).max())
 
-  lm_spdhg = LM_SPDHG(lm_acq_model, contam_list, grad_op, grad_norm, 6)
+  lm_spdhg = LM_SPDHG(lm_acq_model, contam_list, event_counter, grad_op, grad_norm, 6)
   lm_spdhg.init(sens_img, 56, x = lm_osem.x, gamma = 30. / img_norm, rho = 1)
 
   niter = 2
