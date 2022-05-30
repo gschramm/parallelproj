@@ -182,7 +182,7 @@ class PETAcqModel:
 
     return img_fwd
 
-  def adjoint(self, sino, isub = 0):
+  def adjoint(self, sino, isub = None):
     if isub is None:
       back_img = self.proj.back_project(self.sens_sino*self.attn_sino*sino)
     else:

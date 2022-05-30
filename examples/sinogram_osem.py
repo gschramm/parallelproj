@@ -19,13 +19,14 @@ import argparse
 # parse the command line
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--counts',   help = 'counts to simulate',    default = 1e6, type = float)
-parser.add_argument('--niter',    help = 'number of iterations',  default = 4,   type = int)
-parser.add_argument('--nsubsets',   help = 'number of subsets',     default = 28,  type = int)
-parser.add_argument('--fwhm_mm',  help = 'psf modeling FWHM mm',  default = 4.5, type = float)
-parser.add_argument('--fwhm_data_mm',  help = 'psf for data FWHM mm',  default = 4.5, type = float)
-parser.add_argument('--phantom', help = 'phantom to use', default = 'brain2d')
-parser.add_argument('--seed',    help = 'seed for random generator', default = 1, type = int)
+parser.add_argument('--counts',       help = 'counts to simulate',        default = 1e6, type = float)
+parser.add_argument('--niter',        help = 'number of iterations',      default = 30,  type = int)
+parser.add_argument('--nsubsets',     help = 'number of subsets',         default = 28,  type = int)
+parser.add_argument('--fwhm_mm',      help = 'psf modeling FWHM mm',      default = 4.5, type = float)
+parser.add_argument('--fwhm_data_mm', help = 'psf for data FWHM mm',      default = 4.5, type = float)
+parser.add_argument('--seed',         help = 'seed for random generator', default = 1,   type = int)
+parser.add_argument('--beta',         help = 'prior strength',            default = 0.5, type = float)
+parser.add_argument('--phantom',      help = 'phantom to use',            default = 'brain2d')
 args = parser.parse_args()
 
 #---------------------------------------------------------------------------------
@@ -37,7 +38,7 @@ fwhm_mm       = args.fwhm_mm
 fwhm_data_mm  = args.fwhm_data_mm
 phantom       = args.phantom
 seed          = args.seed
-
+beta          = args.beta
 on_gpu        = True
 
 if on_gpu:
@@ -148,42 +149,52 @@ acq_model = ppp.PETAcqModel(proj, attn_sino, sens_sino, image_based_res_model = 
 
 osem = ppp.OSEM(em_sino, acq_model, contam_sino, xp)
 osem.init() # initialize OSEM (e.g. calculate the sensivity image for every subset)
-osem.run(niter, calculate_cost = True)
+osem.run(1, calculate_cost = True)
 
-##-----------------------------------------------------------------------------------------------------------
-## OSEM EMTV recon with prior
-#
-#prior      = ppp.GradientBasedPrior(ppp.GradientOperator(xp), ppp.GradientNorm(xp, name = 'l2_l1'), 3e-2)
-#osem_emtv  = ppp.OSEM_EMTV(em_sino, acq_model, contam_sino, prior, xp)
-#osem_emtv.init()
-#
-#osem_emtv.run(30, calculate_cost = True)
+x_init = ndimage_module.gaussian_filter(osem.x, 1.5)
+
+#-----------------------------------------------------------------------------------------------------------
+# OSEM EMTV recon with prior
+
+prior   = ppp.GradientBasedPrior(ppp.GradientOperator(xp), ppp.GradientNorm(xp, name = 'l2_l1'), beta)
+os_emtv = ppp.OSEM_EMTV(em_sino, acq_model, contam_sino, prior, xp)
+os_emtv.init(x = x_init)
+
+os_emtv.run(niter, calculate_cost = True)
+
+#-----------------------------------------------------------------------------------------------------------
+# SPDHG recon with prior
+gam = 3./float(x_init.max())
+
+spdhg = ppp.SPDHG(em_sino, acq_model, contam_sino, prior, xp)
+spdhg.init(x = x_init, gamma = gam, y = 1 - (em_sino / (acq_model.forward(x_init) + contam_sino)))
+spdhg.run(niter, calculate_cost = True)
+
 
 #-----------------------------------------------------------------------------------------------------------
 # visualizations
 
 ims1 = dict(vmin = 0, vmax = 1.3*img.max(), cmap = plt.cm.Greys)
-ims2 = dict(vmin = -0.2*img.max(), vmax = 0.2*img.max(), cmap = plt.cm.seismic)
 
-fig, ax = plt.subplots(1,5, figsize = (15,3))
+fig, ax = plt.subplots(1,4, figsize = (14,3.5))
 
 if xp.__name__ == 'numpy':
   ax[0].imshow(img[...,n2//2], **ims1)
-  ax[1].imshow(osem.x[...,n2//2], **ims1)
-  ax[2].imshow(ndi.gaussian_filter(osem.x[...,n2//2], fwhm[0] / 2.35), **ims1)
-  ax[3].imshow(osem.x[...,n2//2] - img[...,n2//2], **ims2) 
+  ax[1].imshow(os_emtv.x[...,n2//2], **ims1)
+  ax[2].imshow(spdhg.x[...,n2//2], **ims1)
 else:
   ax[0].imshow(xp.asnumpy(img[...,n2//2]), **ims1)
-  ax[1].imshow(xp.asnumpy(osem.x[...,n2//2]), **ims1)
-  ax[2].imshow(ndi.gaussian_filter(xp.asnumpy(osem.x[...,n2//2]), fwhm[0] / 2.35), **ims1)
-  ax[3].imshow(xp.asnumpy(osem.x[...,n2//2] - img[...,n2//2]), **ims2) 
-ax[4].plot(np.arange(1,osem.cost.shape[0]+1), osem.cost)
+  ax[1].imshow(xp.asnumpy(os_emtv.x[...,n2//2]), **ims1)
+  ax[2].imshow(xp.asnumpy(spdhg.x[...,n2//2]), **ims1)
+
+ax[3].plot(np.arange(1,os_emtv.cost.shape[0]+1), os_emtv.cost)
+ax[3].plot(np.arange(1, spdhg.cost.shape[0]+1), spdhg.cost)
+ax[3].set_ylim(min(os_emtv.cost.min(), spdhg.cost.min()), os_emtv.cost.max())
 
 ax[0].set_title('ground truth')
-ax[1].set_title('OSEM')
-ax[2].set_title('p.sm. OSEM')
-ax[3].set_title('bias')
-ax[4].set_title('neg Poisson logL')
+ax[1].set_title('OS-EMTV')
+ax[2].set_title('SPDHG')
+ax[3].set_title('cost')
 
 fig.tight_layout()
 fig.show()
