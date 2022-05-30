@@ -304,7 +304,11 @@ class GradientOperator:
     
     if joint_grad_field is not None:
       norm   = self._xp.linalg.norm(joint_grad_field, axis = 0)
-      self.e = joint_grad_field / norm
+      inds   = self._xp.where(norm > 0)
+      self.e = joint_grad_field.copy()
+
+      for i in range(self.e.shape[0]):
+        self.e[i,...][inds] = joint_grad_field[i,...][inds] / norm[inds]
 
   def forward(self, x):
     g = []
