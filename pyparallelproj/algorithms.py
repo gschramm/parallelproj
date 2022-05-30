@@ -384,7 +384,7 @@ class PDHG_L2_Denoise:
 
 
   def calculate_cost(self):
-    return 0.5*(self.weights*(self.x - self.img)**2).sum() + self.prior.eval(self.x)
+    return 0.5*(self.weights*(self.x - self.img)**2).sum() + self.prior(self.x)
 
 
 #-----------------------------------------------------------------------------------------------------------------
@@ -489,7 +489,7 @@ class OSEM_EMTV(OSEM):
     self.cost = np.concatenate((self.cost, cost)) 
 
   def eval_cost(self):
-    return super().eval_neg_poisson_logL() + self.prior.eval(self.x)
+    return super().eval_neg_poisson_logL() + self.prior(self.x)
 
 
 #-----------------------------------------------------------------------------------------------------------------

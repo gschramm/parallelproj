@@ -261,7 +261,7 @@ class GradientNorm:
     if not self.name in ['l2_l1', 'l2_sq']:
      raise NotImplementedError
 
-  def eval(self, x):
+  def __call__(self, x):
     if self.name == 'l2_l1':
       n = self._xp.linalg.norm(x, axis = 0).sum()
     elif self.name == 'l2_sq':
@@ -342,6 +342,6 @@ class GradientBasedPrior:
     self.gradient_norm     = gradient_norm
     self.beta              = beta
 
-  def eval(self, x):
-    return float(self.beta*self.gradient_norm.eval(self.gradient_operator.forward(x)))
+  def __call__(self, x):
+    return float(self.beta*self.gradient_norm(self.gradient_operator.forward(x)))
 
