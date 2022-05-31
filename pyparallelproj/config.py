@@ -10,6 +10,7 @@ import warnings
 
 from glob import glob
 from numba import cuda
+from pathlib import Path
 
 try:
   import cupy as cp
@@ -28,7 +29,7 @@ except:
 
 # load a kernel defined in a external file
 if cupy_available:
-  with open('../cuda/src/projector_kernels.cu','r') as f:
+  with open(Path(__file__).parents[1] / 'cuda' / 'src' / 'projector_kernels.cu', 'r') as f:
     lines = f.read()
     joseph3d_fwd_cuda_kernel  = cp.RawKernel(lines, 'joseph3d_fwd_cuda_kernel')
     joseph3d_back_cuda_kernel = cp.RawKernel(lines, 'joseph3d_back_cuda_kernel')
