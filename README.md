@@ -56,31 +56,34 @@ Download and install Miniconda from <https://docs.conda.io/en/latest/miniconda.h
 Please use the ***Python 3.x*** installer and confirm that the installer
 should run ```conda init``` at the end of the installation process.
 
-To create a virtual conda environment and to install all python dependencies execute
+To create a virtual conda environment and to install all python dependencies we need, execute
 ```
-conda create -n parallelproj "python>=3.7" "numpy>=1.18" "matplotlib>=3.2" "numba >=0.49" "scipy>=1.2" "cmake>=3.9"
+conda env create -f environment.yml
 ```
 
-Activate your conda environment
+This will create a virtual conda environment called ```parallelproj``` which
+can be activate via
 ```
 conda activate parallelproj
 ```
-If an NVidia GPU is present and you want to build the CUDA libraries, install the conda cuda-toolkit package from the nvidia channel
+If an NVidia GPU is present and you want to build the CUDA libraries, install the conda cuda-toolkit package from the nvidia channel and cupy from conda-forge
 ```
-conda install cuda-toolkit -c nvidia
+conda install -c nvidia cuda-toolkit
+conda install -c conda-forge
 ```
 
-Compile the C/CUDA libraries as describe above using the environment variable ```CONDA_PREFIX``` as ```CMAKE_INSTALL_PREFIX```
+Compile the C/CUDA libraries as described above using the environment variable ```CONDA_PREFIX``` as ```CMAKE_INSTALL_PREFIX```
 ```
 cd my_project_dir
 mkdir build
 cd build
+
 (Linux): cmake -DCMAKE_INSTALL_PREFIX=${CONDA_PREFIX} ..
 (Windows:) cmake -DCMAKE_INSTALL_PREFIX=%CONDA_PREFIX% ..
+
 cmake --build . --target install --config release
 ```
-This makes sure that the compiled libraries are installed in the correct place and will be found by the python bindings
-(using find_library from ctypes.util)
+This makes sure that the compiled libraries are installed in the correct place and will be found by the python bindings (using find_library from ctypes.util)
 
 Finally, add the package directory to your ```PYTHONPATH``` environment variable.
 
