@@ -28,6 +28,7 @@ class PDHG_L2_Denoise:
 
     cost     ... (1d array) 1d output array for cost calcuation - default None
     """
+
     def __init__(self, prior, xp, nonneg=False, verbose=False):
         self.prior = prior
         self._xp = xp
@@ -79,7 +80,8 @@ class PDHG_L2_Denoise:
         # (4) apply proximity of G
         xnew = (xnew + self.weights * self.img * self.tau) / (
             1. + self.weights * self.tau)
-        if self.nonneg: xnew = self._xp.clip(xnew, 0, None)
+        if self.nonneg:
+            xnew = self._xp.clip(xnew, 0, None)
 
         # (5) calculate the new stepsizes
         self.theta = 1.0 / np.sqrt(1 + 2 * self.gam * self.tau)
@@ -94,7 +96,8 @@ class PDHG_L2_Denoise:
         cost = np.zeros(niter, dtype=np.float32)
 
         for it in range(niter):
-            if self.verbose: print(f'epoch {self.epoch_counter+1}')
+            if self.verbose:
+                print(f'epoch {self.epoch_counter+1}')
             self.run_update()
 
             if calculate_cost:
@@ -109,7 +112,7 @@ class PDHG_L2_Denoise:
                       (self.x - self.img)**2).sum() + self.prior(self.x)
 
 
-#-----------------------------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------------------------------------
 class OSEM:
     def __init__(self, em_sino, acq_model, contam_sino, xp, verbose=True):
         self.em_sino = em_sino
@@ -138,8 +141,9 @@ class OSEM:
                 print(f'calculating sensitivity image {isub}', end='\r')
             self.sens_imgs[isub, ...] = self.acq_model.adjoint(self._xp.ones(
                 self.acq_model.proj.subset_sino_shapes[isub]),
-                                                               isub=isub)
-        if self.verbose: print('')
+                isub=isub)
+        if self.verbose:
+            print('')
 
     def run_EM_update(self, isub):
         ss = self.acq_model.proj.subset_slices[isub]
@@ -151,9 +155,11 @@ class OSEM:
         cost = np.zeros(niter, dtype=np.float32)
 
         for it in range(niter):
-            if self.verbose: print(f'iteration {self.epoch_counter+1}')
+            if self.verbose:
+                print(f'iteration {self.epoch_counter+1}')
             for isub in range(self.acq_model.proj.nsubsets):
-                if self.verbose: print(f'subset {isub+1}', end='\r')
+                if self.verbose:
+                    print(f'subset {isub+1}', end='\r')
                 self.run_EM_update(isub)
 
             if calculate_cost:
@@ -175,7 +181,7 @@ class OSEM:
         return cost
 
 
-#-----------------------------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------------------------------------
 class OSEM_EMTV(OSEM):
     def __init__(self,
                  em_sino,
@@ -216,9 +222,11 @@ class OSEM_EMTV(OSEM):
         cost = np.zeros(niter, dtype=np.float32)
 
         for it in range(niter):
-            if self.verbose: print(f'iteration {self.epoch_counter+1}')
+            if self.verbose:
+                print(f'iteration {self.epoch_counter+1}')
             for isub in range(self.acq_model.proj.nsubsets):
-                if self.verbose: print(f'subset {isub+1}', end='\r')
+                if self.verbose:
+                    print(f'subset {isub+1}', end='\r')
                 self.run_EMTV_update(isub, niter_denoise)
 
             if calculate_cost:
@@ -232,7 +240,7 @@ class OSEM_EMTV(OSEM):
         return super().eval_neg_poisson_logL() + float(self.prior(self.x))
 
 
-#-----------------------------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------------------------------------
 class SPDHG:
     def __init__(self,
                  em_sino,
@@ -346,7 +354,8 @@ class SPDHG:
 
         if i < self.nsubsets:
             # PET subset update
-            if self.verbose: print(f'step {isub} subset {i+1}', end='\r')
+            if self.verbose:
+                print(f'step {isub} subset {i+1}', end='\r')
             ss = self.acq_model.proj.subset_slices[i]
 
             y_plus = self.y[ss] + self.S_i[i] * (
@@ -385,7 +394,8 @@ class SPDHG:
         for it in range(niter):
             self.subset_sequence = np.random.permutation(
                 np.arange(int(self.nsubsets / (1 - self.p_g))))
-            if self.verbose: print(f'\niteration {self.epoch_counter+1}')
+            if self.verbose:
+                print(f'\niteration {self.epoch_counter+1}')
             for isub in range(self.subset_sequence.shape[0]):
                 self.run_update(isub)
 
@@ -408,7 +418,7 @@ class SPDHG:
         return cost
 
 
-#-----------------------------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------------------------------------
 class LM_OSEM:
     def __init__(self, lm_acq_model, contam_list, xp, verbose=True):
         self.lm_acq_model = lm_acq_model
@@ -436,14 +446,16 @@ class LM_OSEM:
 
     def run(self, niter):
         for it in range(niter):
-            if self.verbose: print(f'iteration {self.epoch_counter+1}')
+            if self.verbose:
+                print(f'iteration {self.epoch_counter+1}')
             for isub in range(self.nsubsets):
-                if self.verbose: print(f'subset {isub+1}', end='\r')
+                if self.verbose:
+                    print(f'subset {isub+1}', end='\r')
                 self.run_EM_update(isub)
             self.epoch_counter += 1
 
 
-#--------------------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------------------
 class LM_OSEM_EMTV(LM_OSEM):
     def __init__(self, lm_acq_model, contam_list, prior, xp, verbose=True):
         super().__init__(lm_acq_model, contam_list, xp, verbose=verbose)
@@ -475,14 +487,16 @@ class LM_OSEM_EMTV(LM_OSEM):
 
     def run(self, niter, niter_denoise=30, calculate_cost=False):
         for it in range(niter):
-            if self.verbose: print(f'iteration {self.epoch_counter+1}')
+            if self.verbose:
+                print(f'iteration {self.epoch_counter+1}')
             for isub in range(self.nsubsets):
-                if self.verbose: print(f'subset {isub+1}', end='\r')
+                if self.verbose:
+                    print(f'subset {isub+1}', end='\r')
                 self.run_EMTV_update(isub, niter_denoise)
             self.epoch_counter += 1
 
 
-#--------------------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------------------
 class LM_SPDHG:
     def __init__(self, lm_acq_model, contam_list, event_counter, prior, xp):
         self.lm_acq_model = lm_acq_model
@@ -581,7 +595,8 @@ class LM_SPDHG:
 
         if i < self.nsubsets:
             # PET subset update
-            if self.verbose: print(f'step {isub} subset {i+1}', end='\r')
+            if self.verbose:
+                print(f'step {isub} subset {i+1}', end='\r')
             ss = slice(i, None, self.nsubsets)
 
             y_plus = self.y[ss] + self.S_i[i] * (self.lm_acq_model.forward(
@@ -621,7 +636,8 @@ class LM_SPDHG:
         for it in range(niter):
             self.subset_sequence = np.random.permutation(
                 np.arange(int(self.nsubsets / (1 - self.p_g))))
-            if self.verbose: print(f'\niteration {self.epoch_counter+1}')
+            if self.verbose:
+                print(f'\niteration {self.epoch_counter+1}')
             for isub in range(self.subset_sequence.shape[0]):
                 self.run_update(isub)
             self.epoch_counter += 1

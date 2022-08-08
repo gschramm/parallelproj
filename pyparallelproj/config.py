@@ -1,14 +1,9 @@
 import os
-import sys
-import re
 import numpy.ctypeslib as npct
 import ctypes
 from ctypes.util import find_library
 from ctypes import POINTER
-import platform
-import warnings
 
-from glob import glob
 from numba import cuda
 from pathlib import Path
 
@@ -18,14 +13,14 @@ try:
 except:
     cupy_available = False
 
-#---------------------------------------------------------------------------------------
+# ---------------------------------------------------------------------------------------
 # get the number of visible GPUs
 try:
     n_visible_gpus = len(cuda.gpus)
 except:
     n_visible_gpus = 0
 
-#---------------------------------------------------------------------------------------
+# ---------------------------------------------------------------------------------------
 
 # load a kernel defined in a external file
 if cupy_available:
@@ -53,18 +48,18 @@ else:
     joseph3d_fwd_tof_lm_cuda_kernel = None
     joseph3d_back_tof_lm_cuda_kernel = None
 
-#---------------------------------------------------------------------------------------
+# ---------------------------------------------------------------------------------------
 
 ar_1d_single = npct.ndpointer(dtype=ctypes.c_float, ndim=1, flags='C')
 ar_1d_int = npct.ndpointer(dtype=ctypes.c_int, ndim=1, flags='C')
 ar_1d_short = npct.ndpointer(dtype=ctypes.c_short, ndim=1, flags='C')
 
-#---- find the compiled C / CUDA libraries
+# ---- find the compiled C / CUDA libraries
 
 lib_parallelproj_c_fname = find_library('parallelproj_c')
 lib_parallelproj_cuda_fname = find_library('parallelproj_cuda')
 
-#-------------------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------------------
 # add the calling signature
 
 lib_parallelproj_c = None
@@ -98,10 +93,10 @@ if lib_parallelproj_c_fname is not None:
         ar_1d_single,
         ctypes.c_longlong,
         ar_1d_int,  #
-        ctypes.c_float,  # tofbin_width 
+        ctypes.c_float,  # tofbin_width
         ar_1d_single,  # sigma tof
         ar_1d_single,  # tofcenter_offset
-        ctypes.c_float,  # n_sigmas 
+        ctypes.c_float,  # n_sigmas
         ctypes.c_short,  # n_tofbins
         ctypes.c_ubyte,  # LOR dep. TOF sigma
         ctypes.c_ubyte
@@ -117,10 +112,10 @@ if lib_parallelproj_c_fname is not None:
         ar_1d_single,
         ctypes.c_longlong,
         ar_1d_int,  #
-        ctypes.c_float,  # tofbin_width 
+        ctypes.c_float,  # tofbin_width
         ar_1d_single,  # sigma tof
         ar_1d_single,  # tofcenter_offset
-        ctypes.c_float,  # n_sigmas 
+        ctypes.c_float,  # n_sigmas
         ctypes.c_short,  # n_tofbins
         ctypes.c_ubyte,  # LOR dep. TOF sigma
         ctypes.c_ubyte
@@ -136,11 +131,11 @@ if lib_parallelproj_c_fname is not None:
         ar_1d_single,
         ctypes.c_longlong,
         ar_1d_int,  #
-        ctypes.c_float,  # tofbin_width 
+        ctypes.c_float,  # tofbin_width
         ar_1d_single,  # sigma tof
         ar_1d_single,  # tofcenter_offset
-        ctypes.c_float,  # n_sigmas 
-        ar_1d_short,  # tof bin 
+        ctypes.c_float,  # n_sigmas
+        ar_1d_short,  # tof bin
         ctypes.c_ubyte,  # LOR dep. TOF sigma
         ctypes.c_ubyte
     ]  # LOR dep. TOF center offset
@@ -155,11 +150,11 @@ if lib_parallelproj_c_fname is not None:
         ar_1d_single,
         ctypes.c_longlong,
         ar_1d_int,  #
-        ctypes.c_float,  # tofbin_width 
+        ctypes.c_float,  # tofbin_width
         ar_1d_single,  # sigma tof
         ar_1d_single,  # tofcenter_offset
-        ctypes.c_float,  # n_sigmas 
-        ar_1d_short,  # tof bin 
+        ctypes.c_float,  # n_sigmas
+        ar_1d_short,  # tof bin
         ctypes.c_ubyte,  # LOR dep. TOF sigma
         ctypes.c_ubyte
     ]  # LOR dep. TOF center offset
@@ -194,10 +189,10 @@ if lib_parallelproj_cuda_fname is not None:
         ar_1d_single,
         ctypes.c_longlong,
         ar_1d_int,  #
-        ctypes.c_float,  # tofbin_width 
+        ctypes.c_float,  # tofbin_width
         ar_1d_single,  # sigma tof
         ar_1d_single,  # tofcenter_offset
-        ctypes.c_float,  # n_sigmas 
+        ctypes.c_float,  # n_sigmas
         ctypes.c_short,  # n_tofbins
         ctypes.c_ubyte,  # LOR dep. TOF sigma
         ctypes.c_ubyte,  # LOR dep. TOF center offset
@@ -214,10 +209,10 @@ if lib_parallelproj_cuda_fname is not None:
         ar_1d_single,
         ctypes.c_longlong,
         ar_1d_int,  #
-        ctypes.c_float,  # tofbin_width 
+        ctypes.c_float,  # tofbin_width
         ar_1d_single,  # sigma tof
         ar_1d_single,  # tofcenter_offset
-        ctypes.c_float,  # n_sigmas 
+        ctypes.c_float,  # n_sigmas
         ctypes.c_short,  # n_tofbins
         ctypes.c_ubyte,  # LOR dep.TOF sigma
         ctypes.c_ubyte,  # LOR dep.TOF center offset
@@ -234,11 +229,11 @@ if lib_parallelproj_cuda_fname is not None:
         ar_1d_single,
         ctypes.c_longlong,
         ar_1d_int,  #
-        ctypes.c_float,  # tofbin_width 
+        ctypes.c_float,  # tofbin_width
         ar_1d_single,  # sigma tof
         ar_1d_single,  # tofcenter_offset
-        ctypes.c_float,  # n_sigmas 
-        ar_1d_short,  # tof bin 
+        ctypes.c_float,  # n_sigmas
+        ar_1d_short,  # tof bin
         ctypes.c_ubyte,  # LOR dep. TOF sigma
         ctypes.c_ubyte,  # LOR dep. TOF center offset
         ctypes.c_int
@@ -254,11 +249,11 @@ if lib_parallelproj_cuda_fname is not None:
         ar_1d_single,
         ctypes.c_longlong,
         ar_1d_int,  #
-        ctypes.c_float,  # tofbin_width 
+        ctypes.c_float,  # tofbin_width
         ar_1d_single,  # sigma tof
         ar_1d_single,  # tofcenter_offset
-        ctypes.c_float,  # n_sigmas 
-        ar_1d_short,  # tof bin 
+        ctypes.c_float,  # n_sigmas
+        ar_1d_short,  # tof bin
         ctypes.c_ubyte,  # LOR dep. TOF sigma
         ctypes.c_ubyte,  # LOR dep. TOF center offset
         ctypes.c_int
