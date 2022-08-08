@@ -133,3 +133,4 @@ docs/*
 build_win/*
 wip/*
 *.qdrep
+.vscode/*
