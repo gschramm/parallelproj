@@ -9,7 +9,11 @@ except:
     warn('cupy is not available')
 
 import scipy.ndimage as ndi
-import cupyx.scipy.ndimage as ndi_cupy
+
+try:
+    import cupyx.scipy.ndimage as ndi_cupy
+except:
+    warn('cupyx.scipy.ndimage is not available')
 
 from time import time
 
@@ -45,6 +49,7 @@ parser.add_argument('--seed',
                     type=int)
 parser.add_argument('--beta', help='prior strength', default=0.5, type=float)
 parser.add_argument('--phantom', help='phantom to use', default='brain2d')
+parser.add_argument('--on_gpu', help='run on gpu', action='store_true')
 args = parser.parse_args()
 
 #---------------------------------------------------------------------------------
@@ -57,7 +62,7 @@ fwhm_data_mm = args.fwhm_data_mm
 phantom = args.phantom
 seed = args.seed
 beta = args.beta
-on_gpu = True
+on_gpu = args.on_gpu
 
 if on_gpu:
     xp = cp
@@ -181,8 +186,8 @@ acq_model = ppp.PETAcqModel(proj,
                             image_based_res_model=res_model)
 
 osem = ppp.OSEM(em_sino, acq_model, contam_sino, xp)
-osem.init(
-)  # initialize OSEM (e.g. calculate the sensivity image for every subset)
+# initialize OSEM (e.g. calculate the sensivity image for every subset)
+osem.init()
 osem.run(1, calculate_cost=True)
 
 x_init = ndimage_module.gaussian_filter(osem.x, 1.5)
@@ -223,14 +228,17 @@ else:
     ax[1].imshow(xp.asnumpy(os_emtv.x[..., n2 // 2]), **ims1)
     ax[2].imshow(xp.asnumpy(spdhg.x[..., n2 // 2]), **ims1)
 
-ax[3].plot(np.arange(1, os_emtv.cost.shape[0] + 1), os_emtv.cost)
-ax[3].plot(np.arange(1, spdhg.cost.shape[0] + 1), spdhg.cost)
+ax[3].plot(np.arange(1, os_emtv.cost.shape[0] + 1),
+           os_emtv.cost,
+           label='OS-EMTV')
+ax[3].plot(np.arange(1, spdhg.cost.shape[0] + 1), spdhg.cost, label='SPDHG')
 ax[3].set_ylim(min(os_emtv.cost.min(), spdhg.cost.min()), os_emtv.cost.max())
 
 ax[0].set_title('ground truth')
 ax[1].set_title('OS-EMTV')
 ax[2].set_title('SPDHG')
 ax[3].set_title('cost')
+ax[3].legend()
 
 fig.tight_layout()
 fig.show()
