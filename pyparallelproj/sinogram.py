@@ -40,6 +40,7 @@ class PETSinogramParameters:
           -1 (default) ... TOF is last dimension
           other values are not supported yet
     """
+
     def __init__(self,
                  scanner,
                  span=1,
@@ -85,7 +86,7 @@ class PETSinogramParameters:
 
             self.istart_plane, self.iend_plane = self.get_plane_det_index()
 
-    #-------------------------------------------------------------------
+    # -------------------------------------------------------------------
     def get_plane_det_index(self):
         start = np.arange(self.scanner.ncrystals_axial)
         end = np.arange(self.scanner.ncrystals_axial)
@@ -99,7 +100,7 @@ class PETSinogramParameters:
 
         return start, end
 
-    #-------------------------------------------------------------------
+    # -------------------------------------------------------------------
     def get_view_crystal_indices(self, views):
         """ get the trans-axial and axial crystal indices for a number of views of the sinogram
 
@@ -151,7 +152,7 @@ class PETSinogramParameters:
                         (self.nrad, views.shape[0], self.nplanes, 2)),
                     np.concatenate((self.spatial_dim_order, [3]))))
 
-    #-------------------------------------------------------------------
+    # -------------------------------------------------------------------
     def sinogram_to_listmode(self,
                              sinogram,
                              return_multi_index=False,
@@ -237,7 +238,7 @@ class PETSinogramParameters:
             return events[tmp, :]
 
 
-#----------------------------------------------------------------------
+# ----------------------------------------------------------------------
 if __name__ == '__main__':
 
     import matplotlib.pyplot as py

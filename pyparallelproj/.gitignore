@@ -4,3 +4,4 @@
 */share/*
 */cmake/*
 CMAKE_INSTALL_LIBDIR__*
+.vscode/*

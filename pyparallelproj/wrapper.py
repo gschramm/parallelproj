@@ -32,7 +32,7 @@ def calc_chunks(nLORs, n_chunks):
     return chunks
 
 
-#------------------
+# ------------------
 
 
 def joseph3d_fwd(xstart,
@@ -79,7 +79,7 @@ def joseph3d_fwd(xstart,
     return ok
 
 
-#------------------
+# ------------------
 
 
 def joseph3d_back(xstart,
@@ -136,7 +136,7 @@ def joseph3d_back(xstart,
     return ok
 
 
-#------------------
+# ------------------
 
 
 def joseph3d_fwd_tof_sino(xstart,
@@ -216,7 +216,7 @@ def joseph3d_fwd_tof_sino(xstart,
     return ok
 
 
-#------------------
+# ------------------
 
 
 def joseph3d_back_tof_sino(xstart,
@@ -303,7 +303,7 @@ def joseph3d_back_tof_sino(xstart,
     return ok
 
 
-#------------------
+# ------------------
 
 
 def joseph3d_fwd_tof_lm(xstart,
@@ -381,7 +381,7 @@ def joseph3d_fwd_tof_lm(xstart,
     return ok
 
 
-#------------------
+# ------------------
 
 
 def joseph3d_back_tof_lm(xstart,

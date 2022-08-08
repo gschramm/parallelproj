@@ -27,6 +27,7 @@ class RegularPolygonPETScanner:
        module_gap_axial : float
          the gap between two modules in axial direction (in mm)
     """
+
     def __init__(self,
                  R=325.,
                  ncrystals_per_module=np.array([16, 9]),

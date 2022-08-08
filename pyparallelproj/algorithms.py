@@ -42,7 +42,7 @@ class PDHG_L2_Denoise:
 
         img      ... (numpy/cupy array) with the image to be denoised
 
-        weights  ... (scalar or numpy/cupy array) with weights for data fidelity term 
+        weights  ... (scalar or numpy/cupy array) with weights for data fidelity term
         """
         self.img = img
         self.x = self.img.copy()
@@ -60,8 +60,8 @@ class PDHG_L2_Denoise:
         self.ndim = len([x for x in self.img.shape if x > 1])
         self.grad_op_norm = self._xp.sqrt(self.ndim * 4)
 
-        self.tau = 1. / self.gam
-        self.sig = 1. / (self.tau * self.grad_op_norm**2)
+        self.tau = 1.0 / self.gam
+        self.sig = 1.0 / (self.tau * self.grad_op_norm**2)
 
         self.epoch_counter = 0
         self.cost = np.array([], dtype=np.float32)
@@ -79,7 +79,7 @@ class PDHG_L2_Denoise:
 
         # (4) apply proximity of G
         xnew = (xnew + self.weights * self.img * self.tau) / (
-            1. + self.weights * self.tau)
+            1.0 + self.weights * self.tau)
         if self.nonneg:
             xnew = self._xp.clip(xnew, 0, None)
 
@@ -97,7 +97,7 @@ class PDHG_L2_Denoise:
 
         for it in range(niter):
             if self.verbose:
-                print(f'epoch {self.epoch_counter+1}')
+                print(f"epoch {self.epoch_counter+1}")
             self.run_update()
 
             if calculate_cost:
@@ -114,6 +114,7 @@ class PDHG_L2_Denoise:
 
 # -----------------------------------------------------------------------------------------------------------------
 class OSEM:
+
     def __init__(self, em_sino, acq_model, contam_sino, xp, verbose=True):
         self.em_sino = em_sino
         self.acq_model = acq_model
@@ -127,7 +128,7 @@ class OSEM:
         self.cost = np.array([], dtype=np.float32)
 
         if x is None:
-            self.x = self._xp.full(self.img_shape, 1., dtype=self._xp.float32)
+            self.x = self._xp.full(self.img_shape, 1.0, dtype=self._xp.float32)
         else:
             self.x = x.copy()
 
@@ -138,12 +139,12 @@ class OSEM:
 
         for isub in range(self.acq_model.proj.nsubsets):
             if self.verbose:
-                print(f'calculating sensitivity image {isub}', end='\r')
+                print(f"calculating sensitivity image {isub}", end="\r")
             self.sens_imgs[isub, ...] = self.acq_model.adjoint(self._xp.ones(
                 self.acq_model.proj.subset_sino_shapes[isub]),
-                isub=isub)
+                                                               isub=isub)
         if self.verbose:
-            print('')
+            print("")
 
     def run_EM_update(self, isub):
         ss = self.acq_model.proj.subset_slices[isub]
@@ -156,10 +157,10 @@ class OSEM:
 
         for it in range(niter):
             if self.verbose:
-                print(f'iteration {self.epoch_counter+1}')
+                print(f"iteration {self.epoch_counter+1}")
             for isub in range(self.acq_model.proj.nsubsets):
                 if self.verbose:
-                    print(f'subset {isub+1}', end='\r')
+                    print(f"subset {isub+1}", end="\r")
                 self.run_EM_update(isub)
 
             if calculate_cost:
@@ -183,6 +184,7 @@ class OSEM:
 
 # -----------------------------------------------------------------------------------------------------------------
 class OSEM_EMTV(OSEM):
+
     def __init__(self,
                  em_sino,
                  acq_model,
@@ -205,7 +207,7 @@ class OSEM_EMTV(OSEM):
         # we clip "tiny" values to make sure that weights.max() stays finite
         denom = self._xp.clip(self.prior.beta * self.x, self.tiny, None)
         weights = self.sens_imgs.sum(axis=0) / denom
-        #weights = self.acq_model.proj.nsubsets*self.sens_imgs[isub,...] / denom
+        # weights = self.acq_model.proj.nsubsets*self.sens_imgs[isub,...] / denom
         # we also have to make sure that the weights.min() > 0 since gam = weights.min() and tau = 1 / gamma
         weights = self._xp.clip(weights, 10 * self.tiny, self.fmax)
 
@@ -223,10 +225,10 @@ class OSEM_EMTV(OSEM):
 
         for it in range(niter):
             if self.verbose:
-                print(f'iteration {self.epoch_counter+1}')
+                print(f"iteration {self.epoch_counter+1}")
             for isub in range(self.acq_model.proj.nsubsets):
                 if self.verbose:
-                    print(f'subset {isub+1}', end='\r')
+                    print(f"subset {isub+1}", end="\r")
                 self.run_EMTV_update(isub, niter_denoise)
 
             if calculate_cost:
@@ -242,6 +244,7 @@ class OSEM_EMTV(OSEM):
 
 # -----------------------------------------------------------------------------------------------------------------
 class SPDHG:
+
     def __init__(self,
                  em_sino,
                  acq_model,
@@ -257,7 +260,7 @@ class SPDHG:
         self._xp = xp
         self.prior = prior
 
-    def init(self, x=None, y=None, gamma=1., rho=0.999, rho_grad=0.999):
+    def init(self, x=None, y=None, gamma=1.0, rho=0.999, rho_grad=0.999):
         self.epoch_counter = 0
         self.cost = np.array([], dtype=np.float32)
         self.gamma = gamma
@@ -266,7 +269,7 @@ class SPDHG:
         self.nsubsets = self.acq_model.proj.nsubsets
 
         if x is None:
-            self.x = self._xp.full(self.img_shape, 1., dtype=self._xp.float32)
+            self.x = self._xp.full(self.img_shape, 1.0, dtype=self._xp.float32)
         else:
             self.x = x.copy()
 
@@ -355,7 +358,7 @@ class SPDHG:
         if i < self.nsubsets:
             # PET subset update
             if self.verbose:
-                print(f'step {isub} subset {i+1}', end='\r')
+                print(f"step {isub} subset {i+1}", end="\r")
             ss = self.acq_model.proj.subset_slices[i]
 
             y_plus = self.y[ss] + self.S_i[i] * (
@@ -371,10 +374,9 @@ class SPDHG:
             self.y[ss] = y_plus.copy()
             self.zbar = self.z + dz / self.p_p
         else:
-            print(f'step {isub} gradient update', end='\r')
-            y_grad_plus = (
-                self.y_grad +
-                self.S_g * self.prior.gradient_operator.forward(self.x))
+            print(f"step {isub} gradient update", end="\r")
+            y_grad_plus = self.y_grad + self.S_g * self.prior.gradient_operator.forward(
+                self.x)
 
             # apply the prox for the gradient norm
             y_grad_plus = self.prior.beta * self.prior.gradient_norm.prox_convex_dual(
@@ -395,7 +397,7 @@ class SPDHG:
             self.subset_sequence = np.random.permutation(
                 np.arange(int(self.nsubsets / (1 - self.p_g))))
             if self.verbose:
-                print(f'\niteration {self.epoch_counter+1}')
+                print(f"\niteration {self.epoch_counter+1}")
             for isub in range(self.subset_sequence.shape[0]):
                 self.run_update(isub)
 
@@ -420,6 +422,7 @@ class SPDHG:
 
 # -----------------------------------------------------------------------------------------------------------------
 class LM_OSEM:
+
     def __init__(self, lm_acq_model, contam_list, xp, verbose=True):
         self.lm_acq_model = lm_acq_model
         self.contam_list = contam_list
@@ -433,30 +436,30 @@ class LM_OSEM:
         self.nsubsets = nsubsets
 
         if x is None:
-            self.x = self._xp.full(self.img_shape, 1., dtype=self._xp.float32)
+            self.x = self._xp.full(self.img_shape, 1.0, dtype=self._xp.float32)
         else:
             self.x = x.copy()
 
     def run_EM_update(self, isub):
-        exp_list = self.lm_acq_model.forward(
-            self.x, isub,
-            self.nsubsets) + self.contam_list[isub::self.nsubsets]
+        exp_list = (self.lm_acq_model.forward(self.x, isub, self.nsubsets) +
+                    self.contam_list[isub::self.nsubsets])
         self.x *= (self.lm_acq_model.adjoint(self.nsubsets / exp_list, isub,
                                              self.nsubsets) / self.sens_img)
 
     def run(self, niter):
         for it in range(niter):
             if self.verbose:
-                print(f'iteration {self.epoch_counter+1}')
+                print(f"iteration {self.epoch_counter+1}")
             for isub in range(self.nsubsets):
                 if self.verbose:
-                    print(f'subset {isub+1}', end='\r')
+                    print(f"subset {isub+1}", end="\r")
                 self.run_EM_update(isub)
             self.epoch_counter += 1
 
 
 # --------------------------------------------------------------------------------------------
 class LM_OSEM_EMTV(LM_OSEM):
+
     def __init__(self, lm_acq_model, contam_list, prior, xp, verbose=True):
         super().__init__(lm_acq_model, contam_list, xp, verbose=verbose)
         self.prior = prior
@@ -488,16 +491,17 @@ class LM_OSEM_EMTV(LM_OSEM):
     def run(self, niter, niter_denoise=30, calculate_cost=False):
         for it in range(niter):
             if self.verbose:
-                print(f'iteration {self.epoch_counter+1}')
+                print(f"iteration {self.epoch_counter+1}")
             for isub in range(self.nsubsets):
                 if self.verbose:
-                    print(f'subset {isub+1}', end='\r')
+                    print(f"subset {isub+1}", end="\r")
                 self.run_EMTV_update(isub, niter_denoise)
             self.epoch_counter += 1
 
 
 # --------------------------------------------------------------------------------------------
 class LM_SPDHG:
+
     def __init__(self, lm_acq_model, contam_list, event_counter, prior, xp):
         self.lm_acq_model = lm_acq_model
         self.contam_list = contam_list
@@ -512,7 +516,7 @@ class LM_SPDHG:
              sens_img,
              nsubsets,
              x=None,
-             gamma=1.,
+             gamma=1.0,
              rho=0.999,
              rho_grad=0.999):
         self.epoch_counter = 0
@@ -523,7 +527,7 @@ class LM_SPDHG:
         self.nsubsets = nsubsets
 
         if x is None:
-            self.x = self._xp.full(self.img_shape, 1., dtype=self._xp.float32)
+            self.x = self._xp.full(self.img_shape, 1.0, dtype=self._xp.float32)
         else:
             self.x = x.copy()
 
@@ -566,8 +570,8 @@ class LM_SPDHG:
         # calculate the step size T
         self.T = self._xp.zeros_like(sens_img)
         inds = self._xp.where(self.sens_img > 0)
-        self.T[inds] = self.nsubsets * self.p_p * self.rho / (
-            self.gamma * self.sens_img[inds])
+        self.T[inds] = (self.nsubsets * self.p_p * self.rho /
+                        (self.gamma * self.sens_img[inds]))
 
         if self.p_g > 0:
             self.T = self._xp.clip(self.T, None, self.T_g)
@@ -596,7 +600,7 @@ class LM_SPDHG:
         if i < self.nsubsets:
             # PET subset update
             if self.verbose:
-                print(f'step {isub} subset {i+1}', end='\r')
+                print(f"step {isub} subset {i+1}", end="\r")
             ss = slice(i, None, self.nsubsets)
 
             y_plus = self.y[ss] + self.S_i[i] * (self.lm_acq_model.forward(
@@ -613,10 +617,9 @@ class LM_SPDHG:
             self.y[ss] = y_plus.copy()
             self.zbar = self.z + dz / self.p_p
         else:
-            print(f'step {isub} gradient update', end='\r')
-            y_grad_plus = (
-                self.y_grad +
-                self.S_g * self.prior.gradient_operator.forward(self.x))
+            print(f"step {isub} gradient update", end="\r")
+            y_grad_plus = self.y_grad + self.S_g * self.prior.gradient_operator.forward(
+                self.x)
 
             # apply the prox for the gradient norm
             y_grad_plus = self.prior.beta * self.prior.gradient_norm.prox_convex_dual(
@@ -637,7 +640,7 @@ class LM_SPDHG:
             self.subset_sequence = np.random.permutation(
                 np.arange(int(self.nsubsets / (1 - self.p_g))))
             if self.verbose:
-                print(f'\niteration {self.epoch_counter+1}')
+                print(f"\niteration {self.epoch_counter+1}")
             for isub in range(self.subset_sequence.shape[0]):
                 self.run_update(isub)
             self.epoch_counter += 1

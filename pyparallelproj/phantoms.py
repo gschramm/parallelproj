@@ -18,7 +18,7 @@ def ellipse_inds(nx, ny, rx, ry=None, x0=0, y0=0):
     return np.where((((X - x0) / rx)**2 + ((Y - y0) / ry)**2) <= 1)
 
 
-#--------------------------------------------------------------
+# --------------------------------------------------------------
 def ellipse2d_phantom(n=256, c=3):
     r = n / 6
 
@@ -43,7 +43,7 @@ def ellipse2d_phantom(n=256, c=3):
     return img
 
 
-#--------------------------------------------------------------
+# --------------------------------------------------------------
 
 
 def brain2d_phantom(n=128):
@@ -55,10 +55,14 @@ def brain2d_phantom(n=128):
         img = zoom(img, n / 128, order=1, prefilter=False)
 
     # due to floating point predicision shape of img can be different from n
-    if img.shape[0] > n: img = img[:n, :]
-    if img.shape[1] > n: img = img[:, :n]
+    if img.shape[0] > n:
+        img = img[:n, :]
+    if img.shape[1] > n:
+        img = img[:, :n]
 
-    if img.shape[0] < n: img = np.pad(img, ((0, n - img.shape[0]), (0, 0)))
-    if img.shape[1] < n: img = np.pad(img, ((0, 0), (0, n - img.shape[1])))
+    if img.shape[0] < n:
+        img = np.pad(img, ((0, n - img.shape[0]), (0, 0)))
+    if img.shape[1] < n:
+        img = np.pad(img, ((0, 0), (0, n - img.shape[1])))
 
     return img

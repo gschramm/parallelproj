@@ -62,6 +62,7 @@ class SinogramProjector:
            threads per block to use on a CUDA GPU
            Default: 64
     """
+
     def __init__(self,
                  scanner,
                  sino_params,
@@ -128,7 +129,7 @@ class SinogramProjector:
 
         self.init_subsets(nsubsets)
 
-    #-----------------------------------------------------------------------------------------------
+    # -----------------------------------------------------------------------------------------------
     def init_subsets(self, nsubsets):
 
         self.nsubsets = nsubsets
@@ -168,7 +169,7 @@ class SinogramProjector:
 
             self.subset_sino_shapes.append(subset_shape)
 
-    #-----------------------------------------------------------------------------------------------
+    # -----------------------------------------------------------------------------------------------
     def get_subset_sino_coordinates(self, subset):
         # get the world coordiates for start and end point of all LORs in a subset
 
@@ -185,7 +186,7 @@ class SinogramProjector:
 
         return xstart, xend
 
-    #-----------------------------------------------------------------------------------------------
+    # -----------------------------------------------------------------------------------------------
     def set_tof(self, tof):
         if self.was_created_as_tof_projector:
             self.__tof = tof
@@ -198,7 +199,7 @@ class SinogramProjector:
     def get_tof(self):
         return self.__tof
 
-    #-----------------------------------------------------------------------------------------------
+    # -----------------------------------------------------------------------------------------------
     def fwd_project_subset(self,
                            img,
                            subset,
@@ -211,7 +212,7 @@ class SinogramProjector:
         xstart, xend = self.get_subset_sino_coordinates(subset)
 
         if self.__tof == False:
-            ####### NONTOF fwd projection
+            # NONTOF fwd projection
             img_fwd = self._xp.zeros(int(self.nLORs[subset]),
                                      dtype=self._xp.float32)
 
@@ -225,7 +226,7 @@ class SinogramProjector:
                               self.img_dim,
                               threadsperblock=self.threadsperblock)
         else:
-            ####### TOF fwd projection
+            # TOF fwd projection
             if sigma_tof_per_lor is None:
                 sigma_tof = self._xp.array([self.sigma_tof],
                                            dtype=self._xp.float32)
@@ -257,7 +258,7 @@ class SinogramProjector:
 
         return img_fwd
 
-    #-----------------------------------------------------------------------------------------------
+    # -----------------------------------------------------------------------------------------------
     def fwd_project(self, img, **kwargs):
 
         if self.__tof:
@@ -273,7 +274,7 @@ class SinogramProjector:
 
         return img_fwd
 
-    #-----------------------------------------------------------------------------------------------
+    # -----------------------------------------------------------------------------------------------
     def back_project_subset(self,
                             sino,
                             subset,
@@ -288,7 +289,7 @@ class SinogramProjector:
         back_img = self._xp.zeros(int(self.nvox), dtype=self._xp.float32)
 
         if self.__tof == False:
-            ####### NONTOF back projection
+            # NONTOF back projection
             ok = joseph3d_back(xstart.ravel(),
                                xend.ravel(),
                                back_img,
@@ -299,7 +300,7 @@ class SinogramProjector:
                                self.img_dim,
                                threadsperblock=self.threadsperblock)
         else:
-            ####### TOF back projection
+            # TOF back projection
             if sigma_tof_per_lor is None:
                 sigma_tof = self._xp.array([self.sigma_tof],
                                            dtype=self._xp.float32)
@@ -326,7 +327,7 @@ class SinogramProjector:
 
         return back_img.reshape(self.img_dim)
 
-    #-----------------------------------------------------------------------------------------------
+    # -----------------------------------------------------------------------------------------------
     def back_project(self, sino, **kwargs):
         back_img = self._xp.zeros(self.img_dim, dtype=self._xp.float32)
 
@@ -336,7 +337,7 @@ class SinogramProjector:
 
         return back_img
 
-    #--------------------------------------------------------------------
+    # --------------------------------------------------------------------
     def fwd_project_lm(self,
                        img,
                        events,
@@ -354,7 +355,7 @@ class SinogramProjector:
         xend = self.scanner.get_crystal_coordinates(events[:, 2:4])
 
         if self.__tof == False:
-            ####### NONTOF fwd projection
+            # NONTOF fwd projection
             ok = joseph3d_fwd(xstart.ravel(),
                               xend.ravel(),
                               img.ravel(),
@@ -365,7 +366,7 @@ class SinogramProjector:
                               self.img_dim,
                               threadsperblock=self.threadsperblock)
         else:
-            ####### TOF fwd projection
+            # TOF fwd projection
             if sigma_tof_per_lor is None:
                 sigma_tof = self._xp.array([self.sigma_tof],
                                            dtype=self._xp.float32)
@@ -394,7 +395,7 @@ class SinogramProjector:
 
         return img_fwd
 
-    #--------------------------------------------------------------------
+    # --------------------------------------------------------------------
     def back_project_lm(self,
                         values,
                         events,
@@ -412,7 +413,7 @@ class SinogramProjector:
         xend = self.scanner.get_crystal_coordinates(events[:, 2:4])
 
         if self.__tof == False:
-            ####### NONTOF back projection
+            # NONTOF back projection
             ok = joseph3d_back(xstart.ravel(),
                                xend.ravel(),
                                back_img,
@@ -423,7 +424,7 @@ class SinogramProjector:
                                self.img_dim,
                                threadsperblock=self.threadsperblock)
         else:
-            ####### TOF back projection
+            # TOF back projection
             if sigma_tof_per_lor is None:
                 sigma_tof = self._xp.array([self.sigma_tof],
                                            dtype=self._xp.float32)

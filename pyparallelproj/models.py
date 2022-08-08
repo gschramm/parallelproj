@@ -2,8 +2,9 @@ import numpy as np
 import scipy.ndimage as ndi
 
 
-#------------------------------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------------------------------
 class PETAcqModel:
+
     def __init__(self, proj, attn_sino, sens_sino, image_based_res_model=None):
         self.proj = proj  # parllelproj PET projector
         self.attn_sino = attn_sino  # numpy / cupy array with attenuation sinogram
@@ -40,8 +41,9 @@ class PETAcqModel:
         return back_img
 
 
-#------------------------------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------------------------------
 class LMPETAcqModel:
+
     def __init__(self,
                  proj,
                  events,
@@ -76,10 +78,12 @@ class LMPETAcqModel:
         return back_img
 
 
-#------------------------------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------------------------------
 class ImageBasedResolutionModel:
+
     def __init__(self, fwhm, ndimage_module=None):
-        self.fwhm = fwhm  # numpy array with Gauss FWHM (in voxels) for resolution model
+        # numpy array with Gauss FWHM (in voxels) for resolution model
+        self.fwhm = fwhm
 
         if ndimage_module is None:
             self._ndi = ndi
@@ -93,7 +97,7 @@ class ImageBasedResolutionModel:
         return self._ndi.gaussian_filter(img, self.fwhm / 2.35)
 
 
-#------------------------------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------------------------------
 class GradientNorm:
     """ 
   norm of a gradient field
@@ -109,6 +113,7 @@ class GradientNorm:
   beta : float
     factor multiplied to the norm (default 1)
   """
+
     def __init__(self, xp, name='l2_l1'):
         self.name = name
         self._xp = xp
@@ -136,7 +141,7 @@ class GradientNorm:
         return r
 
 
-#------------------------------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------------------------------
 class GradientOperator:
     """
   (directional) gradient operator and its adjoint in 2,3 or 4 dimensions
@@ -149,6 +154,7 @@ class GradientOperator:
     if given, only the gradient component perpenticular to the directions 
     given in the joint gradient field are specified (default None)
   """
+
     def __init__(self, xp, joint_grad_field=None):
         self._xp = xp
 
@@ -194,8 +200,9 @@ class GradientOperator:
         return d
 
 
-#------------------------------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------------------------------
 class GradientBasedPrior:
+
     def __init__(self, gradient_operator, gradient_norm, beta=1.):
         self.gradient_operator = gradient_operator
         self.gradient_norm = gradient_norm

@@ -1,5 +1,6 @@
 import cupy as cp
 
+
 def cupy_unique_axis0(ar,
                       return_index=False,
                       return_inverse=False,
