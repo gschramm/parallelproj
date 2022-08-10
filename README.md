@@ -69,7 +69,7 @@ conda activate parallelproj
 If an NVidia GPU is present and you want to build the CUDA libraries, install the conda cuda-toolkit package from the nvidia channel and cupy from conda-forge
 ```
 conda install -c nvidia cuda-toolkit
-conda install -c conda-forge
+conda install -c conda-forge cupy
 ```
 
 Compile the C/CUDA libraries as described above using the environment variable ```CONDA_PREFIX``` as ```CMAKE_INSTALL_PREFIX```
@@ -83,7 +83,7 @@ cd build
 
 cmake --build . --target install --config release
 ```
-This makes sure that the compiled libraries are installed in the correct place and will be found by the python bindings (using find_library from ctypes.util)
+After the libraries are compiled and installed, you have to define the environment variables ```PARALLELPROJ_C_LIB``` and ```PARALLELPROJ_CUDA_LIB``` (if the CUDA lib was compiled) pointing to the compiled libraries. The last call to cmake should print the installation paths of the libs to the command line.
 
 Finally, add the package directory to your ```PYTHONPATH``` environment variable.
 
