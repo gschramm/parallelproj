@@ -1,5 +1,5 @@
-# a short demo on how to generate LM PET data
-# we first generate a sinogram, add Poisson noise and then convert it to LM data
+"""a short demo on how to generate LM PET data
+   we first generate a sinogram, add Poisson noise and then convert it to LM data"""
 
 import os
 import pyparallelproj as ppp

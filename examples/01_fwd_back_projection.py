@@ -1,3 +1,4 @@
+"""minimal script to show how to do a (geometrical) forward and backprojection"""
 import os
 import pyparallelproj as ppp
 import numpy as np

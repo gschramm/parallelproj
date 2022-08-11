@@ -15,7 +15,7 @@ voxsize = np.array([2., 2., 2.], dtype=np.float32)
 img_shape = (166, 166, 94)
 verbose = True
 
-fwhm = 4.5 / (2.35 * voxsize)  # FHHM for resolution model in voxels
+fwhm = 4.5 / (2.35 * voxsize)  # FWHM for resolution model in voxels
 
 niter = 10
 beta = 12
