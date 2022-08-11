@@ -5,7 +5,7 @@ from ctypes import POINTER
 from pathlib import Path
 from warnings import warn
 
-import numba
+import numba.cuda
 import numpy.ctypeslib as npct
 
 #---------------------------------------------------------------------------------------
