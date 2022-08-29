@@ -246,7 +246,7 @@ ax[0, 3].plot(x_lm_osem[:, n1 // 2, 0] / img.max(), label='LM')
 ax[0, 3].plot(x_lm_osem_wrong[:, n1 // 2, 0] / img.max(), label='LM wrong')
 ax[0, 3].plot(x_lm_osem_wrong_scaled[:, n1 // 2, 0] / img.max(),
               label='LM wrong sc.')
-ax[0, 3].legend(ncol=2, fontsize='x-small')
+ax[0, 3].legend(ncol=2, fontsize='x-small', loc='lower center')
 
 ax[1, 3].plot(ratio[:, n1 // 2, 0])
 
