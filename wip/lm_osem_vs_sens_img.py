@@ -11,11 +11,49 @@ import matplotlib.pyplot as plt
 import pyparallelproj as ppp
 
 
+class LMPETAcqModelWrong(ppp.LMPETAcqModel):
+    """wrong acquisition model that ignores the attenuation factors in the adjoint
+       meaning that we have a mismatch between forward and adjoint"""
+
+    def __init__(self,
+                 proj,
+                 events,
+                 attn_list,
+                 sens_list,
+                 image_based_res_model=None):
+        super().__init__(proj, events, attn_list, sens_list,
+                         image_based_res_model)
+
+    def adjoint(self, values, isub=0, nsubsets=1):
+        ss = slice(isub, None, nsubsets)
+        return super().adjoint(values / self.attn_list[ss], isub, nsubsets)
+
+
+class PETAcqModelWrong(ppp.PETAcqModel):
+    """wrong acquisition model that ignores the attenuation factors in the adjoint
+       meaning that we have a mismatch between forward and adjoint"""
+
+    def __init__(self, proj, attn_sino, sens_sino, image_based_res_model=None):
+        super().__init__(proj, attn_sino, sens_sino, image_based_res_model)
+
+    def adjoint(self, sino, isub=None):
+        if isub is None:
+            sino2 = sino / self.attn_sino
+        else:
+            ss = self.proj.subset_slices[isub]
+            sino2 = sino / self.attn_sino[ss]
+
+        return super().adjoint(sino2, isub)
+
+
 class Phantom(enum.Enum):
     DISK_20MM = 'DISK_20MM'
     DISK_45MM = 'DISK_45MM'
     DISK_55MM = 'DISK_55MM'
     FOUR_SYRINGES = 'FOUR_SYRINGES'
+    ANNULUS_20MM = 'ANNULUS_20MM'
+    ANNULUS_45MM = 'ANNULUS_45MM'
+    ANNULUS_55MM = 'ANNULUS_55MM'
 
 
 def rod_inds(n0, n1, n2, voxsize, r_mm, offset=(0, 0, 0)):
@@ -43,21 +81,19 @@ parser.add_argument('--counts', type=int, default=1_000_000)
 parser.add_argument('--fwhm_data_mm', type=float, default=2.5)
 parser.add_argument('--fwhm_mm', type=float, default=1.)
 parser.add_argument('--ps_fwhm_mm', type=float, default=3.)
-parser.add_argument(
-    '--phantom',
-    type=str,
-    default='QC',
-    choices=['DISK_20MM', 'DISK_45MM', 'DISK_55MM', 'FOUR_SYRINGES'])
+parser.add_argument('--contam_fraction', type=float, default=0.5)
+parser.add_argument('--phantom', type=str, default='DISK_45MM')
 
 args = parser.parse_args()
 
-niter = args.niter
-nsubsets = args.nsubsets
-counts = args.counts
-fwhm_data_mm = args.fwhm_data_mm
-fwhm_mm = args.fwhm_mm
-ps_fwhm_mm = args.ps_fwhm_mm
-phantom = Phantom(args.phantom)
+niter: int = args.niter
+nsubsets: int = args.nsubsets
+counts: int = args.counts
+fwhm_data_mm: float = args.fwhm_data_mm
+fwhm_mm: float = args.fwhm_mm
+ps_fwhm_mm: float = args.ps_fwhm_mm
+phantom: Phantom = Phantom(args.phantom)
+contam_fraction: float = args.contam_fraction
 
 xp = np
 ndimage_module = ndi
@@ -84,6 +120,13 @@ if phantom.name.startswith('DISK_'):
     img = xp.zeros((n0, n1, n2), dtype=xp.float32)
     inds1 = rod_inds(n0, n1, n2, voxsize, r_mm=r_mm)
     img[inds1] = 1.
+if phantom.name.startswith('ANNULUS_'):
+    r_mm = float(phantom.name.split('_')[1].split('MM')[0]) / 2
+    img = xp.zeros((n0, n1, n2), dtype=xp.float32)
+    inds1 = rod_inds(n0, n1, n2, voxsize, r_mm=r_mm)
+    img[inds1] = 1.
+    inds2 = rod_inds(n0, n1, n2, voxsize, r_mm=0.5 * r_mm)
+    img[inds2] = 0.2
 elif phantom == Phantom.FOUR_SYRINGES:
     img = xp.zeros((n0, n1, n2), dtype=xp.float32)
     inds1 = rod_inds(n0, n1, n2, voxsize, r_mm=10, offset=(20, 0))
@@ -132,7 +175,9 @@ img *= scale_fac
 
 # contamination sinogram with scatter and randoms
 # useful to avoid division by 0 in the ratio of data and exprected data
-contam_sino = xp.full(img_fwd.shape, 0.2 * img_fwd.mean(), dtype=xp.float32)
+contam_sino = xp.full(img_fwd.shape, (contam_fraction /
+                                      (1 - contam_fraction)) * img_fwd.mean(),
+                      dtype=xp.float32)
 
 em_sino = xp.random.poisson(img_fwd + contam_sino)
 
@@ -146,6 +191,10 @@ acq_model = ppp.PETAcqModel(proj,
                             attn_sino,
                             sens_sino,
                             image_based_res_model=res_model)
+acq_model_wrong = PETAcqModelWrong(proj,
+                                   attn_sino,
+                                   sens_sino,
+                                   image_based_res_model=res_model)
 
 osem = ppp.OSEM(em_sino, acq_model, contam_sino, xp)
 # initialize OSEM (e.g. calculate the sensivity image for every subset)
@@ -178,16 +227,18 @@ lm_acq_model = ppp.LMPETAcqModel(proj,
                                  sens_list,
                                  image_based_res_model=res_model)
 
-# back project LM events and compare to back projection of em sino
-back_sino = acq_model.adjoint(em_sino)
-back_lm = lm_acq_model.adjoint(xp.ones(events.shape[0], dtype=xp.float32))
+lm_acq_model_wrong = LMPETAcqModelWrong(proj,
+                                        events,
+                                        attn_list,
+                                        sens_list,
+                                        image_based_res_model=res_model)
 
 # calculate the sensitivity image
 sens_img = acq_model.adjoint(xp.ones(em_sino.shape, dtype=xp.float32))
 
 # calculate the "wrong" sens image where we neglect the effect of attenuation in the backprojection
-sens_img_wrong = acq_model.adjoint(
-    xp.ones(em_sino.shape, dtype=xp.float32) / attn_sino)
+sens_img_wrong = acq_model_wrong.adjoint(
+    xp.ones(em_sino.shape, dtype=xp.float32))
 
 # run LM OSEM with correct sens image
 lm_osem = ppp.LM_OSEM(lm_acq_model, contam_list, xp, verbose=True)
@@ -196,7 +247,7 @@ lm_osem.run(niter)
 x_lm_osem = lm_osem.x.copy()
 
 # run LM OSEM with correct sens image
-lm_osem_wrong = ppp.LM_OSEM(lm_acq_model, contam_list, xp, verbose=True)
+lm_osem_wrong = ppp.LM_OSEM(lm_acq_model_wrong, contam_list, xp, verbose=True)
 lm_osem_wrong.init(sens_img_wrong, nsubsets)
 lm_osem_wrong.run(niter)
 x_lm_osem_wrong = lm_osem_wrong.x.copy()
@@ -209,8 +260,7 @@ if ps_fwhm_mm > 0:
     x_lm_osem_wrong = ndi.gaussian_filter(x_lm_osem_wrong,
                                           ps_fwhm_mm / (2.35 * voxsize))
 
-x_lm_osem_wrong_scaled = x_lm_osem_wrong * x_lm_osem.sum(
-) / x_lm_osem_wrong.sum()
+rel_bias = (x_lm_osem_wrong - x_lm_osem) / x_lm_osem
 
 #------------------------------------------------------------------------------------
 # show results
@@ -220,51 +270,62 @@ ratio[img == 0] = 0
 fig, ax = plt.subplots(3, 4, figsize=(12, 8))
 imkw = dict(cmap=plt.cm.Greys, vmin=0, vmax=1.2 * img.max())
 
-ax[0, 0].imshow(img.squeeze(), **imkw)
-ax[1, 0].imshow(att_img.squeeze(),
-                cmap=plt.cm.Greys,
-                vmin=0,
-                vmax=1.2 * att_img.max())
-ax[2, 0].imshow(x_lm_osem.squeeze(), **imkw)
+im00 = ax[0, 0].imshow(img.squeeze(), **imkw)
+im10 = ax[1, 0].imshow(att_img.squeeze(),
+                       cmap=plt.cm.Greys,
+                       vmin=0,
+                       vmax=1.2 * att_img.max())
+im20 = ax[2, 0].imshow(x_lm_osem.squeeze(), **imkw)
 
-ax[0, 1].imshow(x_lm_osem.squeeze(), **imkw)
-ax[1, 1].imshow(x_lm_osem_wrong.squeeze(), **imkw)
-ax[2, 1].imshow(x_lm_osem_wrong_scaled.squeeze(), **imkw)
+im01 = ax[0, 1].imshow(x_lm_osem.squeeze(), **imkw)
+im11 = ax[1, 1].imshow(x_lm_osem_wrong.squeeze(), **imkw)
+im21 = ax[2, 1].imshow(rel_bias.squeeze(),
+                       cmap=plt.cm.seismic,
+                       vmin=-0.2,
+                       vmax=0.2)
 
-ax[0, 2].imshow(sens_img,
-                cmap=plt.cm.Greys,
-                vmin=0,
-                vmax=1.05 * sens_img_wrong.max())
-ax[1, 2].imshow(sens_img_wrong,
-                cmap=plt.cm.Greys,
-                vmin=0,
-                vmax=1.05 * sens_img_wrong.max())
-ax[2, 2].imshow(sens_img_wrong / sens_img, cmap=plt.cm.Greys)
+im02 = ax[0, 2].imshow(sens_img,
+                       cmap=plt.cm.Greys,
+                       vmin=0,
+                       vmax=1.05 * sens_img_wrong.max())
+im12 = ax[1, 2].imshow(sens_img_wrong,
+                       cmap=plt.cm.Greys,
+                       vmin=0,
+                       vmax=1.05 * sens_img_wrong.max())
+im22 = ax[2, 2].imshow(sens_img_wrong / sens_img, cmap=plt.cm.Greys)
+
+cbkwgs = dict(fraction=0.04, pad=0.01)
+fig.colorbar(im00, ax=ax[0, 0], location='bottom', **cbkwgs)
+fig.colorbar(im01, ax=ax[0, 1], location='bottom', **cbkwgs)
+fig.colorbar(im02, ax=ax[0, 2], location='bottom', **cbkwgs)
+fig.colorbar(im10, ax=ax[1, 0], location='bottom', **cbkwgs)
+fig.colorbar(im11, ax=ax[1, 1], location='bottom', **cbkwgs)
+fig.colorbar(im12, ax=ax[1, 2], location='bottom', **cbkwgs)
+fig.colorbar(im20, ax=ax[2, 0], location='bottom', **cbkwgs)
+fig.colorbar(im21, ax=ax[2, 1], location='bottom', **cbkwgs)
+fig.colorbar(im22, ax=ax[2, 2], location='bottom', **cbkwgs)
 
 ax[0, 3].plot(img[:, n1 // 2, 0] / img.max(), label='true')
 ax[0, 3].plot(x_lm_osem[:, n1 // 2, 0] / img.max(), label='LM')
-ax[0, 3].plot(x_lm_osem_wrong[:, n1 // 2, 0] / img.max(), label='LM wrong')
-ax[0, 3].plot(x_lm_osem_wrong_scaled[:, n1 // 2, 0] / img.max(),
-              label='LM wrong sc.')
+ax[0, 3].plot(x_lm_osem_wrong[:, n1 // 2, 0] / img.max(), label='LM MolC')
 ax[0, 3].legend(ncol=2, fontsize='x-small', loc='lower center')
 
-ax[1, 3].plot(ratio[:, n1 // 2, 0])
+ax[1, 3].plot(rel_bias[:, n1 // 2, 0])
 
-ax[0, 0].set_title('true emission image', fontsize='small')
-ax[1, 0].set_title('true attenuation image', fontsize='small')
-ax[2, 0].set_title('OSEM', fontsize='small')
+ax[0, 0].set_title('true emission image', fontsize='medium')
+ax[1, 0].set_title('true attenuation image', fontsize='medium')
+ax[2, 0].set_title('OSEM', fontsize='medium')
 
-ax[0, 1].set_title('LM OSEM', fontsize='small')
-ax[1, 1].set_title('LM OSEM wrong sens. img.', fontsize='small')
-ax[2, 1].set_title('LM OSEM wrong sens. img. scaled', fontsize='small')
+ax[0, 1].set_title('LM OSEM', fontsize='medium')
+ax[1, 1].set_title('LM OSEM MoleCubes', fontsize='medium')
+ax[2, 1].set_title('(LM_MolC - LM)/ LM', fontsize='medium')
 
-ax[0, 2].set_title('correct sens. img', fontsize='small')
-ax[1, 2].set_title('sens. img w/o att', fontsize='small')
-ax[2, 2].set_title('ration of sens. imgs.', fontsize='small')
+ax[0, 2].set_title('sens. img', fontsize='medium')
+ax[1, 2].set_title('sens. img MolC', fontsize='medium')
+ax[2, 2].set_title('ratio of sens. imgs.', fontsize='medium')
 
-ax[0, 3].set_title('profiles through emission', fontsize='small')
-ax[1, 3].set_title('profile through ratio LM_wrong_sens / LM',
-                   fontsize='small')
+ax[0, 3].set_title('profiles thr. recons', fontsize='medium')
+ax[1, 3].set_title('profile thr. (LM_MolC - LM)/ LM', fontsize='medium')
 
 ax[0, 3].grid(ls=':')
 ax[1, 3].grid(ls=':')
@@ -282,13 +343,9 @@ if phantom.name.startswith('DISK_'):
     ax[2, 3].plot(R.ravel(), img.ravel() / img.max(), '.', ms=1)
     ax[2, 3].plot(R.ravel(), x_lm_osem.ravel() / img.max(), '.', ms=1)
     ax[2, 3].plot(R.ravel(), x_lm_osem_wrong.ravel() / img.max(), '.', ms=1)
-    ax[2, 3].plot(R.ravel(),
-                  x_lm_osem_wrong_scaled.ravel() / img.max(),
-                  '.',
-                  ms=1)
     ax[2, 3].set_xlabel('distance from center [mm]')
     ax[2, 3].set_ylabel('a [arb. units]')
-    ax[2, 3].set_title('radial prof. plot', fontsize='small')
+    ax[2, 3].set_title('radial prof. plot', fontsize='medium')
     ax[2, 3].grid(ls=':')
 else:
     ax[2, 3].set_axis_off()
