@@ -1,7 +1,7 @@
 # structure and content of CMakeLists.txt files adapted from 
 # https://stackoverflow.com/questions/55635294/how-to-create-packages-with-cmake
 
-cmake_minimum_required(VERSION 3.9.0)
+cmake_minimum_required(VERSION 3.18.0)
 project(parallelproj LANGUAGES C CXX VERSION 1.0.1)
 
 include(CMakePackageConfigHelpers)
