@@ -2,12 +2,20 @@ enable_language(CUDA)
 
 # auto detect the cuda architecture
 # https://stackoverflow.com/questions/68223398/how-can-i-get-cmake-to-automatically-detect-the-value-for-cuda-architectures
-include(FindCUDA/select_compute_arch)
-CUDA_DETECT_INSTALLED_GPUS(INSTALLED_GPU_CCS_1)
-string(STRIP "${INSTALLED_GPU_CCS_1}" INSTALLED_GPU_CCS_2)
-string(REPLACE " " ";" INSTALLED_GPU_CCS_3 "${INSTALLED_GPU_CCS_2}")
-string(REPLACE "." "" CUDA_ARCH_LIST "${INSTALLED_GPU_CCS_3}")
-set(CMAKE_CUDA_ARCHITECTURES "${CUDA_ARCH_LIST}")
+if(NOT DEFINED CMAKE_CUDA_ARCHITECTURES)
+  if(${CMAKE_VERSION} VERSION_LESS "3.24.0")
+    include(FindCUDA/select_compute_arch)
+    CUDA_DETECT_INSTALLED_GPUS(INSTALLED_GPU_CCS_1)
+    string(STRIP "${INSTALLED_GPU_CCS_1}" INSTALLED_GPU_CCS_2)
+    string(REPLACE " " ";" INSTALLED_GPU_CCS_3 "${INSTALLED_GPU_CCS_2}")
+    string(REPLACE "." "" CUDA_ARCH_LIST "${INSTALLED_GPU_CCS_3}")
+    set(CMAKE_CUDA_ARCHITECTURES "${CUDA_ARCH_LIST}")
+  else()
+    set(CMAKE_CUDA_ARCHITECTURES "native")
+  endif()
+endif()
+
+message("Using CUDA_ARCHITECTURES: ${CMAKE_CUDA_ARCHITECTURES}")
 
 # add openmp flags to cuda compiler
 set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -Xcompiler=${OpenMP_CXX_FLAGS}") 
