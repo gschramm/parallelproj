@@ -21,7 +21,7 @@ requirements:
     - git
     - {{ compiler('c') }} # [win]
     - {{ compiler('cxx') }} # [win]
-    #- cudatoolkit
+    - cudatoolkit
 
 about:
   home: https://github.com/gschramm/parallelproj
