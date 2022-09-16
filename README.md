@@ -8,7 +8,7 @@ On top of the projectors we also provide a few python bindings and some basic re
 ## Dependencies
 
 For the OpenMP library (CPU version):
-- cmake>=3.9 (3.9 version needed to detect CUDA correctly)
+- cmake>=3.16 (3.16 version needed to detect CUDA correctly)
 - a recent c compiler with OpenMP support (tested with gcc 9.3 and msvc)
 
 For the CUDA library (optional):
