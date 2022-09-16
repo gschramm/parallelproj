@@ -2,7 +2,7 @@
 # https://stackoverflow.com/questions/55635294/how-to-create-packages-with-cmake
 
 cmake_minimum_required(VERSION 3.16.0)
-project(parallelproj LANGUAGES C CXX VERSION 1.0.1)
+project(parallelproj LANGUAGES C CXX VERSION 1.0.2)
 
 include(CMakePackageConfigHelpers)
 include(CheckLanguage)
