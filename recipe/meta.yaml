@@ -16,7 +16,7 @@ build:
 
 requirements:
   build:
-    - cmake
+    - cmake >=3.24
     - make  # [not win]
     - git
     - {{ compiler('c') }} # [win]
