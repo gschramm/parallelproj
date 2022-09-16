@@ -12,7 +12,7 @@ For the OpenMP library (CPU version):
 - a recent c compiler with OpenMP support (tested with gcc 9.3 and msvc)
 
 For the CUDA library (optional):
-- CUDA (tested with 10.1.105)
+- CUDA (tested with >= 10)
 
 For the python bindings:
 - python (tested with  >= 3.7.6)
