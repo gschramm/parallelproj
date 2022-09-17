@@ -65,7 +65,8 @@ jobs:
 
     - name: Configure cmake
       id: configure
-      run: cmake . -B ${{ env.build_dir }} -DCMAKE_BUILD_TYPE=${{ env.config }} -DCUDA_ARCHITECTURES=all
+      run: cmake . -B ${{ env.build_dir }} -DCMAKE_BUILD_TYPE=${{ env.config }} -DCMAKE_CUDA_ARCHITECTURES=75
+      #run: cmake . -B ${{ env.build_dir }} -DCMAKE_BUILD_TYPE=${{ env.config }} -DCUDA_ARCHITECTURES=all
 
     - name: Configure Error Processing
       if: ${{ failure() && steps.configure.outcome == 'failure' }}

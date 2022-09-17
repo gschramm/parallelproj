@@ -12,6 +12,7 @@ include(GNUInstallDirs)
 
 set (CMAKE_BUILD_TYPE Release CACHE STRING "build type" FORCE)
 
+message("CMAKE_VERSION: ${CMAKE_VERSION}")
 #-------------------------------------------------------------
 
 # define INSTALL dirs for libraries, public headers and documentation
