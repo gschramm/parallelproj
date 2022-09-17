@@ -26,6 +26,20 @@ For the python bindings:
 
 *If you want to use the libraries together with the python bindings, skip this section and continue with the next section.*
 
+### Setting CMAKE_CUDA_ARCHITECTURES
+
+If you have CUDA available on your system (even if there is no physical CUDA GPU),
+the default for ```CMAKE_CUDA_ARCHITECTURES``` is depends on the cmake version you are using.
+
+- **cmake >= v3.23**: If you are using cmake >= 3.23, then by default ```CMAKE_CUDA_ARCHITECTURES=all``` which means that the code is build
+for all CUDA architectures.
+
+- **cmake < v3.23**: If you are using cmake < 3.23, then the default of ```CMAKE_CUDA_ARCHITECTURES``` is set to the architecture that is
+present on your system. **This means that if you are compiling on a system without physical CUDA GPU and using cmake < v3.23, 
+you have to set it manually**. E.g. via ```-DCMAKE_CUDA_ARCHITECTURES=75```.
+
+### Building using cmake
+
 We use CMake to auto generate a Makefile / Visual Studio project file which is used to compile the libraries. Make sure that cmake and the desired C compiler are on the PATH. The CMakeLists.txt is configured to search for CUDA. If CUDA is not present, compilation of the CUDA lib is skipped.
 
 To build and install the libraries execute:
