@@ -52,7 +52,7 @@ jobs:
     - name: Install CUDA
       env:
         cuda: ${{ matrix.cuda }}
-      run: ./scripts/actions/install_cuda_ubuntu.sh
+      run: ../../scripts/actions/install_cuda_ubuntu.sh
       shell: bash
 
     # Specify the correct host compilers
