@@ -1,9 +1,3 @@
-# TODO: - CUDA compilation (where to get cudatoolkit from? nvidia or conda-forge)?
-#       - linking problem when using cudatoolkit from nvidia channel               
-#       - currently, using cudatoolkit from nvidia channel and not using the generic compiler('c') / compiler('cxx')
-
-# TODO  - copy cuda kernel file to PREFIX
-
 package:
   name: parallelproj
   version: {{ environ.get('GIT_DESCRIBE_TAG','v')[1:] }}
@@ -16,12 +10,12 @@ build:
 
 requirements:
   build:
-    - cmake >=3.24
+    - cmake >=3.23
     - make  # [not win]
     - git
     - {{ compiler('c') }} # [win]
     - {{ compiler('cxx') }} # [win]
-    - cudatoolkit
+    - cuda-toolkit
 
 about:
   home: https://github.com/gschramm/parallelproj
