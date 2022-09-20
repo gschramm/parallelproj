@@ -7,6 +7,17 @@ source:
 
 build:
   number: {{ GIT_DESCRIBE_NUMBER }}
+  missing_dso_whitelist:
+    - lib/libgomp.so.1            # [linux]
+    - $RPATH/librt.so.1           # [linux]
+    - $RPATH/libpthread.so.0      # [linux]
+    - $RPATH/libdl.so.2           # [linux]
+    - lib/libstdc++.so.6          # [linux]
+    - $RPATH/libc.so.6            # [linux]
+    - /lib64/ld-linux-x86-64.so.2 # [linux]
+    - lib/libgomp.so.1            # [linux]
+    - $RPATH/libc.so.6            # [linux]
+
 
 requirements:
   build:
@@ -16,6 +27,11 @@ requirements:
     - {{ compiler('c') }} # [win]
     - {{ compiler('cxx') }} # [win]
     - cuda-toolkit
+  run:
+    - cuda-toolkit
+    - libgcc-ng     # [linux]
+    - libstdcxx-ng  # [linux]
+    - _openmp_mutex # [linux]
 
 about:
   home: https://github.com/gschramm/parallelproj
