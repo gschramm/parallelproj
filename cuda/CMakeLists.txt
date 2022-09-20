@@ -52,7 +52,7 @@ install(TARGETS parallelproj_cuda EXPORT parallelprojTargets
         PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
 
 # install the cuda kernel source as well which could be used by e.g. cupy
-install(FILES "src/projector_kernels.cu" DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
+install(FILES "src/projector_kernels.cu" RENAME "projector_kernels.cu.${PARALLELPROJ_VERSION}" DESTINATION ${CMAKE_INSTALL_LIBDIR})
 
 # install auto-generated IDL wrapper
 if(PARALLELPROJ_BUILD_WITH_IDL_WRAPPERS)

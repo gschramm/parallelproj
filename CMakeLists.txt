@@ -25,7 +25,7 @@ set(VALID_TAG_PATTERN "^v([0-9]+.*[0-9]+)-[0-9]+-.*")
 set(NUM_COMMIT_PATTERN ".*-([0-9]+)-.*")
 
 if(GIT_DESCRIBE_TAG MATCHES ${VALID_TAG_PATTERN})
-    string(REGEX REPLACE ${VALID_TAG_PATTERN} "\\1" VERSION "${GIT_DESCRIBE_TAG}")
+    string(REGEX REPLACE ${VALID_TAG_PATTERN} "\\1" PARALLELPROJ_VERSION "${GIT_DESCRIBE_TAG}")
     string(REGEX REPLACE ${NUM_COMMIT_PATTERN} "\\1" NUM_COMMITS "${GIT_DESCRIBE_TAG}")
     message(STATUS "NUMBER OF COMMITS FROM LAST TAG: ${NUM_COMMITS}")
 
@@ -40,11 +40,11 @@ else()
    message(FATAL_ERROR "Failed to obtain VERSION number from git describe because of invalid git describe tag: ${GIT_DESCRIBE_TAG}")
 endif()
 
-message(STATUS "BUILDING VERSION: ${VERSION}")
+message(STATUS "BUILDING VERSION: ${PARALLELPROJ_VERSION}")
 
 #-------------------------------------------------------------
 
-project(parallelproj LANGUAGES C CXX VERSION ${VERSION})
+project(parallelproj LANGUAGES C CXX VERSION ${PARALLELPROJ_VERSION})
 
 
 # get standard paths for installation
