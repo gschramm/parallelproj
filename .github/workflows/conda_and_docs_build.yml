@@ -22,5 +22,7 @@ jobs:
       with:
         subDir: 'recipe'
         channels: '-c conda-forge -c nvidia'
-        convert_win: true
+        AnacondaToken: ${{ secrets.ANACONDA_TOKEN }}
+        publish: ${{ github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags') }}
+        convert_win: false
         convert_osx: false
