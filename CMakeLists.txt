@@ -2,10 +2,29 @@
 # https://stackoverflow.com/questions/55635294/how-to-create-packages-with-cmake
 
 cmake_minimum_required(VERSION 3.16.0)
-project(parallelproj LANGUAGES C CXX VERSION 1.1)
 
 include(CMakePackageConfigHelpers)
 include(CheckLanguage)
+
+#-------------------------------------------------------------
+find_package(Git REQUIRED)
+
+# get the version from the latest git tag
+execute_process(COMMAND git describe --tags --abbrev=0
+                OUTPUT_VARIABLE GIT_DESCRIBE_TAG OUTPUT_STRIP_TRAILING_WHITESPACE)
+
+set(GIT_DESCRIBE_TAG "vAf4.2.1sFD")
+message("GIT DESCRIBE TAG: ${GIT_DESCRIBE_TAG}")
+
+# TODO: understand why \\D (non digits) is not working
+string(REGEX REPLACE "^[a-zA-Z]+" "" TMPVERSION "${GIT_DESCRIBE_TAG}")
+string(REGEX REPLACE "[a-zA-Z]+$" "" VERSION "${TMPVERSION}")
+
+message("BUILDING VERSION: ${VERSION}")
+#-------------------------------------------------------------
+
+project(parallelproj LANGUAGES C CXX VERSION ${VERSION})
+
 
 # get standard paths for installation
 include(GNUInstallDirs)
