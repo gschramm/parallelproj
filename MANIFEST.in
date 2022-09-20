@@ -1,5 +1,0 @@
-recursive-include pyparallelproj/Linux_64bit *
-recursive-include pyparallelproj/Linux_32bit *
-recursive-include pyparallelproj/Windows_64bit *
-recursive-include pyparallelproj/Windows_32bit *
-recursive-include pyparallelproj/data *

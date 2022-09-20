@@ -1,11 +1,16 @@
 name: parallelproj
 
 channels:
-- conda-forge
+  - conda-forge
+  - nvidia
 
 dependencies:
-- numpy>=1.18
-- matplotlib>=3.2.1
-- numba>=0.49
-- scipy>=1.2
-- cmake>=3.9
+  - cuda-toolkit
+  - cmake >=3.23
+  - make  # [not win]
+  - git
+  - libgcc-ng     # [linux]
+  - libstdcxx-ng  # [linux]
+  - _openmp_mutex # [linux]
+
+

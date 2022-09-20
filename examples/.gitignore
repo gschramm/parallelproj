@@ -1,8 +1,0 @@
-*.pbs
-*.?50*
-*.bat
-data/*
-figs/*
-test*
-*.npy
-*.npz
