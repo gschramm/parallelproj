@@ -23,15 +23,14 @@ requirements:
   build:
     - cmake >=3.23
     - make  # [not win]
+    - ninja  # [win]
     - git
+    - doxygen
     - {{ compiler('c') }} # [win]
     - {{ compiler('cxx') }} # [win]
     - cuda-toolkit
-  run:
+  run_exports:
     - cuda-toolkit
-    - libgcc-ng     # [linux]
-    - libstdcxx-ng  # [linux]
-    - _openmp_mutex # [linux]
 
 about:
   home: https://github.com/gschramm/parallelproj
