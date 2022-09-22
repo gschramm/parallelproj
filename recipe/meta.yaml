@@ -29,8 +29,6 @@ requirements:
     - {{ compiler('c') }} # [win]
     - {{ compiler('cxx') }} # [win]
     - cuda-toolkit
-  run_exports:
-    - cuda-toolkit
 
 about:
   home: https://github.com/gschramm/parallelproj
