@@ -5,4 +5,4 @@ target_include_directories(nontof_fwd_back PUBLIC
   )
 target_link_libraries(nontof_fwd_back PUBLIC parallelproj_c)
 
-add_test(nontof_fwd_back COMMAND nontof_fwd_back)
+add_test(NAME nontof_fwd_back COMMAND nontof_fwd_back)
