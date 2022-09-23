@@ -5,6 +5,10 @@
 #ifndef __PARALLELPROJ_CUDA_H__
 #define __PARALLELPROJ_CUDA_H__
 
+#ifdef  __cplusplus
+extern "C" {
+#endif
+
 /** @brief 3D non-tof joseph back projector CUDA wrapper
  *
  *  @param h_xstart array of shape [3*nlors] with the coordinates of the start points of the LORs.
@@ -24,15 +28,15 @@
  *  @param h_img_dim      array with dimensions of image [n0,n1,n2]
  *  @param threadsperblock number of threads per block
  */
-extern "C" void joseph3d_back_cuda(const float *h_xstart, 
-                                   const float *h_xend, 
-                                   float **d_img,
-                                   const float *h_img_origin, 
-                                   const float *h_voxsize, 
-                                   const float *h_p,
-                                   long long nlors, 
-                                   const int *h_img_dim, 
-                                   int threadsperblock);
+void joseph3d_back_cuda(const float *h_xstart, 
+                        const float *h_xend, 
+                        float **d_img,
+                        const float *h_img_origin, 
+                        const float *h_voxsize, 
+                        const float *h_p,
+                        long long nlors, 
+                        const int *h_img_dim, 
+                        int threadsperblock);
 
 
 
@@ -73,22 +77,22 @@ extern "C" void joseph3d_back_cuda(const float *h_xstart,
  *                                         array is used for all LORs
  *  @param threadsperblock number of threads per block
  */
-extern "C" void joseph3d_back_tof_lm_cuda(const float *h_xstart,
-                                          const float *h_xend,
-                                          float **d_img,
-                                          const float *h_img_origin,
-                                          const float *h_voxsize,
-                                          const float *h_p,
-                                          long long nlors,
-                                          const int *h_img_dim,
-                                          float tofbin_width,
-                                          const float *h_sigma_tof,
-                                          const float *h_tofcenter_offset,
-                                          float n_sigmas,
-                                          const short *h_tof_bin,
-                                          unsigned char lor_dependent_sigma_tof,
-                                          unsigned char lor_dependent_tofcenter_offset,
-                                          int threadsperblock);
+void joseph3d_back_tof_lm_cuda(const float *h_xstart,
+                               const float *h_xend,
+                               float **d_img,
+                               const float *h_img_origin,
+                               const float *h_voxsize,
+                               const float *h_p,
+                               long long nlors,
+                               const int *h_img_dim,
+                               float tofbin_width,
+                               const float *h_sigma_tof,
+                               const float *h_tofcenter_offset,
+                               float n_sigmas,
+                               const short *h_tof_bin,
+                               unsigned char lor_dependent_sigma_tof,
+                               unsigned char lor_dependent_tofcenter_offset,
+                               int threadsperblock);
 
 
 
@@ -134,22 +138,22 @@ extern "C" void joseph3d_back_tof_lm_cuda(const float *h_xstart,
  *                                         array is used for all LORs
  *  @param threadsperblock number of threads per block
  */
-extern "C" void joseph3d_back_tof_sino_cuda(const float *h_xstart, 
-                                            const float *h_xend, 
-                                            float **d_img,
-                                            const float *h_img_origin, 
-                                            const float *h_voxsize, 
-                                            const float *h_p,
-                                            long long nlors, 
-                                            const int *h_img_dim, 
-                                            float tofbin_width,
-                                            const float *h_sigma_tof,
-                                            const float *h_tofcenter_offset,
-                                            float n_sigmas,
-                                            short n_tofbins,
-                                            unsigned char lor_dependent_sigma_tof,
-                                            unsigned char lor_dependent_tofcenter_offset,
-                                            int threadsperblock);
+void joseph3d_back_tof_sino_cuda(const float *h_xstart, 
+                                 const float *h_xend, 
+                                 float **d_img,
+                                 const float *h_img_origin, 
+                                 const float *h_voxsize, 
+                                 const float *h_p,
+                                 long long nlors, 
+                                 const int *h_img_dim, 
+                                 float tofbin_width,
+                                 const float *h_sigma_tof,
+                                 const float *h_tofcenter_offset,
+                                 float n_sigmas,
+                                 short n_tofbins,
+                                 unsigned char lor_dependent_sigma_tof,
+                                 unsigned char lor_dependent_tofcenter_offset,
+                                 int threadsperblock);
 
 
 
@@ -171,15 +175,15 @@ extern "C" void joseph3d_back_tof_sino_cuda(const float *h_xstart,
  *  @param h_img_dim       array with dimensions of image [n0,n1,n2]
  *  @param threadsperblock number of threads per block
  */
-extern "C" void joseph3d_fwd_cuda(const float *h_xstart, 
-                                  const float *h_xend, 
-                                  float **d_img,
-                                  const float *h_img_origin, 
-                                  const float *h_voxsize, 
-                                  float *h_p,
-                                  long long nlors, 
-                                  const int *h_img_dim,
-                                  int threadsperblock);
+void joseph3d_fwd_cuda(const float *h_xstart, 
+                       const float *h_xend, 
+                       float **d_img,
+                       const float *h_img_origin, 
+                       const float *h_voxsize, 
+                       float *h_p,
+                       long long nlors, 
+                       const int *h_img_dim,
+                       int threadsperblock);
 
 
 
@@ -219,22 +223,22 @@ extern "C" void joseph3d_fwd_cuda(const float *h_xstart,
  *                                         array is used for all LORs
  *  @param threadsperblock    number of threads per block
  */
-extern "C" void joseph3d_fwd_tof_lm_cuda(const float *h_xstart, 
-                                         const float *h_xend, 
-                                         float **d_img,
-                                         const float *h_img_origin, 
-                                         const float *h_voxsize, 
-                                         float *h_p,
-                                         long long nlors, 
-                                         const int *h_img_dim,
-                                         float tofbin_width,
-                                         const float *h_sigma_tof,
-                                         const float *h_tofcenter_offset,
-                                         float n_sigmas,
-                                         const short *h_tof_bin,
-                                         unsigned char lor_dependent_sigma_tof,
-                                         unsigned char lor_dependent_tofcenter_offset,
-                                         int threadsperblock);
+void joseph3d_fwd_tof_lm_cuda(const float *h_xstart, 
+                              const float *h_xend, 
+                              float **d_img,
+                              const float *h_img_origin, 
+                              const float *h_voxsize, 
+                              float *h_p,
+                              long long nlors, 
+                              const int *h_img_dim,
+                              float tofbin_width,
+                              const float *h_sigma_tof,
+                              const float *h_tofcenter_offset,
+                              float n_sigmas,
+                              const short *h_tof_bin,
+                              unsigned char lor_dependent_sigma_tof,
+                              unsigned char lor_dependent_tofcenter_offset,
+                              int threadsperblock);
 
 
 
@@ -279,22 +283,22 @@ extern "C" void joseph3d_fwd_tof_lm_cuda(const float *h_xstart,
  *                                         array is used for all LORs
  *  @param threadsperblock    number of threads per block
  */
-extern "C" void joseph3d_fwd_tof_sino_cuda(const float *h_xstart, 
-                                           const float *h_xend, 
-                                           float **d_img,
-                                           const float *h_img_origin, 
-                                           const float *h_voxsize, 
-                                           float *h_p,
-                                           long long nlors, 
-                                           const int *h_img_dim,
-                                           float tofbin_width,
-                                           const float *h_sigma_tof,
-                                           const float *h_tofcenter_offset,
-                                           float n_sigmas,
-                                           short n_tofbins,
-                                           unsigned char lor_dependent_sigma_tof,
-                                           unsigned char lor_dependent_tofcenter_offset,
-                                           int threadsperblock);
+void joseph3d_fwd_tof_sino_cuda(const float *h_xstart, 
+                                const float *h_xend, 
+                                float **d_img,
+                                const float *h_img_origin, 
+                                const float *h_voxsize, 
+                                float *h_p,
+                                long long nlors, 
+                                const int *h_img_dim,
+                                float tofbin_width,
+                                const float *h_sigma_tof,
+                                const float *h_tofcenter_offset,
+                                float n_sigmas,
+                                short n_tofbins,
+                                unsigned char lor_dependent_sigma_tof,
+                                unsigned char lor_dependent_tofcenter_offset,
+                                int threadsperblock);
 
 
 
@@ -306,7 +310,7 @@ extern "C" void joseph3d_fwd_tof_sino_cuda(const float *h_xstart,
  *  @param    n         number of array elements
  *  @return   a pointer to all devices arrays
  */
-extern "C" float** copy_float_array_to_all_devices(const float *h_array, long long n);
+float** copy_float_array_to_all_devices(const float *h_array, long long n);
 
 
 
@@ -316,7 +320,7 @@ extern "C" float** copy_float_array_to_all_devices(const float *h_array, long lo
  *
  *  @param d_array a pointer to all devices arrays
  */
-extern "C" void free_float_array_on_all_devices(float **d_array);
+void free_float_array_on_all_devices(float **d_array);
 
 
 
@@ -328,7 +332,7 @@ extern "C" void free_float_array_on_all_devices(float **d_array);
  *  @param d_array a pointer to all devices arrays
  *  @param    n         number of array elements
  */
-extern "C" void sum_float_arrays_on_first_device(float **d_array, long long n);
+void sum_float_arrays_on_first_device(float **d_array, long long n);
 
 
 
@@ -341,6 +345,10 @@ extern "C" void sum_float_arrays_on_first_device(float **d_array, long long n);
  *  @param  i_dev     device number
  *  @param  h_array   array of shape [n] on the host used for output
  */
-extern "C" void get_float_array_from_device(float **d_array, long long n, int i_dev, float *h_array);
+void get_float_array_from_device(float **d_array, long long n, int i_dev, float *h_array);
+
+#ifdef __cplusplus
+}  /* extern "C" */
+#endif
 
 #endif

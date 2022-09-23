@@ -5,6 +5,7 @@
 int main()
 {
     int retval = 0;
+    int tpb = 64;
 
     const float img[] = {1, 0, 3,
                          0, 3, 0,
@@ -23,7 +24,9 @@ int main()
     memset(p, 0, sizeof p);
 
     // forward projection test
-    joseph3d_fwd_cuda(xstart, xend, img, img_origin, voxsize, p, nlors, img_dim);
+    float** d_img = copy_float_array_to_all_devices(img, 9);
+    joseph3d_fwd_cuda(xstart, xend, d_img, img_origin, voxsize, p, nlors, img_dim, tpb);
+    free_float_array_on_all_devices(d_img);
 
     printf("%.1f %.1f %.1f %.1f %.1f\n", p[0], p[1], p[2], p[3], p[4]);
 
@@ -50,7 +53,11 @@ int main()
         ones[i] = 1;
     }
 
-    joseph3d_back_cuda(xstart, xend, bimg, img_origin, voxsize, ones, nlors, img_dim);
+    float** d_bimg = copy_float_array_to_all_devices(bimg, 9);
+    joseph3d_back_cuda(xstart, xend, d_bimg, img_origin, voxsize, ones, nlors, img_dim, tpb);
+    sum_float_arrays_on_first_device(d_bimg, 9);
+    get_float_array_from_device(d_bimg, 9, 0, bimg);
+    free_float_array_on_all_devices(d_bimg);
 
     printf("\n%.1f %.1f %.1f\n", bimg[0], bimg[1], bimg[2]);
     printf("%.1f %.1f %.1f\n", bimg[3], bimg[4], bimg[5]);

@@ -4,5 +4,6 @@ target_include_directories(nontof_fwd_back PUBLIC
   $<INSTALL_INTERFACE:include/>
   )
 target_link_libraries(nontof_fwd_back PUBLIC parallelproj_c)
+target_link_libraries(nontof_fwd_back PUBLIC m)
 
 add_test(NAME nontof_fwd_back COMMAND nontof_fwd_back)

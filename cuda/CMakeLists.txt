@@ -58,3 +58,6 @@ install(FILES "src/projector_kernels.cu" RENAME "projector_kernels.cu.${PARALLEL
 if(PARALLELPROJ_BUILD_WITH_IDL_WRAPPERS)
   install(FILES "wrapper/parallelproj_cuda_idl_wrapper.cu" DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
 endif()
+
+# add test executables
+add_subdirectory(tests)
