@@ -26,3 +26,6 @@ install(TARGETS parallelproj_c EXPORT parallelprojTargets
 if(PARALLELPROJ_BUILD_WITH_IDL_WRAPPERS)
   install(FILES "wrapper/parallelproj_c_idl_wrapper.c" DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
 endif()
+
+# add the test executables
+add_subdirectory(tests)

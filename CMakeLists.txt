@@ -46,6 +46,8 @@ message(STATUS "BUILDING VERSION: ${PARALLELPROJ_VERSION}")
 
 project(parallelproj LANGUAGES C CXX VERSION ${PARALLELPROJ_VERSION})
 
+include(CTest)
+enable_testing()
 
 # get standard paths for installation
 include(GNUInstallDirs)
