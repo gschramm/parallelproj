@@ -74,6 +74,6 @@ jobs:
 
       - name: Build everything else
         working-directory: ${{ env.build_dir }}
-        run: 
+        run: |
           cmake --build . --target all --verbose -j `nproc`
           ctest -VV
