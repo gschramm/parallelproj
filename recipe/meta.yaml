@@ -1,4 +1,5 @@
 {% set mincudaversion = "11.0" %}
+{% set maxcudaversion = "12.0" %}
 
 package:
   name: parallelproj
@@ -30,9 +31,9 @@ requirements:
     - doxygen
     - {{ compiler('c') }} # [win]
     - {{ compiler('cxx') }} # [win]
-    - cuda-toolkit >={{ mincudaversion }}
+    - cuda-toolkit >={{ mincudaversion }},<{{ maxcudaversion }}
   run_constrained:
-    - cuda-runtime >={{ mincudaversion }}
+    - cuda-runtime >={{ mincudaversion }},<{{ maxcudaversion }}
 
 about:
   home: https://github.com/gschramm/parallelproj
