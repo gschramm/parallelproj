@@ -1,7 +1,9 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include "parallelproj_c.h"
 
+// test nontof projectors using a simple 2D image along one direction
 int main()
 {
     int retval = 0;
@@ -19,8 +21,7 @@ int main()
     const float xstart[] = {0, 4, -2, 0, 4, -2, 0, 4, -2, 0, 4, 0, 0, 4, 1};
     const float xend[] = {0, -4, -2, 0, -4, -2, 0, -4, -2, 0, -4, 0, 0, -4, 1};
 
-    float p[nlors];
-    memset(p, 0, sizeof p);
+    float* p = (float*) calloc(nlors, sizeof(float));
 
     // forward projection test
     joseph3d_fwd(xstart, xend, img, img_origin, voxsize, p, nlors, img_dim);
