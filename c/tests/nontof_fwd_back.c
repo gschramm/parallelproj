@@ -45,7 +45,7 @@ int main()
                     0, 0, 0,
                     0, 0, 0};
 
-    float ones[nlors];
+    float* ones = (float*) calloc(nlors, sizeof(float));
     for (int i = 0; i < nlors; i++)
     {
         ones[i] = 1;
