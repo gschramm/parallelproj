@@ -67,14 +67,14 @@ void joseph3d_back(const float *xstart,
  *                          A positive value means a shift towards the end point of the LOR.
  *  @param n_sigmas         number of sigmas to consider for calculation of TOF kernel
  *  @param tof_bin          array containing the TOF bin of each event
- *  @params lor_dependent_sigma_tof unsigned char 0 or 1
- *                                  1 means that the TOF sigmas are LOR dependent
- *                                  any other value means that the first value in the sigma_tof
- *                                  array is used for all LORs
- *  @params lor_dependent_tofcenter_offset unsigned char 0 or 1
- *                                         1 means that the TOF center offsets are LOR dependent
- *                                         any other value means that the first value in the tofcenter_offset
- *                                         array is used for all LORs
+ *  @param lor_dependent_sigma_tof unsigned char 0 or 1
+ *                                 1 means that the TOF sigmas are LOR dependent
+ *                                 any other value means that the first value in the sigma_tof
+ *                                 array is used for all LORs
+ *  @param lor_dependent_tofcenter_offset unsigned char 0 or 1
+ *                                        1 means that the TOF center offsets are LOR dependent
+ *                                        any other value means that the first value in the 
+ *                                        tofcenter_offset array is used for all LORs
  */
 void joseph3d_back_tof_lm(const float *xstart, 
                           const float *xend, 
@@ -127,14 +127,14 @@ void joseph3d_back_tof_lm(const float *xstart,
  *                          A positive value means a shift towards the end point of the LOR.
  *  @param n_sigmas         number of sigmas to consider for calculation of TOF kernel
  *  @param n_tofbins        number of TOF bins
- *  @params lor_dependent_sigma_tof unsigned char 0 or 1
- *                                  1 means that the TOF sigmas are LOR dependent
- *                                  any other value means that the first value in the sigma_tof
- *                                  array is used for all LORs
- *  @params lor_dependent_tofcenter_offset unsigned char 0 or 1
- *                                         1 means that the TOF center offsets are LOR dependent
- *                                         any other value means that the first value in the tofcenter_offset
- *                                         array is used for all LORs
+ *  @param lor_dependent_sigma_tof unsigned char 0 or 1
+ *                                 1 means that the TOF sigmas are LOR dependent
+ *                                 any other value means that the first value in the sigma_tof
+ *                                 array is used for all LORs
+ *  @param lor_dependent_tofcenter_offset unsigned char 0 or 1
+ *                                        1 means that the TOF center offsets are LOR dependent
+ *                                        any other value means that the first value in the 
+ *                                        tofcenter_offset array is used for all LORs
  */
 void joseph3d_back_tof_sino(const float *xstart, 
                             const float *xend, 
@@ -205,14 +205,14 @@ void joseph3d_fwd(const float *xstart,
  *                          A positive value means a shift towards the end point of the LOR.
  *  @param n_sigmas         number of sigmas to consider for calculation of TOF kernel
  *  @param tof_bin          array containing the TOF bin of each event
- *  @params lor_dependent_sigma_tof unsigned char 0 or 1
- *                                  1 means that the TOF sigmas are LOR dependent
- *                                  any other value means that the first value in the sigma_tof
- *                                  array is used for all LORs
- *  @params lor_dependent_tofcenter_offset unsigned char 0 or 1
- *                                         1 means that the TOF center offsets are LOR dependent
- *                                         any other value means that the first value in the tofcenter_offset
- *                                         array is used for all LORs
+ *  @param lor_dependent_sigma_tof unsigned char 0 or 1
+ *                                 1 means that the TOF sigmas are LOR dependent
+ *                                 any other value means that the first value in the sigma_tof
+ *                                 array is used for all LORs
+ *  @param lor_dependent_tofcenter_offset unsigned char 0 or 1
+ *                                        1 means that the TOF center offsets are LOR dependent
+ *                                        any other value means that the first value in the 
+ *                                        tofcenter_offset array is used for all LORs
  */
 void joseph3d_fwd_tof_lm(const float *xstart, 
                         const float *xend, 
@@ -260,14 +260,14 @@ void joseph3d_fwd_tof_lm(const float *xstart,
  *                          A positive value means a shift towards the end point of the LOR.
  *  @param n_sigmas         number of sigmas to consider for calculation of TOF kernel
  *  @param n_tofbins        number of TOF bins
- *  @params lor_dependent_sigma_tof unsigned char 0 or 1
- *                                  1 means that the TOF sigmas are LOR dependent
- *                                  any other value means that the first value in the sigma_tof
- *                                  array is used for all LORs
- *  @params lor_dependent_tofcenter_offset unsigned char 0 or 1
- *                                         1 means that the TOF center offsets are LOR dependent
- *                                         any other value means that the first value in the tofcenter_offset
- *                                         array is used for all LORs
+ *  @param lor_dependent_sigma_tof unsigned char 0 or 1
+ *                                 1 means that the TOF sigmas are LOR dependent
+ *                                 any other value means that the first value in the sigma_tof
+ *                                 array is used for all LORs
+ *  @param lor_dependent_tofcenter_offset unsigned char 0 or 1
+ *                                        1 means that the TOF center offsets are LOR dependent
+ *                                        any other value means that the first value in the 
+ *                                        tofcenter_offset array is used for all LORs
  */
 void joseph3d_fwd_tof_sino(const float *xstart, 
                            const float *xend, 
