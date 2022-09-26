@@ -1,3 +1,5 @@
+{% set mincudaversion = "11.0" %}
+
 package:
   name: parallelproj
   version: {{ environ.get('GIT_DESCRIBE_TAG','v')[1:] }}
@@ -28,7 +30,9 @@ requirements:
     - doxygen
     - {{ compiler('c') }} # [win]
     - {{ compiler('cxx') }} # [win]
-    - cuda-toolkit
+    - cuda-toolkit >={{ mincudaversion }}
+  run_constrained:
+    - cuda-runtime >={{ mincudaversion }}
 
 about:
   home: https://github.com/gschramm/parallelproj
