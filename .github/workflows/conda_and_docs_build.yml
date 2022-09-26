@@ -1,14 +1,9 @@
 name: conda_and_docs_build
 
 on:
-  release:
-    types: [published]
   push:
-    branches: [ master ]
     tags:
-      - '**'
-  pull_request:
-    branches: [ master ]
+      - 'v[0-9]+.*'
 
 jobs:
   conda_build:
