@@ -5,5 +5,12 @@ target_include_directories(nontof_fwd_back_cuda PUBLIC
   )
 target_link_libraries(nontof_fwd_back_cuda PUBLIC parallelproj_cuda)
 
+# add CUDA test - only if we have a GPU
+execute_process(COMMAND nvidia-smi --query-gpu=name --format=csv,noheader
+                RESULT_VARIABLE NUM_GPU_RESULT
+                OUTPUT_VARIABLE NUM_GPU_OUTPUT)
+
+message(INFO "NUM GPUS RES: ${NUM_GPU_RESULT}")
+message(INFO "NUM GPUS: ${NUM_GPU_OUTPUT}")
+
 add_test(NAME nontof_fwd_back_cuda COMMAND nontof_fwd_back_cuda)
-set_property(TEST nontof_fwd_back_cuda PROPERTY RESOURCE_GROUPS "gpus:1")
