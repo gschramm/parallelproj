@@ -7,7 +7,7 @@ enable_language(CUDA)
 # if we build on a system without GPU, it is best to just set CMAKE_CUDA_ARCHITECUTURES to e.g. 75
 if(NOT DEFINED CMAKE_CUDA_ARCHITECTURES)
   if(${CMAKE_VERSION} VERSION_LESS "3.23.0")
-    message("CMAKE_CUDA_ARCHITECTURES NOT DEFINED")
+    message(STATUS "CMAKE_CUDA_ARCHITECTURES NOT DEFINED")
     include(FindCUDA/select_compute_arch)
     CUDA_DETECT_INSTALLED_GPUS(INSTALLED_GPU_CCS_1)
     string(STRIP "${INSTALLED_GPU_CCS_1}" INSTALLED_GPU_CCS_2)
@@ -19,7 +19,7 @@ if(NOT DEFINED CMAKE_CUDA_ARCHITECTURES)
   endif()
 endif()
 
-message("Using CMAKE_CUDA_ARCHITECTURES: ${CMAKE_CUDA_ARCHITECTURES}")
+message(STATUS "Using CMAKE_CUDA_ARCHITECTURES: ${CMAKE_CUDA_ARCHITECTURES}")
 
 # add openmp flags to cuda compiler
 set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -Xcompiler=${OpenMP_CXX_FLAGS}") 

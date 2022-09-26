@@ -7,10 +7,16 @@ target_link_libraries(nontof_fwd_back_cuda PUBLIC parallelproj_cuda)
 
 # add CUDA test - only if we have a GPU
 execute_process(COMMAND nvidia-smi --query-gpu=name --format=csv,noheader
-                RESULT_VARIABLE NUM_GPU_RESULT
-                OUTPUT_VARIABLE NUM_GPU_OUTPUT)
+                RESULT_VARIABLE GPU_RESULT
+                OUTPUT_VARIABLE GPU_OUTPUT)
 
-message(INFO "NUM GPUS RES: ${NUM_GPU_RESULT}")
-message(INFO "NUM GPUS: ${NUM_GPU_OUTPUT}")
+message(STATUS "GPUS RES: ${GPU_RESULT}")
+# If there are not GPUs available (or nvidia-smi is not available), GPU_OUTPUT is an empty string
+message(STATUS "Detected GPUS: ${GPU_OUTPUT}")
 
-add_test(NAME nontof_fwd_back_cuda COMMAND nontof_fwd_back_cuda)
+
+if ("${GPU_OUTPUT}" STREQUAL "")
+  message(WARNING "NO GPUs found, skipping cuda tests")
+else()
+  add_test(NAME nontof_fwd_back_cuda COMMAND nontof_fwd_back_cuda)
+endif()
