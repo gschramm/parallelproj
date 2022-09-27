@@ -30,7 +30,7 @@ requirements:
     - {{ compiler('cxx') }} # [win]
     - cuda-toolkit {{ cudatoolkit }}
   run:
-    - {{ pin_compatible('cuda-toolkit') }}
+    - cudatoolkit {{ cudatoolkit }}.*
 
 about:
   home: https://github.com/gschramm/parallelproj
