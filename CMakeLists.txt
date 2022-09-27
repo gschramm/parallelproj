@@ -13,31 +13,39 @@ include(CheckLanguage)
 # print warnings if we are building from an untagged version or a 
 # version with local changes (dirty)
 
-find_package(Git REQUIRED)
+find_package(Git)
 
-# get the version from the latest git tag
-execute_process(COMMAND git describe --tags --long  --dirty=__dirty
-                OUTPUT_VARIABLE GIT_DESCRIBE_TAG OUTPUT_STRIP_TRAILING_WHITESPACE)
-message(STATUS "GIT DESCRIBE TAG: ${GIT_DESCRIBE_TAG}")
-
-# the git describe tag looks sth like v1.0 or v1.2.3-4-hash
-set(VALID_TAG_PATTERN "^v([0-9]+.*[0-9]+)-[0-9]+-.*")
-set(NUM_COMMIT_PATTERN ".*-([0-9]+)-.*")
-
-if(GIT_DESCRIBE_TAG MATCHES ${VALID_TAG_PATTERN})
-    string(REGEX REPLACE ${VALID_TAG_PATTERN} "\\1" PARALLELPROJ_VERSION "${GIT_DESCRIBE_TAG}")
-    string(REGEX REPLACE ${NUM_COMMIT_PATTERN} "\\1" NUM_COMMITS "${GIT_DESCRIBE_TAG}")
-    message(STATUS "NUMBER OF COMMITS FROM LAST TAG: ${NUM_COMMITS}")
-
-    if(NUM_COMMITS GREATER "0")
-        message(WARNING "Building from on untagged version")
-    endif()
-
-    if(GIT_DESCRIBE_TAG MATCHES ".*__dirty$")
-        message(WARNING "Building from a version with local changes.")
-    endif()
+if(Git_FOUND)
+  # get the version from the latest git tag
+  execute_process(COMMAND git describe --tags --long  --dirty=__dirty
+                  OUTPUT_VARIABLE GIT_DESCRIBE_TAG OUTPUT_STRIP_TRAILING_WHITESPACE)
+  message(STATUS "GIT DESCRIBE TAG: ${GIT_DESCRIBE_TAG}")
+  
+  # the git describe tag looks sth like v1.0 or v1.2.3-4-hash
+  set(VALID_TAG_PATTERN "^v([0-9]+.*[0-9]+)-[0-9]+-.*")
+  set(NUM_COMMIT_PATTERN ".*-([0-9]+)-.*")
+  
+  if(GIT_DESCRIBE_TAG MATCHES ${VALID_TAG_PATTERN})
+      string(REGEX REPLACE ${VALID_TAG_PATTERN} "\\1" PARALLELPROJ_VERSION "${GIT_DESCRIBE_TAG}")
+      string(REGEX REPLACE ${NUM_COMMIT_PATTERN} "\\1" NUM_COMMITS "${GIT_DESCRIBE_TAG}")
+      message(STATUS "NUMBER OF COMMITS FROM LAST TAG: ${NUM_COMMITS}")
+  
+      if(NUM_COMMITS GREATER "0")
+          message(WARNING "Building from on untagged version")
+      endif()
+  
+      if(GIT_DESCRIBE_TAG MATCHES ".*__dirty$")
+          message(WARNING "Building from a version with local changes.")
+      endif()
+  else()
+    # git is there but the directory was not git cloned, get version from parent folder (parallelproj-X.X)
+    get_filename_component(TMP ${CMAKE_CURRENT_SOURCE_DIR} NAME)
+    string(REPLACE "parallelproj-" "" PARALLELPROJ_VERSION ${TMP})
+  endif()
 else()
-   message(FATAL_ERROR "Failed to obtain VERSION number from git describe because of invalid git describe tag: ${GIT_DESCRIBE_TAG}")
+  # git is not there, get version from parent folder (parallelproj-X.X)
+  get_filename_component(TMP ${CMAKE_CURRENT_SOURCE_DIR} NAME)
+  string(REPLACE "parallelproj-" "" PARALLELPROJ_VERSION ${TMP})
 endif()
 
 message(STATUS "BUILDING VERSION: ${PARALLELPROJ_VERSION}")
