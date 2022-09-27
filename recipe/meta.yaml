@@ -32,8 +32,11 @@ requirements:
     - {{ compiler('c') }} # [win]
     - {{ compiler('cxx') }} # [win]
     - cuda-toolkit >={{ mincudaversion }},<{{ maxcudaversion }}
-  run_constrained:
-    - cuda-runtime >={{ mincudaversion }},<{{ maxcudaversion }}
+  run_exports:
+    - cuda-toolkit
+
+  #run_constrained:
+  #  - cuda-runtime >={{ mincudaversion }},<{{ maxcudaversion }}
 
 about:
   home: https://github.com/gschramm/parallelproj
