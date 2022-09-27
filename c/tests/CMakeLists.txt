@@ -1,9 +1,9 @@
-add_executable(nontof_fwd_back nontof_fwd_back.c)
-target_include_directories(nontof_fwd_back PUBLIC
+add_executable(parallelproj_nontof_fwd_back_test nontof_fwd_back.c)
+target_include_directories(parallelproj_nontof_fwd_back_test PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include/>
   $<INSTALL_INTERFACE:include/>
   )
-target_link_libraries(nontof_fwd_back PUBLIC parallelproj_c)
+target_link_libraries(parallelproj_nontof_fwd_back_test PUBLIC parallelproj_c)
 
 # check if we need to link against libm (we need to do that e.g. for gcc, but not for msvc)
 set(POW_LIBS "")
@@ -15,7 +15,14 @@ if(LIBM)
 endif()
 
 if(CMAKE_COMPILER_IS_GNUCC)
-  target_link_libraries(nontof_fwd_back PUBLIC ${POW_LIBS})
+  target_link_libraries(parallelproj_nontof_fwd_back_test PUBLIC ${POW_LIBS})
 endif()
 
-add_test(NAME nontof_fwd_back COMMAND nontof_fwd_back)
+install(TARGETS parallelproj_nontof_fwd_back_test EXPORT parallelprojTargets 
+        RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR} 
+        LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR} 
+        ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR} 
+        PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
+
+
+add_test(NAME parallelproj_nontof_fwd_back_test COMMAND parallelproj_nontof_fwd_back_test)
