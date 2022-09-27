@@ -11,14 +11,14 @@ This project provides OpenMP and CUDA implementations of 3D Joseph non-TOF and T
 The easiest and recommended way to install the parallelproj OpenMP and CUDA libs is to get them from our conda channel via
 
 ```
-conda install -c gschramm -c nvidia parallelproj
+conda install -c gschramm -c conda-forge parallelproj
 ```
 
 ### Building from source
 
 ### Dependencies
 
-- cmake>=3.16 (3.16 version needed to detect CUDA correctly)
+- cmake>=3.16 (3.16 version needed to detect CUDA correctly), we recommend to use cmake>=3.23
 - a recent c compiler with OpenMP support (tested with gcc 9.3 and msvc)
 - git (to detect the version from git describe)
 - cuda toolkit (optional, tested with >= 10)
