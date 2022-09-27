@@ -6,15 +6,20 @@ This project provides OpenMP and CUDA implementations of 3D Joseph non-TOF and T
 
 ## Installation
 
-### Installation from conda
+### (Option 1 - recommended) Installation from conda
 
-The easiest and recommended way to install the parallelproj OpenMP and CUDA libs is to get them from our conda channel via
-
+The easiest and recommended way to install the parallelproj OpenMP and CUDA libs and all their dependencies is to get them from [our conda channel](https://anaconda.org/gschramm/parallelproj) via
 ```
 conda install -c gschramm -c conda-forge parallelproj
 ```
 
-### Building from source
+*Remarks*:
+- *As usual, we recommend to install the libs into a separate conda virtual enviornment.* 
+- *Currently, we only provide a conda package for ```linux-64```. If you would like to use our libs on other platforms, you have to build them from source (see next section).*
+- *Even if you do not have a CUDA GPU on your system, the compiled CUDA lib (and also the cudatoolkit) gets installed.*  
+
+
+### (Option 2) Building from source
 
 ### Dependencies
 
