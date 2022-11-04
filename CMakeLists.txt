@@ -37,6 +37,12 @@ set (CMAKE_BUILD_TYPE Release CACHE STRING "build type" FORCE)
 
 # variable whether to build with auto-generated IDL wrappers
 set(PARALLELPROJ_BUILD_WITH_IDL_WRAPPERS FALSE CACHE BOOL "include auto-generated IDL wrapper sources in build")
+
+set(SKIP_OPENMP_LIB FALSE CACHE BOOL "do not build the openmp lib")
+set(SKIP_CUDA_LIB FALSE CACHE BOOL "do not build the cuda lib")
+set(SKIP_DOCS FALSE CACHE BOOL "do not build the documentation")
+
+
 #-------------------------------------------------------------
 
 set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS TRUE)
@@ -56,12 +62,20 @@ find_package(Doxygen)
 
 #-------------------------------------------------------------
 # build the C/OpenMP lib
-add_subdirectory(c)
+if (NOT SKIP_OPENMP_LIB)
+  add_subdirectory(c)
+else()
+  message(STATUS "Skipping build of openMP lib")
+endif()
 
 
 # only build CUDA lib if CUDA is available
-if(CMAKE_CUDA_COMPILER)
-  add_subdirectory(cuda)
+if (NOT SKIP_CUDA_LIB)
+  if(CMAKE_CUDA_COMPILER)
+    add_subdirectory(cuda)
+  endif()
+else()
+  message(STATUS "Skipping build of cuda lib")
 endif()
 
 #-------------------------------------------------------------
@@ -77,22 +91,25 @@ install(
 #-------------------------------------------------------------
 # build the documentation with Doxygen
 
-if (DOXYGEN_FOUND)
-  # set input and output files
-  set(DOXYGEN_IN ${CMAKE_CURRENT_SOURCE_DIR}/cmake/Doxyfile.in)
-  set(DOXYGEN_OUT ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile)
-
-  # request to configure the file
-  configure_file(${DOXYGEN_IN} ${DOXYGEN_OUT} @ONLY)
-
-  # note the option ALL which allows to build the docs together with the application
-  add_custom_target(docs
-      COMMAND ${DOXYGEN_EXECUTABLE} ${DOXYGEN_OUT}
-      WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-      COMMENT "Generating API documentation with Doxygen"
-      VERBATIM )
-endif (DOXYGEN_FOUND)
-
+if (NOT SKIP_DOCS)
+  if (DOXYGEN_FOUND)
+    # set input and output files
+    set(DOXYGEN_IN ${CMAKE_CURRENT_SOURCE_DIR}/cmake/Doxyfile.in)
+    set(DOXYGEN_OUT ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile)
+  
+    # request to configure the file
+    configure_file(${DOXYGEN_IN} ${DOXYGEN_OUT} @ONLY)
+  
+    # note the option ALL which allows to build the docs together with the application
+    add_custom_target(docs
+        COMMAND ${DOXYGEN_EXECUTABLE} ${DOXYGEN_OUT}
+        WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+        COMMENT "Generating API documentation with Doxygen"
+        VERBATIM )
+  endif (DOXYGEN_FOUND)
+else()
+  message(STATUS "skipping build of documentation")
+endif()
 
 #-------------------------------------------------------------
 # generate and install cmake package and version files
