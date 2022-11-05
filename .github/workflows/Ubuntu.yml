@@ -26,9 +26,6 @@ jobs:
           - os: ubuntu-20.04
             cuda: "11.3"
             gcc: 10
-          - os: ubuntu-18.04
-            cuda: "10.1"
-            gcc: 8
 
     env:
       build_dir: "build"
@@ -74,6 +71,6 @@ jobs:
 
       - name: Build everything else
         working-directory: ${{ env.build_dir }}
-        run: | 
+        run: |
           cmake --build . --target all --verbose -j `nproc`
           ctest -VV

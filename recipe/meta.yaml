@@ -7,32 +7,40 @@ source:
 
 build:
   number: {{ GIT_DESCRIBE_NUMBER }}
-  missing_dso_whitelist:
-    - lib/libgomp.so.1            # [linux]
-    - $RPATH/librt.so.1           # [linux]
-    - $RPATH/libpthread.so.0      # [linux]
-    - $RPATH/libdl.so.2           # [linux]
-    - lib/libstdc++.so.6          # [linux]
-    - $RPATH/libc.so.6            # [linux]
-    - /lib64/ld-linux-x86-64.so.2 # [linux]
-    - lib/libgomp.so.1            # [linux]
-    - $RPATH/libc.so.6            # [linux]
+  skip: true #  [win]
 
+outputs:
+  - name: parallelproj
+    script: build_openmp.sh  # [not win]
+    requirements:
+      build:
+        - cmake >=3.23
+        - ninja
+        - git
+        - {{ compiler('c') }}
+        - {{ compiler('cxx') }}
+        - libgomp  # [linux]
+        - llvm-openmp  # [osx]
+      run:
+        - libgomp  # [linux]
+        - llvm-openmp  # [osx]
 
-requirements:
-  build:
-    - cmake >=3.23
-    - make  # [not win]
-    - ninja  # [win]
-    - git
-    - doxygen
-    - {{ compiler('c') }} # [win]
-    - {{ compiler('cxx') }} # [win]
-    - cuda-toolkit {{ cudatoolkit }}
-  run:
-    - cudatoolkit {{ cudatoolkit }}
+  - name: parallelproj-cuda
+    script: build_cuda.sh  # [not win]
+    requirements:
+      build:
+        - cmake >=3.23
+        - ninja
+        - git
+        - libgomp  # [linux]
+        - llvm-openmp  # [osx]
+        - cuda-toolkit
+      run:
+        - libgomp  # [linux]
+        - llvm-openmp  # [osx]
+        - cuda-toolkit
 
 about:
   home: https://github.com/gschramm/parallelproj
-  license:  MIT License
+  license:  MIT
   summary: 'parallelized TOF PET projectors'
