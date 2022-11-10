@@ -1,3 +1,8 @@
+## 1.2.4 (November 10, 2022)
+- chore: updated package.json, updated CHANGELOG.md, bumped 1.2.3 -> 1.2.4
+- add fatal error if cuda lib is to be build but no cuda compiler is found
+- add empty host sections to recipy on output level
+
 ## 1.2.3 (November 04, 2022)
 - chore: updated package.json, updated CHANGELOG.md, bumped 1.2.2 -> 1.2.3
 - work on local recipy and remove conda workflows
