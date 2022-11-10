@@ -13,6 +13,7 @@ outputs:
   - name: parallelproj
     script: build_openmp.sh  # [not win]
     requirements:
+      host:
       build:
         - cmake >=3.23
         - ninja
@@ -28,6 +29,7 @@ outputs:
   - name: parallelproj-cuda
     script: build_cuda.sh  # [not win]
     requirements:
+      host:
       build:
         - cmake >=3.23
         - ninja
