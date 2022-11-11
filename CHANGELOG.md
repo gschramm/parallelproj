@@ -1,3 +1,7 @@
+## 1.2.5 (November 11, 2022)
+- chore: updated package.json, updated CHANGELOG.md, bumped 1.2.4 -> 1.2.5
+- add conditions to nested if else when adding cuda subdir
+
 ## 1.2.4 (November 10, 2022)
 - chore: updated package.json, updated CHANGELOG.md, bumped 1.2.3 -> 1.2.4
 - add fatal error if cuda lib is to be build but no cuda compiler is found
