@@ -70,15 +70,15 @@ endif()
 
 
 # only build CUDA lib if CUDA is available
-if (NOT SKIP_CUDA_LIB)
+if(NOT SKIP_CUDA_LIB)
   if(CMAKE_CUDA_COMPILER)
     add_subdirectory(cuda)
-  else()
+  else(CMAKE_CUDA_COMPILER)
     message(FATAL_ERROR "No Cuda compiler found")
-  endif()
-else()
+  endif(CMAKE_CUDA_COMPILER)
+else(NOT SKIP_CUDA_LIB)
   message(STATUS "Skipping build of cuda lib")
-endif()
+endif(NOT SKIP_CUDA_LIB)
 
 #-------------------------------------------------------------
 # install the targets
