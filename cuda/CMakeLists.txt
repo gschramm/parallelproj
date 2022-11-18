@@ -1,5 +1,10 @@
 enable_language(CUDA)
 
+# find the required OpeMP
+find_package(OpenMP REQUIRED)
+
+set(CUDA_SUPPORTED ON)
+
 # auto detect the cuda architecture
 # https://stackoverflow.com/questions/68223398/how-can-i-get-cmake-to-automatically-detect-the-value-for-cuda-architectures
 # for cmake >= 3.23 it is better to use CMAKE_CUDA_ARCHITECTURES=all or native, but we want to support older cmake

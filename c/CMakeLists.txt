@@ -1,3 +1,8 @@
+enable_language(C)
+
+# find the required OpeMP
+find_package(OpenMP REQUIRED)
+
 if(PARALLELPROJ_BUILD_WITH_IDL_WRAPPERS)
   file(GLOB C_SOURCES src/*.c wrapper/parallelproj_c_idl_wrapper.c)
 else()

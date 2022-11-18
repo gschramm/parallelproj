@@ -20,7 +20,7 @@ message(STATUS "BUILDING VERSION: ${PARALLELPROJ_VERSION}")
 
 #-------------------------------------------------------------
 
-project(parallelproj LANGUAGES C CXX VERSION ${PARALLELPROJ_VERSION})
+project(parallelproj VERSION ${PARALLELPROJ_VERSION})
 
 include(CTest)
 enable_testing()
@@ -48,13 +48,7 @@ set(SKIP_DOCS FALSE CACHE BOOL "do not build the documentation")
 set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS TRUE)
 
 #-------------------------------------------------------------
-# checks for OpenMP, CUDA and doxygen
 
-# find the required OpeMP
-find_package(OpenMP REQUIRED)
-
-# check if CUDA is available
-check_language(CUDA)
 
 # check if Doxygen is installed
 find_package(Doxygen)
@@ -69,13 +63,8 @@ else()
 endif()
 
 
-# only build CUDA lib if CUDA is available
 if(NOT SKIP_CUDA_LIB)
-  if(CMAKE_CUDA_COMPILER)
-    add_subdirectory(cuda)
-  else(CMAKE_CUDA_COMPILER)
-    message(FATAL_ERROR "No Cuda compiler found")
-  endif(CMAKE_CUDA_COMPILER)
+  add_subdirectory(cuda)
 else(NOT SKIP_CUDA_LIB)
   message(STATUS "Skipping build of cuda lib")
 endif(NOT SKIP_CUDA_LIB)
@@ -115,9 +104,6 @@ endif()
 
 #-------------------------------------------------------------
 # generate and install cmake package and version files
-if(CMAKE_CUDA_COMPILER)
-  set(CUDA_SUPPORTED ON)
-endif()
   
 configure_package_config_file(
   ${CMAKE_CURRENT_SOURCE_DIR}/cmake/Config.cmake.in
