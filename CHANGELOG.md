@@ -1,3 +1,7 @@
+## 1.2.6 (November 18, 2022)
+- chore: updated package.json, updated CHANGELOG.md, bumped 1.2.5 -> 1.2.6
+- clean up CMake logic
+
 ## 1.2.5 (November 11, 2022)
 - chore: updated package.json, updated CHANGELOG.md, bumped 1.2.4 -> 1.2.5
 - add conditions to nested if else when adding cuda subdir
