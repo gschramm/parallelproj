@@ -18,11 +18,4 @@ if(CMAKE_COMPILER_IS_GNUCC)
   target_link_libraries(parallelproj_nontof_fwd_back_test PUBLIC ${POW_LIBS})
 endif()
 
-install(TARGETS parallelproj_nontof_fwd_back_test EXPORT parallelprojTargets 
-        RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR} 
-        LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR} 
-        ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR} 
-        PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
-
-
 add_test(NAME parallelproj_nontof_fwd_back_test COMMAND parallelproj_nontof_fwd_back_test)

@@ -14,12 +14,6 @@ message(STATUS "GPUS RES: ${GPU_RESULT}")
 # If there are not GPUs available (or nvidia-smi is not available), GPU_OUTPUT is an empty string
 message(STATUS "Detected GPUS: ${GPU_OUTPUT}")
 
-install(TARGETS parallelproj_nontof_fwd_back_cuda_test EXPORT parallelprojTargets 
-        RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR} 
-        LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR} 
-        ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR} 
-        PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
-
 if ("${GPU_OUTPUT}" STREQUAL "")
   message(WARNING "NO GPUs found, skipping cuda tests")
 else()
