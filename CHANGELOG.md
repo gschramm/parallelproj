@@ -1,3 +1,6 @@
+## 1.2.8 (December 02, 2022)
+- chore: updated package.json, updated CHANGELOG.md, bumped 1.2.7 -> 1.2.8
+
 ## 1.2.7 (December 02, 2022)
 - chore: updated package.json, updated CHANGELOG.md, bumped 1.2.6 -> 1.2.7
 - do not install test binaries
