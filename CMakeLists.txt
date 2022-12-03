@@ -20,7 +20,7 @@ message(STATUS "BUILDING VERSION: ${PARALLELPROJ_VERSION}")
 
 #-------------------------------------------------------------
 
-project(parallelproj VERSION ${PARALLELPROJ_VERSION})
+project(parallelproj VERSION ${PARALLELPROJ_VERSION} LANGUAGES C)
 
 include(CTest)
 enable_testing()
