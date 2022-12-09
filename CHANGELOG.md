@@ -1,3 +1,7 @@
+## 1.2.9 (December 09, 2022)
+- chore: updated package.json, updated CHANGELOG.md, bumped 1.2.8 -> 1.2.9
+- BUGFIX: correct calcultion of x_pr2 when principle direction is 0
+
 ## 1.2.8 (December 02, 2022)
 - chore: updated package.json, updated CHANGELOG.md, bumped 1.2.7 -> 1.2.8
 
