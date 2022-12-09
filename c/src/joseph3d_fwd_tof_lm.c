@@ -205,7 +205,7 @@ void joseph3d_fwd_tof_lm(const float *xstart,
         {
           // get the indices where the ray intersects the image plane
           x_pr1 = xstart1 + (img_origin0 + i0*voxsize0 - xstart0)*d1 / d0;
-          x_pr2 = xstart2 + (img_origin1 + i0*voxsize1 - xstart0)*d2 / d0;
+          x_pr2 = xstart2 + (img_origin0 + i0*voxsize0 - xstart0)*d2 / d0;
   
           i1_floor = (int)floor((x_pr1 - img_origin1)/voxsize1);
           i1_ceil  = i1_floor + 1;
