@@ -52,27 +52,39 @@ int main()
     }
 
     // setup the start and end coordinates of a few test rays in voxel coordinates
-    long long nlors = 6;
+    long long nlors = 10;
 
-    float vstart[] = {0, -1, 0,   // 0
-                      0, -1, 0,   // 1
-                      0, -1, 1,   // 2
-                      0, -1, 0.5, // 3
-                      0, 0, -1,   // 4
-                      -1, 0, 0};  // 5
+    float vstart[] = {
+        0, -1, 0,           // 0
+        0, -1, 0,           // 1
+        0, -1, 1,           // 2
+        0, -1, 0.5,         // 3
+        0, 0, -1,           // 4
+        -1, 0, 0,           // 5
+        n0 - 1, -1, 0,      // 6 - (shifted 1)
+        n0 - 1, -1, n2 - 1, // 7 - (shifted 6)
+        n0 - 1, 0, -1,      // 8 - (shifted 4)
+        n0 - 1, n1 - 1, -1, // 9 - (shifted 8)
+    };
 
-    float vend[] = {0, n1, 0,   // 0
-                    0, n1, 0,   // 1
-                    0, n1, 1,   // 2
-                    0, n1, 0.5, // 3
-                    0, 0, n2,   // 4
-                    n0, 0, 0};  // 5
+    float vend[] = {
+        0, n1, 0,           // 0
+        0, n1, 0,           // 1
+        0, n1, 1,           // 2
+        0, n1, 0.5,         // 3
+        0, 0, n2,           // 4
+        n0, 0, 0,           // 5
+        n0 - 1, n1, 0,      // 6 - (shifted 1)
+        n0 - 1, n1, n2 - 1, // 7 - (shifted 6)
+        n0 - 1, 0, n2,      // 8 - (shifted 4)
+        n0 - 1, n1 - 1, n2, // 9 - (shifted 8)
+    };
 
     for (int ir = 0; ir < nlors; ir++)
     {
         printf("test ray %d\n", ir);
-        printf("start .: %.1f %.1f %.1f\n", vstart[ir * 3 + 0], vstart[ir * 3 + 1], vstart[ir * 3 + 2]);
-        printf("end   .: %.1f %.1f %.1f\n", vend[ir * 3 + 0], vend[ir * 3 + 1], vend[ir * 3 + 2]);
+        printf("start voxel num .: %.1f %.1f %.1f\n", vstart[ir * 3 + 0], vstart[ir * 3 + 1], vstart[ir * 3 + 2]);
+        printf("end   voxel num .: %.1f %.1f %.1f\n", vend[ir * 3 + 0], vend[ir * 3 + 1], vend[ir * 3 + 2]);
     }
 
     // calculate the start and end coordinates in world coordinates
@@ -80,6 +92,7 @@ int main()
     float *xend = (float *)calloc(3 * nlors, sizeof(float));
 
     for (int ir = 0; ir < nlors; ir++)
+
     {
         for (int j = 0; j < 3; j++)
         {
@@ -123,8 +136,33 @@ int main()
         expected_fwd_vals[5] += img[i0 * n1 * n2 + 0 * n2 + 0] * voxsize[0];
     }
 
+    // calculate the expected value of rays6 from [n0-1,-1,0] to [n0-1,last+1,0]
+    for (int i1 = 0; i1 < n1; i1++)
+    {
+        expected_fwd_vals[6] += img[(n0 - 1) * n1 * n2 + i1 * n2 + 0] * voxsize[1];
+    }
+
+    // calculate the expected value of rays7 from [n0-1,-1,n2-1] to [n0-1,last+1,n2-1]
+    for (int i1 = 0; i1 < n1; i1++)
+    {
+        expected_fwd_vals[7] += img[(n0 - 1) * n1 * n2 + i1 * n2 + (n2 - 1)] * voxsize[1];
+    }
+
+    // calculate the expected value of ray4 from [n0-1,0,-1] to [n0-1,0,last+1]
+    for (int i2 = 0; i2 < n2; i2++)
+    {
+        expected_fwd_vals[8] += img[(n0 - 1) * n1 * n2 + 0 * n2 + i2] * voxsize[2];
+    }
+
+    // calculate the expected value of ray4 from [n0-1,0,-1] to [n0-1,0,last+1]
+    for (int i2 = 0; i2 < n2; i2++)
+    {
+        expected_fwd_vals[9] += img[(n0 - 1) * n1 * n2 + (n1 - 1) * n2 + i2] * voxsize[2];
+    }
+
     // check if we got the expected results
     float fwd_diff = 0;
+    printf("\nforward projection test\n");
     for (int ir = 0; ir < nlors; ir++)
     {
         printf("test ray %d: fwd projected: %.7e expected: %.7e\n", ir, p[ir], expected_fwd_vals[ir]);
@@ -134,54 +172,68 @@ int main()
         {
             printf("\n################################################################################");
             printf("\nabs(fwd projected - expected value) = %.2e for ray%d above tolerance %.2e", fwd_diff, ir, eps);
-            printf("\n################################################################################");
+            printf("\n################################################################################\n");
             retval = 1;
         }
     }
 
-    //// back projection test
-    // float bimg[] = {0, 0, 0,
-    //                 0, 0, 0,
-    //                 0, 0, 0,
+    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    // backprojection of ones test
+    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-    //                0, 0, 0,
-    //                0, 0, 0,
-    //                0, 0, 0,
+    float *bimg = (float *)calloc(n0 * n1 * n2, sizeof(float));
 
-    //                0, 0, 0,
-    //                0, 0, 0,
-    //                0, 0, 0};
+    float *ones = (float *)calloc(nlors, sizeof(float));
+    for (int i = 0; i < nlors; i++)
+    {
+        ones[i] = 1;
+    }
 
-    // float *ones = (float *)calloc(nlors, sizeof(float));
-    // for (int i = 0; i < nlors; i++)
-    //{
-    //     ones[i] = 1;
-    // }
+    joseph3d_back(xstart, xend, bimg, img_origin, voxsize, ones, nlors, img_dim);
 
-    // joseph3d_back(xstart, xend, bimg, img_origin, voxsize, ones, nlors, img_dim);
+    printf("\nback projection of ones along all rays:\n");
+    for (int i0 = 0; i0 < n0; i0++)
+    {
+        for (int i1 = 0; i1 < n1; i1++)
+        {
+            for (int i2 = 0; i2 < n2; i2++)
+            {
+                printf("%.1f ", bimg[n1 * n2 * i0 + n2 * i1 + i2]);
+            }
+            printf("\n");
+        }
+        printf("\n");
+    }
 
-    // printf("\n%.1f %.1f %.1f\n", bimg[0 + 9], bimg[1 + 9], bimg[2 + 9]);
-    // printf("%.1f %.1f %.1f\n", bimg[3 + 9], bimg[4 + 9], bimg[5 + 9]);
-    // printf("%.1f %.1f %.1f\n", bimg[6 + 9], bimg[7 + 9], bimg[8 + 9]);
+    // To test whether the back projection is correct, we test if the back projector is the adjoint
+    // of the forward projector. This is more practical than checking a lot of single voxels in the
+    // back projected image.
 
-    // if (bimg[0 + 9] != 6)
-    //     retval = 1;
-    // if (bimg[1 + 9] != 3)
-    //     retval = 1;
-    // if (bimg[2 + 9] != 1)
-    //     retval = 1;
-    // if (bimg[3 + 9] != 6)
-    //     retval = 1;
-    // if (bimg[4 + 9] != 3)
-    //     retval = 1;
-    // if (bimg[5 + 9] != 1)
-    //     retval = 1;
-    // if (bimg[6 + 9] != 6)
-    //     retval = 1;
-    // if (bimg[7 + 9] != 3)
-    //     retval = 1;
-    // if (bimg[8 + 9] != 1)
-    //     retval = 1;
+    float inner_product1 = 0;
+    float inner_product2 = 0;
+
+    for (int i = 0; i < (n0 * n1 * n2); i++)
+    {
+        inner_product1 += (img[i] * bimg[i]);
+    }
+
+    for (int ir = 0; ir < nlors; ir++)
+    {
+        inner_product2 += (p[ir] * ones[ir]);
+    }
+
+    float ip_diff = fabs(inner_product1 - inner_product2);
+
+    if (ip_diff > eps)
+    {
+        printf("\n#########################################################################");
+        printf("\nback projection test failed. back projection seems not to be the adjoint.");
+        printf("\n %.7e", ip_diff);
+        printf("\n#########################################################################\n");
+        retval = 1;
+    }
 
     return retval;
 }
