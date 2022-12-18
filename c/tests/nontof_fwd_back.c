@@ -21,12 +21,12 @@ int main()
     int n1 = img_dim[1];
     int n2 = img_dim[2];
 
-    const float img_origin[] = {(-(float)img_dim[0] / 2 + 0.5) * voxsize[0],
-                                (-(float)img_dim[1] / 2 + 0.5) * voxsize[1],
-                                (-(float)img_dim[2] / 2 + 0.5) * voxsize[2]};
+    const float img_origin[] = {(-(float)n0 / 2 + 0.5) * voxsize[0],
+                                (-(float)n1 / 2 + 0.5) * voxsize[1],
+                                (-(float)n2 / 2 + 0.5) * voxsize[2]};
 
     printf("\nimage dimension: ");
-    printf("%d %d %d\n", img_dim[0], img_dim[1], img_dim[2]);
+    printf("%d %d %d\n", n0, n1, n2);
 
     printf("\nvoxel size: ");
     printf("%.1f %.1f %.1f\n", voxsize[0], voxsize[1], voxsize[2]);
@@ -37,11 +37,11 @@ int main()
     float *img = (float *)calloc(n0 * n1 * n2, sizeof(float));
 
     printf("\nimage:\n");
-    for (int i0 = 0; i0 < img_dim[0]; i0++)
+    for (int i0 = 0; i0 < n0; i0++)
     {
-        for (int i1 = 0; i1 < img_dim[1]; i1++)
+        for (int i1 = 0; i1 < n1; i1++)
         {
-            for (int i2 = 0; i2 < img_dim[2]; i2++)
+            for (int i2 = 0; i2 < n2; i2++)
             {
                 img[n1 * n2 * i0 + n2 * i1 + i2] = (n1 * n2 * i0 + n2 * i1 + i2 + 1);
                 printf("%.1f ", img[n1 * n2 * i0 + n2 * i1 + i2]);
@@ -95,7 +95,7 @@ int main()
     joseph3d_fwd(xstart, xend, img, img_origin, voxsize, p, nlors, img_dim);
     // calculate the expected value of rays0/1 from [0,-1,0] to [0,last+1,0]
     float *expected_fwd_vals = (float *)calloc(nlors, sizeof(float));
-    for (int i1 = 0; i1 < img_dim[1]; i1++)
+    for (int i1 = 0; i1 < n1; i1++)
     {
         expected_fwd_vals[0] += img[0 * n1 * n2 + i1 * n2 + 0] * voxsize[1];
     }
@@ -103,7 +103,7 @@ int main()
     expected_fwd_vals[1] = expected_fwd_vals[0];
 
     // calculate the expected value of ray2 from [0,-1,1] to [0,last+1,1]
-    for (int i1 = 0; i1 < img_dim[1]; i1++)
+    for (int i1 = 0; i1 < n1; i1++)
     {
         expected_fwd_vals[2] += img[0 * n1 * n2 + i1 * n2 + 1] * voxsize[1];
     }
@@ -112,13 +112,13 @@ int main()
     expected_fwd_vals[3] = 0.5 * (expected_fwd_vals[0] + expected_fwd_vals[2]);
 
     // calculate the expected value of ray4 from [0,0,-1] to [0,0,last+1]
-    for (int i2 = 0; i2 < img_dim[2]; i2++)
+    for (int i2 = 0; i2 < n2; i2++)
     {
         expected_fwd_vals[4] += img[0 * n1 * n2 + 0 * n2 + i2] * voxsize[2];
     }
 
     // calculate the expected value of ray5 from [-1,0,0] to [last+1,0,0]
-    for (int i0 = 0; i0 < img_dim[0]; i0++)
+    for (int i0 = 0; i0 < n0; i0++)
     {
         expected_fwd_vals[5] += img[i0 * n1 * n2 + 0 * n2 + 0] * voxsize[0];
     }
