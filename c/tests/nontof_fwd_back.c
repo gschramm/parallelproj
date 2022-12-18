@@ -52,23 +52,27 @@ int main()
     }
 
     // setup the start and end coordinates of a few test rays in voxel coordinates
-    long long nlors = 4;
+    long long nlors = 6;
 
-    int istart[] = {0, -1, 0, // first two test rays are the same to check for race condiations in the back projection
-                    0, -1, 0, //
-                    0, 0, -1, //
-                    -1, 0, 0};
+    float vstart[] = {0, -1, 0,   // 0
+                      0, -1, 0,   // 1
+                      0, -1, 1,   // 2
+                      0, -1, 0.5, // 3
+                      0, 0, -1,   // 4
+                      -1, 0, 0};  // 5
 
-    int iend[] = {0, n1, 0, //
-                  0, n1, 0, //
-                  0, 0, n2, //
-                  n0, 0, 0};
+    float vend[] = {0, n1, 0,   // 0
+                    0, n1, 0,   // 1
+                    0, n1, 1,   // 2
+                    0, n1, 0.5, // 3
+                    0, 0, n2,   // 4
+                    n0, 0, 0};  // 5
 
     for (int ir = 0; ir < nlors; ir++)
     {
         printf("test ray %d\n", ir);
-        printf("start .: %d %d %d\n", istart[ir * 3 + 0], istart[ir * 3 + 1], istart[ir * 3 + 2]);
-        printf("end   .: %d %d %d\n", iend[ir * 3 + 0], iend[ir * 3 + 1], iend[ir * 3 + 2]);
+        printf("start .: %.1f %.1f %.1f\n", vstart[ir * 3 + 0], vstart[ir * 3 + 1], vstart[ir * 3 + 2]);
+        printf("end   .: %.1f %.1f %.1f\n", vend[ir * 3 + 0], vend[ir * 3 + 1], vend[ir * 3 + 2]);
     }
 
     // calculate the start and end coordinates in world coordinates
@@ -79,8 +83,8 @@ int main()
     {
         for (int j = 0; j < 3; j++)
         {
-            xstart[ir * 3 + j] = img_origin[j] + istart[ir * 3 + j] * voxsize[j];
-            xend[ir * 3 + j] = img_origin[j] + iend[ir * 3 + j] * voxsize[j];
+            xstart[ir * 3 + j] = img_origin[j] + vstart[ir * 3 + j] * voxsize[j];
+            xend[ir * 3 + j] = img_origin[j] + vend[ir * 3 + j] * voxsize[j];
         }
     }
 
@@ -89,14 +93,7 @@ int main()
 
     // forward projection test
     joseph3d_fwd(xstart, xend, img, img_origin, voxsize, p, nlors, img_dim);
-
-    printf("\nforward projected values:\n");
-    for (int i = 0; i < nlors; i++)
-    {
-        printf("%.1f ", p[i]);
-    }
-
-    // calculate the expected value of the first and second rays that project from [0,-1,0] to [0,last,0]
+    // calculate the expected value of rays0/1 from [0,-1,0] to [0,last+1,0]
     float *expected_fwd_vals = (float *)calloc(nlors, sizeof(float));
     for (int i1 = 0; i1 < img_dim[1]; i1++)
     {
@@ -105,21 +102,32 @@ int main()
 
     expected_fwd_vals[1] = expected_fwd_vals[0];
 
-    for (int i2 = 0; i2 < img_dim[2]; i2++)
+    // calculate the expected value of ray2 from [0,-1,1] to [0,last+1,1]
+    for (int i1 = 0; i1 < img_dim[1]; i1++)
     {
-        expected_fwd_vals[2] += img[0 * n1 * n2 + 0 * n2 + i2] * voxsize[2];
+        expected_fwd_vals[2] += img[0 * n1 * n2 + i1 * n2 + 1] * voxsize[1];
     }
 
-    // calculate the expected value of the first and second rays that project from [1,1,-1] to [1,1,last]
+    // calculate the expected value of ray3 from [0,-1,0.5] to [0,last+1,0.5]
+    expected_fwd_vals[3] = 0.5 * (expected_fwd_vals[0] + expected_fwd_vals[2]);
+
+    // calculate the expected value of ray4 from [0,0,-1] to [0,0,last+1]
+    for (int i2 = 0; i2 < img_dim[2]; i2++)
+    {
+        expected_fwd_vals[4] += img[0 * n1 * n2 + 0 * n2 + i2] * voxsize[2];
+    }
+
+    // calculate the expected value of ray5 from [-1,0,0] to [last+1,0,0]
     for (int i0 = 0; i0 < img_dim[0]; i0++)
     {
-        expected_fwd_vals[3] += img[i0 * n1 * n2 + 0 * n2 + 0] * voxsize[0];
+        expected_fwd_vals[5] += img[i0 * n1 * n2 + 0 * n2 + 0] * voxsize[0];
     }
 
     // check if we got the expected results
     float fwd_diff = 0;
     for (int ir = 0; ir < nlors; ir++)
     {
+        printf("test ray %d: fwd projected: %.7e expected: %.7e\n", ir, p[ir], expected_fwd_vals[ir]);
 
         fwd_diff = fabs(p[ir] - expected_fwd_vals[ir]);
         if (fwd_diff > eps)
