@@ -72,7 +72,7 @@ jobs:
       - name: Configure CMake
         id: configure
         shell: bash
-        run: cmake . -B ${{ env.build_dir }} -G "${{ matrix.visual_studio }}" -A x64
+        run: cmake . -B ${{ env.build_dir }} -GNinja
 
       - name: Configure Error Processing
         if: ${{ (failure() && steps.configure.outcome == 'failure') || success() }}
@@ -94,4 +94,4 @@ jobs:
         working-directory: ${{ env.build_dir }}
         run: |
           cmake --build . --config ${{ env.config }} --target ALL_BUILD --verbose
-          ctest -VV -C Debug
+          ctest -VV
