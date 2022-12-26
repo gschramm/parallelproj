@@ -18,8 +18,7 @@ conda install -c conda-forge parallelproj
 - *As usual, we recommend to install the libs into a separate conda virtual enviornment.* 
 - conda auto detects where cuda is available on your system
 - if cuda is not available, only the OpenMP library will be installed
-- currently the precompiled cuda library is only available for Linux, but a Windows version
-  should become available soon
+- currently the precompiled cuda library is not available for MacOS
 
 
 ### (Option 2) Building from source
