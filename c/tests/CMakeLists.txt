@@ -5,9 +5,4 @@ target_include_directories(parallelproj_nontof_fwd_back_test PUBLIC
   )
 target_link_libraries(parallelproj_nontof_fwd_back_test PUBLIC parallelproj_c)
 
-find_library(MATH_LIBRARY m)
-if(MATH_LIBRARY)
-    target_link_libraries(parallelproj_nontof_fwd_back_test PUBLIC ${MATH_LIBRARY})
-endif()
-
 add_test(NAME parallelproj_nontof_fwd_back_test COMMAND parallelproj_nontof_fwd_back_test)

@@ -18,8 +18,14 @@ target_include_directories(parallelproj_c PUBLIC
 set_target_properties(parallelproj_c PROPERTIES PUBLIC_HEADER "include/parallelproj_c.h"
                                                 SOVERSION ${parallelproj_VERSION})
 
-# we have to add the openmp library to be linked
-target_link_libraries(parallelproj_c PUBLIC OpenMP::OpenMP_C)
+# link to libm if it exists and against OpenMP_C
+find_library(MATH_LIBRARY m)
+if(MATH_LIBRARY)
+    message(STATUS "linking against libm")
+    target_link_libraries(parallelproj_c PUBLIC ${MATH_LIBRARY} OpenMP::OpenMP_C)
+else()
+    target_link_libraries(parallelproj_c PUBLIC OpenMP::OpenMP_C)
+endif()
 
 install(TARGETS parallelproj_c EXPORT parallelprojTargets 
         RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR} 
