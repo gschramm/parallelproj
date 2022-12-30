@@ -5,17 +5,9 @@ target_include_directories(parallelproj_nontof_fwd_back_test PUBLIC
   )
 target_link_libraries(parallelproj_nontof_fwd_back_test PUBLIC parallelproj_c)
 
-# check if we need to link against libm (we need to do that e.g. for gcc, but not for msvc)
-set(POW_LIBS "")
-include(CheckLibraryExists)
-check_library_exists(m pow "" LIBM)
-if(LIBM)
-    message(STATUS "linking test against libm")
-    list(APPEND POW_LIBS "m")
-endif()
-
-if(CMAKE_COMPILER_IS_GNUCC)
-  target_link_libraries(parallelproj_nontof_fwd_back_test PUBLIC ${POW_LIBS})
+find_library(MATH_LIBRARY m)
+if(MATH_LIBRARY)
+    target_link_libraries(parallelproj_nontof_fwd_back_test PUBLIC ${MATH_LIBRARY})
 endif()
 
 add_test(NAME parallelproj_nontof_fwd_back_test COMMAND parallelproj_nontof_fwd_back_test)
