@@ -1,3 +1,16 @@
+## 1.2.10 (December 30, 2022)
+- chore: updated package.json, updated CHANGELOG.md, bumped 1.2.9 -> 1.2.10
+- link parallelproj_c against libm (using PUBLIC link interface)
+- use better way to test whether we have to link against libm
+- Update README.md
+- Merge pull request #18 from gschramm/add_generic_nontof_test
+- updata non-tof cuda test
+- add adjoint back projection test
+- cosmetics
+- add better output
+- add more generic nontof test that tests rays in all 3 directions
+- update README
+
 ## 1.2.9 (December 09, 2022)
 - chore: updated package.json, updated CHANGELOG.md, bumped 1.2.8 -> 1.2.9
 - BUGFIX: correct calcultion of x_pr2 when principle direction is 0
