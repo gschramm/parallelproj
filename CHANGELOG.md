@@ -1,3 +1,7 @@
+## 1.2.11 (January 05, 2023)
+- chore: updated package.json, updated CHANGELOG.md, bumped 1.2.10 -> 1.2.11
+- set default CMAKE_CUDA_HOST_COMPILER to CMAKE_CXX_COMPILER
+
 ## 1.2.10 (December 30, 2022)
 - chore: updated package.json, updated CHANGELOG.md, bumped 1.2.9 -> 1.2.10
 - link parallelproj_c against libm (using PUBLIC link interface)
