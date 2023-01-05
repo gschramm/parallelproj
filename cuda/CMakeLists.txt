@@ -1,4 +1,12 @@
 enable_language(CXX)
+
+# set the CUDA host compiler by default to the CMAKE CXX COMPILER
+# e.g. important for setting the openMP flags for the host compiler correctly
+if(NOT DEFINED CMAKE_CUDA_HOST_COMPILER)
+  set(CMAKE_CUDA_HOST_COMPILER "${CMAKE_CXX_COMPILER}")
+  message(STATUS "CMAKE_CUDA_HOST_COMPILER ${CMAKE_CUDA_HOST_COMPILER}")
+endif()
+
 enable_language(CUDA)
 
 # find the required OpeMP
