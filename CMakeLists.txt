@@ -42,6 +42,12 @@ set(SKIP_OPENMP_LIB FALSE CACHE BOOL "do not build the openmp lib")
 set(SKIP_CUDA_LIB FALSE CACHE BOOL "do not build the cuda lib")
 set(SKIP_DOCS FALSE CACHE BOOL "do not build the documentation")
 
+# skip build of the CUDA lib, if CUDA is not available
+check_language(CUDA)
+if(NOT CMAKE_CUDA_COMPILER)
+  message(STATUS "CUDA not available skipping build of CUDA LIB")
+  set(SKIP_CUDA_LIB TRUE)
+endif()
 
 #-------------------------------------------------------------
 
