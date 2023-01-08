@@ -4,6 +4,8 @@ OpenMP and CUDA libraries for 3D Joseph non-TOF and TOF forward and back project
 
 This project provides OpenMP and CUDA implementations of 3D Joseph non-TOF and TOF forward and back projectors that can be e.g. used for image reconstruction. The input to the projectors are a list of start and end points for line of responses (LORs) such that they are very flexible and suitable for sinogram and listmode processing.
 
+A few benchmarking tests of the projectors can be found in [this](https://arxiv.org/abs/2212.12519) preprint on arxiv.
+
 ## Installation
 
 ### (Option 1 - recommended) Installation from conda-forge
