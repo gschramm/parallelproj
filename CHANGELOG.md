@@ -1,3 +1,8 @@
+## 1.2.12 (January 08, 2023)
+- chore: updated package.json, updated CHANGELOG.md, bumped 1.2.11 -> 1.2.12
+- set CUDA_HOST_COMPILER only when using clang
+- skip build of cuda lib if cuda is not present
+
 ## 1.2.11 (January 05, 2023)
 - chore: updated package.json, updated CHANGELOG.md, bumped 1.2.10 -> 1.2.11
 - set default CMAKE_CUDA_HOST_COMPILER to CMAKE_CXX_COMPILER
