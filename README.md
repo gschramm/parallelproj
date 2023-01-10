@@ -10,34 +10,31 @@ A few benchmarking tests of the projectors can be found in [this](https://arxiv.
 
 ### (Option 1 - recommended) Installation from conda-forge
 
-Precompiled parallelproj OpenMP and CUDA libraries and all their dependencies are available on [conda-forge](https://github.com/conda-forge/parallelproj-feedstock) 
+Precompiled parallelproj OpenMP and CUDA libraries and all their dependencies are available on [conda-forge](https://github.com/conda-forge/parallelproj-feedstock)
 for Linux, Windows and MacOS. You can install the libraries via
+
 ```
 conda install -c conda-forge parallelproj
 ```
 
-*Remarks*:
-- *As usual, we recommend to install the libs into a separate conda virtual enviornment.* 
+_Remarks_:
+
+- _As usual, we recommend to install the libs into a separate conda virtual enviornment._
 - conda auto detects where cuda is available on your system
 - if cuda is not available, only the OpenMP library will be installed
 - currently the precompiled cuda library is not available for MacOS
-
 
 ### (Option 2) Building from source
 
 ### Dependencies
 
 - cmake>=3.16 (3.16 version needed to detect CUDA correctly), we recommend to use cmake>=3.23
-- a recent c compiler with OpenMP support (tested with gcc 9.3 and msvc)
-- git (to detect the version from git describe)
+- a recent c compiler with OpenMP support (tested with gcc, msvc and clang)
 - cuda toolkit (optional, tested with >= 10)
 
 **Notes**
 
 - if cuda is not available on the build system, the build of the cuda library is skipped (only the C/OpenMP library is build)
-- to install all dependencies for the build, you can use our conda
-  [environment.yml](environment.yml)
-- make sure to use `git clone` to get the sources, since we use `git describe` to deduce the cmake project version
 
 ### Building using cmake
 
@@ -67,6 +64,12 @@ To build the documentation (doxygen required) run
 cmake --build . --target docs
 ```
 
+To run all unit tests execute:
+
+```
+ctest -VV
+```
+
 ### Setting CMAKE_CUDA_ARCHITECTURES
 
 If you have CUDA available on your system (even if there is no physical CUDA GPU),
@@ -76,12 +79,3 @@ the default for `CMAKE_CUDA_ARCHITECTURES` depends on the cmake version you are 
   for all CUDA architectures.
 
 - **3.16 <= cmake version < 3.23**: If you are using cmake < 3.23, then the default of `CMAKE_CUDA_ARCHITECTURES` is set to the architecture that is present on your system. **This means that if you are compiling on a system without physical CUDA GPU and using cmake < v3.23, you have to set it manually**, e.g. via `-DCMAKE_CUDA_ARCHITECTURES=75`.
-
-## Testing your installation
-
-If everything is installed correctly, the two binaries representing a minimal nontof forward and backprojection test:
-```
-parallelproj_nontof_fwd_back_test
-parallelproj_nontof_fwd_back_cuda_test
-```
-should be available on your system. You can run them and check if the return code is 0. The latter one only works if you have a CUDA GPU available on your system.
