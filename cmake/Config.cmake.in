@@ -3,11 +3,11 @@ include( "${CMAKE_CURRENT_LIST_DIR}/parallelprojTargets.cmake" )
 
 find_package(OpenMP REQUIRED)
 
-if(@OpenMP_FOUND@)
+if(NOT @SKIP_OPENMP_LIB@)
   set(parallelproj_built_with_OpenMP TRUE)
 endif()
 
-if(@CUDA_SUPPORTED@)
+if(NOT @SKIP_CUDA_LIB@)
   set(parallelproj_built_with_CUDA TRUE)
 endif()
 
