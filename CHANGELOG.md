@@ -1,3 +1,9 @@
+## 1.2.13 (January 13, 2023)
+- chore: updated package.json, updated CHANGELOG.md, bumped 1.2.12 -> 1.2.13
+- fix variable expansion in Config.cmake.in
+- update README
+- add link to arxix preprint
+
 ## 1.2.12 (January 08, 2023)
 - chore: updated package.json, updated CHANGELOG.md, bumped 1.2.11 -> 1.2.12
 - set CUDA_HOST_COMPILER only when using clang
