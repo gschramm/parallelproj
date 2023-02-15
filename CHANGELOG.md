@@ -1,3 +1,8 @@
+## 1.2.14 (February 15, 2023)
+- chore: updated package.json, updated CHANGELOG.md, bumped 1.2.13 -> 1.2.14
+- make target link libraries (m and OpenMP) private
+- dummy commit
+
 ## 1.2.13 (January 13, 2023)
 - chore: updated package.json, updated CHANGELOG.md, bumped 1.2.12 -> 1.2.13
 - fix variable expansion in Config.cmake.in
