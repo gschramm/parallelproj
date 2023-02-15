@@ -22,9 +22,9 @@ set_target_properties(parallelproj_c PROPERTIES PUBLIC_HEADER "include/parallelp
 find_library(MATH_LIBRARY m)
 if(MATH_LIBRARY)
     message(STATUS "linking against libm")
-    target_link_libraries(parallelproj_c PUBLIC ${MATH_LIBRARY} OpenMP::OpenMP_C)
+    target_link_libraries(parallelproj_c PRIVATE ${MATH_LIBRARY} OpenMP::OpenMP_C)
 else()
-    target_link_libraries(parallelproj_c PUBLIC OpenMP::OpenMP_C)
+    target_link_libraries(parallelproj_c PRIVATE OpenMP::OpenMP_C)
 endif()
 
 install(TARGETS parallelproj_c EXPORT parallelprojTargets 
@@ -40,3 +40,4 @@ endif()
 
 # add the test executables
 add_subdirectory(tests)
+

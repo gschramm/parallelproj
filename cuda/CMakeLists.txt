@@ -58,7 +58,7 @@ target_include_directories(parallelproj_cuda PUBLIC
   )
 
 # we have to add the openmp library to be linked
-target_link_libraries(parallelproj_cuda PUBLIC OpenMP::OpenMP_CXX)
+target_link_libraries(parallelproj_cuda PRIVATE OpenMP::OpenMP_CXX)
 
 install(TARGETS parallelproj_cuda EXPORT parallelprojTargets 
         RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR} 
@@ -76,3 +76,4 @@ endif()
 
 # add test executables
 add_subdirectory(tests)
+
