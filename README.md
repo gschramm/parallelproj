@@ -70,6 +70,7 @@ To run all unit tests execute:
 ctest -VV
 ```
 
+
 ### Setting CMAKE_CUDA_ARCHITECTURES
 
 If you have CUDA available on your system (even if there is no physical CUDA GPU),
