@@ -34,7 +34,8 @@ _Remarks_:
 
 **Notes**
 
-- if cuda is not available on the build system, the build of the cuda library is skipped (only the C/OpenMP library is build)
+- If cuda is not available on the build system, the build of the cuda library is skipped (only the C/OpenMP library is build)
+- If you are building on a recent version of Ubuntu with cuda, we recommend to use cuda >= 11.7. See [here](https://github.com/gschramm/parallelproj/issues/24) why.
 
 ### Building using cmake
 
