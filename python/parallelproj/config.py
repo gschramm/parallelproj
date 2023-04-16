@@ -19,9 +19,11 @@ if cuda_enabled:
     import cupy.typing as cpt
     XPArray = Union[npt.NDArray, cpt.NDArray]
     XPFloat32Array = Union[npt.NDArray[np.float32], cpt.NDArray[np.float32]]
+    XPShortArray = Union[npt.NDArray[np.int16], cpt.NDArray[np.int16]]
 else:
     XPArray = npt.NDArray
     XPFloat32Array = npt.NDArray[np.float32]
+    XPShortArray = npt.NDArray[np.int16]
 
 
 def get_array_module(array) -> ModuleType:
