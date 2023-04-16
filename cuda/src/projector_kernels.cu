@@ -1720,7 +1720,7 @@ extern "C" __global__ void joseph3d_fwd_tof_sino_cuda_kernel(float *xstart,
         if (iend >= (int)ceil(iend_f)){iend = (int)ceil(iend_f);}
         //---
 
-        for(i2 = iend; i2 < istart; i2++)
+        for(i2 = istart; i2 < iend; i2++)
         {
           // get the indices where the ray intersects the image plane
           x_pr0 = xstart0 + (img_origin2 + i2*voxsize2 - xstart2)*d0 / d2;
