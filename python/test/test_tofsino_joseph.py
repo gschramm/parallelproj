@@ -21,8 +21,7 @@ def adjointness_test(xp: ModuleType,
     img_dim = xp.array([n0, n1, n2])
     voxel_size = xp.array([1., 1., 1.], dtype=xp.float32)
     img_origin = ((-img_dim / 2 + 0.5) * voxel_size).astype(xp.float32)
-    img = xp.zeros((n0, n1, n2)).astype(xp.float32)
-    img[n0 // 2, n1 // 2, n2 // 2] = 1
+    img = xp.random.rand(n0, n1, n2).astype(xp.float32)
 
     # generate random LORs on a sphere around the image volume
     # generate random LORs on a sphere around the image volume
@@ -85,6 +84,7 @@ def adjointness_test(xp: ModuleType,
 
 
 #--------------------------------------------------------------------------
+
 
 class TestTOFJoseph(unittest.TestCase):
     """test for TOF joseph projections"""
