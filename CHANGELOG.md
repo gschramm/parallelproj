@@ -1,3 +1,15 @@
+## 1.2.15 (April 15, 2023)
+- chore: updated package.json, updated CHANGELOG.md, bumped 1.2.14 -> 1.2.15
+- add TOF sino projector wrappers and first test
+- BUGFIX: correct start and stop of loop over planes in cuda TOF sino projector when direction=2
+- add adjointness test (indirect test for back projection)
+- add first python unit test for non-tof fwd projection
+- add first python wrappers for non-tof Joseph projectors
+- start adding python wrappers
+- remove recipe (moved to conda-forge feedstock)
+- Update README.md
+- dummy commit
+
 ## 1.2.14 (February 15, 2023)
 - chore: updated package.json, updated CHANGELOG.md, bumped 1.2.13 -> 1.2.14
 - make target link libraries (m and OpenMP) private
