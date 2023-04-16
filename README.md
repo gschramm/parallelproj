@@ -71,7 +71,6 @@ To run all unit tests execute:
 ctest -VV
 ```
 
-
 ### Setting CMAKE_CUDA_ARCHITECTURES
 
 If you have CUDA available on your system (even if there is no physical CUDA GPU),
@@ -81,4 +80,3 @@ the default for `CMAKE_CUDA_ARCHITECTURES` depends on the cmake version you are 
   for all CUDA architectures.
 
 - **3.16 <= cmake version < 3.23**: If you are using cmake < 3.23, then the default of `CMAKE_CUDA_ARCHITECTURES` is set to the architecture that is present on your system. **This means that if you are compiling on a system without physical CUDA GPU and using cmake < v3.23, you have to set it manually**, e.g. via `-DCMAKE_CUDA_ARCHITECTURES=75`.
-
