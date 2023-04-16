@@ -1,3 +1,13 @@
+## 1.2.16 (April 16, 2023)
+- chore: updated package.json, updated CHANGELOG.md, bumped 1.2.15 -> 1.2.16
+- improve way to detect whether visible GPUs are present in the python API
+- remove AS approximation of erff in openMP lib since it leads to too big inaccuracies
+- add TOF LM tests
+- add listmode wrappers
+- add TOF sino fwd test
+- use random image in TOF sino test
+- dummy commit
+
 ## 1.2.15 (April 15, 2023)
 - chore: updated package.json, updated CHANGELOG.md, bumped 1.2.14 -> 1.2.15
 - add TOF sino projector wrappers and first test
