@@ -1,4 +1,6 @@
 import os
+import importlib
+import distutils
 import math
 
 import ctypes
@@ -10,8 +12,28 @@ from warnings import warn
 
 import numpy as np
 import numpy.ctypeslib as npct
+import numpy.typing as npt
 
-from parallelproj.config import cuda_enabled, cupy_enabled, XPShortArray, XPFloat32Array, get_array_module
+from typing import Union
+from types import ModuleType
+
+# check if cuda is present
+cuda_present = distutils.spawn.find_executable('nvidia-smi') is not None
+
+# check if cupy is available
+cupy_enabled = (importlib.util.find_spec('cupy') is not None)
+
+# define type for cupy or numpy array
+if cupy_enabled:
+    import cupy as cp
+    import cupy.typing as cpt
+    XPArray = Union[npt.NDArray, cpt.NDArray]
+    XPFloat32Array = Union[npt.NDArray[np.float32], cpt.NDArray[np.float32]]
+    XPShortArray = Union[npt.NDArray[np.int16], cpt.NDArray[np.int16]]
+else:
+    XPArray = npt.NDArray
+    XPFloat32Array = npt.NDArray[np.float32]
+    XPShortArray = npt.NDArray[np.int16]
 
 # numpy ctypes lib array definitions
 ar_1d_single = npct.ndpointer(dtype=ctypes.c_float, ndim=1, flags='C')
@@ -137,7 +159,7 @@ else:
 
 #---------------------------------------------------------------------------------------
 
-if cuda_enabled:
+if cuda_present:
     if 'PARALLELPROJ_CUDA_LIB' in os.environ:
         lib_parallelproj_cuda_fname = os.environ['PARALLELPROJ_CUDA_LIB']
     else:
@@ -151,6 +173,14 @@ if cuda_enabled:
         lib_parallelproj_cuda = npct.load_library(
             os.path.basename(lib_parallelproj_cuda_fname),
             os.path.dirname(lib_parallelproj_cuda_fname))
+
+        # get the number of visible cuda devices
+        lib_parallelproj_cuda.get_cuda_device_count.restype = np.int32
+        num_visible_cuda_devices = lib_parallelproj_cuda.get_cuda_device_count(
+        )
+
+        if (num_visible_cuda_devices == 0) and cupy_enabled:
+            cupy_enabled = False
 
         lib_parallelproj_cuda.joseph3d_fwd_cuda.restype = None
         lib_parallelproj_cuda.joseph3d_fwd_cuda.argtypes = [
@@ -387,7 +417,7 @@ def joseph3d_fwd(xstart: XPFloat32Array,
              xp.asarray(img_dim)))
         xp.cuda.Device().synchronize()
     else:
-        if cuda_enabled:
+        if num_visible_cuda_devices > 0:
             # projection of numpy array using the cuda parallelproj lib
             num_voxel = ctypes.c_longlong(img_dim[0] * img_dim[1] * img_dim[2])
 
@@ -461,7 +491,7 @@ def joseph3d_back(xstart: XPFloat32Array,
              np.int64(nLORs), xp.asarray(img_dim)))
         xp.cuda.Device().synchronize()
     else:
-        if cuda_enabled:
+        if num_visible_cuda_devices > 0:
             # back projection of numpy array using the cuda parallelproj lib
             num_voxel = ctypes.c_longlong(img_dim[0] * img_dim[1] * img_dim[2])
 
@@ -569,7 +599,7 @@ def joseph3d_fwd_tof_sino(xstart: XPFloat32Array,
              lor_dependent_sigma_tof, lor_dependent_tofcenter_offset))
         xp.cuda.Device().synchronize()
     else:
-        if cuda_enabled:
+        if num_visible_cuda_devices > 0:
             # back projection of numpy array using the cuda parallelproj lib
             num_voxel = ctypes.c_longlong(img_dim[0] * img_dim[1] * img_dim[2])
 
@@ -689,7 +719,7 @@ def joseph3d_back_tof_sino(xstart: XPFloat32Array,
              lor_dependent_sigma_tof, lor_dependent_tofcenter_offset))
         xp.cuda.Device().synchronize()
     else:
-        if cuda_enabled:
+        if num_visible_cuda_devices > 0:
             # back projection of numpy array using the cuda parallelproj lib
             num_voxel = ctypes.c_longlong(img_dim[0] * img_dim[1] * img_dim[2])
 
@@ -815,7 +845,7 @@ def joseph3d_fwd_tof_lm(xstart: XPFloat32Array,
              lor_dependent_tofcenter_offset))
         xp.cuda.Device().synchronize()
     else:
-        if cuda_enabled:
+        if num_visible_cuda_devices > 0:
             # projection of numpy array using the cuda parallelproj lib
             num_voxel = ctypes.c_longlong(img_dim[0] * img_dim[1] * img_dim[2])
 
@@ -933,7 +963,7 @@ def joseph3d_back_tof_lm(xstart: XPFloat32Array,
              lor_dependent_tofcenter_offset))
         xp.cuda.Device().synchronize()
     else:
-        if cuda_enabled:
+        if num_visible_cuda_devices > 0:
             # back projection of numpy array using the cuda parallelproj lib
             num_voxel = ctypes.c_longlong(img_dim[0] * img_dim[1] * img_dim[2])
 
@@ -982,7 +1012,28 @@ def joseph3d_back_tof_lm(xstart: XPFloat32Array,
         else:
             # back projection of numpy array using the openmp parallelproj lib
             lib_parallelproj_c.joseph3d_back_tof_lm(
-                xstart.ravel(), xend.ravel(), back_img.ravel(), img_origin,
-                voxsize, lst, np.int64(nLORs), img_dim, tofbin_width, sigma_tof,
+                xstart.ravel(),
+                xend.ravel(), back_img.ravel(), img_origin, voxsize, lst,
+                np.int64(nLORs), img_dim, tofbin_width, sigma_tof,
                 tofcenter_offset, nsigmas, tofbin, lor_dependent_sigma_tof,
                 lor_dependent_tofcenter_offset)
+
+
+#-----------------------------------------------------------------------------
+
+
+def get_array_module(array) -> ModuleType:
+    """return module of a cupy or numpy array
+
+    Parameters
+    ----------
+    array : cupy or numpy array
+
+    Returns
+    -------
+    cupy or numpy module
+    """
+    if cupy_enabled:
+        return cp.get_array_module(array)
+    else:
+        return np

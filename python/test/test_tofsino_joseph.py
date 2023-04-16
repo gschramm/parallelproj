@@ -67,7 +67,7 @@ def tof_sino_fwd_test(xp: ModuleType, verbose: bool = True) -> None:
 
     if verbose:
         print(
-            f'module = {xp.__name__}  -  cuda_enabled {parallelproj.cuda_enabled}'
+            f'module = {xp.__name__}  -  cuda_enabled {parallelproj.num_visible_cuda_devices > 0}'
         )
         print(
             f'sum of TOF profile / expected:    {float(img_fwd.sum()):.4E} / {voxsize:.4E}'
@@ -145,7 +145,7 @@ def adjointness_test(xp: ModuleType,
 
     if verbose:
         print(
-            f'module = {xp.__name__}  -  cuda_enabled {parallelproj.cuda_enabled}'
+            f'module = {xp.__name__}  -  cuda_enabled {parallelproj.num_visible_cuda_devices > 0}'
         )
         print('ip_a = ', ip_a)
         print('ip_b = ', ip_b)
@@ -168,11 +168,6 @@ class TestTOFJoseph(unittest.TestCase):
             import cupy as cp
             self.assertTrue(adjointness_test(cp))
 
-        #if parallelproj.cuda_enabled:
-        #    parallelproj.cuda_enabled = False
-        #    self.assertTrue(adjointness_test(np))
-        #    parallelproj.cuda_enabled = True
-
     def test_forward(self):
         """test TOF joseph forward projection using different backends"""
         self.assertTrue(tof_sino_fwd_test(np))
@@ -180,11 +175,6 @@ class TestTOFJoseph(unittest.TestCase):
         if parallelproj.cupy_enabled:
             import cupy as cp
             self.assertTrue(tof_sino_fwd_test(cp))
-
-        #if parallelproj.cuda_enabled:
-        #    parallelproj.cuda_enabled = False
-        #    self.assertTrue(tof_sino_fwd_test(np))
-        #    parallelproj.cuda_enabled = True
 
 
 #--------------------------------------------------------------------------

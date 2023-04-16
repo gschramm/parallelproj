@@ -64,7 +64,7 @@ def fwd_test(xp: ModuleType, verbose=True) -> bool:
 
     if verbose:
         print(
-            f'module = {xp.__name__}  -  cuda_enabled {parallelproj.cuda_enabled}'
+            f'module = {xp.__name__}  -  cuda_enabled {parallelproj.num_visible_cuda_devices > 0}'
         )
         print('calculated projection = ', img_fwd)
         print('expected   projection = ', expected_projections)
@@ -134,7 +134,7 @@ def adjointness_test(xp: ModuleType,
 
     if verbose:
         print(
-            f'module = {xp.__name__}  -  cuda_enabled {parallelproj.cuda_enabled}'
+            f'module = {xp.__name__}  -  cuda_enabled {parallelproj.num_visible_cuda_devices > 0}'
         )
         print('ip_a = ', ip_a)
         print('ip_b = ', ip_b)
@@ -157,11 +157,6 @@ class TestNonTOFJoseph(unittest.TestCase):
             import cupy as cp
             self.assertTrue(fwd_test(cp))
 
-        if parallelproj.cuda_enabled:
-            parallelproj.cuda_enabled = False
-            self.assertTrue(fwd_test(np))
-            parallelproj.cuda_enabled = True
-
     def test_adjoint(self):
         """test non TOF joseph forward projection using different backends"""
         self.assertTrue(adjointness_test(np))
@@ -169,11 +164,6 @@ class TestNonTOFJoseph(unittest.TestCase):
         if parallelproj.cupy_enabled:
             import cupy as cp
             self.assertTrue(adjointness_test(cp))
-
-        if parallelproj.cuda_enabled:
-            parallelproj.cuda_enabled = False
-            self.assertTrue(adjointness_test(np))
-            parallelproj.cuda_enabled = True
 
 
 #--------------------------------------------------------------------------
