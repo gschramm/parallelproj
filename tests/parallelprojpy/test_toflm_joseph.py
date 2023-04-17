@@ -1,5 +1,5 @@
 import unittest
-import parallelproj
+import parallelprojpy
 import numpy as np
 
 from types import ModuleType
@@ -47,7 +47,7 @@ def tof_lm_fwd_test(xp: ModuleType, verbose: bool = True) -> None:
     # setup a TOF bin array that is centered around 0
     tof_bin = xp.arange(num_tof_bins, dtype=xp.int16) - num_tof_bins // 2
 
-    parallelproj.joseph3d_fwd_tof_lm(xstart, xend, img, img_origin, voxel_size,
+    parallelprojpy.joseph3d_fwd_tof_lm(xstart, xend, img, img_origin, voxel_size,
                                      img_fwd, tofbin_width, sigma_tof,
                                      tofcenter_offset, nsigmas, tof_bin)
 
@@ -69,7 +69,7 @@ def tof_lm_fwd_test(xp: ModuleType, verbose: bool = True) -> None:
 
     if verbose:
         print(
-            f'module = {xp.__name__}  -  cuda_enabled {parallelproj.num_visible_cuda_devices > 0}'
+            f'module = {xp.__name__}  -  cuda_enabled {parallelprojpy.num_visible_cuda_devices > 0}'
         )
         print(
             f'sum of TOF profile / expected:    {float(img_fwd.sum()):.4E} / {voxsize:.4E}'
@@ -129,7 +129,7 @@ def adjointness_test(xp: ModuleType,
     tof_bin = (xp.random.randint(0, num_tof_bins, xstart.shape[0]) -
                num_tof_bins // 2).astype(xp.int16)
 
-    parallelproj.joseph3d_fwd_tof_lm(xstart, xend, img, img_origin, voxel_size,
+    parallelprojpy.joseph3d_fwd_tof_lm(xstart, xend, img, img_origin, voxel_size,
                                      img_fwd, tofbin_width, sigma_tof,
                                      tofcenter_offset, nsigmas, tof_bin)
 
@@ -137,7 +137,7 @@ def adjointness_test(xp: ModuleType,
     back_img = xp.zeros_like(img)
     lst = xp.random.rand(nLORs).astype(xp.float32)
 
-    parallelproj.joseph3d_back_tof_lm(xstart, xend, back_img, img_origin,
+    parallelprojpy.joseph3d_back_tof_lm(xstart, xend, back_img, img_origin,
                                       voxel_size, lst, tofbin_width, sigma_tof,
                                       tofcenter_offset, nsigmas, tof_bin)
     ip_a = (back_img * img).sum()
@@ -147,7 +147,7 @@ def adjointness_test(xp: ModuleType,
 
     if verbose:
         print(
-            f'module = {xp.__name__}  -  cuda_enabled {parallelproj.num_visible_cuda_devices > 0}'
+            f'module = {xp.__name__}  -  cuda_enabled {parallelprojpy.num_visible_cuda_devices > 0}'
         )
         print('ip_a = ', ip_a)
         print('ip_b = ', ip_b)
@@ -166,7 +166,7 @@ class TestLMTOFJoseph(unittest.TestCase):
         """test TOF joseph forward projection using different backends"""
         self.assertTrue(adjointness_test(np))
 
-        if parallelproj.cupy_enabled:
+        if parallelprojpy.cupy_enabled:
             import cupy as cp
             self.assertTrue(adjointness_test(cp))
 
@@ -174,7 +174,7 @@ class TestLMTOFJoseph(unittest.TestCase):
         """test TOF joseph forward projection using different backends"""
         self.assertTrue(tof_lm_fwd_test(np))
 
-        if parallelproj.cupy_enabled:
+        if parallelprojpy.cupy_enabled:
             import cupy as cp
             self.assertTrue(tof_lm_fwd_test(cp))
 

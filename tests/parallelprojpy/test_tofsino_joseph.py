@@ -1,5 +1,5 @@
 import unittest
-import parallelproj
+import parallelprojpy
 import numpy as np
 
 from types import ModuleType
@@ -44,7 +44,7 @@ def tof_sino_fwd_test(xp: ModuleType, verbose: bool = True) -> None:
 
     img_fwd = xp.zeros((xstart.shape[0], num_tof_bins), dtype=xp.float32)
 
-    parallelproj.joseph3d_fwd_tof_sino(xstart, xend, img, img_origin,
+    parallelprojpy.joseph3d_fwd_tof_sino(xstart, xend, img, img_origin,
                                        voxel_size, img_fwd, tofbin_width,
                                        sigma_tof, tofcenter_offset, nsigmas,
                                        num_tof_bins)
@@ -67,7 +67,7 @@ def tof_sino_fwd_test(xp: ModuleType, verbose: bool = True) -> None:
 
     if verbose:
         print(
-            f'module = {xp.__name__}  -  cuda_enabled {parallelproj.num_visible_cuda_devices > 0}'
+            f'module = {xp.__name__}  -  cuda_enabled {parallelprojpy.num_visible_cuda_devices > 0}'
         )
         print(
             f'sum of TOF profile / expected:    {float(img_fwd.sum()):.4E} / {voxsize:.4E}'
@@ -125,7 +125,7 @@ def adjointness_test(xp: ModuleType,
 
     img_fwd = xp.zeros((xstart.shape[0], num_tof_bins), dtype=xp.float32)
 
-    parallelproj.joseph3d_fwd_tof_sino(xstart, xend, img, img_origin,
+    parallelprojpy.joseph3d_fwd_tof_sino(xstart, xend, img, img_origin,
                                        voxel_size, img_fwd, tofbin_width,
                                        sigma_tof, tofcenter_offset, nsigmas,
                                        num_tof_bins)
@@ -134,7 +134,7 @@ def adjointness_test(xp: ModuleType,
     back_img = xp.zeros_like(img)
     sino = xp.random.rand(nLORs, num_tof_bins).astype(xp.float32)
 
-    parallelproj.joseph3d_back_tof_sino(xstart, xend, back_img, img_origin,
+    parallelprojpy.joseph3d_back_tof_sino(xstart, xend, back_img, img_origin,
                                         voxel_size, sino, tofbin_width,
                                         sigma_tof, tofcenter_offset, nsigmas,
                                         num_tof_bins)
@@ -145,7 +145,7 @@ def adjointness_test(xp: ModuleType,
 
     if verbose:
         print(
-            f'module = {xp.__name__}  -  cuda_enabled {parallelproj.num_visible_cuda_devices > 0}'
+            f'module = {xp.__name__}  -  cuda_enabled {parallelprojpy.num_visible_cuda_devices > 0}'
         )
         print('ip_a = ', ip_a)
         print('ip_b = ', ip_b)
@@ -164,7 +164,7 @@ class TestTOFJoseph(unittest.TestCase):
         """test TOF joseph forward projection using different backends"""
         self.assertTrue(adjointness_test(np))
 
-        if parallelproj.cupy_enabled:
+        if parallelprojpy.cupy_enabled:
             import cupy as cp
             self.assertTrue(adjointness_test(cp))
 
@@ -172,7 +172,7 @@ class TestTOFJoseph(unittest.TestCase):
         """test TOF joseph forward projection using different backends"""
         self.assertTrue(tof_sino_fwd_test(np))
 
-        if parallelproj.cupy_enabled:
+        if parallelprojpy.cupy_enabled:
             import cupy as cp
             self.assertTrue(tof_sino_fwd_test(cp))
 
