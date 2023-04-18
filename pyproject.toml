@@ -1,9 +1,29 @@
+# version is auto-derived from git tags / archives
+# see https://pypi.org/project/setuptools-scm/
 [build-system]
-requires = [
-    "setuptools>=45",
-    "setuptools_scm[toml]>=6.2",
-    "setuptools_scm_git_archive"
-]
-build-backend = 'setuptools.build_meta'
-
+requires = ["setuptools>=45", "setuptools_scm[toml]>=7.0"]
+# needed to detect version number from git tags / archives
 [tool.setuptools_scm]
+
+[project]
+name = "parallelprojpy"
+authors = [
+    {name = "Georg Schramm", email = "georg.schramm@kuleuven.be"},
+]
+description = "Python wrappers for parallelproj projectors."
+readme = "README.md"
+requires-python = ">=3.6"
+classifiers = [
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python",
+]
+license = {file = "LICENSE"}
+dependencies = [
+    "numpy>=1.12",
+]
+dynamic = ["version"]
+
+# hint where the python sources can be found
+[tool.setuptools.packages.find]
+where = ["python"]
+include = ["parallelprojpy*"]
