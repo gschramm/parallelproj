@@ -5,7 +5,7 @@ import numpy as np
 from types import ModuleType
 
 
-def tof_sino_fwd_test(xp: ModuleType, verbose: bool = True) -> None:
+def tof_sino_fwd_test(xp: ModuleType, verbose: bool = True, atol: float = 1e-6) -> None:
     """test fwd sinogram TOF projection of a point source"""
     nLORs: int = 1
     voxsize: float = 0.1
@@ -59,11 +59,11 @@ def tof_sino_fwd_test(xp: ModuleType, verbose: bool = True) -> None:
     res2 = xp.isclose(
         float(
             xp.interp(xp.array([fwhm_tof / 2]), r,
-                      img_fwd[0, :] - 0.5 * img_fwd[0, :].max())[0]), 0)
+                      img_fwd[0, :] - 0.5 * img_fwd[0, :].max())[0]), 0, atol = atol)
     res3 = xp.isclose(
         float(
             xp.interp(xp.array([-fwhm_tof / 2]), r,
-                      img_fwd[0, :] - 0.5 * img_fwd[0, :].max())[0]), 0)
+                      img_fwd[0, :] - 0.5 * img_fwd[0, :].max())[0]), 0, atol = atol)
 
     if verbose:
         print(

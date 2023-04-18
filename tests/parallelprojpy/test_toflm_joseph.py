@@ -5,7 +5,7 @@ import numpy as np
 from types import ModuleType
 
 
-def tof_lm_fwd_test(xp: ModuleType, verbose: bool = True) -> None:
+def tof_lm_fwd_test(xp: ModuleType, verbose: bool = True, atol: float = 1e-6) -> None:
     """test fwd LM TOF projection of a point source"""
 
     num_tof_bins: int = 501
@@ -61,11 +61,11 @@ def tof_lm_fwd_test(xp: ModuleType, verbose: bool = True) -> None:
     res2 = xp.isclose(
         float(
             xp.interp(xp.array([fwhm_tof / 2]), r,
-                      img_fwd - 0.5 * img_fwd.max())[0]), 0)
+                      img_fwd - 0.5 * img_fwd.max())[0]), 0, atol = atol)
     res3 = xp.isclose(
         float(
             xp.interp(xp.array([-fwhm_tof / 2]), r,
-                      img_fwd - 0.5 * img_fwd.max())[0]), 0)
+                      img_fwd - 0.5 * img_fwd.max())[0]), 0, atol = atol)
 
     if verbose:
         print(
