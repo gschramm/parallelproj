@@ -6,6 +6,7 @@
 - add first version of pyproject.toml
 - dummy commit
 
+
 ## 1.2.16 (April 16, 2023)
 
 - chore: updated package.json, updated CHANGELOG.md, bumped 1.2.15 -> 1.2.16
