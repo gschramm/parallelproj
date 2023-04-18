@@ -1,3 +1,8 @@
+## 1.3.1 (April 17, 2023)
+- chore: updated package.json, updated CHANGELOG.md, bumped 1.3.0 -> 1.3.1
+- add num_visivle_devices definition when cuda is not present
+- dummy commit
+
 ## 1.3.0 (April 17, 2023)
 - chore: updated package.json, updated CHANGELOG.md, bumped 1.2.16 -> 1.3.0
 - clean up pyproject.toml
