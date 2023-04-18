@@ -1,3 +1,11 @@
+## 1.3.0 (April 17, 2023)
+- chore: updated package.json, updated CHANGELOG.md, bumped 1.2.16 -> 1.3.0
+- clean up pyproject.toml
+- mv tests and rename imports in tests
+- rename python package to parallelprojpy and adapt setup.cfg
+- add first version of pyproject.toml
+- dummy commit
+
 ## 1.2.16 (April 16, 2023)
 
 - chore: updated package.json, updated CHANGELOG.md, bumped 1.2.15 -> 1.2.16
