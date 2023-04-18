@@ -159,6 +159,8 @@ else:
 
 #---------------------------------------------------------------------------------------
 
+num_visible_cuda_devices = 0
+
 if cuda_present:
     if 'PARALLELPROJ_CUDA_LIB' in os.environ:
         lib_parallelproj_cuda_fname = os.environ['PARALLELPROJ_CUDA_LIB']
