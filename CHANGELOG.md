@@ -4,6 +4,7 @@
 - lower absolute tolerance for forward TOF tests - (otherwise windows builds might fail)
 - dummy commit
 
+
 ## 1.3.1 (April 17, 2023)
 - chore: updated package.json, updated CHANGELOG.md, bumped 1.3.0 -> 1.3.1
 - add num_visivle_devices definition when cuda is not present
