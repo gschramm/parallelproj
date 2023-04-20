@@ -3,6 +3,7 @@
 - import annotations from __future__ to be compatiable with older versions
 - dummy commit
 
+
 ## 1.3.2 (April 18, 2023)
 - chore: updated package.json, updated CHANGELOG.md, bumped 1.3.1 -> 1.3.2
 - rename test folder
