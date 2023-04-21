@@ -3,6 +3,7 @@
 - rename python binding back to parallelproj
 - dummy commit
 
+
 ## 1.3.3 (April 20, 2023)
 - chore: updated package.json, updated CHANGELOG.md, bumped 1.3.2 -> 1.3.3
 - import annotations from __future__ to be compatiable with older versions
