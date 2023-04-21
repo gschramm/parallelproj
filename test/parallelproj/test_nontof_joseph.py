@@ -1,5 +1,5 @@
 import unittest
-import parallelprojpy
+import parallelproj
 import numpy as np
 
 from types import ModuleType
@@ -45,7 +45,7 @@ def fwd_test(xp: ModuleType, verbose=True) -> bool:
 
     img_fwd = xp.zeros(xstart.shape[0], dtype=xp.float32)
 
-    parallelprojpy.joseph3d_fwd(xstart, xend, img, img_origin, voxel_size,
+    parallelproj.joseph3d_fwd(xstart, xend, img, img_origin, voxel_size,
                               img_fwd)
 
     # setup the expected values for the projection
@@ -64,7 +64,7 @@ def fwd_test(xp: ModuleType, verbose=True) -> bool:
 
     if verbose:
         print(
-            f'module = {xp.__name__}  -  cuda_enabled {parallelprojpy.num_visible_cuda_devices > 0}'
+            f'module = {xp.__name__}  -  cuda_enabled {parallelproj.num_visible_cuda_devices > 0}'
         )
         print('calculated projection = ', img_fwd)
         print('expected   projection = ', expected_projections)
@@ -118,13 +118,13 @@ def adjointness_test(xp: ModuleType,
 
     # forward project
     img_fwd = xp.zeros(xstart.shape[0], dtype=xp.float32)
-    parallelprojpy.joseph3d_fwd(xstart, xend, img, img_origin, voxel_size,
+    parallelproj.joseph3d_fwd(xstart, xend, img, img_origin, voxel_size,
                               img_fwd)
 
     # backward project
     back_img = xp.zeros_like(img)
     sino = xp.random.rand(nLORs).astype(xp.float32)
-    parallelprojpy.joseph3d_back(xstart, xend, back_img, img_origin, voxel_size,
+    parallelproj.joseph3d_back(xstart, xend, back_img, img_origin, voxel_size,
                                sino)
 
     ip_a = (back_img * img).sum()
@@ -134,7 +134,7 @@ def adjointness_test(xp: ModuleType,
 
     if verbose:
         print(
-            f'module = {xp.__name__}  -  cuda_enabled {parallelprojpy.num_visible_cuda_devices > 0}'
+            f'module = {xp.__name__}  -  cuda_enabled {parallelproj.num_visible_cuda_devices > 0}'
         )
         print('ip_a = ', ip_a)
         print('ip_b = ', ip_b)
@@ -153,7 +153,7 @@ class TestNonTOFJoseph(unittest.TestCase):
         """test non TOF joseph forward projection using different backends"""
         self.assertTrue(fwd_test(np))
 
-        if parallelprojpy.cupy_enabled:
+        if parallelproj.cupy_enabled:
             import cupy as cp
             self.assertTrue(fwd_test(cp))
 
@@ -161,7 +161,7 @@ class TestNonTOFJoseph(unittest.TestCase):
         """test non TOF joseph forward projection using different backends"""
         self.assertTrue(adjointness_test(np))
 
-        if parallelprojpy.cupy_enabled:
+        if parallelproj.cupy_enabled:
             import cupy as cp
             self.assertTrue(adjointness_test(cp))
 

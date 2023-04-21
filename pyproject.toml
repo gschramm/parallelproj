@@ -6,7 +6,7 @@ requires = ["setuptools>=45", "setuptools_scm[toml]>=7.0"]
 [tool.setuptools_scm]
 
 [project]
-name = "parallelprojpy"
+name = "parallelproj"
 authors = [
     {name = "Georg Schramm", email = "georg.schramm@kuleuven.be"},
 ]
@@ -26,4 +26,4 @@ dynamic = ["version"]
 # hint where the python sources can be found
 [tool.setuptools.packages.find]
 where = ["python"]
-include = ["parallelprojpy*"]
+include = ["parallelproj*"]

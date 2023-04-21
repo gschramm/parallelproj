@@ -1,13 +1,14 @@
 import unittest
-import parallelprojpy
+import parallelproj
 import numpy as np
 
 from types import ModuleType
 
 
-def tof_sino_fwd_test(xp: ModuleType, verbose: bool = True, atol: float = 1e-6) -> None:
-    """test fwd sinogram TOF projection of a point source"""
-    nLORs: int = 1
+def tof_lm_fwd_test(xp: ModuleType, verbose: bool = True, atol: float = 1e-6) -> None:
+    """test fwd LM TOF projection of a point source"""
+
+    num_tof_bins: int = 501
     voxsize: float = 0.1
     seed: int = 1
 
@@ -23,31 +24,32 @@ def tof_sino_fwd_test(xp: ModuleType, verbose: bool = True, atol: float = 1e-6) 
 
     # generate random LORs on a sphere around the image volume
     # generate random LORs on a sphere around the image volume
-    xstart = xp.zeros((nLORs, 3), dtype=xp.float32)
+    xstart = xp.zeros((num_tof_bins, 3), dtype=xp.float32)
     xstart[:, 0] = 0
     xstart[:, 0] = 0
     xstart[:, 0] = 100
 
-    xend = xp.zeros((nLORs, 3), dtype=xp.float32)
+    xend = xp.zeros((num_tof_bins, 3), dtype=xp.float32)
     xend[:, 0] = 0
     xend[:, 0] = 0
     xend[:, 0] = -100
 
     # forward project
     tofbin_width = 0.05
-    num_tof_bins = 501
     nsigmas = 9.
     fwhm_tof = 6.
     sigma_tof = xp.array([fwhm_tof / (2 * np.sqrt(2 * np.log(2)))],
                          dtype=xp.float32)
     tofcenter_offset = xp.array([0], dtype=xp.float32)
 
-    img_fwd = xp.zeros((xstart.shape[0], num_tof_bins), dtype=xp.float32)
+    img_fwd = xp.zeros(xstart.shape[0], dtype=xp.float32)
 
-    parallelprojpy.joseph3d_fwd_tof_sino(xstart, xend, img, img_origin,
-                                       voxel_size, img_fwd, tofbin_width,
-                                       sigma_tof, tofcenter_offset, nsigmas,
-                                       num_tof_bins)
+    # setup a TOF bin array that is centered around 0
+    tof_bin = xp.arange(num_tof_bins, dtype=xp.int16) - num_tof_bins // 2
+
+    parallelproj.joseph3d_fwd_tof_lm(xstart, xend, img, img_origin, voxel_size,
+                                     img_fwd, tofbin_width, sigma_tof,
+                                     tofcenter_offset, nsigmas, tof_bin)
 
     # check if sum of the projection is correct (should be equal to the voxel size)
     res1 = xp.isclose(img_fwd.sum(), voxsize)
@@ -59,15 +61,15 @@ def tof_sino_fwd_test(xp: ModuleType, verbose: bool = True, atol: float = 1e-6) 
     res2 = xp.isclose(
         float(
             xp.interp(xp.array([fwhm_tof / 2]), r,
-                      img_fwd[0, :] - 0.5 * img_fwd[0, :].max())[0]), 0, atol = atol)
+                      img_fwd - 0.5 * img_fwd.max())[0]), 0, atol = atol)
     res3 = xp.isclose(
         float(
             xp.interp(xp.array([-fwhm_tof / 2]), r,
-                      img_fwd[0, :] - 0.5 * img_fwd[0, :].max())[0]), 0, atol = atol)
+                      img_fwd - 0.5 * img_fwd.max())[0]), 0, atol = atol)
 
     if verbose:
         print(
-            f'module = {xp.__name__}  -  cuda_enabled {parallelprojpy.num_visible_cuda_devices > 0}'
+            f'module = {xp.__name__}  -  cuda_enabled {parallelproj.num_visible_cuda_devices > 0}'
         )
         print(
             f'sum of TOF profile / expected:    {float(img_fwd.sum()):.4E} / {voxsize:.4E}'
@@ -123,29 +125,29 @@ def adjointness_test(xp: ModuleType,
     sigma_tof = xp.array([5 / 2.35], dtype=xp.float32)
     tofcenter_offset = xp.array([0], dtype=xp.float32)
 
-    img_fwd = xp.zeros((xstart.shape[0], num_tof_bins), dtype=xp.float32)
+    img_fwd = xp.zeros(xstart.shape[0], dtype=xp.float32)
+    tof_bin = (xp.random.randint(0, num_tof_bins, xstart.shape[0]) -
+               num_tof_bins // 2).astype(xp.int16)
 
-    parallelprojpy.joseph3d_fwd_tof_sino(xstart, xend, img, img_origin,
-                                       voxel_size, img_fwd, tofbin_width,
-                                       sigma_tof, tofcenter_offset, nsigmas,
-                                       num_tof_bins)
+    parallelproj.joseph3d_fwd_tof_lm(xstart, xend, img, img_origin, voxel_size,
+                                     img_fwd, tofbin_width, sigma_tof,
+                                     tofcenter_offset, nsigmas, tof_bin)
 
     # backward project
     back_img = xp.zeros_like(img)
-    sino = xp.random.rand(nLORs, num_tof_bins).astype(xp.float32)
+    lst = xp.random.rand(nLORs).astype(xp.float32)
 
-    parallelprojpy.joseph3d_back_tof_sino(xstart, xend, back_img, img_origin,
-                                        voxel_size, sino, tofbin_width,
-                                        sigma_tof, tofcenter_offset, nsigmas,
-                                        num_tof_bins)
+    parallelproj.joseph3d_back_tof_lm(xstart, xend, back_img, img_origin,
+                                      voxel_size, lst, tofbin_width, sigma_tof,
+                                      tofcenter_offset, nsigmas, tof_bin)
     ip_a = (back_img * img).sum()
-    ip_b = (img_fwd * sino).sum()
+    ip_b = (img_fwd * lst).sum()
 
     res = np.isclose(ip_a, ip_b)
 
     if verbose:
         print(
-            f'module = {xp.__name__}  -  cuda_enabled {parallelprojpy.num_visible_cuda_devices > 0}'
+            f'module = {xp.__name__}  -  cuda_enabled {parallelproj.num_visible_cuda_devices > 0}'
         )
         print('ip_a = ', ip_a)
         print('ip_b = ', ip_b)
@@ -157,24 +159,24 @@ def adjointness_test(xp: ModuleType,
 #--------------------------------------------------------------------------
 
 
-class TestTOFJoseph(unittest.TestCase):
+class TestLMTOFJoseph(unittest.TestCase):
     """test for TOF joseph projections"""
 
     def test_adjoint(self):
         """test TOF joseph forward projection using different backends"""
         self.assertTrue(adjointness_test(np))
 
-        if parallelprojpy.cupy_enabled:
+        if parallelproj.cupy_enabled:
             import cupy as cp
             self.assertTrue(adjointness_test(cp))
 
     def test_forward(self):
         """test TOF joseph forward projection using different backends"""
-        self.assertTrue(tof_sino_fwd_test(np))
+        self.assertTrue(tof_lm_fwd_test(np))
 
-        if parallelprojpy.cupy_enabled:
+        if parallelproj.cupy_enabled:
             import cupy as cp
-            self.assertTrue(tof_sino_fwd_test(cp))
+            self.assertTrue(tof_lm_fwd_test(cp))
 
 
 #--------------------------------------------------------------------------
