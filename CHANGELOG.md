@@ -1,3 +1,8 @@
+## 1.3.5 (April 23, 2023)
+- chore: updated package.json, updated CHANGELOG.md, bumped 1.3.4 -> 1.3.5
+- add py.typed for mypy type checker
+- dummy commit
+
 ## 1.3.4 (April 21, 2023)
 - chore: updated package.json, updated CHANGELOG.md, bumped 1.3.3 -> 1.3.4
 - rename python binding back to parallelproj
