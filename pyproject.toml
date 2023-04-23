@@ -27,3 +27,6 @@ dynamic = ["version"]
 [tool.setuptools.packages.find]
 where = ["python"]
 include = ["parallelproj*"]
+
+[tool.setuptools.package-data]
+"parallelproj" = ["py.typed"]
