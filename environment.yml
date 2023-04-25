@@ -1,8 +1,7 @@
 name: parallelproj
-
 channels:
   - conda-forge
-
 dependencies:
   - libparallelproj
+  - llvm-openmp
   - numpy
