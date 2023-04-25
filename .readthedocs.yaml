@@ -6,7 +6,7 @@ conda:
 build:
   os: "ubuntu-22.04"
   tools:
-    python: "3"
+    python: "3.8"
   commands:
     - conda search -c conda-forge libparallelproj
 
