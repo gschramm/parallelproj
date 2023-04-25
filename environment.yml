@@ -4,9 +4,5 @@ channels:
   - conda-forge
 
 dependencies:
-  - cmake >=3.23
-  - make # [not win]
-  - ninja # [win]
-  - libgcc-ng # [linux]
-  - libstdcxx-ng # [linux]
-
+  - libparallelproj
+  - numpy
