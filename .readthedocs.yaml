@@ -7,11 +7,11 @@ build:
 
 conda:
   environment: docs/environment.yml
-## This part is necessary otherwise the project is not built
-#python:
-#  install:
-#    - method: pip
-#      path: .
+# This part is necessary otherwise the project is not built
+python:
+  install:
+    - method: pip
+      path: .
 #version: 2
 #
 #build:
