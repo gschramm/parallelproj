@@ -12,26 +12,9 @@ python:
   install:
     - method: pip
       path: .
-#version: 2
-#
-#build:
-#  os: "ubuntu-20.04"
-#  tools:
-#    python: "3.8"
-#
-#sphinx:
-#  fail_on_warning: true
-#
-#conda:
-#  environment: environment.yml
-#
-#python:
-#  # Install our python package before building the docs
-#  install:
-#    - method: pip
-#      path: .
-#
+
+sphinx:
+  fail_on_warning: false
 #formats:
 #  - pdf
 #  - epub
-#
