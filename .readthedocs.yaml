@@ -8,7 +8,9 @@ build:
   tools:
     python: "3.8"
   commands:
-    - conda search -c conda-forge libparallelproj
+    - echo "##########################################################"
+    - uname -i
+    - echo "##########################################################"
 
 # This part is necessary otherwise the project is not built
 python:
