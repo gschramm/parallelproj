@@ -1,7 +1,6 @@
-name: parallelproj
+name: readthedocs
 channels:
   - conda-forge
 dependencies:
   - libparallelproj
-  - llvm-openmp
   - numpy
