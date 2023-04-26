@@ -1,30 +1,73 @@
 # parallelproj
 
-OpenMP and CUDA libraries for 3D Joseph non-TOF and TOF forward and back projectors.
+OpenMP and CUDA libraries + python interface for 3D Joseph non-TOF and TOF forward and back projectors.
 
-This project provides OpenMP and CUDA implementations of 3D Joseph non-TOF and TOF forward and back projectors that can be e.g. used for image reconstruction. The input to the projectors are a list of start and end points for line of responses (LORs) such that they are very flexible and suitable for sinogram and listmode processing.
+This project provides OpenMP and CUDA implementations and a python interface of 3D Joseph non-TOF and TOF forward and back projectors that can be e.g. used for image reconstruction. The input to the projectors are a list of start and end points for line of responses (LORs) such that they are very flexible and suitable for sinogram and listmode processing.
 
 A few benchmarking tests of the projectors can be found in [this](https://arxiv.org/abs/2212.12519) preprint on arxiv.
+
+## Documentation
+
+The documentation of the python interface can be found [here](https://parallelproj.readthedocs.io/en/stable/).
 
 ## Installation
 
 ### (Option 1 - recommended) Installation from conda-forge
 
-Precompiled parallelproj OpenMP and CUDA libraries and all their dependencies are available on [conda-forge](https://github.com/conda-forge/parallelproj-feedstock)
-for Linux, Windows and MacOS. You can install the libraries via
+Precompiled `libparallelproj` OpenMP and CUDA libraries and all their dependencies are available on [conda-forge](https://github.com/conda-forge/parallelproj-feedstock)
+for Linux, Windows and MacOS. You can install the libraries (`libparallelproj` conda-forge package) and the python interface (`parallelproj` conda-forge package) using `mamba` or `conda` via
+
+```
+mamba install parallelproj
+```
+
+or 
 
 ```
 conda install -c conda-forge parallelproj
 ```
 
-_Remarks_:
+---
 
-- _As usual, we recommend to install the libs into a separate conda virtual enviornment._
+If you do not need the python interface, use
+
+```
+mamba install libparallelproj
+```
+
+or 
+
+```
+conda install -c conda-forge libparallelproj
+```
+
+---
+
+If you want to use the `cupy` interface of parallelproj, you
+have to install the optional cupy dependency via
+
+```
+mamba install cupy
+```
+
+or 
+
+```
+conda install -c conda-forge cupy
+```
+
+
+
+**Remarks:**
+
+- we recommend to install the packages into a separate conda virtual enviornment
 - conda auto detects where cuda is available on your system
 - if cuda is not available, only the OpenMP library will be installed
 - currently the precompiled cuda library is not available for MacOS
 
-### (Option 2) Building from source
+---
+
+### (Option 2 - developers only) Building from source
 
 ### Dependencies
 
