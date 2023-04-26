@@ -1,3 +1,45 @@
+## 1.3.6 (April 25, 2023)
+- chore: updated package.json, updated CHANGELOG.md, bumped 1.3.5 -> 1.3.6
+- update conf.py
+- Revert "update rtd conf.py"
+- update rtd conf.py
+- Update README.md
+- update doc index
+- update rtd config
+- update of API rtd
+- update conf.py
+- update doc
+- api rtd update
+- rtd api update
+- update rtd api
+- update rtd api
+- update rtd API
+- add sphinx napoleon ext to allow for numpy docstrings
+- change API doc
+- update rtd config
+- use mamba for rtd
+- remove pre-build jobs
+- diag info
+- test outputs
+- remove python.version
+- change OS version in rtd
+- correct build python version
+- diag. outout for conda-forge search
+- add pip to rtd env
+- update rtd env
+- bump python version for rtd
+- mov rtd env yaml
+- update rtd env
+- add build config to rtd docs
+- update env file
+- update environment.yml and use conda for rdt
+- work on docs
+- add docs subfolder for rtd
+- remove fail on warning
+- remove os from rtd build config
+- add sphinx config files for read the docs
+- dummy commit
+
 ## 1.3.5 (April 23, 2023)
 - chore: updated package.json, updated CHANGELOG.md, bumped 1.3.4 -> 1.3.5
 - add py.typed for mypy type checker
