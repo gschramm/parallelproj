@@ -3,11 +3,11 @@
 # -- Project information
 
 project = 'parallelproj'
-copyright = 'Unknown'
-author = 'gschramm'
+copyright = 'Georg Schramm'
+author = 'Georg Schramm'
 
-release = '0.1'
-version = '0.1.0'
+release = '1.3'
+version = '1.3.0'
 
 # -- General configuration
 
@@ -18,6 +18,8 @@ extensions = [
     'sphinx.ext.autosummary',
     'sphinx.ext.napoleon',
     'sphinx.ext.intersphinx',
+    'sphinx.ext.mathjax',
+    'sphinx.ext.viewcode'
 ]
 
 intersphinx_mapping = {
@@ -38,3 +40,6 @@ epub_show_urls = 'footnote'
 # napoleon options
 napoleon_google_docstring = False
 napoleon_numpy_docstring = True
+
+autosummary_generate = True
+autosummary_imported_members = True
