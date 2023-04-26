@@ -1,84 +1,47 @@
 ## 1.3.6 (April 25, 2023)
+
 - chore: updated package.json, updated CHANGELOG.md, bumped 1.3.5 -> 1.3.6
-- update conf.py
-- Revert "update rtd conf.py"
-- update rtd conf.py
-- Update README.md
-- update doc index
-- update rtd config
-- update of API rtd
-- update conf.py
-- update doc
-- api rtd update
-- rtd api update
-- update rtd api
-- update rtd api
-- update rtd API
-- add sphinx napoleon ext to allow for numpy docstrings
-- change API doc
-- update rtd config
-- use mamba for rtd
-- remove pre-build jobs
-- diag info
-- test outputs
-- remove python.version
-- change OS version in rtd
-- correct build python version
-- diag. outout for conda-forge search
-- add pip to rtd env
-- update rtd env
-- bump python version for rtd
-- mov rtd env yaml
-- update rtd env
-- add build config to rtd docs
-- update env file
-- update environment.yml and use conda for rdt
-- work on docs
-- add docs subfolder for rtd
-- remove fail on warning
-- remove os from rtd build config
-- add sphinx config files for read the docs
-- dummy commit
+- enable readthedocs
 
 ## 1.3.5 (April 23, 2023)
+
 - chore: updated package.json, updated CHANGELOG.md, bumped 1.3.4 -> 1.3.5
 - add py.typed for mypy type checker
 - dummy commit
 
-
 ## 1.3.4 (April 21, 2023)
+
 - chore: updated package.json, updated CHANGELOG.md, bumped 1.3.3 -> 1.3.4
 - rename python binding back to parallelproj
 - dummy commit
 
-
 ## 1.3.3 (April 20, 2023)
+
 - chore: updated package.json, updated CHANGELOG.md, bumped 1.3.2 -> 1.3.3
-- import annotations from __future__ to be compatiable with older versions
+- import annotations from **future** to be compatiable with older versions
 - dummy commit
 
-
 ## 1.3.2 (April 18, 2023)
+
 - chore: updated package.json, updated CHANGELOG.md, bumped 1.3.1 -> 1.3.2
 - rename test folder
 - lower absolute tolerance for forward TOF tests - (otherwise windows builds might fail)
 - dummy commit
 
-
 ## 1.3.1 (April 17, 2023)
+
 - chore: updated package.json, updated CHANGELOG.md, bumped 1.3.0 -> 1.3.1
 - add num_visivle_devices definition when cuda is not present
 - dummy commit
 
-
 ## 1.3.0 (April 17, 2023)
+
 - chore: updated package.json, updated CHANGELOG.md, bumped 1.2.16 -> 1.3.0
 - clean up pyproject.toml
 - mv tests and rename imports in tests
 - rename python package to parallelprojpy and adapt setup.cfg
 - add first version of pyproject.toml
 - dummy commit
-
 
 ## 1.2.16 (April 16, 2023)
 
