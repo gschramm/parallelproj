@@ -1,4 +1,5 @@
 # Configuration file for the Sphinx documentation builder.
+import json
 
 # -- Project information
 
@@ -6,8 +7,10 @@ project = 'parallelproj'
 copyright = 'Georg Schramm'
 author = 'Georg Schramm'
 
-release = '1.3'
-version = '1.3.0'
+# get version string from file
+with open('../../package.json') as f:
+    version = json.load(f)['version']
+release = version
 
 # -- General configuration
 

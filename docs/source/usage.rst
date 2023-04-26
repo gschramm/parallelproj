@@ -1,13 +1,9 @@
 Usage
 =====
 
-.. _installation:
+Non-TOF projection example
+--------------------------
 
-Installation
-------------
-
-To use install parallelproj from conda-forge
-
-.. code-block:: console
-
-   $ mamba install parallelproj
+.. literalinclude:: ../../examples/00_nontof_projections.py
+   :language: python
+   :linenos:

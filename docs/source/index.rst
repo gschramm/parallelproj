@@ -5,13 +5,11 @@ Welcome to parallelproj's documentation!
 libparallelproj projector libraries written in C/OpenMP
 and cuda.
 
-Check out the :doc:`usage` section for further information, including
-how to :ref:`installation` the project.
-
 Contents
 --------
 
 .. toctree::
 
+   installation
    usage
    api
