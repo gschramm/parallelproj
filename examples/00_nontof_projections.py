@@ -29,9 +29,9 @@ img = xp.arange(n0 * n1 * n2, dtype=xp.float32).reshape((n0, n1, n2))
 #--- setup the LOR start and end points ------------------------
 #---------------------------------------------------------------
 
-# Rvery line of response (LOR) along which we want to project is
-# define by its start point (3 element array) and end point (3 element array).
-# Here we define 10 LORs, such and group all start and end points in two
+# Every line of response (LOR) along which we want to project is
+# defined by its start point (3 element array) and end point (3 element array).
+# Here we define 10 LORs and group all start and end points in two
 # 2D arrays of shape (10,3).
 
 # We first define the LORs start/end points in voxel coordinates (for convenience)
@@ -82,7 +82,7 @@ parallelproj.joseph3d_fwd(xstart, xend, img, img_origin, voxel_size,
 
 
 #---------------------------------------------------------------
-#--- call the forward projector --------------------------------
+#--- call the adjoint of the forward projector -----------------
 #---------------------------------------------------------------
 
 # setup a "sinogram" full of ones
