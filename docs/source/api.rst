@@ -1,5 +1,7 @@
 API
 ===
 
-.. automodule:: parallelproj
-   :members:
+.. autosummary::
+   :toctree: generated
+
+   parallelproj
