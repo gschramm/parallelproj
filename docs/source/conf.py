@@ -3,8 +3,11 @@
 # -- Project information
 
 project = 'parallelproj'
-copyright = 'MIT license'
-author = 'Georg Schramm'
+copyright = 'Unknown'
+author = 'gschramm'
+
+release = '0.1'
+version = '0.1.0'
 
 # -- General configuration
 
