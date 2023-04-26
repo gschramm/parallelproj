@@ -4,4 +4,4 @@ API
 .. autosummary::
    :toctree: generated
 
-   parallelproj
+   parallelproj.backend
