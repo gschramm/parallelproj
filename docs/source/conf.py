@@ -34,3 +34,7 @@ html_theme = 'sphinx_rtd_theme'
 
 # -- Options for EPUB output
 epub_show_urls = 'footnote'
+
+# napoleon options
+napoleon_google_docstring = False
+napoleon_numpy_docstring = True
