@@ -12,7 +12,7 @@ and cuda.
     installation
 
 .. toctree::
-    :caption: Minimal Examples
+    :caption: Minimal Python Examples
     :titlesonly:
 
     nontof_example
@@ -20,7 +20,17 @@ and cuda.
     toflm_example
 
 .. toctree::
-    :caption: Modules
+    :caption: Python Modules
     :titlesonly:
 
     backend_mod
+
+.. toctree::
+    :caption: C/CUDA lib API
+    :titlesonly:
+
+    libparallelproj_c
+    libparallelproj_cuda
+    cuda_kernels
+
+
