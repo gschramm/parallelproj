@@ -1,5 +1,5 @@
-API
-===
+Backend
+-------
 
 .. automodule:: parallelproj.backend
    :members:

@@ -46,3 +46,10 @@ napoleon_numpy_docstring = True
 
 autosummary_generate = True
 autosummary_imported_members = True
+
+# Automatically extract typehints when specified and place them in
+# descriptions of the relevant function/method.
+autodoc_typehints = "description"
+
+# Don't show class signature with the class' name.
+autodoc_class_signature = "separated"

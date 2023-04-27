@@ -1026,17 +1026,19 @@ def joseph3d_back_tof_lm(xstart: XPFloat32Array,
 #-----------------------------------------------------------------------------
 
 
-def get_array_module(array) -> ModuleType:
-    """return module of a cupy or numpy array
+def get_array_module(array: npt.NDArray | cpt.NDArray) -> ModuleType:
+    """get the module of a numpy or cupy array
 
     Parameters
     ----------
-    array : cupy or numpy array
+    array : npt.NDArray | cpt.NDArray
+        a numpy or cupy array
 
     Returns
     -------
-    cupy or numpy module
-    """
+    ModuleType
+        the numpy or cupy module
+    """    
     if cupy_enabled:
         return cp.get_array_module(array)
     else:
