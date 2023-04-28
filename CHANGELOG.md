@@ -1,11 +1,6 @@
 ## 1.3.7 (April 27, 2023)
 - chore: updated package.json, updated CHANGELOG.md, bumped 1.3.6 -> 1.3.7
-- remove html_context from conf.py
-- update docs
-- update docs (include C/CUDA api doc)
-- restructure documentation
-- add TOF examples
-- add first example for documentation
+- update documentation
 - dummy commit
 
 ## 1.3.6 (April 25, 2023)
