@@ -458,7 +458,7 @@ def joseph3d_back(xstart: XPFloat32Array,
                   sino: XPFloat32Array,
                   threadsperblock: int = 32,
                   num_chunks: int = 1) -> None:
-    """Non-TOF Joseph 3D forward projector
+    """Non-TOF Joseph 3D back projector
 
     Parameters
     ----------
@@ -664,7 +664,7 @@ def joseph3d_back_tof_sino(xstart: XPFloat32Array,
                            ntofbins: int,
                            threadsperblock: int = 32,
                            num_chunks: int = 1) -> None:
-    """TOF Joseph 3D sinogram forward projector
+    """TOF Joseph 3D sinogram back projector
 
     Parameters
     ----------

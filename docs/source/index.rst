@@ -7,27 +7,28 @@ and cuda.
 
 
 .. toctree::
-    :titlesonly:
-
+    :hidden:
+    :caption: Getting Started
+    
     installation
 
 .. toctree::
+    :hidden:
     :caption: Minimal Python Examples
-    :titlesonly:
 
     nontof_example
     tofsino_example
     toflm_example
 
 .. toctree::
-    :caption: Python Modules
-    :titlesonly:
+    :hidden:
+    :caption: Python API
 
     backend_mod
 
 .. toctree::
+    :hidden:
     :caption: C/CUDA lib API
-    :titlesonly:
 
     libparallelproj_c
     libparallelproj_cuda
