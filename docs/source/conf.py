@@ -54,9 +54,3 @@ autodoc_typehints = "description"
 # Don't show class signature with the class' name.
 autodoc_class_signature = "separated"
 
-html_context = {
-  'display_github': True,
-  'github_user': 'gschramm',
-  'github_repo': 'parallelproj',
-  'github_version': 'master/docs/',
-}
