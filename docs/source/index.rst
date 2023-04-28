@@ -24,7 +24,7 @@ and cuda.
     :hidden:
     :caption: Python API
 
-    backend_mod
+    python_api
 
 .. toctree::
     :hidden:
