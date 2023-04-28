@@ -6,68 +6,13 @@ This project provides OpenMP and CUDA implementations and a python interface of 
 
 A few benchmarking tests of the projectors can be found in [this](https://arxiv.org/abs/2212.12519) preprint on arxiv.
 
-## Documentation
+## Installation, Documentation & Examples
 
-The documentation of the python interface can be found [here](https://parallelproj.readthedocs.io/en/stable/).
-
-## Installation
-
-### (Option 1 - recommended) Installation from conda-forge
-
-Precompiled `libparallelproj` OpenMP and CUDA libraries and all their dependencies are available on [conda-forge](https://github.com/conda-forge/parallelproj-feedstock)
-for Linux, Windows and MacOS. You can install the libraries (`libparallelproj` conda-forge package) and the python interface (`parallelproj` conda-forge package) using `mamba` or `conda` via
-
-```
-mamba install parallelproj
-```
-
-or 
-
-```
-conda install -c conda-forge parallelproj
-```
+Please refer to the official documentation [here](https://parallelproj.readthedocs.io/en/stable/).
 
 ---
 
-If you do not need the python interface, use
-
-```
-mamba install libparallelproj
-```
-
-or 
-
-```
-conda install -c conda-forge libparallelproj
-```
-
----
-
-If you want to use the `cupy` interface of parallelproj, you
-have to install the optional cupy dependency via
-
-```
-mamba install cupy
-```
-
-or 
-
-```
-conda install -c conda-forge cupy
-```
-
-
-
-**Remarks:**
-
-- we recommend to install the packages into a separate conda virtual enviornment
-- conda auto detects where cuda is available on your system
-- if cuda is not available, only the OpenMP library will be installed
-- currently the precompiled cuda library is not available for MacOS
-
----
-
-### (Option 2 - developers only) Building from source
+## Building the libraries from source (developers only)
 
 ### Dependencies
 
