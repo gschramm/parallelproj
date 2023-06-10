@@ -202,37 +202,3 @@ class GaussianFilterOperator(LinearOperator):
         """ adjoint step x = A^H y"""
         return self._call(y)
 
-
-
-#----------------------------------------------------
-
-if __name__ == '__main__':
-    #import numpy as xp
-    #import scipy.ndimage as ndi
-
-    import cupy as xp
-    import cupyx.scipy.ndimage as ndi
-
-    from parallelproj.projectors import ParallelViewProjector2D
-
-    #----------------------------------------------------------------------
-    projector = ParallelViewProjector2D((1, 128, 128),
-                                xp.linspace(-200, 200, 131, dtype=xp.float32),
-                                210, 300.,
-                                xp.array([0, -63.5, -63.5], dtype=xp.float32),
-                                xp.ones(3, dtype=xp.float32), xp)
-
-
-    image_space_filter = GaussianFilterOperator(projector.in_shape,
-                               ndi,
-                               sigma=1.3)
-
-    sensitivity = ElementwiseMultiplicationOperator(xp.full(projector.out_shape, 2.3, dtype=xp.float32))
-
-    fwd_model = CompositeLinearOperator((sensitivity, projector, image_space_filter))
-
-    fwd_model.adjointness_test(xp, verbose=True)
-    fwd_model_norm = fwd_model.norm(xp)
-
-    fig = projector.show_views()
-    fig.show()
