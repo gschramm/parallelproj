@@ -1,6 +1,3 @@
-#TODO: dtype_kind -> np.float32 or np.compelx64 -> check whether dtyoe is complex
-#      tonumpy()
-
 from __future__ import annotations
 import abc
 import numpy as np
@@ -9,8 +6,13 @@ from matplotlib.patches import Rectangle
 import parallelproj
 
 
-def tonumpy(x):
-    return x
+def tonumpy(x, xp):
+    if xp.__name__ == 'numpy':
+        return x
+    elif xp.__name__ == 'cupy':
+        return xp.asnumpy(x)
+    else:
+        raise ValueError
 
 
 class LinearOperator(abc.ABC):
@@ -26,18 +28,6 @@ class LinearOperator(abc.ABC):
     @property
     @abc.abstractmethod
     def out_shape(self) -> tuple[int, ...]:
-        raise NotImplementedError
-
-    @property
-    @abc.abstractmethod
-    def in_dtype_kind(self) -> str:
-        """must return 'float' for real or 'complex' for complex """
-        raise NotImplementedError
-
-    @property
-    @abc.abstractmethod
-    def out_dtype_kind(self) -> str:
-        """must return 'float' for real or 'complex' for complex """
         raise NotImplementedError
 
     @property
@@ -74,14 +64,14 @@ class LinearOperator(abc.ABC):
         else:
             return np.conj(self._scale) * self._adjoint(y)
 
-    def adjointness_test(self, xp, verbose=False, **kwargs):
+    def adjointness_test(self, xp, verbose=False, iscomplex = False, **kwargs):
         x = xp.random.rand(*self.in_shape)
         y = xp.random.rand(*self.out_shape)
 
-        if self.in_dtype_kind == 'complex':
+        if iscomplex:
             x = x + 1j * xp.random.rand(*self.in_shape)
 
-        if self.out_dtype_kind == 'complex':
+        if iscomplex:
             y = y + 1j * xp.random.rand(*self.out_shape)
 
         x_fwd = self.__call__(x)
@@ -95,11 +85,11 @@ class LinearOperator(abc.ABC):
 
         assert (xp.isclose(ip1, ip2, **kwargs))
 
-    def norm(self, xp, num_iter=30, verbose=False):
+    def norm(self, xp, num_iter=30, iscomplex = False, verbose=False):
         """estimate the norm of the operator using power iterations"""
         x = xp.random.rand(*self.in_shape)
 
-        if self.in_dtype_kind == 'complex':
+        if iscomplex:
             x = x + 1j * xp.random.rand(*self.in_shape)
 
         for i in range(num_iter):
@@ -133,14 +123,6 @@ class MatrixOperator(LinearOperator):
         return (self._A.shape[0], )
 
     @property
-    def in_dtype_kind(self):
-        return self._dtype_kind
-
-    @property
-    def out_dtype_kind(self):
-        return self._dtype_kind
-
-    @property
     def A(self):
         return self._A
 
@@ -166,14 +148,6 @@ class CompositeLinearOperator(LinearOperator):
     @property
     def out_shape(self):
         return self._operators[0].out_shape
-
-    @property
-    def in_dtype_kind(self):
-        return self._operators[-1].in_dtype_kind
-
-    @property
-    def out_dtype_kind(self):
-        return self._operators[0].in_dtype_kind
 
     @property
     def operators(self) -> tuple[LinearOperator, ...]:
@@ -208,14 +182,6 @@ class ElementwiseMultiplicationOperator(LinearOperator):
     def out_shape(self):
         return self._values.shape
 
-    @property
-    def in_dtype_kind(self):
-        return self._values.dtype.kind
-
-    @property
-    def out_dtype_kind(self):
-        return self._values.dtype.kind
-
     def _call(self, x):
         """ forward step y = Ax"""
         return self._values * x
@@ -227,11 +193,10 @@ class ElementwiseMultiplicationOperator(LinearOperator):
 
 class GaussianFilterOperator(LinearOperator):
 
-    def __init__(self, in_shape, ndimage_module, dtype='float', **kwargs):
+    def __init__(self, in_shape, ndimage_module, **kwargs):
         super().__init__()
         self._in_shape = in_shape
         self._ndimage_module = ndimage_module
-        self._dtype = dtype
         self._kwargs = kwargs
 
     @property
@@ -241,14 +206,6 @@ class GaussianFilterOperator(LinearOperator):
     @property
     def out_shape(self):
         return self._in_shape
-
-    @property
-    def in_dtype_kind(self):
-        return self._dtype
-
-    @property
-    def out_dtype_kind(self):
-        return self._dtype
 
     def _call(self, x):
         """ forward step y = Ax"""
@@ -315,14 +272,6 @@ class ParallelViewProjector2D(LinearOperator):
     def out_shape(self):
         return (self._num_views, self._num_rad)
 
-    @property
-    def in_dtype_kind(self):
-        return 'float'
-
-    @property
-    def out_dtype_kind(self):
-        return 'float'
-
     def _call(self, x):
         y = self._xp.zeros(self.out_shape, dtype=self._xp.float32)
         parallelproj.joseph3d_fwd(self._xstart.reshape(-1, 3),
@@ -351,12 +300,12 @@ class ParallelViewProjector2D(LinearOperator):
         img_extent = [tmp1, -tmp1, tmp2, -tmp2]
 
         for i, ip in enumerate(views_to_show):
-            ax[i].plot(tonumpy(self._xstart[ip, :, 1]),
-                       tonumpy(self._xstart[ip, :, 2]),
+            ax[i].plot(tonumpy(self._xstart[ip, :, 1], self._xp),
+                       tonumpy(self._xstart[ip, :, 2], self._xp),
                        '.',
                        ms=0.5)
-            ax[i].plot(tonumpy(self._xend[ip, :, 1]),
-                       tonumpy(self._xend[ip, :, 2]),
+            ax[i].plot(tonumpy(self._xend[ip, :, 1], self._xp),
+                       tonumpy(self._xend[ip, :, 2], self._xp),
                        '.',
                        ms=0.5)
             for k in np.linspace(0, self._num_rad - 1, 7).astype(int):
@@ -385,7 +334,7 @@ class ParallelViewProjector2D(LinearOperator):
                               edgecolor='r',
                               facecolor='none',
                               linestyle=':'))
-                ax[i].imshow(tonumpy(image[0, ...]).T,
+                ax[i].imshow(tonumpy(image[0, ...], self._xp).T,
                              origin='lower',
                              extent=img_extent,
                              **kwargs)
@@ -401,40 +350,26 @@ class ParallelViewProjector2D(LinearOperator):
 #----------------------------------------------------
 
 if __name__ == '__main__':
-    np.random.seed(1)
     import scipy.ndimage as ndi
 
-    G0 = MatrixOperator(np.random.rand(3, 2) + np.random.rand(3, 2) * 1j)
-    G1 = MatrixOperator(np.random.rand(5, 3) + np.random.rand(5, 3) * 1j)
-    G2 = MatrixOperator(np.random.rand(4, 5) + np.random.rand(4, 5) * 1j)
-
-    G0.scale = 2. - 3j
-    G1.scale = 3. + 3j
-    G2.scale = 1. + 2j
-
-    G0.adjointness_test(np)
-    G1.adjointness_test(np)
-    G2.adjointness_test(np)
-
-    D = ElementwiseMultiplicationOperator(
-        np.random.rand(*G2.out_shape) + 1j * np.random.rand(*G2.out_shape))
-
-    C = GaussianFilterOperator(D.out_shape,
-                               ndi,
-                               dtype=D.out_dtype_kind,
-                               sigma=1.3)
-
-    G = CompositeLinearOperator((C, D, G2, G1, G0))
-    G.scale = 2 - 1.4j
-
-    G.adjointness_test(np, verbose=True)
-
     #----------------------------------------------------------------------
-    P = ParallelViewProjector2D((1, 128, 128),
+    projector = ParallelViewProjector2D((1, 128, 128),
                                 np.linspace(-200, 200, 131, dtype=np.float32),
                                 210, 300.,
                                 np.array([0, -63.5, -63.5], dtype=np.float32),
                                 np.ones(3, dtype=np.float32), np)
 
-    fig = P.show_views()
+
+    image_space_filter = GaussianFilterOperator(projector.in_shape,
+                               ndi,
+                               sigma=1.3)
+
+    sensitivity = ElementwiseMultiplicationOperator(np.full(projector.out_shape, 2.3, dtype=np.float32))
+
+    fwd_model = CompositeLinearOperator((sensitivity, projector, image_space_filter))
+
+    fwd_model.adjointness_test(np, verbose=True)
+    fwd_model_norm = fwd_model.norm(np)
+
+    fig = projector.show_views()
     fig.show()
