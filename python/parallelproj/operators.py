@@ -10,23 +10,23 @@ class LinearOperator(abc.ABC):
 
     @property
     @abc.abstractmethod
-    def in_shape(self):
+    def in_shape(self) -> tuple[int, ...]:
         raise NotImplementedError
 
     @property
     @abc.abstractmethod
-    def out_shape(self):
+    def out_shape(self) -> tuple[int, ...]:
         raise NotImplementedError
 
     @property
     @abc.abstractmethod
-    def in_dtype_kind(self):
+    def in_dtype_kind(self) -> str:
         """must return 'float' for real or 'complex' for complex """
         raise NotImplementedError
 
     @property
     @abc.abstractmethod
-    def out_dtype_kind(self):
+    def out_dtype_kind(self) -> str:
         """must return 'float' for real or 'complex' for complex """
         raise NotImplementedError
 
@@ -65,14 +65,14 @@ class LinearOperator(abc.ABC):
             return np.conj(self._scale) * self._adjoint(y)
 
     def adjointness_test(self, xp, verbose=False, **kwargs):
-        x = xp.random.rand(self.in_shape)
-        y = xp.random.rand(self.out_shape)
+        x = xp.random.rand(*self.in_shape)
+        y = xp.random.rand(*self.out_shape)
 
         if self.in_dtype_kind == 'complex':
-            x = x + 1j * xp.random.rand(self.in_shape)
+            x = x + 1j * xp.random.rand(*self.in_shape)
 
         if self.out_dtype_kind == 'complex':
-            y = y + 1j * xp.random.rand(self.out_shape)
+            y = y + 1j * xp.random.rand(*self.out_shape)
 
         x_fwd = self.__call__(x)
         y_adj = self.adjoint(y)
@@ -99,11 +99,11 @@ class MatrixOperator(LinearOperator):
 
     @property
     def in_shape(self):
-        return self._A.shape[1]
+        return (self._A.shape[1], )
 
     @property
     def out_shape(self):
-        return self._A.shape[0]
+        return (self._A.shape[0], )
 
     @property
     def in_dtype_kind(self):
@@ -167,6 +167,37 @@ class CompositeLinearOperator(LinearOperator):
         return x
 
 
+class ElementwiseMultiplicationOperator(LinearOperator):
+
+    def __init__(self, values):
+        super().__init__()
+        self._values = values
+
+    @property
+    def in_shape(self):
+        return self._values.shape
+
+    @property
+    def out_shape(self):
+        return self._values.shape
+
+    @property
+    def in_dtype_kind(self):
+        return self._values.dtype.kind
+
+    @property
+    def out_dtype_kind(self):
+        return self._values.dtype.kind
+
+    def _call(self, x):
+        """ forward step y = Ax"""
+        return self._values * x
+
+    def _adjoint(self, y):
+        """ adjoint step x = A^H y"""
+        return self._values.conj() * y
+
+
 #----------------------------------------------------
 
 if __name__ == '__main__':
@@ -180,11 +211,14 @@ if __name__ == '__main__':
     G1.scale = 3. + 3j
     G2.scale = 1. + 2j
 
+    D = ElementwiseMultiplicationOperator(
+        np.random.rand(*G2.out_shape) + 1j * np.random.rand(*G2.out_shape))
+
     G0.adjointness_test(np)
     G1.adjointness_test(np)
     G2.adjointness_test(np)
 
-    G = CompositeLinearOperator((G2, G1, G0))
+    G = CompositeLinearOperator((D, G2, G1, G0))
     G.scale = 2 - 1.4j
 
     G.adjointness_test(np)
