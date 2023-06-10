@@ -198,10 +198,44 @@ class ElementwiseMultiplicationOperator(LinearOperator):
         return self._values.conj() * y
 
 
+class GaussianFilterOperator(LinearOperator):
+
+    def __init__(self, in_shape, ndimage_module, **kwargs):
+        super().__init__()
+        self._in_shape = in_shape
+        self._ndimage_module = ndimage_module
+        self._kwargs = kwargs
+
+    @property
+    def in_shape(self):
+        return self._in_shape
+
+    @property
+    def out_shape(self):
+        return self._in_shape
+
+    @property
+    def in_dtype_kind(self):
+        return 'complex'
+
+    @property
+    def out_dtype_kind(self):
+        return 'complex'
+
+    def _call(self, x):
+        """ forward step y = Ax"""
+        return self._ndimage_module.gaussian_filter(x, **self._kwargs)
+
+    def _adjoint(self, y):
+        """ adjoint step x = A^H y"""
+        return self._call(y)
+
+
 #----------------------------------------------------
 
 if __name__ == '__main__':
     np.random.seed(1)
+    import scipy.ndimage as ndi
 
     G0 = MatrixOperator(np.random.rand(3, 2) + np.random.rand(3, 2) * 1j)
     G1 = MatrixOperator(np.random.rand(5, 3) + np.random.rand(5, 3) * 1j)
@@ -211,14 +245,17 @@ if __name__ == '__main__':
     G1.scale = 3. + 3j
     G2.scale = 1. + 2j
 
-    D = ElementwiseMultiplicationOperator(
-        np.random.rand(*G2.out_shape) + 1j * np.random.rand(*G2.out_shape))
-
     G0.adjointness_test(np)
     G1.adjointness_test(np)
     G2.adjointness_test(np)
 
-    G = CompositeLinearOperator((D, G2, G1, G0))
+    D = ElementwiseMultiplicationOperator(
+        np.random.rand(*G2.out_shape) + 1j * np.random.rand(*G2.out_shape))
+
+    C = GaussianFilterOperator(D.out_shape, ndi, sigma=1.3)
+    C2 = GaussianFilterOperator(D.out_shape, ndi, sigma=1.3)
+
+    G = CompositeLinearOperator((C2, C, D, G2, G1, G0))
     G.scale = 2 - 1.4j
 
     G.adjointness_test(np)
