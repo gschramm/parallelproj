@@ -85,6 +85,23 @@ class LinearOperator(abc.ABC):
 
         assert (xp.isclose(ip1, ip2, **kwargs))
 
+    def norm(self, xp, num_iter=30, verbose=False):
+        """estimate the norm of the operator using power iterations"""
+        x = xp.random.rand(*self.in_shape)
+
+        if self.in_dtype_kind == 'complex':
+            x = x + 1j * xp.random.rand(*self.in_shape)
+
+        for i in range(num_iter):
+            x = self.adjoint(self.__call__(x))
+            norm_squared = xp.linalg.norm(x)
+            x /= norm_squared
+
+            if verbose:
+                print(f'{(i+1):03} {xp.sqrt(norm_squared):.2E}')
+
+        return xp.sqrt(norm_squared)
+
 
 class MatrixOperator(LinearOperator):
 
