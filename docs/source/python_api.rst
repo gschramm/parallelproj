@@ -7,15 +7,6 @@ linear operators
    
    parallelproj.LinearOperator
 
-high-level projection operators
--------------------------------
-
-.. autosummary::
-   :toctree: generated
-   :nosignatures:
-
-   parallelproj.ParallelViewProjector2D
-
 low-level non-TOF projector API
 -------------------------------
 
