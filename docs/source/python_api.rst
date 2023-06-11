@@ -1,5 +1,5 @@
-Non-TOF projectors
-------------------
+low level non-TOF projector API
+-------------------------------
 
 .. autosummary::
    :toctree: generated
@@ -9,8 +9,8 @@ Non-TOF projectors
    parallelproj.joseph3d_back
 
 
-TOF sinogram projectors
------------------------
+low level TOF projector API
+---------------------------
 
 .. autosummary::
    :toctree: generated
@@ -19,8 +19,8 @@ TOF sinogram projectors
    parallelproj.joseph3d_fwd_tof_sino
    parallelproj.joseph3d_back_tof_sino
 
-TOF listmode projectors
------------------------
+lower level TOF listmode projector API
+--------------------------------------
 
 .. autosummary::
    :toctree: generated
@@ -28,3 +28,16 @@ TOF listmode projectors
    
    parallelproj.joseph3d_fwd_tof_lm
    parallelproj.joseph3d_back_tof_lm
+
+linear operators
+----------------
+
+.. autosummary::
+   :toctree: generated
+   :nosignatures:
+   
+   parallelproj.LinearOperator
+   parallelproj.MatrixOperator
+   parallelproj.ElementwiseMultiplicationOperator
+   parallelproj.GaussianFilterOperator 
+   parallelproj.CompositeLinearOperator

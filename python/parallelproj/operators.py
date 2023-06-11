@@ -2,7 +2,9 @@ from __future__ import annotations
 import abc
 import numpy as np
 
+
 class LinearOperator(abc.ABC):
+    """abstract base class for linear operators"""
 
     def __init__(self):
         self._scale = 1
@@ -10,19 +12,22 @@ class LinearOperator(abc.ABC):
     @property
     @abc.abstractmethod
     def in_shape(self) -> tuple[int, ...]:
+        """shape of the input array"""
         raise NotImplementedError
 
     @property
     @abc.abstractmethod
     def out_shape(self) -> tuple[int, ...]:
+        """shape of the output array"""
         raise NotImplementedError
 
     @property
-    def scale(self):
+    def scale(self) -> int | float | complex:
+        """scalar factor applied to the linear operator"""
         return self._scale
 
     @scale.setter
-    def scale(self, value):
+    def scale(self, value: int | float | complex):
         if not np.isscalar(value):
             raise ValueError
         self._scale = value
@@ -38,20 +43,48 @@ class LinearOperator(abc.ABC):
         raise NotImplementedError
 
     def __call__(self, x):
-        """ forward step y = scale * Ax"""
+        """ forward step y = scale * Ax
+
+        Parameters
+        ----------
+        x : numpy or cupy array
+
+        Returns
+        -------
+        numpy or cupy array
+        """
         if self._scale == 1:
             return self._call(x)
         else:
             return self._scale * self._call(x)
 
     def adjoint(self, y):
-        """ adjoint step x = conj(scale) * A^H y"""
+        """ adjoint step x = conj(scale) * A^H y
+
+        Parameters
+        ----------
+        y : numpy or cupy array
+
+        Returns
+        -------
+        numpy or cupy array
+        """
         if self._scale == 1:
             return self._adjoint(y)
         else:
             return np.conj(self._scale) * self._adjoint(y)
 
-    def adjointness_test(self, xp, verbose=False, iscomplex = False, **kwargs):
+    def adjointness_test(self, xp, verbose=False, iscomplex=False, **kwargs):
+        """test whether the adjoint is correctly implemented
+
+        Parameters
+        ----------
+        xp : numpy or cupy module
+        verbose : bool, optional
+            verbose output
+        iscomplex : bool, optional
+            use complex arrays
+        """
         x = xp.random.rand(*self.in_shape)
         y = xp.random.rand(*self.out_shape)
 
@@ -72,8 +105,24 @@ class LinearOperator(abc.ABC):
 
         assert (xp.isclose(ip1, ip2, **kwargs))
 
-    def norm(self, xp, num_iter=30, iscomplex = False, verbose=False):
-        """estimate the norm of the operator using power iterations"""
+    def norm(self, xp, num_iter=30, iscomplex=False, verbose=False) -> float:
+        """estimate norm of the linear operator using power iterations
+
+        Parameters
+        ----------
+        xp : numpy or cupy module
+        num_iter : int, optional
+            number of power iterations
+        iscomplex : bool, optional
+            use complex arrays
+        verbose : bool, optional
+            verbose output
+
+        Returns
+        -------
+        float
+            the norm of the linear operator
+        """
         x = xp.random.rand(*self.in_shape)
 
         if iscomplex:
@@ -91,8 +140,15 @@ class LinearOperator(abc.ABC):
 
 
 class MatrixOperator(LinearOperator):
+    """Linear Operator defined by dense matrix multiplication"""
 
     def __init__(self, A):
+        """ init method
+
+        Parameters
+        ----------
+        A : 2D numpy or cupy real of complex array
+        """
         super().__init__()
         self._A = A
 
@@ -123,8 +179,20 @@ class MatrixOperator(LinearOperator):
 
 
 class CompositeLinearOperator(LinearOperator):
+    """Composite Linear Operator defined by a sequence of Linear Operators
+    
+       Given a tuple of operators (A_0, ..., A_{n-1}) the composite operator is defined as
+       A(x) = A0( A1( ... ( A_{n-1}(x) ) ) ) 
+    """
 
     def __init__(self, operators: tuple[LinearOperator, ...]):
+        """init method
+
+        Parameters
+        ----------
+        operators : tuple[LinearOperator, ...]
+            tuple of linear operators
+        """
         super().__init__()
         self._operators = operators
 
@@ -138,6 +206,7 @@ class CompositeLinearOperator(LinearOperator):
 
     @property
     def operators(self) -> tuple[LinearOperator, ...]:
+        """tuple of linear operators"""
         return self._operators
 
     def _call(self, x):
@@ -156,8 +225,16 @@ class CompositeLinearOperator(LinearOperator):
 
 
 class ElementwiseMultiplicationOperator(LinearOperator):
+    """Element-wise multiplication operator (multiplication with a diagonal matrix)"""
 
     def __init__(self, values):
+        """init method
+
+        Parameters
+        ----------
+        values : numpy or cupy array
+            values of the diagonal matrix
+        """
         super().__init__()
         self._values = values
 
@@ -179,8 +256,19 @@ class ElementwiseMultiplicationOperator(LinearOperator):
 
 
 class GaussianFilterOperator(LinearOperator):
+    """Gaussian filter operator"""
 
     def __init__(self, in_shape, ndimage_module, **kwargs):
+        """init method
+
+        Parameters
+        ----------
+        in_shape : tuple[int, ...]
+            shape of the input array
+        ndimage_module : scipy or cupyx.scipy module
+        **kwargs : sometype
+            passed to the ndimage gaussian_filter function
+        """
         super().__init__()
         self._in_shape = in_shape
         self._ndimage_module = ndimage_module
@@ -201,4 +289,3 @@ class GaussianFilterOperator(LinearOperator):
     def _adjoint(self, y):
         """ adjoint step x = A^H y"""
         return self._call(y)
-
