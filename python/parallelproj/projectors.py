@@ -5,10 +5,28 @@ import parallelproj
 
 
 class ParallelViewProjector2D(parallelproj.LinearOperator):
+    """2D non-TOF parallel view projector"""
 
     def __init__(self, image_shape, radial_positions, num_views, radius,
                  image_origin, voxel_size, xp):
+        """init method
 
+        Parameters
+        ----------
+        image_shape : tuple[int, int, int]
+            shape of the input image (1, n1, n2)
+        radial_positions : numpy or cupy image
+            radial positions of the projection views in world coordinates
+        num_views : int
+            number of projection views
+        radius : float
+            radius of the scanner
+        image_origin : 3 element numpy or cupy array
+            world coordinates of the [0,0,0] voxel
+        voxel_size : 3 element numpy or cupy array
+            the voxel size
+        xp : numpy or cupy module
+        """
         super().__init__()
 
         self._image_shape = image_shape
@@ -77,6 +95,18 @@ class ParallelViewProjector2D(parallelproj.LinearOperator):
         return x
 
     def show_views(self, views_to_show=None, image=None, **kwargs):
+        """visualize the geometry of certrain projection views
+
+        Parameters
+        ----------
+        views_to_show : numpy array of integers
+            view numbers to show
+        image : numpy array or cupy array, optional
+            show an image inside the projector geometry
+        **kwargs : some type
+            passed to matplotlib.pyplot.imshow
+
+        """
         if views_to_show is None:
             views_to_show = np.linspace(0, self._num_views - 1, 5).astype(int)
 
