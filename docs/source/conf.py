@@ -15,14 +15,9 @@ release = version
 # -- General configuration
 
 extensions = [
-    'sphinx.ext.duration',
-    'sphinx.ext.doctest',
-    'sphinx.ext.autodoc',
-    'sphinx.ext.autosummary',
-    'sphinx.ext.napoleon',
-    'sphinx.ext.intersphinx',
-    'sphinx.ext.mathjax',
-    'sphinx.ext.viewcode'
+    'sphinx.ext.duration', 'sphinx.ext.doctest', 'sphinx.ext.autodoc',
+    'sphinx.ext.autosummary', 'sphinx.ext.napoleon', 'sphinx.ext.intersphinx',
+    'sphinx.ext.mathjax', 'sphinx.ext.viewcode'
 ]
 
 intersphinx_mapping = {
@@ -51,6 +46,13 @@ autosummary_imported_members = True
 # descriptions of the relevant function/method.
 autodoc_typehints = "description"
 
-# Don't show class signature with the class' name.
-autodoc_class_signature = "separated"
+## Don't show class signature with the class' name.
+#autodoc_class_signature = "separated"
 
+autodoc_default_options = {
+    "members": True,
+    "private-members": True,
+    "special-members": True,
+    "show-inheritance": True,
+    "exclude-members": "__weakref__"
+}
