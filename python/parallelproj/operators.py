@@ -34,16 +34,16 @@ class LinearOperator(abc.ABC):
 
     @abc.abstractmethod
     def _call(self, x):
-        """ forward step y = Ax"""
+        """forward step y = Ax"""
         raise NotImplementedError
 
     @abc.abstractmethod
     def _adjoint(self, y):
-        """ adjoint step x = A^H y"""
+        """adjoint step x = A^H y"""
         raise NotImplementedError
 
     def __call__(self, x):
-        """ forward step y = scale * Ax
+        """forward step y = scale * Ax
 
         Parameters
         ----------
@@ -59,7 +59,7 @@ class LinearOperator(abc.ABC):
             return self._scale * self._call(x)
 
     def adjoint(self, y):
-        """ adjoint step x = conj(scale) * A^H y
+        """adjoint step x = conj(scale) * A^H y
 
         Parameters
         ----------
@@ -143,7 +143,7 @@ class MatrixOperator(LinearOperator):
     """Linear Operator defined by dense matrix multiplication"""
 
     def __init__(self, A):
-        """ init method
+        """init method
 
         Parameters
         ----------
@@ -170,11 +170,11 @@ class MatrixOperator(LinearOperator):
         return self._A
 
     def _call(self, x):
-        """ forward step y = Ax"""
+        """forward step y = Ax"""
         return self._A @ x
 
     def _adjoint(self, y):
-        """ adjoint step x = A^H y"""
+        """adjoint step x = A^H y"""
         return self._A.conj().T @ y
 
 
@@ -210,14 +210,14 @@ class CompositeLinearOperator(LinearOperator):
         return self._operators
 
     def _call(self, x):
-        """ forward step y = Ax"""
+        """forward step y = Ax"""
         y = x
         for op in self._operators[::-1]:
             y = op(y)
         return y
 
     def _adjoint(self, y):
-        """ adjoint step x = A^H y"""
+        """adjoint step x = A^H y"""
         x = y
         for op in self._operators:
             x = op.adjoint(x)
@@ -247,11 +247,11 @@ class ElementwiseMultiplicationOperator(LinearOperator):
         return self._values.shape
 
     def _call(self, x):
-        """ forward step y = Ax"""
+        """forward step y = Ax"""
         return self._values * x
 
     def _adjoint(self, y):
-        """ adjoint step x = A^H y"""
+        """adjoint step x = A^H y"""
         return self._values.conj() * y
 
 
@@ -283,9 +283,9 @@ class GaussianFilterOperator(LinearOperator):
         return self._in_shape
 
     def _call(self, x):
-        """ forward step y = Ax"""
+        """forward step y = Ax"""
         return self._ndimage_module.gaussian_filter(x, **self._kwargs)
 
     def _adjoint(self, y):
-        """ adjoint step x = A^H y"""
+        """adjoint step x = A^H y"""
         return self._call(y)
