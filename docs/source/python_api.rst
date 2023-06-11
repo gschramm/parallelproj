@@ -6,6 +6,10 @@ linear operators
    :nosignatures:
    
    parallelproj.LinearOperator
+   parallelproj.MatrixOperator
+   parallelproj.ElementwiseMultiplicationOperator
+   parallelproj.GaussianFilterOperator 
+   parallelproj.CompositeLinearOperator
 
 high-level projection operators
 -------------------------------
