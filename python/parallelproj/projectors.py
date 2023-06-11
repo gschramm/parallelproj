@@ -2,10 +2,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.patches import Rectangle
 import parallelproj
-from parallelproj.operators import LinearOperator
-from parallelproj.utils import tonumpy
 
-class ParallelViewProjector2D(LinearOperator):
+
+class ParallelViewProjector2D(parallelproj.LinearOperator):
 
     def __init__(self, image_shape, radial_positions, num_views, radius,
                  image_origin, voxel_size, xp):
@@ -89,12 +88,12 @@ class ParallelViewProjector2D(LinearOperator):
         img_extent = [tmp1, -tmp1, tmp2, -tmp2]
 
         for i, ip in enumerate(views_to_show):
-            ax[i].plot(tonumpy(self._xstart[ip, :, 1], self._xp),
-                       tonumpy(self._xstart[ip, :, 2], self._xp),
+            ax[i].plot(parallelproj.tonumpy(self._xstart[ip, :, 1], self._xp),
+                       parallelproj.tonumpy(self._xstart[ip, :, 2], self._xp),
                        '.',
                        ms=0.5)
-            ax[i].plot(tonumpy(self._xend[ip, :, 1], self._xp),
-                       tonumpy(self._xend[ip, :, 2], self._xp),
+            ax[i].plot(parallelproj.tonumpy(self._xend[ip, :, 1], self._xp),
+                       parallelproj.tonumpy(self._xend[ip, :, 2], self._xp),
                        '.',
                        ms=0.5)
             for k in np.linspace(0, self._num_rad - 1, 7).astype(int):
@@ -123,7 +122,7 @@ class ParallelViewProjector2D(LinearOperator):
                               edgecolor='r',
                               facecolor='none',
                               linestyle=':'))
-                ax[i].imshow(tonumpy(image[0, ...], self._xp).T,
+                ax[i].imshow(parallelproj.tonumpy(image[0, ...], self._xp).T,
                              origin='lower',
                              extent=img_extent,
                              **kwargs)
@@ -134,4 +133,3 @@ class ParallelViewProjector2D(LinearOperator):
         fig.tight_layout()
 
         return fig
-
