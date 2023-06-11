@@ -7,6 +7,6 @@ dependencies:
   - pip
   - libparallelproj
   - numpy
-  - scipy
+  - matplotlib
   - sphinx<7
   - sphinx_rtd_theme
