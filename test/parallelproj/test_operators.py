@@ -5,7 +5,7 @@ import numpy as np
 import scipy.ndimage as ndi
 
 
-class TestNonTOFJoseph(unittest.TestCase):
+class TestProjectors(unittest.TestCase):
 
     def test_matrix(self):
         A = np.array([[1., 2.], [-3., 2.], [-1., -1.]])

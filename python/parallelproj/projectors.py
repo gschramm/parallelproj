@@ -7,7 +7,7 @@ import parallelproj
 class ParallelViewProjector2D(parallelproj.LinearOperator):
     """2D non-TOF parallel view projector"""
 
-    def __init__(self, image_shape, radial_positions, num_views, radius,
+    def __init__(self, image_shape, radial_positions, view_angles, radius,
                  image_origin, voxel_size, xp):
         """init method
 
@@ -15,10 +15,10 @@ class ParallelViewProjector2D(parallelproj.LinearOperator):
         ----------
         image_shape : tuple[int, int, int]
             shape of the input image (1, n1, n2)
-        radial_positions : numpy or cupy image
+        radial_positions : numpy or cupy array
             radial positions of the projection views in world coordinates
-        num_views : int
-            number of projection views
+        view angles : numpy or cupy array
+            angles of the projection views in radians
         radius : float
             radius of the scanner
         image_origin : 3 element numpy or cupy array
@@ -30,22 +30,17 @@ class ParallelViewProjector2D(parallelproj.LinearOperator):
         super().__init__()
 
         self._image_shape = image_shape
+        self._view_angles = view_angles
+        self._num_views = self._view_angles.shape[0]
         self._radial_positions = radial_positions
 
         self._num_rad = radial_positions.shape[0]
-        self._num_views = num_views
 
         self._radius = radius
         self._image_origin = image_origin
         self._voxel_size = voxel_size
 
         self._xp = xp
-
-        # array of projection angles
-        self._view_angles = self._xp.linspace(0,
-                                              xp.pi,
-                                              self._num_views,
-                                              endpoint=False)
 
         self._xstart = self._xp.zeros((self._num_views, self._num_rad, 3),
                                       dtype=xp.float32)
