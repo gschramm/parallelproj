@@ -11,44 +11,59 @@ class TestProjectors(unittest.TestCase):
         A = np.array([[1., 2.], [-3., 2.], [-1., -1.]])
         x = np.array([-2., 1.])
 
-        op = parallelproj.MatrixOperator(A)
+        op = parallelproj.MatrixOperator(A, np)
 
         op.adjointness_test(np)
-        assert (np.all(np.isclose(A @ x, op(x))))
+        assert np.allclose(A @ x, op(x))
 
     def test_elementwise(self):
         v = np.array([3., -1.])
         x = np.array([-2., 1.])
 
-        op = parallelproj.ElementwiseMultiplicationOperator(v)
+        op = parallelproj.ElementwiseMultiplicationOperator(v, np)
 
         op.adjointness_test(np)
-        assert (np.all(np.isclose(v * x, op(x))))
+        assert np.allclose(v * x, op(x))
 
     def test_gaussian(self):
-
         in_shape = (32, 32)
         x = np.random.randn(*in_shape)
         sigma = 2.3
 
-        op = parallelproj.GaussianFilterOperator(in_shape, ndi, sigma=sigma)
+        op = parallelproj.GaussianFilterOperator(in_shape, ndi, np, sigma=sigma)
 
         op.adjointness_test(np)
-        assert (np.all(np.isclose(ndi.gaussian_filter(x, sigma=sigma), op(x))))
+        assert np.allclose(ndi.gaussian_filter(x, sigma=sigma), op(x))
 
     def test_composite(self):
-
         A = np.array([[1., 2.], [-3., 2.], [-1., -1.]])
         x = np.array([-2., 1.])
         v = np.array([3., -1., 2.])
 
-        op1 = parallelproj.ElementwiseMultiplicationOperator(v)
-        op2 = parallelproj.MatrixOperator(A)
+        op1 = parallelproj.ElementwiseMultiplicationOperator(v, np)
+        op2 = parallelproj.MatrixOperator(A, np)
 
         op = parallelproj.CompositeLinearOperator([op1, op2])
 
         op.adjointness_test(np)
-        assert (np.all(np.isclose(v * (A @ x), op(x))))
+        assert np.allclose(v * (A @ x), op(x))
+
+    def test_vstack(self):
+        in_shape = (16,11)
+        import scipy.ndimage as ndimage
+
+        A1  = parallelproj.GaussianFilterOperator(in_shape, ndimage, np, sigma = 1.) 
+        A2  = parallelproj.ElementwiseMultiplicationOperator(np.random.rand(*in_shape), np)
+        A3  = parallelproj.GaussianFilterOperator(in_shape, ndimage, np, sigma = 2.) 
+
+        A = parallelproj.VstackOperator((A1, A2, A3))
+
+        A.adjointness_test()
+
+        x = np.random.rand(*in_shape)
+        x_fwd = A(x)
+
+        assert np.allclose(x_fwd, np.concatenate((A1(x).ravel(), A2(x). ravel(), A3(x).ravel())))
 
 
 #--------------------------------------------------------------------------

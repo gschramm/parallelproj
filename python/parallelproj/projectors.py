@@ -29,7 +29,7 @@ class ParallelViewProjector2D(parallelproj.LinearOperator):
             the voxel size
         xp : numpy or cupy module
         """
-        super().__init__()
+        super().__init__(xp)
 
         self._image_shape = image_shape
         self._view_angles = view_angles

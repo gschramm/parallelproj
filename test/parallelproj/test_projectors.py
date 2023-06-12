@@ -28,7 +28,7 @@ class TestParallelViewProjector2D(unittest.TestCase):
 
         exp_result = np.array([[2., 6., 10.], [8., 6., 4.]], dtype=np.float32)
 
-        assert (np.all(np.isclose(x_fwd, exp_result)))
+        assert np.allclose(x_fwd, exp_result)
 
 
 #--------------------------------------------------------------------------

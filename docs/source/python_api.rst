@@ -11,6 +11,8 @@ linear operators
 
 .. autoclass:: parallelproj.CompositeLinearOperator
 
+.. autoclass:: parallelproj.VstackOperator
+
 
 high-level projection operators
 -------------------------------

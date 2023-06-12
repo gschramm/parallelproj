@@ -74,7 +74,7 @@ def fwd_test(xp: ModuleType, verbose=True) -> bool:
               xp.abs(img_fwd - expected_projections) / expected_projections)
         print('')
 
-    return xp.all(xp.isclose(img_fwd, expected_projections))
+    return xp.allclose(img_fwd, expected_projections)
 
 
 #--------------------------------------------------------------------------
