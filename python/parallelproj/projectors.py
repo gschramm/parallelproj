@@ -75,7 +75,7 @@ class ParallelViewProjector2D(parallelproj.LinearOperator):
     def out_shape(self):
         return (self._num_views, self._num_rad)
 
-    def _call(self, x):
+    def _apply(self, x):
         y = self._xp.zeros(self.out_shape, dtype=self._xp.float32)
         parallelproj.joseph3d_fwd(self._xstart.reshape(-1, 3),
                                   self._xend.reshape(-1, 3),

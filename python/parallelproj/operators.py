@@ -46,7 +46,7 @@ class LinearOperator(abc.ABC):
         return self._xp
 
     @abc.abstractmethod
-    def _call(self, x):
+    def _apply(self, x):
         """forward step y = Ax"""
         raise NotImplementedError
 
@@ -55,7 +55,7 @@ class LinearOperator(abc.ABC):
         """adjoint step x = A^H y"""
         raise NotImplementedError
 
-    def __call__(self, x):
+    def apply(self, x):
         """forward step y = scale * Ax
 
         Parameters
@@ -67,9 +67,12 @@ class LinearOperator(abc.ABC):
         numpy or cupy array
         """
         if self._scale == 1:
-            return self._call(x)
+            return self._apply(x)
         else:
-            return self._scale * self._call(x)
+            return self._scale * self._apply(x)
+
+    def __call__(self, x):
+        return self.apply(x)
 
     def adjoint(self, y):
         """adjoint step x = conj(scale) * A^H y
@@ -106,7 +109,7 @@ class LinearOperator(abc.ABC):
         if iscomplex:
             y = y + 1j * self.xp.random.rand(*self.out_shape)
 
-        x_fwd = self.__call__(x)
+        x_fwd = self.apply(x)
         y_adj = self.adjoint(y)
 
         ip1 = (x_fwd.conj() * y).sum()
@@ -140,7 +143,7 @@ class LinearOperator(abc.ABC):
             x = x + 1j * self.xp.random.rand(*self.in_shape)
 
         for i in range(num_iter):
-            x = self.adjoint(self.__call__(x))
+            x = self.adjoint(self.apply(x))
             norm_squared = self.xp.linalg.norm(x)
             x /= norm_squared
 
@@ -182,7 +185,7 @@ class MatrixOperator(LinearOperator):
     def A(self):
         return self._A
 
-    def _call(self, x):
+    def _apply(self, x):
         """forward step y = Ax"""
         return self._A @ x
 
@@ -222,7 +225,7 @@ class CompositeLinearOperator(LinearOperator):
         """tuple of linear operators"""
         return self._operators
 
-    def _call(self, x):
+    def _apply(self, x):
         """forward step y = Ax"""
         y = x
         for op in self._operators[::-1]:
@@ -261,7 +264,7 @@ class ElementwiseMultiplicationOperator(LinearOperator):
     def out_shape(self):
         return self._values.shape
 
-    def _call(self, x):
+    def _apply(self, x):
         """forward step y = Ax"""
         return self._values * x
 
@@ -299,13 +302,13 @@ class GaussianFilterOperator(LinearOperator):
     def out_shape(self):
         return self._in_shape
 
-    def _call(self, x):
+    def _apply(self, x):
         """forward step y = Ax"""
         return self._ndimage_module.gaussian_filter(x, **self._kwargs)
 
     def _adjoint(self, y):
         """adjoint step x = A^H y"""
-        return self._call(y)
+        return self._apply(y)
 
 
 class VstackOperator(LinearOperator):
@@ -342,7 +345,7 @@ class VstackOperator(LinearOperator):
     def out_shape(self):
         return self._out_shape
 
-    def _call(self, x):
+    def _apply(self, x):
         y = self.xp.zeros(self._out_shape, dtype=x.dtype)
 
         for i, op in enumerate(self._operators):
