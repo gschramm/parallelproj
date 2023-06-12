@@ -312,6 +312,7 @@ class GaussianFilterOperator(LinearOperator):
 
 
 class VstackOperator(LinearOperator):
+    """Stacking operator for stacking multiple linear operators vertically"""
 
     def __init__(self, operators: tuple[LinearOperator, ...]) -> None:
         """init method
@@ -360,3 +361,68 @@ class VstackOperator(LinearOperator):
             x += op.adjoint(y[self._slices[i]].reshape(self._out_shapes[i]))
 
         return x
+
+
+class SubsetOperator:
+    """Operator split into subsets"""
+
+    def __init__(self, operators: tuple[LinearOperator, ...]) -> None:
+        """init method
+
+        Parameters
+        ----------
+        operators : tuple[LinearOperator, ...]
+            tuple of linear operators
+        """
+        self._operators = operators
+        self._in_shape = self._operators[0].in_shape
+        self._out_shapes = tuple([x.out_shape for x in operators])
+        self._num_subsets = len(operators)
+
+    @property
+    def in_shape(self):
+        return self._in_shape
+    
+    @property
+    def out_shapes(self):
+        return self._out_shapes
+
+    @property
+    def operators(self) -> tuple[LinearOperator, ...]:
+        return self._operators
+
+    @property
+    def num_subsets(self):
+        return self._num_subsets
+
+    def apply(self, x):
+        """A_i x for all subsets i"""
+        
+        y = [op(x) for op in self._operators]
+
+        return y
+
+    def __call__(self, x):
+        return self.apply(x)
+
+    def adjoint(self, y):
+        """A_i^H x for all subsets i"""
+
+        x = []
+
+        for i, op in enumerate(self._operators):
+            x.append(op.adjoint(y[i]))
+
+        return x
+
+    def apply_subset(self, x, i):
+        """A_i x for a given subset i"""
+        return self._operators[i](x)
+
+    def adjoint_subset(self, x, i):
+        """A_i^H x for a given subset i"""
+        return self._operators[i].adjoint(x)
+
+    def norms(self):
+        """norm(A_i) for all subsets i"""
+        return [op.norm() for op in self._operators]

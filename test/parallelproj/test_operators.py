@@ -26,6 +26,7 @@ class TestProjectors(unittest.TestCase):
         assert np.allclose(v * x, op(x))
 
     def test_gaussian(self):
+        np.random.seed(0)
         in_shape = (32, 32)
         x = np.random.randn(*in_shape)
         sigma = 2.3
@@ -49,12 +50,12 @@ class TestProjectors(unittest.TestCase):
         assert np.allclose(v * (A @ x), op(x))
 
     def test_vstack(self):
+        np.random.seed(0)
         in_shape = (16,11)
-        import scipy.ndimage as ndimage
 
-        A1  = parallelproj.GaussianFilterOperator(in_shape, ndimage, np, sigma = 1.) 
+        A1  = parallelproj.GaussianFilterOperator(in_shape, ndi, np, sigma = 1.) 
         A2  = parallelproj.ElementwiseMultiplicationOperator(np.random.rand(*in_shape), np)
-        A3  = parallelproj.GaussianFilterOperator(in_shape, ndimage, np, sigma = 2.) 
+        A3  = parallelproj.GaussianFilterOperator(in_shape, ndi, np, sigma = 2.) 
 
         A = parallelproj.VstackOperator((A1, A2, A3))
 
@@ -65,6 +66,27 @@ class TestProjectors(unittest.TestCase):
 
         assert np.allclose(x_fwd, np.concatenate((A1(x).ravel(), A2(x). ravel(), A3(x).ravel())))
 
+    def test_subsets(self):
+        np.random.seed(0)
+        in_shape = (3,)
+
+        A1 = parallelproj.MatrixOperator(np.random.randn(4, 3), np)
+        A2 = parallelproj.MatrixOperator(np.random.randn(5, 3), np)
+        A3 = parallelproj.MatrixOperator(np.random.randn(2, 3), np)
+
+        A = parallelproj.SubsetOperator((A1, A2, A3))
+
+        x = np.random.rand(*in_shape)
+
+        x_fwd = A(x)
+
+        for i in range(A.num_subsets):
+            assert np.allclose(x_fwd[i], A.apply_subset(x, i))
+
+        y = A.adjoint(x_fwd)
+
+        for i in range(A.num_subsets):
+            assert np.allclose(y[i], A.adjoint_subset(x_fwd[i], i))
 
 #--------------------------------------------------------------------------
 

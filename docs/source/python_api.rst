@@ -13,6 +13,8 @@ linear operators
 
 .. autoclass:: parallelproj.VstackOperator
 
+.. autoclass:: parallelproj.SubsetOperator
+
 
 high-level projection operators
 -------------------------------
