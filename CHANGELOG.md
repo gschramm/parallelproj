@@ -1,3 +1,46 @@
+## 1.4.0 (June 11, 2023)
+- chore: updated package.json, updated CHANGELOG.md, bumped 1.3.7 -> 1.4.0
+- add subset operator
+- rename _call to _apply
+- add vstack operator
+- update docs
+- update docs
+- update rtf python to at least 3.9
+- Revert "change doc to test rtd build"
+- Revert "doc test"
+- doc test
+- change doc to test rtd build
+- add matplotlib as dependency
+- add scipy to rtd env
+- add unit test for 2D parallel view projector
+- add operator tests
+- add more documentation
+- add doc strings of linear operators
+- update __init__
+- put rtd reqs in env.yml
+- rename rtd req file
+- restrict sphinx version for rtd
+- remove example
+- split python classes
+- remove notebooks
+- remove todo's
+- add 2D parallel view projector
+- add norm of linear operator
+- add gaussian filter operator
+- add elementwise multiplication operator
+- add first draft of linop abc
+- move utils
+- rename colab utils
+- download utils in notebook if needed
+- separate utils in extra file
+- split colab notebook cells
+- update notebook
+- add test notebook
+- rename doc file
+- docs update
+- update readme
+- dummy commit
+
 ## 1.3.7 (April 27, 2023)
 - chore: updated package.json, updated CHANGELOG.md, bumped 1.3.6 -> 1.3.7
 - update documentation
