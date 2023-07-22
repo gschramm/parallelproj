@@ -19,7 +19,8 @@ classifiers = [
 ]
 license = {file = "LICENSE"}
 dependencies = [
-    "numpy>=1.12",
+    "numpy>=1.20",
+    "array-api-compat",
     "matplotlib",
 ]
 dynamic = ["version"]
