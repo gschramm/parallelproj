@@ -1,6 +1,7 @@
 import unittest
 import parallelproj
 import numpy as np
+import numpy.array_api as nparr
 
 from types import ModuleType
 
@@ -8,13 +9,13 @@ from types import ModuleType
 def fwd_test(xp: ModuleType, verbose=True) -> bool:
     n0, n1, n2 = (2, 3, 4)
 
-    img_dim = xp.array([n0, n1, n2])
-    voxel_size = xp.array([4., 3., 2.], dtype=xp.float32)
-    img_origin = ((-img_dim / 2 + 0.5) * voxel_size).astype(xp.float32)
-    img = xp.arange(n0 * n1 * n2, dtype=xp.float32).reshape((n0, n1, n2))
+    img_dim = (n0, n1, n2)
+    voxel_size = xp.asarray([4., 3., 2.], dtype=xp.float32)
+    img_origin = ((-xp.asarray(img_dim, dtype = xp.float32) / 2 + 0.5) * voxel_size)
+    img = xp.reshape(xp.arange(n0 * n1 * n2, dtype=xp.float32), (n0, n1, n2))
 
     # LOR start points in voxel coordinates
-    vstart = xp.array([
+    vstart = xp.asarray([
         [0, -1, 0],  # 
         [0, -1, 0],  #
         [0, -1, 1],  #
@@ -27,7 +28,7 @@ def fwd_test(xp: ModuleType, verbose=True) -> bool:
         [n0 - 1, n1 - 1, -1]
     ])
 
-    vend = xp.array([
+    vend = xp.asarray([
         [0, n1, 0],  #           
         [0, n1, 0],  #           
         [0, n1, 1],  #          
@@ -40,27 +41,24 @@ def fwd_test(xp: ModuleType, verbose=True) -> bool:
         [n0 - 1, n1 - 1, n2]
     ])
 
-    xstart = (vstart * voxel_size + img_origin).astype(xp.float32)
-    xend = (vend * voxel_size + img_origin).astype(xp.float32)
+    xstart = (vstart * voxel_size + img_origin)
+    xend = (vend * voxel_size + img_origin)
 
-    img_fwd = xp.zeros(xstart.shape[0], dtype=xp.float32)
-
-    parallelproj.joseph3d_fwd(xstart, xend, img, img_origin, voxel_size,
-                              img_fwd)
+    img_fwd = parallelproj.joseph3d_fwd(xstart, xend, img, img_origin, voxel_size)
 
     # setup the expected values for the projection
     expected_projections = xp.zeros_like(img_fwd)
-    expected_projections[0] = img[0, :, 0].sum() * voxel_size[1]
-    expected_projections[1] = img[0, :, 0].sum() * voxel_size[1]
-    expected_projections[2] = img[0, :, 1].sum() * voxel_size[1]
+    expected_projections[0] = xp.sum(img[0, :, 0]) * voxel_size[1]
+    expected_projections[1] = xp.sum(img[0, :, 0]) * voxel_size[1]
+    expected_projections[2] = xp.sum(img[0, :, 1]) * voxel_size[1]
     expected_projections[3] = 0.5 * (expected_projections[0] +
                                      expected_projections[2])
-    expected_projections[4] = img[0, 0, :].sum() * voxel_size[2]
-    expected_projections[5] = img[:, 0, 0].sum() * voxel_size[0]
-    expected_projections[6] = img[n0 - 1, :, 0].sum() * voxel_size[1]
-    expected_projections[7] = img[n0 - 1, :, n2 - 1].sum() * voxel_size[1]
-    expected_projections[8] = img[n0 - 1, 0, :].sum() * voxel_size[2]
-    expected_projections[9] = img[n0 - 1, n1 - 1, :].sum() * voxel_size[2]
+    expected_projections[4] = xp.sum(img[0, 0, :]) * voxel_size[2]
+    expected_projections[5] = xp.sum(img[:, 0, 0]) * voxel_size[0]
+    expected_projections[6] = xp.sum(img[n0 - 1, :, 0]) * voxel_size[1]
+    expected_projections[7] = xp.sum(img[n0 - 1, :, n2 - 1]) * voxel_size[1]
+    expected_projections[8] = xp.sum(img[n0 - 1, 0, :]) * voxel_size[2]
+    expected_projections[9] = xp.sum(img[n0 - 1, n1 - 1, :]) * voxel_size[2]
 
     if verbose:
         print(
@@ -74,7 +72,7 @@ def fwd_test(xp: ModuleType, verbose=True) -> bool:
               xp.abs(img_fwd - expected_projections) / expected_projections)
         print('')
 
-    return xp.allclose(img_fwd, expected_projections)
+    return bool(np.allclose(img_fwd, expected_projections))
 
 
 #--------------------------------------------------------------------------
@@ -87,19 +85,21 @@ def adjointness_test(xp: ModuleType,
     """test whether backprojection is the adjoint of forward projection
        indirect test whether back projection is correct (assuming fwd projection is correct)
     """
-    xp.random.seed(seed)
+
+    np.random.seed(seed)
     n0, n1, n2 = (16, 15, 17)
 
-    img_dim = xp.array([n0, n1, n2])
-    voxel_size = xp.array([0.7, 0.8, 0.6], dtype=xp.float32)
-    img_origin = ((-img_dim / 2 + 0.5) * voxel_size).astype(xp.float32)
-    img = xp.random.rand(n0, n1, n2).astype(xp.float32)
+    img_dim = (n0, n1, n2)
+    voxel_size = xp.asarray([0.7, 0.8, 0.6], dtype=xp.float32)
+    img_origin = ((-xp.asarray(img_dim, dtype = xp.float32) / 2 + 0.5) * voxel_size)
+
+    img = xp.asarray(np.random.rand(n0, n1, n2), dtype = xp.float32)
 
     # generate random LORs on a sphere around the image volume
-    R = 0.8 * (img_dim * voxel_size).max()
+    R = 0.8 * xp.max((xp.asarray(img_dim, dtype = xp.float32) * voxel_size))
 
-    phis = xp.random.rand(nLORs) * 2 * xp.pi
-    costheta = xp.random.rand(nLORs) * 2 - 1
+    phis = xp.asarray(np.random.rand(nLORs) * 2 * np.pi)
+    costheta = xp.asarray(np.random.rand(nLORs) * 2 - 1)
     sintheta = xp.sqrt(1 - costheta**2)
 
     xstart = xp.zeros((nLORs, 3), dtype=xp.float32)
@@ -107,8 +107,8 @@ def adjointness_test(xp: ModuleType,
     xstart[:, 1] = R * sintheta * xp.sin(phis)
     xstart[:, 2] = R * costheta
 
-    phis = xp.random.rand(nLORs) * 2 * xp.pi
-    costheta = xp.random.rand(nLORs) * 2 - 1
+    phis = xp.asarray(np.random.rand(nLORs) * 2 * np.pi)
+    costheta = xp.asarray(np.random.rand(nLORs) * 2 - 1)
     sintheta = xp.sqrt(1 - costheta**2)
 
     xend = xp.zeros((nLORs, 3), dtype=xp.float32)
@@ -117,20 +117,14 @@ def adjointness_test(xp: ModuleType,
     xend[:, 2] = R * costheta
 
     # forward project
-    img_fwd = xp.zeros(xstart.shape[0], dtype=xp.float32)
-    parallelproj.joseph3d_fwd(xstart, xend, img, img_origin, voxel_size,
-                              img_fwd)
+    img_fwd = parallelproj.joseph3d_fwd(xstart, xend, img, img_origin, voxel_size)
 
     # backward project
-    back_img = xp.zeros_like(img)
-    sino = xp.random.rand(nLORs).astype(xp.float32)
-    parallelproj.joseph3d_back(xstart, xend, back_img, img_origin, voxel_size,
-                               sino)
+    sino = xp.asarray(np.random.rand(nLORs), dtype = xp.float32)
+    back_img = parallelproj.joseph3d_back(xstart, xend, img.shape, img_origin, voxel_size, sino)
 
-    ip_a = (back_img * img).sum()
-    ip_b = (img_fwd * sino).sum()
-
-    res = np.isclose(ip_a, ip_b)
+    ip_a = float(xp.sum((back_img * img)))
+    ip_b = float(xp.sum((img_fwd * sino)))
 
     if verbose:
         print(
@@ -140,7 +134,7 @@ def adjointness_test(xp: ModuleType,
         print('ip_b = ', ip_b)
         print('')
 
-    return res
+    return bool(np.isclose(ip_a, ip_b))
 
 
 #--------------------------------------------------------------------------
@@ -152,18 +146,28 @@ class TestNonTOFJoseph(unittest.TestCase):
     def test_fwd(self):
         """test non TOF joseph forward projection using different backends"""
         self.assertTrue(fwd_test(np))
+        self.assertTrue(fwd_test(nparr))
 
         if parallelproj.cupy_enabled:
             import cupy as cp
             self.assertTrue(fwd_test(cp))
 
+        if parallelproj.torch_enabled:
+            import torch
+            self.assertTrue(fwd_test(torch))
+
     def test_adjoint(self):
         """test non TOF joseph forward projection using different backends"""
         self.assertTrue(adjointness_test(np))
+        self.assertTrue(adjointness_test(nparr))
 
         if parallelproj.cupy_enabled:
             import cupy as cp
             self.assertTrue(adjointness_test(cp))
+
+        if parallelproj.torch_enabled:
+            import torch
+            self.assertTrue(adjointness_test(torch))
 
 
 #--------------------------------------------------------------------------

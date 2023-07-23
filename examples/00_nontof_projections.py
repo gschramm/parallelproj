@@ -3,10 +3,16 @@ import parallelproj
 
 # parallelproj tells us whether cupy is available and supported
 # if it is, we use cupy, otherwise numpy as array module (xp)
+# to be compatible with the python array api, we use the minimal
+# numpy.array_api implementation
 if parallelproj.cupy_enabled:
     import cupy as xp
 else:
-    import numpy as xp
+    import numpy.array_api as xp
+
+## parallelproj also supports torch tensors
+#if parallelproj.torch_enabled:
+#    import torch as xp
 
 #---------------------------------------------------------------
 #--- setup a simple test image ---------------------------------
@@ -14,15 +20,15 @@ else:
 
 # setup the image dimensions
 n0, n1, n2 = (2, 3, 4)
-img_dim = xp.array([n0, n1, n2])
+img_dim = (n0, n1, n2)
 
 # define the voxel sizes (in physical units)
-voxel_size = xp.array([4., 3., 2.], dtype=xp.float32)
+voxel_size = xp.asarray([4., 3., 2.], dtype=xp.float32)
 # define the origin of the image (location of voxel (0,0,0) in physical units)
-img_origin = ((-img_dim / 2 + 0.5) * voxel_size).astype(xp.float32)
+img_origin = ((-xp.asarray(img_dim, dtype = xp.float32) / 2 + 0.5) * voxel_size)
 
 # create a simple test image
-img = xp.arange(n0 * n1 * n2, dtype=xp.float32).reshape((n0, n1, n2))
+img = xp.reshape(xp.arange(n0 * n1 * n2, dtype=xp.float32), (n0, n1, n2))
 
 
 #---------------------------------------------------------------
@@ -38,7 +44,7 @@ img = xp.arange(n0 * n1 * n2, dtype=xp.float32).reshape((n0, n1, n2))
 # and convert them later to physical units (as required for the projectors)
 
 # define start/end points in voxel coordinates
-vstart = xp.array([
+vstart = xp.asarray([
     [0, -1, 0], # 
     [0, -1, 0], #
     [0, -1, 1], #
@@ -51,7 +57,7 @@ vstart = xp.array([
     [n0 - 1, n1 - 1, -1]
 ])
 
-vend = xp.array([
+vend = xp.asarray([
     [0, n1, 0], #           
     [0, n1, 0], #           
     [0, n1, 1], #          
@@ -65,8 +71,8 @@ vend = xp.array([
 ])
 
 # convert the LOR coordinates to world coordinates (physical units)
-xstart = (vstart * voxel_size + img_origin).astype(xp.float32)
-xend = (vend * voxel_size + img_origin).astype(xp.float32)
+xstart = xp.asarray(vstart * voxel_size + img_origin, dtype = xp.float32)
+xend = xp.asarray(vend * voxel_size + img_origin, dtype = xp.float32)
 
 
 #---------------------------------------------------------------
@@ -74,12 +80,10 @@ xend = (vend * voxel_size + img_origin).astype(xp.float32)
 #---------------------------------------------------------------
 
 # allocate memory for the forward projection array
-img_fwd = xp.zeros(xstart.shape[0], dtype=xp.float32)
-
 # call the forward projector
-parallelproj.joseph3d_fwd(xstart, xend, img, img_origin, voxel_size,
-                          img_fwd)
+img_fwd = parallelproj.joseph3d_fwd(xstart, xend, img, img_origin, voxel_size)
 
+print(img_fwd)
 
 #---------------------------------------------------------------
 #--- call the adjoint of the forward projector -----------------
@@ -88,9 +92,9 @@ parallelproj.joseph3d_fwd(xstart, xend, img, img_origin, voxel_size,
 # setup a "sinogram" full of ones
 sino = xp.ones_like(img_fwd)
 
-# allocate memory for the back projection array
-back_img = xp.zeros_like(img)
-
 # call the back projector
-parallelproj.joseph3d_back(xstart, xend, back_img, img_origin, voxel_size,
+back_img = parallelproj.joseph3d_back(xstart, xend, img_dim, img_origin, voxel_size,
                            sino)
+
+
+print(back_img)
