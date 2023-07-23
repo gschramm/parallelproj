@@ -120,7 +120,7 @@ def adjointness_test(xp: ModuleType,
     img_fwd = parallelproj.joseph3d_fwd(xstart, xend, img, img_origin, voxel_size)
 
     # backward project
-    sino = xp.asarray(np.random.rand(nLORs), dtype = xp.float32)
+    sino = xp.asarray(np.random.rand(*img_fwd.shape), dtype = xp.float32)
     back_img = parallelproj.joseph3d_back(xstart, xend, img.shape, img_origin, voxel_size, sino)
 
     ip_a = float(xp.sum((back_img * img)))
