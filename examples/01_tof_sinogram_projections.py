@@ -23,12 +23,11 @@ img_dim = (n0, n1, n2)
 # define the voxel sizes (in physical units)
 voxel_size = xp.asarray([2., 2., 2.], dtype=xp.float32)
 # define the origin of the image (location of voxel (0,0,0) in physical units)
-img_origin = ((-xp.asarray(img_dim, dtype = xp.float32) / 2 + 0.5) * voxel_size)
+img_origin = ((-xp.asarray(img_dim, dtype=xp.float32) / 2 + 0.5) * voxel_size)
 
 # create a simple test image
-img = xp.zeros((n0,n1,n2), dtype=xp.float32)
-img[n0//2,n1//2,n2//2] = 1
-
+img = xp.zeros((n0, n1, n2), dtype=xp.float32)
+img[n0 // 2, n1 // 2, n2 // 2] = 1
 
 #---------------------------------------------------------------
 #--- setup the LOR start and end points ------------------------
@@ -44,19 +43,18 @@ img[n0//2,n1//2,n2//2] = 1
 
 # define start/end points in voxel coordinates
 vstart = xp.asarray([
-    [n0//2, -1, n2//2], # 
-    [n0//2, n1//2, -1], # 
+    [n0 // 2, -1, n2 // 2],  # 
+    [n0 // 2, n1 // 2, -1],  # 
 ])
 
 vend = xp.asarray([
-    [n0//2, n1, n2//2], #           
-    [n0//2, n1//2, n2], # 
+    [n0 // 2, n1, n2 // 2],  #           
+    [n0 // 2, n1 // 2, n2],  # 
 ])
 
 # convert the LOR coordinates to world coordinates (physical units)
-xstart = (xp.asarray(vstart, dtype = xp.float32) * voxel_size + img_origin)
-xend = (xp.asarray(vend, dtype = xp.float32) * voxel_size + img_origin)
-
+xstart = (xp.asarray(vstart, dtype=xp.float32) * voxel_size + img_origin)
+xend = (xp.asarray(vend, dtype=xp.float32) * voxel_size + img_origin)
 
 #---------------------------------------------------------------
 #--- setup the TOF related parameters --------------------------
@@ -66,7 +64,7 @@ xend = (xp.asarray(vend, dtype = xp.float32) * voxel_size + img_origin)
 # same unit as voxel size
 tofbin_width = 1.5
 
-# the number of TOF bins 
+# the number of TOF bins
 num_tof_bins = 17
 
 # number of sigmas after which TOF kernel is truncated
@@ -90,9 +88,9 @@ tofcenter_offset = xp.asarray([0], dtype=xp.float32)
 #---------------------------------------------------------------
 
 img_fwd = parallelproj.joseph3d_fwd_tof_sino(xstart, xend, img, img_origin,
-                                   voxel_size, tofbin_width,
-                                   sigma_tof, tofcenter_offset, nsigmas,
-                                   num_tof_bins)
+                                             voxel_size, tofbin_width,
+                                             sigma_tof, tofcenter_offset,
+                                             nsigmas, num_tof_bins)
 
 #---------------------------------------------------------------
 #--- call the adjoint of the forward projector -----------------
@@ -100,9 +98,10 @@ img_fwd = parallelproj.joseph3d_fwd_tof_sino(xstart, xend, img, img_origin,
 
 # setup a "TOF sinogram"
 sino = xp.zeros_like(img_fwd)
-sino[:,num_tof_bins//2] = 1
+sino[:, num_tof_bins // 2] = 1
 
-back_img = parallelproj.joseph3d_back_tof_sino(xstart, xend, img_dim, img_origin,
-                                    voxel_size, sino, tofbin_width,
-                                    sigma_tof, tofcenter_offset, nsigmas,
-                                    num_tof_bins)
+back_img = parallelproj.joseph3d_back_tof_sino(xstart, xend, img_dim,
+                                               img_origin, voxel_size, sino,
+                                               tofbin_width, sigma_tof,
+                                               tofcenter_offset, nsigmas,
+                                               num_tof_bins)

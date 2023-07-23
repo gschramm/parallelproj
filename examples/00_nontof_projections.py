@@ -25,11 +25,10 @@ img_dim = (n0, n1, n2)
 # define the voxel sizes (in physical units)
 voxel_size = xp.asarray([4., 3., 2.], dtype=xp.float32)
 # define the origin of the image (location of voxel (0,0,0) in physical units)
-img_origin = ((-xp.asarray(img_dim, dtype = xp.float32) / 2 + 0.5) * voxel_size)
+img_origin = ((-xp.asarray(img_dim, dtype=xp.float32) / 2 + 0.5) * voxel_size)
 
 # create a simple test image
 img = xp.reshape(xp.arange(n0 * n1 * n2, dtype=xp.float32), (n0, n1, n2))
-
 
 #---------------------------------------------------------------
 #--- setup the LOR start and end points ------------------------
@@ -45,35 +44,34 @@ img = xp.reshape(xp.arange(n0 * n1 * n2, dtype=xp.float32), (n0, n1, n2))
 
 # define start/end points in voxel coordinates
 vstart = xp.asarray([
-    [0, -1, 0], # 
-    [0, -1, 0], #
-    [0, -1, 1], #
-    [0, -1, 0.5], #
-    [0, 0, -1], #
-    [-1, 0, 0], #
-    [n0 - 1, -1, 0], # 
-    [n0 - 1, -1, n2 - 1], #
-    [n0 - 1, 0, -1], #
+    [0, -1, 0],  # 
+    [0, -1, 0],  #
+    [0, -1, 1],  #
+    [0, -1, 0.5],  #
+    [0, 0, -1],  #
+    [-1, 0, 0],  #
+    [n0 - 1, -1, 0],  # 
+    [n0 - 1, -1, n2 - 1],  #
+    [n0 - 1, 0, -1],  #
     [n0 - 1, n1 - 1, -1]
 ])
 
 vend = xp.asarray([
-    [0, n1, 0], #           
-    [0, n1, 0], #           
-    [0, n1, 1], #          
-    [0, n1, 0.5], #         
-    [0, 0, n2], #          
-    [n0, 0, 0], #          
-    [n0 - 1, n1, 0], #      
-    [n0 - 1, n1, n2 - 1], # 
-    [n0 - 1, 0, n2], #     
+    [0, n1, 0],  #           
+    [0, n1, 0],  #           
+    [0, n1, 1],  #          
+    [0, n1, 0.5],  #         
+    [0, 0, n2],  #          
+    [n0, 0, 0],  #          
+    [n0 - 1, n1, 0],  #      
+    [n0 - 1, n1, n2 - 1],  # 
+    [n0 - 1, 0, n2],  #     
     [n0 - 1, n1 - 1, n2]
 ])
 
 # convert the LOR coordinates to world coordinates (physical units)
-xstart = xp.asarray(vstart * voxel_size + img_origin, dtype = xp.float32)
-xend = xp.asarray(vend * voxel_size + img_origin, dtype = xp.float32)
-
+xstart = xp.asarray(vstart * voxel_size + img_origin, dtype=xp.float32)
+xend = xp.asarray(vend * voxel_size + img_origin, dtype=xp.float32)
 
 #---------------------------------------------------------------
 #--- call the forward projector --------------------------------
@@ -93,8 +91,7 @@ print(img_fwd)
 sino = xp.ones_like(img_fwd)
 
 # call the back projector
-back_img = parallelproj.joseph3d_back(xstart, xend, img_dim, img_origin, voxel_size,
-                           sino)
-
+back_img = parallelproj.joseph3d_back(xstart, xend, img_dim, img_origin,
+                                      voxel_size, sino)
 
 print(back_img)
