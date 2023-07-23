@@ -83,7 +83,7 @@ def tof_sino_fwd_test(xp: ModuleType, verbose: bool = True, atol: float = 1e-6) 
         )
         print('')
 
-    return res1 * res2 * res3
+    return bool(res1 * res2 * res3)
 
 def adjointness_test(xp: ModuleType,
                      nLORs=1000000,
