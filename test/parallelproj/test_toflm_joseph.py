@@ -98,21 +98,20 @@ def adjointness_test(xp: ModuleType,
        indirect test whether back projection is correct (assuming fwd projection is correct)
     """
 
-    xp.random.seed(seed)
+    np.random.seed(seed)
+    n0, n1, n2 = (16, 15, 17)
 
-    n0, n1, n2 = (17, 17, 17)
+    img_dim = (n0, n1, n2)
+    voxel_size = xp.asarray([0.7, 0.8, 0.6], dtype=xp.float32)
+    img_origin = ((-xp.asarray(img_dim, dtype = xp.float32) / 2 + 0.5) * voxel_size)
 
-    img_dim = xp.array([n0, n1, n2])
-    voxel_size = xp.array([1., 1., 1.], dtype=xp.float32)
-    img_origin = ((-img_dim / 2 + 0.5) * voxel_size).astype(xp.float32)
-    img = xp.random.rand(n0, n1, n2).astype(xp.float32)
+    img = xp.asarray(np.random.rand(n0, n1, n2), dtype = xp.float32)
 
     # generate random LORs on a sphere around the image volume
-    # generate random LORs on a sphere around the image volume
-    R = 0.8 * (img_dim * voxel_size).max()
+    R = 0.8 * xp.max((xp.asarray(img_dim, dtype = xp.float32) * voxel_size))
 
-    phis = xp.random.rand(nLORs) * 2 * xp.pi
-    costheta = xp.random.rand(nLORs) * 2 - 1
+    phis = xp.asarray(np.random.rand(nLORs) * 2 * np.pi)
+    costheta = xp.asarray(np.random.rand(nLORs) * 2 - 1)
     sintheta = xp.sqrt(1 - costheta**2)
 
     xstart = xp.zeros((nLORs, 3), dtype=xp.float32)
@@ -120,8 +119,8 @@ def adjointness_test(xp: ModuleType,
     xstart[:, 1] = R * sintheta * xp.sin(phis)
     xstart[:, 2] = R * costheta
 
-    phis = xp.random.rand(nLORs) * 2 * xp.pi
-    costheta = xp.random.rand(nLORs) * 2 - 1
+    phis = xp.asarray(np.random.rand(nLORs) * 2 * np.pi)
+    costheta = xp.asarray(np.random.rand(nLORs) * 2 - 1)
     sintheta = xp.sqrt(1 - costheta**2)
 
     xend = xp.zeros((nLORs, 3), dtype=xp.float32)
@@ -129,32 +128,26 @@ def adjointness_test(xp: ModuleType,
     xend[:, 1] = R * sintheta * xp.sin(phis)
     xend[:, 2] = R * costheta
 
-    # forward project
+    # TOF parameters
     tofbin_width = 2.
     num_tof_bins = 11
     nsigmas = 3.
-    sigma_tof = xp.array([5 / 2.35], dtype=xp.float32)
-    tofcenter_offset = xp.array([0], dtype=xp.float32)
+    sigma_tof = xp.asarray([5 / 2.35], dtype=xp.float32)
+    tofcenter_offset = xp.asarray([0], dtype=xp.float32)
+    tof_bin = xp.asarray((np.random.randint(0, num_tof_bins, xstart.shape[0]) -
+               num_tof_bins // 2).astype(np.int16))
 
-    img_fwd = xp.zeros(xstart.shape[0], dtype=xp.float32)
-    tof_bin = (xp.random.randint(0, num_tof_bins, xstart.shape[0]) -
-               num_tof_bins // 2).astype(xp.int16)
-
-    parallelproj.joseph3d_fwd_tof_lm(xstart, xend, img, img_origin, voxel_size,
-                                     img_fwd, tofbin_width, sigma_tof,
-                                     tofcenter_offset, nsigmas, tof_bin)
+    img_fwd = parallelproj.joseph3d_fwd_tof_lm(xstart, xend, img, img_origin, voxel_size, tofbin_width, sigma_tof, tofcenter_offset, nsigmas, tof_bin)
 
     # backward project
-    back_img = xp.zeros_like(img)
-    lst = xp.random.rand(nLORs).astype(xp.float32)
+    lst = xp.asarray(np.random.rand(nLORs), dtype = xp.float32)
 
-    parallelproj.joseph3d_back_tof_lm(xstart, xend, back_img, img_origin,
-                                      voxel_size, lst, tofbin_width, sigma_tof,
-                                      tofcenter_offset, nsigmas, tof_bin)
-    ip_a = (back_img * img).sum()
-    ip_b = (img_fwd * lst).sum()
+    back_img = parallelproj.joseph3d_back_tof_lm(xstart, xend, img.shape, img_origin, voxel_size, lst, tofbin_width, sigma_tof, tofcenter_offset, nsigmas, tof_bin)
 
-    res = np.isclose(ip_a, ip_b)
+    ip_a = float(xp.sum(back_img * img))
+    ip_b = float(xp.sum(img_fwd * lst))
+
+    res = bool(np.isclose(ip_a, ip_b))
 
     if verbose:
         print(
@@ -187,13 +180,18 @@ class TestLMTOFJoseph(unittest.TestCase):
             self.assertTrue(tof_lm_fwd_test(torch))
 
 
-    #def test_adjoint(self):
-    #    """test TOF joseph forward projection using different backends"""
-    #    self.assertTrue(adjointness_test(np))
+    def test_adjoint(self):
+        """test TOF joseph forward projection using different backends"""
+        self.assertTrue(adjointness_test(np))
+        self.assertTrue(adjointness_test(nparr))
 
-    #    if parallelproj.cupy_enabled:
-    #        import cupy as cp
-    #        self.assertTrue(adjointness_test(cp))
+        if parallelproj.cupy_enabled:
+            import cupy as cp
+            self.assertTrue(adjointness_test(cp))
+
+        if parallelproj.torch_enabled:
+            import torch
+            self.assertTrue(adjointness_test(torch))
 
 
 #--------------------------------------------------------------------------
