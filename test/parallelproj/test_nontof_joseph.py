@@ -11,7 +11,8 @@ def fwd_test(xp: ModuleType, verbose=True) -> bool:
 
     img_dim = (n0, n1, n2)
     voxel_size = xp.asarray([4., 3., 2.], dtype=xp.float32)
-    img_origin = ((-xp.asarray(img_dim, dtype = xp.float32) / 2 + 0.5) * voxel_size)
+    img_origin = ((-xp.asarray(img_dim, dtype=xp.float32) / 2 + 0.5) *
+                  voxel_size)
     img = xp.reshape(xp.arange(n0 * n1 * n2, dtype=xp.float32), (n0, n1, n2))
 
     # LOR start points in voxel coordinates
@@ -44,7 +45,8 @@ def fwd_test(xp: ModuleType, verbose=True) -> bool:
     xstart = (vstart * voxel_size + img_origin)
     xend = (vend * voxel_size + img_origin)
 
-    img_fwd = parallelproj.joseph3d_fwd(xstart, xend, img, img_origin, voxel_size)
+    img_fwd = parallelproj.joseph3d_fwd(xstart, xend, img, img_origin,
+                                        voxel_size)
 
     # setup the expected values for the projection
     expected_projections = xp.zeros_like(img_fwd)
@@ -91,12 +93,13 @@ def adjointness_test(xp: ModuleType,
 
     img_dim = (n0, n1, n2)
     voxel_size = xp.asarray([0.7, 0.8, 0.6], dtype=xp.float32)
-    img_origin = ((-xp.asarray(img_dim, dtype = xp.float32) / 2 + 0.5) * voxel_size)
+    img_origin = ((-xp.asarray(img_dim, dtype=xp.float32) / 2 + 0.5) *
+                  voxel_size)
 
-    img = xp.asarray(np.random.rand(n0, n1, n2), dtype = xp.float32)
+    img = xp.asarray(np.random.rand(n0, n1, n2), dtype=xp.float32)
 
     # generate random LORs on a sphere around the image volume
-    R = 0.8 * xp.max((xp.asarray(img_dim, dtype = xp.float32) * voxel_size))
+    R = 0.8 * xp.max((xp.asarray(img_dim, dtype=xp.float32) * voxel_size))
 
     phis = xp.asarray(np.random.rand(nLORs) * 2 * np.pi)
     costheta = xp.asarray(np.random.rand(nLORs) * 2 - 1)
@@ -117,11 +120,13 @@ def adjointness_test(xp: ModuleType,
     xend[:, 2] = R * costheta
 
     # forward project
-    img_fwd = parallelproj.joseph3d_fwd(xstart, xend, img, img_origin, voxel_size)
+    img_fwd = parallelproj.joseph3d_fwd(xstart, xend, img, img_origin,
+                                        voxel_size)
 
     # backward project
-    sino = xp.asarray(np.random.rand(*img_fwd.shape), dtype = xp.float32)
-    back_img = parallelproj.joseph3d_back(xstart, xend, img.shape, img_origin, voxel_size, sino)
+    sino = xp.asarray(np.random.rand(*img_fwd.shape), dtype=xp.float32)
+    back_img = parallelproj.joseph3d_back(xstart, xend, img.shape, img_origin,
+                                          voxel_size, sino)
 
     ip_a = float(xp.sum((back_img * img)))
     ip_b = float(xp.sum((img_fwd * sino)))

@@ -6,7 +6,9 @@ import numpy.array_api as nparr
 from types import ModuleType
 
 
-def tof_lm_fwd_test(xp: ModuleType, verbose: bool = True, atol: float = 1e-6) -> bool:
+def tof_lm_fwd_test(xp: ModuleType,
+                    verbose: bool = True,
+                    atol: float = 1e-6) -> bool:
     """test fwd LM TOF projection of a point source"""
 
     num_tof_bins: int = 501
@@ -19,7 +21,8 @@ def tof_lm_fwd_test(xp: ModuleType, verbose: bool = True, atol: float = 1e-6) ->
 
     img_dim = (n0, n1, n2)
     voxel_size = xp.asarray([voxsize, voxsize, voxsize], dtype=xp.float32)
-    img_origin = ((-xp.asarray(img_dim, dtype = xp.float32) / 2 + 0.5) * voxel_size)
+    img_origin = ((-xp.asarray(img_dim, dtype=xp.float32) / 2 + 0.5) *
+                  voxel_size)
     img = xp.zeros((n0, n1, n2), dtype=xp.float32)
     img[n0 // 2, n1 // 2, n2 // 2] = 1
 
@@ -40,43 +43,53 @@ def tof_lm_fwd_test(xp: ModuleType, verbose: bool = True, atol: float = 1e-6) ->
     nsigmas = 9.
     fwhm_tof = 6.
     sigma_tof = xp.asarray([fwhm_tof / (2 * np.sqrt(2 * np.log(2)))],
-                         dtype=xp.float32)
+                           dtype=xp.float32)
     tofcenter_offset = xp.asarray([0], dtype=xp.float32)
 
     # setup a TOF bin array that is centered around 0
     tof_bin = xp.arange(num_tof_bins, dtype=xp.int16) - num_tof_bins // 2
 
-    img_fwd = parallelproj.joseph3d_fwd_tof_lm(xstart, xend, img, img_origin, voxel_size,
-                                               tofbin_width, sigma_tof,
-                                               tofcenter_offset, nsigmas, tof_bin)
+    img_fwd = parallelproj.joseph3d_fwd_tof_lm(xstart, xend, img, img_origin,
+                                               voxel_size, tofbin_width,
+                                               sigma_tof, tofcenter_offset,
+                                               nsigmas, tof_bin)
 
     # check if sum of the projection is correct (should be equal to the voxel size)
     res1 = bool(np.isclose(xp.sum(img_fwd), voxsize))
 
     # check if the FWHM in the projected profile is correct
     # to do so, we check if the interpolated profile - 0.5max(profile) at +/- FWHM/2 is 0
-    r = (xp.arange(num_tof_bins, dtype = xp.float32) - 0.5 * num_tof_bins + 0.5) * tofbin_width
+    r = (xp.arange(num_tof_bins, dtype=xp.float32) - 0.5 * num_tof_bins +
+         0.5) * tofbin_width
 
     if parallelproj.is_cuda_array(img_fwd):
         import cupy as cp
-        res2 = bool(cp.isclose(
-            float(
+        res2 = bool(
+            cp.isclose(float(
                 cp.interp(cp.asarray([fwhm_tof / 2]), r,
-                          img_fwd - 0.5 * xp.max(img_fwd))[0]), 0, atol = atol))
-        res3 = bool(cp.isclose(
-            float(
+                          img_fwd - 0.5 * xp.max(img_fwd))[0]),
+                       0,
+                       atol=atol))
+        res3 = bool(
+            cp.isclose(float(
                 cp.interp(xp.asarray([-fwhm_tof / 2]), r,
-                          img_fwd - 0.5 * xp.max(img_fwd))[0]), 0, atol = atol))
+                          img_fwd - 0.5 * xp.max(img_fwd))[0]),
+                       0,
+                       atol=atol))
 
     else:
-        res2 = bool(np.isclose(
-            float(
+        res2 = bool(
+            np.isclose(float(
                 np.interp(np.asarray([fwhm_tof / 2]), r,
-                          img_fwd - 0.5 * xp.max(img_fwd))[0]), 0, atol = atol))
-        res3 = bool(np.isclose(
-            float(
+                          img_fwd - 0.5 * xp.max(img_fwd))[0]),
+                       0,
+                       atol=atol))
+        res3 = bool(
+            np.isclose(float(
                 np.interp(xp.asarray([-fwhm_tof / 2]), r,
-                          img_fwd - 0.5 * xp.max(img_fwd))[0]), 0, atol = atol))
+                          img_fwd - 0.5 * xp.max(img_fwd))[0]),
+                       0,
+                       atol=atol))
 
     if verbose:
         print(
@@ -103,12 +116,13 @@ def adjointness_test(xp: ModuleType,
 
     img_dim = (n0, n1, n2)
     voxel_size = xp.asarray([0.7, 0.8, 0.6], dtype=xp.float32)
-    img_origin = ((-xp.asarray(img_dim, dtype = xp.float32) / 2 + 0.5) * voxel_size)
+    img_origin = ((-xp.asarray(img_dim, dtype=xp.float32) / 2 + 0.5) *
+                  voxel_size)
 
-    img = xp.asarray(np.random.rand(n0, n1, n2), dtype = xp.float32)
+    img = xp.asarray(np.random.rand(n0, n1, n2), dtype=xp.float32)
 
     # generate random LORs on a sphere around the image volume
-    R = 0.8 * xp.max((xp.asarray(img_dim, dtype = xp.float32) * voxel_size))
+    R = 0.8 * xp.max((xp.asarray(img_dim, dtype=xp.float32) * voxel_size))
 
     phis = xp.asarray(np.random.rand(nLORs) * 2 * np.pi)
     costheta = xp.asarray(np.random.rand(nLORs) * 2 - 1)
@@ -135,14 +149,21 @@ def adjointness_test(xp: ModuleType,
     sigma_tof = xp.asarray([5 / 2.35], dtype=xp.float32)
     tofcenter_offset = xp.asarray([0], dtype=xp.float32)
     tof_bin = xp.asarray((np.random.randint(0, num_tof_bins, xstart.shape[0]) -
-               num_tof_bins // 2).astype(np.int16))
+                          num_tof_bins // 2).astype(np.int16))
 
-    img_fwd = parallelproj.joseph3d_fwd_tof_lm(xstart, xend, img, img_origin, voxel_size, tofbin_width, sigma_tof, tofcenter_offset, nsigmas, tof_bin)
+    img_fwd = parallelproj.joseph3d_fwd_tof_lm(xstart, xend, img, img_origin,
+                                               voxel_size, tofbin_width,
+                                               sigma_tof, tofcenter_offset,
+                                               nsigmas, tof_bin)
 
     # backward project
-    lst = xp.asarray(np.random.rand(nLORs), dtype = xp.float32)
+    lst = xp.asarray(np.random.rand(nLORs), dtype=xp.float32)
 
-    back_img = parallelproj.joseph3d_back_tof_lm(xstart, xend, img.shape, img_origin, voxel_size, lst, tofbin_width, sigma_tof, tofcenter_offset, nsigmas, tof_bin)
+    back_img = parallelproj.joseph3d_back_tof_lm(xstart, xend, img.shape,
+                                                 img_origin, voxel_size, lst,
+                                                 tofbin_width, sigma_tof,
+                                                 tofcenter_offset, nsigmas,
+                                                 tof_bin)
 
     ip_a = float(xp.sum(back_img * img))
     ip_b = float(xp.sum(img_fwd * lst))
@@ -178,7 +199,6 @@ class TestLMTOFJoseph(unittest.TestCase):
         if parallelproj.torch_enabled:
             import torch
             self.assertTrue(tof_lm_fwd_test(torch))
-
 
     def test_adjoint(self):
         """test TOF joseph forward projection using different backends"""
