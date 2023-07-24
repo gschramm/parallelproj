@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import numpy as np
 import numpy.typing as npt
 import array_api_compat
 import matplotlib.pyplot as plt
@@ -86,74 +87,95 @@ class ParallelViewProjector2D(parallelproj.LinearOperator):
                                        self._voxel_size, y)
         return x
 
+    def show_views(self, views_to_show=None, image=None, **kwargs):
+        """visualize the geometry of certrain projection views
 
-#    def show_views(self, views_to_show=None, image=None, **kwargs):
-#        """visualize the geometry of certrain projection views
-#
-#        Parameters
-#        ----------
-#        views_to_show : numpy array of integers
-#            view numbers to show
-#        image : numpy array or cupy array, optional
-#            show an image inside the projector geometry
-#        **kwargs : some type
-#            passed to matplotlib.pyplot.imshow
-#
-#        """
-#        if views_to_show is None:
-#            views_to_show = np.linspace(0, self._num_views - 1, 5).astype(int)
-#
-#        num_cols = len(views_to_show)
-#        fig, ax = plt.subplots(1, num_cols, figsize=(num_cols * 3, 3))
-#
-#        tmp1 = float(self._image_origin[1] - 0.5 * self._voxel_size[1])
-#        tmp2 = float(self._image_origin[2] - 0.5 * self._voxel_size[2])
-#        img_extent = [tmp1, -tmp1, tmp2, -tmp2]
-#
-#        for i, ip in enumerate(views_to_show):
-#            ax[i].plot(parallelproj.tonumpy(self._xstart[ip, :, 1], self._xp),
-#                       parallelproj.tonumpy(self._xstart[ip, :, 2], self._xp),
-#                       '.',
-#                       ms=0.5)
-#            ax[i].plot(parallelproj.tonumpy(self._xend[ip, :, 1], self._xp),
-#                       parallelproj.tonumpy(self._xend[ip, :, 2], self._xp),
-#                       '.',
-#                       ms=0.5)
-#            for k in np.linspace(0, self._num_rad - 1, 7).astype(int):
-#                ax[i].plot([
-#                    float(self._xstart[ip, k, 1]),
-#                    float(self._xend[ip, k, 1])
-#                ], [
-#                    float(self._xstart[ip, k, 2]),
-#                    float(self._xend[ip, k, 2])
-#                ],
-#                           'k-',
-#                           lw=0.5)
-#                ax[i].annotate(f'{k}', (float(
-#                    self._xstart[ip, k, 1]), float(self._xstart[ip, k, 2])),
-#                               fontsize='xx-small')
-#            ax[i].set_xlim(-500, 500)
-#            ax[i].set_ylim(-500, 500)
-#            ax[i].grid(ls=':')
-#            ax[i].set_aspect('equal')
-#
-#            if image is not None:
-#                ax[i].add_patch(
-#                    Rectangle((tmp1, tmp2),
-#                              float(self.in_shape[1] * self._voxel_size[1]),
-#                              float(self.in_shape[2] * self._voxel_size[2]),
-#                              edgecolor='r',
-#                              facecolor='none',
-#                              linestyle=':'))
-#                ax[i].imshow(parallelproj.tonumpy(image[0, ...], self._xp).T,
-#                             origin='lower',
-#                             extent=img_extent,
-#                             **kwargs)
-#            ax[i].set_title(
-#                f'view {ip:03} - phi {(180/np.pi)*self._view_angles[ip]:.1f} deg',
-#                fontsize='small')
-#
-#        fig.tight_layout()
-#
-#        return fig
-#
+        Parameters
+        ----------
+        views_to_show : numpy array of integers
+            view numbers to show
+        image : numpy array or cupy array, optional
+            show an image inside the projector geometry
+        **kwargs : some type
+            passed to matplotlib.pyplot.imshow
+
+        """
+        if views_to_show is None:
+            views_to_show = np.linspace(0, self._num_views - 1, 5).astype(int)
+
+        num_cols = len(views_to_show)
+        fig, ax = plt.subplots(1, num_cols, figsize=(num_cols * 3, 3))
+
+        tmp1 = float(self._image_origin[1] - 0.5 * self._voxel_size[1])
+        tmp2 = float(self._image_origin[2] - 0.5 * self._voxel_size[2])
+        img_extent = [tmp1, -tmp1, tmp2, -tmp2]
+
+        for i, ip in enumerate(views_to_show):
+            if parallelproj.is_cuda_array(self._xstart):
+                import cupy as cp
+                ax[i].plot(cp.asnumpy(self._xstart[ip, :, 1]),
+                           cp.asnumpy(self._xstart[ip, :, 2]),
+                           '.',
+                           ms=0.5)
+                ax[i].plot(cp.asnumpy(self._xend[ip, :, 1]),
+                           cp.asnumpy(self._xend[ip, :, 2]),
+                           '.',
+                           ms=0.5)
+            else:
+                ax[i].plot(np.asarray(self._xstart[ip, :, 1]),
+                           np.asarray(self._xstart[ip, :, 2]),
+                           '.',
+                           ms=0.5)
+                ax[i].plot(np.asarray(self._xend[ip, :, 1]),
+                           np.asarray(self._xend[ip, :, 2]),
+                           '.',
+                           ms=0.5)
+
+            for k in np.linspace(0, self._num_rad - 1, 7).astype(int):
+                ax[i].plot([
+                    float(self._xstart[ip, k, 1]),
+                    float(self._xend[ip, k, 1])
+                ], [
+                    float(self._xstart[ip, k, 2]),
+                    float(self._xend[ip, k, 2])
+                ],
+                           'k-',
+                           lw=0.5)
+                ax[i].annotate(f'{k}', (float(
+                    self._xstart[ip, k, 1]), float(self._xstart[ip, k, 2])),
+                               fontsize='xx-small')
+
+            pmax = 1.5 * float(self.xp.max(self._xstart[..., 1]))
+            ax[i].set_xlim(-pmax, pmax)
+            ax[i].set_ylim(-pmax, pmax)
+            ax[i].grid(ls=':')
+            ax[i].set_aspect('equal')
+
+            if image is not None:
+                ax[i].add_patch(
+                    Rectangle((tmp1, tmp2),
+                              float(self.in_shape[1] * self._voxel_size[1]),
+                              float(self.in_shape[2] * self._voxel_size[2]),
+                              edgecolor='r',
+                              facecolor='none',
+                              linestyle=':'))
+
+                if parallelproj.is_cuda_array(image):
+                    import cupy as cp
+                    ax[i].imshow(cp.asnumpy(image[0, ...]).T,
+                                 origin='lower',
+                                 extent=img_extent,
+                                 **kwargs)
+                else:
+                    ax[i].imshow(np.asarray(image[0, ...]).T,
+                                 origin='lower',
+                                 extent=img_extent,
+                                 **kwargs)
+
+            ax[i].set_title(
+                f'view {ip:03} - phi {(180/np.pi)*self._view_angles[ip]} deg',
+                fontsize='small')
+
+        fig.tight_layout()
+
+        return fig
