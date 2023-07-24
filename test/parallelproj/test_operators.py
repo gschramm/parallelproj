@@ -99,50 +99,84 @@ def test_subsets(xp):
 
 
 #--------------------------------------------------------------------------
-class TestProjectors(unittest.TestCase):
+class TestOperators(unittest.TestCase):
 
     def testmatrix(self):
         test_matrix(nparr)
-        if parallelproj.cupy_enabled:
+
+    if parallelproj.cupy_enabled:
+
+        def testmatrix_cp(self):
             import array_api_compat.cupy as cp
             test_matrix(cp)
-        if parallelproj.torch_enabled:
+
+    if parallelproj.torch_enabled:
+
+        def testmatrix_torch(self):
             import array_api_compat.torch as torch
             test_matrix(torch)
 
+    #-----------------------------------------------
     def testelementwise(self):
         test_elementwise(nparr)
-        if parallelproj.cupy_enabled:
+
+    if parallelproj.cupy_enabled:
+
+        def testelementwise_cp(self):
             import array_api_compat.cupy as cp
             test_elementwise(cp)
-        if parallelproj.torch_enabled:
+
+    if parallelproj.torch_enabled:
+
+        def testelementwise_torch(self):
             import array_api_compat.torch as torch
             test_elementwise(torch)
 
+    #-----------------------------------------------
     def testgaussian(self):
         test_gaussian(nparr)
-        if parallelproj.cupy_enabled:
+
+    if parallelproj.cupy_enabled:
+
+        def testgaussian_cp(self):
             import array_api_compat.cupy as cp
             test_gaussian(cp)
-        if parallelproj.torch_enabled:
+
+    if parallelproj.torch_enabled:
+
+        def testgaussian_torch(self):
             import array_api_compat.torch as torch
             test_gaussian(torch)
 
+    #-----------------------------------------------
     def testcomposite(self):
         test_composite(nparr)
-        if parallelproj.cupy_enabled:
+
+    if parallelproj.cupy_enabled:
+
+        def testcomposite_cp(self):
             import array_api_compat.cupy as cp
             test_composite(cp)
-        if parallelproj.torch_enabled:
+
+    if parallelproj.torch_enabled:
+
+        def testcomposite_torch(self):
             import array_api_compat.torch as torch
             test_composite(torch)
 
+    #-----------------------------------------------
     def testvstack(self):
         test_vstack(nparr)
-        if parallelproj.cupy_enabled:
+
+    if parallelproj.cupy_enabled:
+
+        def testvstack_cp(self):
             import array_api_compat.cupy as cp
             test_vstack(cp)
-        if parallelproj.torch_enabled:
+
+    if parallelproj.torch_enabled:
+
+        def testvstack_torch(self):
             import array_api_compat.torch as torch
             test_vstack(torch)
 
