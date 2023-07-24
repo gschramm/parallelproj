@@ -2,6 +2,10 @@ from __future__ import annotations
 from types import ModuleType
 import abc
 import numpy as np
+import array_api_compat
+
+import parallelproj
+
 
 class LinearOperator(abc.ABC):
     """abstract base class for linear operators"""
@@ -13,7 +17,7 @@ class LinearOperator(abc.ABC):
         ----------
         xp : ModuleType
             numpy or cupy module
-        """        
+        """
         self._scale = 1
         self._xp = xp
 
@@ -100,8 +104,9 @@ class LinearOperator(abc.ABC):
         iscomplex : bool, optional
             use complex arrays
         """
-        x = self.xp.random.rand(*self.in_shape)
-        y = self.xp.random.rand(*self.out_shape)
+
+        x = self.xp.asarray(np.random.rand(*self.in_shape))
+        y = self.xp.asarray(np.random.rand(*self.out_shape))
 
         if iscomplex:
             x = x + 1j * self.xp.random.rand(*self.in_shape)
@@ -112,13 +117,17 @@ class LinearOperator(abc.ABC):
         x_fwd = self.apply(x)
         y_adj = self.adjoint(y)
 
-        ip1 = (x_fwd.conj() * y).sum()
-        ip2 = (x.conj() * y_adj).sum()
+        if iscomplex:
+            ip1 = complex(self.xp.sum(self.xp.conj(x_fwd) * y))
+            ip2 = complex(self.xp.sum(self.xp.conj(x) * y_adj))
+        else:
+            ip1 = float(self.xp.sum(x_fwd * y))
+            ip2 = float(self.xp.sum(x * y_adj))
 
         if verbose:
             print(ip1, ip2)
 
-        assert (self.xp.isclose(ip1, ip2, **kwargs))
+        assert (np.isclose(ip1, ip2, **kwargs))
 
     def norm(self, num_iter=30, iscomplex=False, verbose=False) -> float:
         """estimate norm of the linear operator using power iterations
@@ -156,22 +165,15 @@ class LinearOperator(abc.ABC):
 class MatrixOperator(LinearOperator):
     """Linear Operator defined by dense matrix multiplication"""
 
-    def __init__(self, A, xp):
+    def __init__(self, A):
         """init method
 
         Parameters
         ----------
         A : 2D numpy or cupy real of complex array
-        xp: ModuleType
-            numpy or cupy module
         """
-        super().__init__(xp)
+        super().__init__(array_api_compat.get_namespace(A))
         self._A = A
-
-        if self._A.dtype.kind == 'c':
-            self._dtype_kind = 'complex'
-        else:
-            self._dtype_kind = 'float'
 
     @property
     def in_shape(self):
@@ -185,13 +187,22 @@ class MatrixOperator(LinearOperator):
     def A(self):
         return self._A
 
+    def iscomplex(self):
+        return self.xp.isdtype(self._A.dtype,
+                               self.xp.complex64) or self.xp.isdtype(
+                                   self._A.dtype, self.xp.complex128)
+
     def _apply(self, x):
         """forward step y = Ax"""
-        return self._A @ x
+        return self.xp.matmul(self._A, x)
 
     def _adjoint(self, y):
         """adjoint step x = A^H y"""
-        return self._A.conj().T @ y
+
+        if self.iscomplex():
+            return self.xp.matmul(self.xp.conj(self._A).T, y)
+        else:
+            return self.xp.matmul(self._A.T, y)
 
 
 class CompositeLinearOperator(LinearOperator):
@@ -243,17 +254,15 @@ class CompositeLinearOperator(LinearOperator):
 class ElementwiseMultiplicationOperator(LinearOperator):
     """Element-wise multiplication operator (multiplication with a diagonal matrix)"""
 
-    def __init__(self, values, xp):
+    def __init__(self, values):
         """init method
 
         Parameters
         ----------
         values : numpy or cupy array
             values of the diagonal matrix
-        xp: ModuleType
-            numpy or cupy module
         """
-        super().__init__(xp)
+        super().__init__(array_api_compat.get_namespace(values))
         self._values = values
 
     @property
@@ -270,20 +279,28 @@ class ElementwiseMultiplicationOperator(LinearOperator):
 
     def _adjoint(self, y):
         """adjoint step x = A^H y"""
-        return self._values.conj() * y
+
+        if self.iscomplex():
+            return self.xp.conj(self._values) * y
+        else:
+            return self._values * y
+
+    def iscomplex(self):
+        return self.xp.isdtype(self._values.dtype,
+                               self.xp.complex64) or self.xp.isdtype(
+                                   self._values.dtype, self.xp.complex128)
 
 
 class GaussianFilterOperator(LinearOperator):
     """Gaussian filter operator"""
 
-    def __init__(self, in_shape, ndimage_module, xp, **kwargs):
+    def __init__(self, in_shape, xp, **kwargs):
         """init method
 
         Parameters
         ----------
         in_shape : tuple[int, ...]
             shape of the input array
-        ndimage_module : scipy or cupyx.scipy module
         xp: ModuleType
             numpy or cupy module
         **kwargs : sometype
@@ -291,7 +308,6 @@ class GaussianFilterOperator(LinearOperator):
         """
         super().__init__(xp)
         self._in_shape = in_shape
-        self._ndimage_module = ndimage_module
         self._kwargs = kwargs
 
     @property
@@ -304,7 +320,17 @@ class GaussianFilterOperator(LinearOperator):
 
     def _apply(self, x):
         """forward step y = Ax"""
-        return self._ndimage_module.gaussian_filter(x, **self._kwargs)
+        xp = array_api_compat.get_namespace(x)
+
+        if parallelproj.is_cuda_array(x):
+            import cupy as cp
+            import cupyx.scipy.ndimage as ndimagex
+            return xp.asarray(
+                ndimagex.gaussian_filter(cp.asarray(x), **self._kwargs))
+        else:
+            import scipy.ndimage as ndimage
+            return xp.asarray(
+                ndimage.gaussian_filter(np.asarray(x), **self._kwargs))
 
     def _adjoint(self, y):
         """adjoint step x = A^H y"""
@@ -326,9 +352,10 @@ class VstackOperator(LinearOperator):
         self._operators = operators
         self._in_shape = self._operators[0].in_shape
         self._out_shapes = tuple([x.out_shape for x in operators])
-        self._raveled_out_shapes = tuple([np.prod(x) for x in self._out_shapes])
+        self._raveled_out_shapes = tuple(
+            [np.prod(x) for x in self._out_shapes])
         self._out_shape = (sum(self._raveled_out_shapes), )
-  
+
         # setup the slices for slicing the raveled output array
         self._slices = []
         start = 0
@@ -350,7 +377,7 @@ class VstackOperator(LinearOperator):
         y = self.xp.zeros(self._out_shape, dtype=x.dtype)
 
         for i, op in enumerate(self._operators):
-            y[self._slices[i]] = op(x).ravel()
+            y[self._slices[i]] = self.xp.reshape(op(x), (-1, ))
 
         return y
 
@@ -358,7 +385,8 @@ class VstackOperator(LinearOperator):
         x = self.xp.zeros(self._in_shape, dtype=y.dtype)
 
         for i, op in enumerate(self._operators):
-            x += op.adjoint(y[self._slices[i]].reshape(self._out_shapes[i]))
+            x += op.adjoint(
+                self.xp.reshape(y[self._slices[i]], self._out_shapes[i]))
 
         return x
 
@@ -382,7 +410,7 @@ class SubsetOperator:
     @property
     def in_shape(self):
         return self._in_shape
-    
+
     @property
     def out_shapes(self):
         return self._out_shapes
@@ -397,7 +425,7 @@ class SubsetOperator:
 
     def apply(self, x):
         """A_i x for all subsets i"""
-        
+
         y = [op(x) for op in self._operators]
 
         return y
