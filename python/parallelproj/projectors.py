@@ -76,12 +76,40 @@ class ParallelViewProjector2D(parallelproj.LinearOperator):
     def out_shape(self):
         return (self._num_views, self._num_rad)
 
-    def _apply(self, x):
+    @property
+    def num_views(self) -> int:
+        return self._num_views
+
+    @property
+    def num_rad(self) -> int:
+        return self._num_rad
+
+    @property
+    def xstart(self) -> npt.ArrayLike:
+        return self._xstart
+
+    @property
+    def xend(self) -> npt.ArrayLike:
+        return self._xend
+
+    @property
+    def image_origin(self) -> npt.ArrayLike:
+        return self._image_origin
+
+    @property
+    def image_shape(self) -> tuple[int, int, int]:
+        return self._image_shape
+
+    @property
+    def voxel_size(self) -> npt.ArrayLike:
+        return self._voxel_size
+
+    def _apply(self, x: npt.ArrayLike) -> npt.ArrayLike:
         y = parallelproj.joseph3d_fwd(self._xstart, self._xend, x,
                                       self._image_origin, self._voxel_size)
         return y
 
-    def _adjoint(self, y):
+    def _adjoint(self, y: npt.ArrayLike) -> npt.ArrayLike:
         x = parallelproj.joseph3d_back(self._xstart, self._xend,
                                        self._image_shape, self._image_origin,
                                        self._voxel_size, y)
@@ -179,3 +207,132 @@ class ParallelViewProjector2D(parallelproj.LinearOperator):
         fig.tight_layout()
 
         return fig
+
+
+#-------------------------------------------------------------------------------
+
+
+class ParallelViewProjector3D(parallelproj.LinearOperator):
+    """3D non-TOF parallel view projector"""
+
+    def __init__(self,
+                 image_shape: tuple[int, int, int],
+                 image_origin: npt.ArrayLike,
+                 parallelviewprojector2d: ParallelViewProjector2D,
+                 ring_positions: npt.ArrayLike,
+                 span: int = 1,
+                 max_ring_diff: int | None = None):
+        """init method
+
+        Parameters
+        ----------
+        ring_positions : numpy or cupy array
+            position of the rings in world coordinates
+        radius : float
+            radius of the scanner
+        span : int
+            span of the sinogram - default is 1
+        max_ring_diff : int | None
+            maximum ring difference - default is None (no limit)
+        """
+        super().__init__(parallelviewprojector2d.xp)
+
+        self._image_shape = image_shape
+        self._image_origin = image_origin
+        self._projector2d = parallelviewprojector2d
+
+        self._ring_positions = ring_positions
+        self._num_rings = ring_positions.shape[0]
+        self._span = span
+
+        if max_ring_diff is None:
+            self._max_ring_diff = self._num_rings - 1
+        else:
+            self._max_ring_diff = max_ring_diff
+
+        if self._span == 1:
+            self._num_segments = 2 * self._max_ring_diff + 1
+            self._segment_numbers = np.zeros(self._num_segments,
+                                             dtype=np.int32)
+            self._segment_numbers[0::2] = np.arange(self._max_ring_diff + 1)
+            self._segment_numbers[1::2] = -np.arange(1,
+                                                     self._max_ring_diff + 1)
+
+            self._num_planes_per_segment = self._num_rings - np.abs(
+                self._segment_numbers)
+
+            self._start_plane_number = []
+            self._end_plane_number = []
+
+            for i, seg_number in enumerate(self._segment_numbers):
+                tmp = np.arange(self._num_planes_per_segment[i])
+
+                if seg_number < 0:
+                    tmp -= seg_number
+
+                self._start_plane_number.append(tmp)
+                self._end_plane_number.append(tmp + seg_number)
+
+            self._start_plane_number = np.concatenate(self._start_plane_number)
+            self._end_plane_number = np.concatenate(self._end_plane_number)
+            self._num_planes = self._start_plane_number.shape[0]
+        else:
+            raise ValueError('span > 1 not implemented yet')
+
+        self._xstart = self._xp.zeros(
+            (self._num_planes, self._projector2d.num_views,
+             self._projector2d.num_rad, 3),
+            dtype=self._xp.float32)
+        self._xend = self._xp.zeros(
+            (self._num_planes, self._projector2d.num_views,
+             self._projector2d.num_rad, 3),
+            dtype=self._xp.float32)
+
+        for i in range(self._num_planes):
+            self._xstart[i, ...] = self._projector2d.xstart
+            self._xend[i, ...] = self._projector2d.xend
+
+            self._xstart[i, :, :,
+                         0] = self._ring_positions[self._start_plane_number[i]]
+            self._xend[i, :, :,
+                       0] = self._ring_positions[self._end_plane_number[i]]
+
+    @property
+    def in_shape(self):
+        return self._image_shape
+
+    @property
+    def out_shape(self):
+        return (self._num_planes, self._projector2d.num_views,
+                self._projector2d.num_rad)
+
+    @property
+    def voxel_size(self) -> npt.ArrayLike:
+        return self._projector2d.voxel_size
+
+    @property
+    def image_origin(self) -> npt.ArrayLike:
+        return self._image_origin
+
+    @property
+    def image_shape(self) -> tuple[int, int, int]:
+        return self._image_shape
+
+    @property
+    def xstart(self) -> npt.ArrayLike:
+        return self._xstart
+
+    @property
+    def xend(self) -> npt.ArrayLike:
+        return self._xend
+
+    def _apply(self, x: npt.ArrayLike) -> npt.ArrayLike:
+        y = parallelproj.joseph3d_fwd(self._xstart, self._xend, x,
+                                      self.image_origin, self.voxel_size)
+        return y
+
+    def _adjoint(self, y: npt.ArrayLike) -> npt.ArrayLike:
+        x = parallelproj.joseph3d_back(self._xstart, self._xend,
+                                       self.image_shape, self.image_origin,
+                                       self.voxel_size, y)
+        return x

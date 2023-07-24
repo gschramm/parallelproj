@@ -7,6 +7,6 @@ from .backend import joseph3d_fwd_tof_lm, joseph3d_back_tof_lm
 from .operators import LinearOperator, MatrixOperator, ElementwiseMultiplicationOperator
 from .operators import GaussianFilterOperator, CompositeLinearOperator, VstackOperator, SubsetOperator
 
-from .projectors import ParallelViewProjector2D
+from .projectors import ParallelViewProjector2D, ParallelViewProjector3D
 
 from .utils import tonumpy
