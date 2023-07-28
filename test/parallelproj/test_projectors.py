@@ -1,7 +1,18 @@
+from __future__ import annotations
+
 import unittest
 import parallelproj
 import numpy as np
 import numpy.array_api as nparr
+import array_api_compat
+
+
+def allclose(x, y, atol: float = 1e-8, rtol: float = 1e-5) -> bool:
+    """check if two arrays are close to each other, given absolute and relative error
+       inspired by numpy.allclose
+    """
+    xp = array_api_compat.array_namespace(x)
+    return bool(xp.all(xp.less_equal(xp.abs(x - y), atol + rtol * xp.abs(y))))
 
 
 def test_parallelviewprojector(xp, verbose=True):
@@ -37,7 +48,7 @@ def test_parallelviewprojector(xp, verbose=True):
               xp.abs(x_fwd - exp_result) / exp_result)
         print('')
 
-    assert bool(np.allclose(x_fwd, exp_result))
+    assert allclose(x_fwd, exp_result)
 
     # setup a simple 3D projector with 2 rings
 
@@ -63,9 +74,9 @@ def test_parallelviewprojector(xp, verbose=True):
     exp_result_dp2 = xp.asarray([[18., 22., 26.], [24., 22., 20.]],
                                 dtype=xp.float32)
 
-    assert bool(np.allclose(x3d_fwd[0, ...], exp_result_dp0))
-    assert bool(np.allclose(x3d_fwd[1, ...], exp_result_dp1))
-    assert bool(np.allclose(x3d_fwd[2, ...], exp_result_dp2))
+    assert allclose(x3d_fwd[0, ...], exp_result_dp0)
+    assert allclose(x3d_fwd[1, ...], exp_result_dp1)
+    assert allclose(x3d_fwd[2, ...], exp_result_dp2)
 
 
 #--------------------------------------------------------------------------

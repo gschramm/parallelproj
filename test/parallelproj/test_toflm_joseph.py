@@ -6,6 +6,16 @@ import numpy.array_api as nparr
 from types import ModuleType
 
 
+def isclose(x: float,
+            y: float,
+            atol: float = 1e-8,
+            rtol: float = 1e-5) -> bool:
+    """check if two floating point numbers are close to each other, given absolute and relative error
+       inspired by numpy.isclose
+    """
+    return bool(abs(x - y) <= (atol + rtol * abs(y)))
+
+
 def tof_lm_fwd_test(xp: ModuleType,
                     verbose: bool = True,
                     atol: float = 1e-6) -> bool:
@@ -55,7 +65,7 @@ def tof_lm_fwd_test(xp: ModuleType,
                                                nsigmas, tof_bin)
 
     # check if sum of the projection is correct (should be equal to the voxel size)
-    res1 = bool(np.isclose(xp.sum(img_fwd), voxsize))
+    res1 = isclose(xp.sum(img_fwd), voxsize)
 
     # check if the FWHM in the projected profile is correct
     # to do so, we check if the interpolated profile - 0.5max(profile) at +/- FWHM/2 is 0
@@ -64,32 +74,28 @@ def tof_lm_fwd_test(xp: ModuleType,
 
     if parallelproj.is_cuda_array(img_fwd):
         import cupy as cp
-        res2 = bool(
-            cp.isclose(float(
-                cp.interp(cp.asarray([fwhm_tof / 2]), r,
-                          img_fwd - 0.5 * xp.max(img_fwd))[0]),
+        res2 = isclose(float(
+            cp.interp(cp.asarray([fwhm_tof / 2]), r,
+                      img_fwd - 0.5 * xp.max(img_fwd))[0]),
                        0,
-                       atol=atol))
-        res3 = bool(
-            cp.isclose(float(
-                cp.interp(xp.asarray([-fwhm_tof / 2]), r,
-                          img_fwd - 0.5 * xp.max(img_fwd))[0]),
+                       atol=atol)
+        res3 = isclose(float(
+            cp.interp(xp.asarray([-fwhm_tof / 2]), r,
+                      img_fwd - 0.5 * xp.max(img_fwd))[0]),
                        0,
-                       atol=atol))
+                       atol=atol)
 
     else:
-        res2 = bool(
-            np.isclose(float(
-                np.interp(np.asarray([fwhm_tof / 2]), r,
-                          img_fwd - 0.5 * xp.max(img_fwd))[0]),
+        res2 = isclose(float(
+            np.interp(np.asarray([fwhm_tof / 2]), r,
+                      img_fwd - 0.5 * xp.max(img_fwd))[0]),
                        0,
-                       atol=atol))
-        res3 = bool(
-            np.isclose(float(
-                np.interp(xp.asarray([-fwhm_tof / 2]), r,
-                          img_fwd - 0.5 * xp.max(img_fwd))[0]),
+                       atol=atol)
+        res3 = isclose(float(
+            np.interp(xp.asarray([-fwhm_tof / 2]), r,
+                      img_fwd - 0.5 * xp.max(img_fwd))[0]),
                        0,
-                       atol=atol))
+                       atol=atol)
 
     if verbose:
         print(
@@ -168,7 +174,7 @@ def adjointness_test(xp: ModuleType,
     ip_a = float(xp.sum(back_img * img))
     ip_b = float(xp.sum(img_fwd * lst))
 
-    res = bool(np.isclose(ip_a, ip_b))
+    res = isclose(ip_a, ip_b)
 
     if verbose:
         print(
