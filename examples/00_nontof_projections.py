@@ -1,10 +1,9 @@
 """minimal example that shows how to use the joseph3d non-TOF forward and back projector"""
 import parallelproj
 
+# parallelproj supports the different array backend (numpy, cupy, torch)
 # parallelproj tells us whether cupy is available and supported
 # if it is, we use cupy, otherwise numpy as array module (xp)
-# to be compatible with the python array api, we use the minimal
-# numpy.array_api implementation
 if parallelproj.cupy_enabled:
     import cupy as xp
 else:
