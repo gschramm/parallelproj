@@ -6,6 +6,8 @@ import numpy as np
 import numpy.array_api as nparr
 import array_api_compat
 
+from types import ModuleType
+
 
 def allclose(x, y, atol: float = 1e-8, rtol: float = 1e-5) -> bool:
     """check if two arrays are close to each other, given absolute and relative error
@@ -15,7 +17,7 @@ def allclose(x, y, atol: float = 1e-8, rtol: float = 1e-5) -> bool:
     return bool(xp.all(xp.less_equal(xp.abs(x - y), atol + rtol * xp.abs(y))))
 
 
-def test_matrix(xp):
+def matrix_test(xp: ModuleType):
     np.random.seed(0)
 
     A = xp.asarray([[1., 2.], [-3., 2.], [-1., -1.]])
@@ -27,7 +29,7 @@ def test_matrix(xp):
     assert allclose(A @ x, op(x))
 
 
-def test_elementwise(xp):
+def elemenwise_test(xp: ModuleType):
     np.random.seed(0)
 
     v = xp.asarray([3., -1.])
@@ -39,7 +41,7 @@ def test_elementwise(xp):
     assert allclose(v * x, op(x))
 
 
-def test_gaussian(xp):
+def gaussian_test(xp: ModuleType):
     np.random.seed(0)
     in_shape = (32, 32)
     sigma = 2.3
@@ -48,7 +50,7 @@ def test_gaussian(xp):
     op.adjointness_test(xp)
 
 
-def test_composite(xp):
+def composite_test(xp: ModuleType):
     np.random.seed(0)
 
     A = xp.asarray([[1., 2.], [-3., 2.], [-1., -1.]])
@@ -64,7 +66,7 @@ def test_composite(xp):
     assert allclose(v * (A @ x), op(x))
 
 
-def test_vstack(xp):
+def vstack_test(xp: ModuleType):
     np.random.seed(0)
     in_shape = (16, 11)
 
@@ -86,7 +88,7 @@ def test_vstack(xp):
                    xp.reshape(A3(x), (-1, )))))
 
 
-def test_subsets(xp):
+def subsets_test(xp: ModuleType):
     np.random.seed(0)
     in_shape = (3, )
 
@@ -113,85 +115,101 @@ def test_subsets(xp):
 class TestOperators(unittest.TestCase):
 
     def testmatrix(self):
-        test_matrix(np)
-        test_matrix(nparr)
+        matrix_test(np)
+        matrix_test(nparr)
 
     if parallelproj.cupy_enabled:
 
         def testmatrix_cp(self):
             import array_api_compat.cupy as cp
-            test_matrix(cp)
+            matrix_test(cp)
 
     if parallelproj.torch_enabled:
 
         def testmatrix_torch(self):
             import array_api_compat.torch as torch
-            test_matrix(torch)
+            matrix_test(torch)
 
     #-----------------------------------------------
     def testelementwise(self):
-        test_elementwise(np)
-        test_elementwise(nparr)
+        elemenwise_test(np)
+        elemenwise_test(nparr)
 
     if parallelproj.cupy_enabled:
 
         def testelementwise_cp(self):
             import array_api_compat.cupy as cp
-            test_elementwise(cp)
+            elemenwise_test(cp)
 
     if parallelproj.torch_enabled:
 
         def testelementwise_torch(self):
             import array_api_compat.torch as torch
-            test_elementwise(torch)
+            elemenwise_test(torch)
 
     #-----------------------------------------------
     def testgaussian(self):
-        test_gaussian(nparr)
+        gaussian_test(nparr)
 
     if parallelproj.cupy_enabled:
 
         def testgaussian_cp(self):
             import array_api_compat.cupy as cp
-            test_gaussian(cp)
+            gaussian_test(cp)
 
     if parallelproj.torch_enabled:
 
         def testgaussian_torch(self):
             import array_api_compat.torch as torch
-            test_gaussian(torch)
+            gaussian_test(torch)
 
     #-----------------------------------------------
     def testcomposite(self):
-        test_composite(nparr)
+        composite_test(nparr)
 
     if parallelproj.cupy_enabled:
 
         def testcomposite_cp(self):
             import array_api_compat.cupy as cp
-            test_composite(cp)
+            composite_test(cp)
 
     if parallelproj.torch_enabled:
 
         def testcomposite_torch(self):
             import array_api_compat.torch as torch
-            test_composite(torch)
+            composite_test(torch)
 
     #-----------------------------------------------
     def testvstack(self):
-        test_vstack(nparr)
+        vstack_test(nparr)
 
     if parallelproj.cupy_enabled:
 
         def testvstack_cp(self):
             import array_api_compat.cupy as cp
-            test_vstack(cp)
+            vstack_test(cp)
 
     if parallelproj.torch_enabled:
 
         def testvstack_torch(self):
             import array_api_compat.torch as torch
-            test_vstack(torch)
+            vstack_test(torch)
+
+    #-----------------------------------------------
+    def testsubsets(self):
+        vstack_test(nparr)
+
+    if parallelproj.cupy_enabled:
+
+        def testsubsets(self):
+            import array_api_compat.cupy as cp
+            subsets_test(cp)
+
+    if parallelproj.torch_enabled:
+
+        def testsubsets_torch(self):
+            import array_api_compat.torch as torch
+            subsets_test(torch)
 
 
 #--------------------------------------------------------------------

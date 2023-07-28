@@ -15,7 +15,7 @@ def allclose(x, y, atol: float = 1e-8, rtol: float = 1e-5) -> bool:
     return bool(xp.all(xp.less_equal(xp.abs(x - y), atol + rtol * xp.abs(y))))
 
 
-def test_parallelviewprojector(xp, verbose=True):
+def parallelviewprojector_test(xp, verbose=True):
     image_shape = (1, 2, 2)
     voxel_size = xp.asarray([2., 2., 2.], dtype=xp.float32)
     image_origin = xp.asarray([0, -1., -1.], dtype=xp.float32)
@@ -85,19 +85,22 @@ def test_parallelviewprojector(xp, verbose=True):
 class TestParallelViewProjector(unittest.TestCase):
 
     def test(self):
-        test_parallelviewprojector(nparr)
+        parallelviewprojector_test(np)
+        parallelviewprojector_test(nparr)
 
     if parallelproj.cupy_enabled:
 
         def test_cp(self):
             import array_api_compat.cupy as cp
-            test_parallelviewprojector(cp)
+            parallelviewprojector_test(cp)
+            import cupy.array_api as cparr
+            parallelviewprojector_test(cparr)
 
     if parallelproj.torch_enabled:
 
         def test_torch(self):
             import array_api_compat.torch as torch
-            test_parallelviewprojector(torch)
+            parallelviewprojector_test(torch)
 
 
 if __name__ == '__main__':
