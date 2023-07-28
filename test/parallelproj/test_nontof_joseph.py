@@ -6,7 +6,10 @@ import numpy.array_api as nparr
 from types import ModuleType
 
 
-def fwd_test(xp: ModuleType, verbose=True) -> bool:
+def fwd_test(xp: ModuleType,
+             verbose: bool = True,
+             rtol: float = 1e-5,
+             atol: float = 1e-8) -> bool:
     n0, n1, n2 = (2, 3, 4)
 
     img_dim = (n0, n1, n2)
@@ -74,16 +77,23 @@ def fwd_test(xp: ModuleType, verbose=True) -> bool:
               xp.abs(img_fwd - expected_projections) / expected_projections)
         print('')
 
-    return bool(np.allclose(img_fwd, expected_projections))
+    isclose = bool(
+        xp.all(
+            xp.less_equal(xp.abs(img_fwd - expected_projections),
+                          atol + rtol * xp.abs(expected_projections))))
+
+    return isclose
 
 
 #--------------------------------------------------------------------------
 
 
 def adjointness_test(xp: ModuleType,
-                     nLORs=1000000,
-                     seed=1,
-                     verbose=True) -> bool:
+                     nLORs: int = 1000000,
+                     seed: int = 1,
+                     verbose: bool = True,
+                     rtol: float = 1e-5,
+                     atol: float = 1e-8) -> bool:
     """test whether backprojection is the adjoint of forward projection
        indirect test whether back projection is correct (assuming fwd projection is correct)
     """
@@ -139,7 +149,9 @@ def adjointness_test(xp: ModuleType,
         print('ip_b = ', ip_b)
         print('')
 
-    return bool(np.isclose(ip_a, ip_b))
+    isclose = (abs(ip_a - ip_b) <= atol + rtol * abs(ip_b))
+
+    return isclose
 
 
 #--------------------------------------------------------------------------
@@ -156,6 +168,8 @@ class TestNonTOFJoseph(unittest.TestCase):
         if parallelproj.cupy_enabled:
             import cupy as cp
             self.assertTrue(fwd_test(cp))
+            import cupy.array_api as cparr
+            self.assertTrue(fwd_test(cparr))
 
         if parallelproj.torch_enabled:
             import torch
@@ -169,6 +183,8 @@ class TestNonTOFJoseph(unittest.TestCase):
         if parallelproj.cupy_enabled:
             import cupy as cp
             self.assertTrue(adjointness_test(cp))
+            import cupy.array_api as cparr
+            self.assertTrue(fwd_test(cparr))
 
         if parallelproj.torch_enabled:
             import torch
