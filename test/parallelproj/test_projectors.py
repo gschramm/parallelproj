@@ -99,7 +99,7 @@ class TestParallelViewProjector(unittest.TestCase):
     if parallelproj.torch_enabled:
 
         def test_torch(self):
-            import array_api_compat.torch as torch
+            import torch
             parallelviewprojector_test(torch)
 
 
