@@ -1,7 +1,18 @@
+from __future__ import annotations
+
 import unittest
 import parallelproj
 import numpy as np
 import numpy.array_api as nparr
+import array_api_compat
+
+
+def allclose(x, y, atol: float = 1e-8, rtol: float = 1e-5) -> bool:
+    """check if two arrays are close to each other, given absolute and relative error
+       inspired by numpy.allclose
+    """
+    xp = array_api_compat.array_namespace(x)
+    return bool(xp.all(xp.less_equal(xp.abs(x - y), atol + rtol * xp.abs(y))))
 
 
 def test_matrix(xp):
@@ -13,7 +24,7 @@ def test_matrix(xp):
     op = parallelproj.MatrixOperator(A)
 
     op.adjointness_test(xp)
-    assert np.allclose(A @ x, op(x))
+    assert allclose(A @ x, op(x))
 
 
 def test_elementwise(xp):
@@ -25,7 +36,7 @@ def test_elementwise(xp):
     op = parallelproj.ElementwiseMultiplicationOperator(v)
 
     op.adjointness_test(xp)
-    assert np.allclose(v * x, op(x))
+    assert allclose(v * x, op(x))
 
 
 def test_gaussian(xp):
@@ -50,7 +61,7 @@ def test_composite(xp):
     op = parallelproj.CompositeLinearOperator([op1, op2])
 
     op.adjointness_test(xp)
-    assert np.allclose(v * (A @ x), op(x))
+    assert allclose(v * (A @ x), op(x))
 
 
 def test_vstack(xp):
@@ -69,7 +80,7 @@ def test_vstack(xp):
     x = xp.asarray(np.random.rand(*in_shape))
     x_fwd = A(x)
 
-    assert np.allclose(
+    assert allclose(
         x_fwd,
         xp.concat((xp.reshape(A1(x), (-1, )), xp.reshape(A2(x), (-1, )),
                    xp.reshape(A3(x), (-1, )))))
@@ -90,18 +101,19 @@ def test_subsets(xp):
     x_fwd = A(x)
 
     for i in range(A.num_subsets):
-        assert np.allclose(x_fwd[i], A.apply_subset(x, i))
+        assert allclose(x_fwd[i], A.apply_subset(x, i))
 
     y = A.adjoint(x_fwd)
 
     for i in range(A.num_subsets):
-        assert np.allclose(y[i], A.adjoint_subset(x_fwd[i], i))
+        assert allclose(y[i], A.adjoint_subset(x_fwd[i], i))
 
 
 #--------------------------------------------------------------------------
 class TestOperators(unittest.TestCase):
 
     def testmatrix(self):
+        test_matrix(np)
         test_matrix(nparr)
 
     if parallelproj.cupy_enabled:
@@ -118,6 +130,7 @@ class TestOperators(unittest.TestCase):
 
     #-----------------------------------------------
     def testelementwise(self):
+        test_elementwise(np)
         test_elementwise(nparr)
 
     if parallelproj.cupy_enabled:
