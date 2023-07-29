@@ -2,9 +2,9 @@ from __future__ import annotations
 
 import unittest
 import parallelproj
-import numpy as np
 import numpy.array_api as nparr
 import array_api_compat
+import array_api_compat.numpy as np
 
 
 def allclose(x, y, atol: float = 1e-8, rtol: float = 1e-5) -> bool:
@@ -91,8 +91,8 @@ class TestParallelViewProjector(unittest.TestCase):
 
     def test(self):
         parallelviewprojector_test(np)
-
-        parallelviewprojector_test(nparr)
+        if np.__version__ >= '1.25':
+            parallelviewprojector_test(nparr)
 
     if parallelproj.cupy_enabled:
 

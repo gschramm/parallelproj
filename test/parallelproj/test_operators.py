@@ -2,9 +2,9 @@ from __future__ import annotations
 
 import unittest
 import parallelproj
-import numpy as np
 import numpy.array_api as nparr
 import array_api_compat
+import array_api_compat.numpy as np
 
 from types import ModuleType
 
@@ -116,7 +116,8 @@ class TestOperators(unittest.TestCase):
 
     def testmatrix(self):
         matrix_test(np)
-        matrix_test(nparr)
+        if np.__version__ >= '1.25':
+            matrix_test(nparr)
 
     if parallelproj.cupy_enabled:
 
@@ -133,7 +134,8 @@ class TestOperators(unittest.TestCase):
     #-----------------------------------------------
     def testelementwise(self):
         elemenwise_test(np)
-        elemenwise_test(nparr)
+        if np.__version__ >= '1.25':
+            elemenwise_test(nparr)
 
     if parallelproj.cupy_enabled:
 
@@ -149,7 +151,9 @@ class TestOperators(unittest.TestCase):
 
     #-----------------------------------------------
     def testgaussian(self):
-        gaussian_test(nparr)
+        gaussian_test(np)
+        if np.__version__ >= '1.25':
+            gaussian_test(nparr)
 
     if parallelproj.cupy_enabled:
 
@@ -165,7 +169,9 @@ class TestOperators(unittest.TestCase):
 
     #-----------------------------------------------
     def testcomposite(self):
-        composite_test(nparr)
+        composite_test(np)
+        if np.__version__ >= '1.25':
+            composite_test(nparr)
 
     if parallelproj.cupy_enabled:
 
@@ -181,7 +187,9 @@ class TestOperators(unittest.TestCase):
 
     #-----------------------------------------------
     def testvstack(self):
-        vstack_test(nparr)
+        vstack_test(np)
+        if np.__version__ >= '1.25':
+            vstack_test(nparr)
 
     if parallelproj.cupy_enabled:
 
@@ -197,7 +205,9 @@ class TestOperators(unittest.TestCase):
 
     #-----------------------------------------------
     def testsubsets(self):
-        vstack_test(nparr)
+        subsets_test(np)
+        if np.__version__ >= '1.25':
+            subsets_test(nparr)
 
     if parallelproj.cupy_enabled:
 

@@ -1,7 +1,7 @@
 import unittest
 import parallelproj
-import numpy as np
 import numpy.array_api as nparr
+import array_api_compat.numpy as np
 
 from types import ModuleType
 
@@ -187,7 +187,8 @@ class TestTOFJoseph(unittest.TestCase):
     def test_forward(self):
         """test TOF joseph forward projection using different backends"""
         self.assertTrue(tof_sino_fwd_test(np))
-        self.assertTrue(tof_sino_fwd_test(nparr))
+        if np.__version__ >= '1.25':
+            self.assertTrue(tof_sino_fwd_test(nparr))
 
         if parallelproj.cupy_enabled:
             import cupy as cp
@@ -200,7 +201,8 @@ class TestTOFJoseph(unittest.TestCase):
     def test_adjoint(self):
         """test TOF joseph forward projection using different backends"""
         self.assertTrue(adjointness_test(np))
-        self.assertTrue(adjointness_test(nparr))
+        if np.__version__ >= '1.25':
+            self.assertTrue(adjointness_test(nparr))
 
         if parallelproj.cupy_enabled:
             import cupy as cp

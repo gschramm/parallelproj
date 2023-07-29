@@ -19,7 +19,7 @@ classifiers = [
 ]
 license = {file = "LICENSE"}
 dependencies = [
-    "numpy>=1.25",
+    "numpy>=1.22",
     "array-api-compat",
     "matplotlib",
 ]

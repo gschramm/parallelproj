@@ -2,8 +2,8 @@ from __future__ import annotations
 
 import unittest
 import parallelproj
-import numpy as np
 import numpy.array_api as nparr
+import array_api_compat.numpy as np
 
 from types import ModuleType
 
@@ -165,7 +165,8 @@ class TestNonTOFJoseph(unittest.TestCase):
     def test_fwd(self):
         """test non TOF joseph forward projection using different backends"""
         self.assertTrue(fwd_test(np))
-        self.assertTrue(fwd_test(nparr))
+        if np.__version__ >= '1.25':
+            self.assertTrue(fwd_test(nparr))
 
         if parallelproj.cupy_enabled:
             import cupy as cp
@@ -180,7 +181,8 @@ class TestNonTOFJoseph(unittest.TestCase):
     def test_adjoint(self):
         """test non TOF joseph forward projection using different backends"""
         self.assertTrue(adjointness_test(np))
-        self.assertTrue(adjointness_test(nparr))
+        if np.__version__ >= '1.25':
+            self.assertTrue(adjointness_test(nparr))
 
         if parallelproj.cupy_enabled:
             import cupy as cp
