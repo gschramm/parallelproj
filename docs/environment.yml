@@ -10,4 +10,4 @@ dependencies:
   - matplotlib
   - sphinx<7
   - sphinx_rtd_theme
-  - array_api_compat
+  - array-api-compat
