@@ -151,25 +151,16 @@ class ParallelViewProjector2D(parallelproj.LinearOperator):
         img_extent = [tmp1, -tmp1, tmp2, -tmp2]
 
         for i, ip in enumerate(views_to_show):
-            if parallelproj.is_cuda_array(self._xstart):
-                import cupy as cp
-                ax[i].plot(cp.asnumpy(self._xstart[:, ip, 1]),
-                           cp.asnumpy(self._xstart[:, ip, 2]),
-                           '.',
-                           ms=0.5)
-                ax[i].plot(cp.asnumpy(self._xend[:, ip, 1]),
-                           cp.asnumpy(self._xend[:, ip, 2]),
-                           '.',
-                           ms=0.5)
-            else:
-                ax[i].plot(np.asarray(self._xstart[:, ip, 1]),
-                           np.asarray(self._xstart[:, ip, 2]),
-                           '.',
-                           ms=0.5)
-                ax[i].plot(np.asarray(self._xend[:, ip, 1]),
-                           np.asarray(self._xend[:, ip, 2]),
-                           '.',
-                           ms=0.5)
+            ax[i].plot(array_api_compat.to_device(self._xstart[:, ip, 1],
+                                                  'cpu'),
+                       array_api_compat.to_device(self._xstart[:, ip, 2],
+                                                  'cpu'),
+                       '.',
+                       ms=0.5)
+            ax[i].plot(array_api_compat.to_device(self._xend[:, ip, 1], 'cpu'),
+                       array_api_compat.to_device(self._xend[:, ip, 2], 'cpu'),
+                       '.',
+                       ms=0.5)
 
             for k in np.linspace(0, self._num_rad - 1, 7).astype(int):
                 ax[i].plot([
@@ -200,17 +191,10 @@ class ParallelViewProjector2D(parallelproj.LinearOperator):
                               facecolor='none',
                               linestyle=':'))
 
-                if parallelproj.is_cuda_array(image):
-                    import cupy as cp
-                    ax[i].imshow(cp.asnumpy(image).T,
-                                 origin='lower',
-                                 extent=img_extent,
-                                 **kwargs)
-                else:
-                    ax[i].imshow(np.asarray(image).T,
-                                 origin='lower',
-                                 extent=img_extent,
-                                 **kwargs)
+                ax[i].imshow(array_api_compat.to_device(image, 'cpu').T,
+                             origin='lower',
+                             extent=img_extent,
+                             **kwargs)
 
             ax[i].set_title(
                 f'view {ip:03} - phi {(180/np.pi)*self._view_angles[ip]} deg',
