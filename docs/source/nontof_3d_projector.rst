@@ -1,5 +1,5 @@
-Low-level non-TOF projection example
-------------------------------------
+High-level 3D non-TOF projection example
+----------------------------------------
 
 .. note::
    parallelproj aims to be compatible with the **python array API** and 
@@ -8,9 +8,9 @@ Low-level non-TOF projection example
    the import lines.
 
 .. note::
-   The example below shows how to do a simple non-TOF forward projection along
-   a set of known lines of response with known start and end points.
+   The example below shows how to do a non-TOF forward projection using a predefined
+   3D parallelview projector.
 
-.. literalinclude:: ../../examples/00_nontof_projections.py
+.. literalinclude:: ../../examples/04_nontof_sinogram_3d_projector.py
    :language: python
    :linenos:

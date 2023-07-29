@@ -19,6 +19,8 @@ and cuda.
     nontof_example
     tofsino_example
     toflm_example
+    nontof_2d_projector
+    nontof_3d_projector
 
 .. toctree::
     :hidden:
