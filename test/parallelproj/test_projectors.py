@@ -35,7 +35,7 @@ def parallelviewprojector_test(xp, verbose=True):
     x2d = xp.reshape(xp.arange(4, dtype=xp.float32), (2, 2))
     x_fwd = proj2d(x2d)
 
-    exp_result = xp.asarray([[2., 6., 10.], [8., 6., 4.]], dtype=xp.float32)
+    exp_result = xp.asarray([[2., 8.], [6., 6.], [10., 4.]], dtype=xp.float32)
 
     if verbose:
         print(
@@ -50,33 +50,38 @@ def parallelviewprojector_test(xp, verbose=True):
 
     assert allclose(x_fwd, exp_result)
 
-    ## setup a simple 3D projector with 2 rings
+    # setup a simple 3D projector with 2 rings
 
-    #image_shape3d = (2, 2, 2)
-    #image_origin3d = xp.asarray([-1, -1., -1.], dtype=xp.float32)
-    #ring_positions = xp.asarray([-1, 0, 1.], dtype=xp.float32)
+    image_shape3d = (2, 2, 2)
+    image_origin3d = (-1, -1., -1.)
+    voxel_size3d = (2., 2., 2.)
+    ring_positions = xp.asarray([-1, 0, 1.], dtype=xp.float32)
 
-    #proj3d = parallelproj.ParallelViewProjector3D(image_shape3d,
-    #                                              image_origin3d, proj2d,
-    #                                              ring_positions)
+    proj3d = parallelproj.ParallelViewProjector3D(image_shape3d,
+                                                  radial_positions,
+                                                  view_angles,
+                                                  radius,
+                                                  image_origin3d,
+                                                  voxel_size3d,
+                                                  ring_positions,
+                                                  max_ring_diff=1)
+    proj3d.adjointness_test(verbose=verbose)
 
-    #proj3d.adjointness_test(verbose=verbose)
+    # test a simple 3D projection
+    x3d = xp.reshape(xp.arange(8, dtype=xp.float32), (2, 2, 2))
+    x3d_fwd = proj3d(x3d)
 
-    ## test a simple 3D projection
-    #x3d = xp.reshape(xp.arange(8, dtype=xp.float32), (2, 2, 2))
-    #x3d_fwd = proj3d(x3d)
+    # check if we get the expected results for the 3 direct planes
+    exp_result_dp0 = xp.asarray([[4., 16.], [12., 12.], [20., 8.]],
+                                dtype=xp.float32)
+    exp_result_dp1 = xp.asarray([[6., 18.], [14., 14.], [22., 10.]],
+                                dtype=xp.float32)
+    exp_result_dp2 = xp.asarray([[8., 20.], [16., 16.], [24., 12.]],
+                                dtype=xp.float32)
 
-    ## check if we get the expected results for the 3 direct planes
-    #exp_result_dp0 = xp.asarray([[2., 6., 10.], [8., 6., 4.]],
-    #                            dtype=xp.float32)
-    #exp_result_dp1 = xp.asarray([[10., 14., 18.], [16., 14., 12.]],
-    #                            dtype=xp.float32)
-    #exp_result_dp2 = xp.asarray([[18., 22., 26.], [24., 22., 20.]],
-    #                            dtype=xp.float32)
-
-    #assert allclose(x3d_fwd[0, ...], exp_result_dp0)
-    #assert allclose(x3d_fwd[1, ...], exp_result_dp1)
-    #assert allclose(x3d_fwd[2, ...], exp_result_dp2)
+    assert allclose(x3d_fwd[..., 0], exp_result_dp0)
+    assert allclose(x3d_fwd[..., 1], exp_result_dp1)
+    assert allclose(x3d_fwd[..., 2], exp_result_dp2)
 
 
 #--------------------------------------------------------------------------
@@ -86,6 +91,7 @@ class TestParallelViewProjector(unittest.TestCase):
 
     def test(self):
         parallelviewprojector_test(np)
+
         parallelviewprojector_test(nparr)
 
     if parallelproj.cupy_enabled:
