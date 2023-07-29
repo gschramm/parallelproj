@@ -16,8 +16,7 @@ import numpy as np
 import numpy.ctypeslib as npct
 import numpy.typing as npt
 
-from typing import Union
-from types import ModuleType
+import array_api_compat
 
 # check if cuda is present
 cuda_present = distutils.spawn.find_executable('nvidia-smi') is not None
@@ -25,17 +24,12 @@ cuda_present = distutils.spawn.find_executable('nvidia-smi') is not None
 # check if cupy is available
 cupy_enabled = (importlib.util.find_spec('cupy') is not None)
 
+# check if cupy is available
+torch_enabled = (importlib.util.find_spec('torch') is not None)
+
 # define type for cupy or numpy array
 if cupy_enabled:
     import cupy as cp
-    import cupy.typing as cpt
-    XPArray = Union[npt.NDArray, cpt.NDArray]
-    XPFloat32Array = Union[npt.NDArray[np.float32], cpt.NDArray[np.float32]]
-    XPShortArray = Union[npt.NDArray[np.int16], cpt.NDArray[np.int16]]
-else:
-    XPArray = npt.NDArray
-    XPFloat32Array = npt.NDArray[np.float32]
-    XPShortArray = npt.NDArray[np.int16]
 
 # numpy ctypes lib array definitions
 ar_1d_single = npct.ndpointer(dtype=ctypes.c_float, ndim=1, flags='C')
@@ -355,7 +349,8 @@ if cuda_present:
             warn('cannot find cuda kernel file for cupy kernels')
 
 
-def calc_chunks(nLORs: int, num_chunks: int) -> list[int]:
+def calc_chunks(nLORs: int | np.int64,
+                num_chunks: int) -> list[int] | list[np.int64]:
     """ calculate indices to split an array of length nLORs into num_chunks chunks
 
         example: splitting an array of length 10 into 3 chunks returns [0,4,7,10]
@@ -376,103 +371,126 @@ def calc_chunks(nLORs: int, num_chunks: int) -> list[int]:
     return chunks
 
 
-def joseph3d_fwd(xstart: XPFloat32Array,
-                 xend: XPFloat32Array,
-                 img: XPFloat32Array,
-                 img_origin: XPFloat32Array,
-                 voxsize: XPFloat32Array,
-                 img_fwd: XPFloat32Array,
+def is_cuda_array(x) -> bool:
+
+    iscuda = False
+
+    if 'cupy' in array_api_compat.get_namespace(x).__name__:
+        iscuda = True
+    elif 'torch' in array_api_compat.get_namespace(x).__name__:
+        if array_api_compat.device(x).type == 'cuda':
+            iscuda = True
+
+    return iscuda
+
+
+def joseph3d_fwd(xstart: npt.ArrayLike,
+                 xend: npt.ArrayLike,
+                 img: npt.ArrayLike,
+                 img_origin: npt.ArrayLike,
+                 voxsize: npt.ArrayLike,
                  threadsperblock: int = 32,
-                 num_chunks: int = 1) -> None:
+                 num_chunks: int = 1) -> npt.ArrayLike:
     """Non-TOF Joseph 3D forward projector
 
     Parameters
     ----------
-    xstart : XPFloat32Array (float32 numpy or cupy array)
+    xstart : npt.ArrayLike (numpy/cupy array or torch tensor)
         start world coordinates of the LORs, shape (nLORs, 3)
-    xend : XPFloat32Array (float32 numpy or cupy array)
+    xend : npt.ArrayLike (numpy/cupy array or torch tensor)
         end world coordinates of the LORs, shape (nLORs, 3)
-    img : XPFloat32Array (float32 numpy or cupy array)
+    img : npt.ArrayLike (numpy/cupy array or torch tensor)
         containing the 3D image to be projected
-    img_origin : XPFloat32Array (float32 numpy or cupy array)
+    img_origin : npt.ArrayLike (numpy/cupy array or torch tensor)
         containing the world coordinates of the image origin (voxel [0,0,0])
-    voxsize : XPFloat32Array (float32 numpy or cupy array)
+    voxsize : npt.ArrayLike (numpy/cupy array or torch tensor)
         array containing the voxel size
-    img_fwd : XPFloat32Array (float32 numpy or cupy array)
-        output array of length nLORs for storing the forward projection 
     threadsperblock : int, optional
         by default 32
     num_chunks : int, optional
         break down the projection in hybrid mode into chunks to
         save memory on the GPU, by default 1
     """
-    img_dim = np.array(img.shape, dtype=np.int32)
-    nLORs = xstart.shape[0]
+    nLORs = np.int64(array_api_compat.size(xstart) // 3)
+    xp = array_api_compat.get_namespace(img)
 
-    # check whether the input image is a numpy or cupy array
-    xp = get_array_module(img)
+    if is_cuda_array(img):
+        # projection of GPU array (cupy to torch GPU array) using the cupy raw kernel
+        img_fwd = cp.zeros(xstart.shape[:-1], dtype=cp.float32)
 
-    if (xp.__name__ == 'cupy'):
-        # projection of cupy GPU array using the cupy raw kernel
         _joseph3d_fwd_cuda_kernel(
             (math.ceil(nLORs / threadsperblock), ), (threadsperblock, ),
-            (xstart.ravel(), xend.ravel(), img.ravel(), xp.asarray(img_origin),
-             xp.asarray(voxsize), img_fwd, np.int64(nLORs),
-             xp.asarray(img_dim)))
-        xp.cuda.Device().synchronize()
+            (cp.asarray(xstart, dtype=cp.float32).ravel(),
+             cp.asarray(xend, dtype=cp.float32).ravel(),
+             cp.asarray(img, dtype=cp.float32).ravel(),
+             cp.asarray(img_origin, dtype=cp.float32),
+             cp.asarray(voxsize, dtype=cp.float32), img_fwd.ravel(), nLORs,
+             cp.asarray(img.shape, dtype=cp.int32)))
+        cp.cuda.Device().synchronize()
     else:
+        img_fwd = np.zeros(xstart.shape[:-1], dtype=np.float32)
+
+        # projection of CPU array (numpy to torch CPU array)
         if num_visible_cuda_devices > 0:
             # projection of numpy array using the cuda parallelproj lib
-            num_voxel = ctypes.c_longlong(img_dim[0] * img_dim[1] * img_dim[2])
+            num_voxel = ctypes.c_longlong(array_api_compat.size(img))
 
             # send image to all devices
             d_img = lib_parallelproj_cuda.copy_float_array_to_all_devices(
-                img.ravel(), num_voxel)
+                np.asarray(img, dtype=np.float32).ravel(), num_voxel)
 
             # split call to GPU lib into chunks (useful for systems with limited memory)
             ic = calc_chunks(nLORs, num_chunks)
 
             for i in range(num_chunks):
                 lib_parallelproj_cuda.joseph3d_fwd_cuda(
-                    xstart[ic[i]:(ic[i + 1]), :].ravel(),
-                    xend[ic[i]:(ic[i + 1]), :].ravel(), d_img, img_origin,
-                    voxsize,
+                    np.asarray(xstart, dtype=np.float32).reshape(
+                        -1, 3)[ic[i]:(ic[i + 1]), :].ravel(),
+                    np.asarray(xend, dtype=np.float32).reshape(
+                        -1, 3)[ic[i]:(ic[i + 1]), :].ravel(), d_img,
+                    np.asarray(img_origin, dtype=np.float32),
+                    np.asarray(voxsize, dtype=np.float32),
                     img_fwd.ravel()[ic[i]:ic[i + 1]], ic[i + 1] - ic[i],
-                    img_dim, threadsperblock)
+                    np.asarray(img.shape, dtype=np.int32), threadsperblock)
 
             # free image device arrays
             lib_parallelproj_cuda.free_float_array_on_all_devices(d_img)
         else:
             # projection of numpy array using the openmp parallelproj lib
-            lib_parallelproj_c.joseph3d_fwd(xstart.ravel(), xend.ravel(),
-                                            img.ravel(), img_origin, voxsize,
-                                            img_fwd.ravel(), np.int64(nLORs),
-                                            img_dim)
+            lib_parallelproj_c.joseph3d_fwd(
+                np.asarray(xstart, dtype=np.float32).ravel(),
+                np.asarray(xend, dtype=np.float32).ravel(),
+                np.asarray(img, dtype=np.float32).ravel(),
+                np.asarray(img_origin, dtype=np.float32),
+                np.asarray(voxsize, dtype=np.float32), img_fwd.ravel(), nLORs,
+                np.asarray(img.shape, dtype=np.int32))
+
+    return xp.asarray(img_fwd, device=array_api_compat.device(img))
 
 
-def joseph3d_back(xstart: XPFloat32Array,
-                  xend: XPFloat32Array,
-                  back_img: XPFloat32Array,
-                  img_origin: XPFloat32Array,
-                  voxsize: XPFloat32Array,
-                  sino: XPFloat32Array,
+def joseph3d_back(xstart: npt.ArrayLike,
+                  xend: npt.ArrayLike,
+                  img_shape: tuple[int, int, int],
+                  img_origin: npt.ArrayLike,
+                  voxsize: npt.ArrayLike,
+                  img_fwd: npt.ArrayLike,
                   threadsperblock: int = 32,
-                  num_chunks: int = 1) -> None:
+                  num_chunks: int = 1) -> npt.ArrayLike:
     """Non-TOF Joseph 3D back projector
 
     Parameters
     ----------
-    xstart : XPFloat32Array (float32 numpy or cupy array)
+    xstart : npt.ArrayLike (numpy/cupy array or torch tensor)
         start world coordinates of the LORs, shape (nLORs, 3)
-    xend : XPFloat32Array (float32 numpy or cupy array)
+    xend : npt.ArrayLike (numpy/cupy array or torch tensor)
         end world coordinates of the LORs, shape (nLORs, 3)
-    back_img : XPFloat32Array (float32 numpy or cupy array)
-        output array for the back projection
-    img_origin : XPFloat32Array (float32 numpy or cupy array)
+    img_shape : tuple[int, int, int]
+        the shape of the back projected image
+    img_origin : npt.ArrayLike (numpy/cupy array or torch tensor)
         containing the world coordinates of the image origin (voxel [0,0,0])
-    voxsize : XPFloat32Array (float32 numpy or cupy array)
+    voxsize : npt.ArrayLike (numpy/cupy array or torch tensor)
         array containing the voxel size
-    sino : XPFloat32Array (float32 numpy or cupy array)
+    img_fwd : npt.ArrayLike (numpy/cupy array or torch tensor)
         array of length nLORs containing the values to be back projected
     threadsperblock : int, optional
         by default 32
@@ -480,25 +498,29 @@ def joseph3d_back(xstart: XPFloat32Array,
         break down the back projection in hybrid mode into chunks to
         save memory on the GPU, by default 1
     """
-    img_dim = np.array(back_img.shape, dtype=np.int32)
-    nLORs = xstart.shape[0]
+    nLORs = np.int64(array_api_compat.size(xstart) // 3)
+    xp = array_api_compat.get_namespace(img_fwd)
 
-    # check whether the input image is a numpy or cupy array
-    xp = get_array_module(sino)
+    if (is_cuda_array(img_fwd)):
+        # back projection of cupy or torch GPU array using the cupy raw kernel
+        back_img = cp.zeros(img_shape, dtype=cp.float32)
 
-    if (xp.__name__ == 'cupy'):
-        # back projection of cupy GPU array using the cupy raw kernel
         _joseph3d_back_cuda_kernel(
             (math.ceil(nLORs / threadsperblock), ), (threadsperblock, ),
-            (xstart.ravel(), xend.ravel(), back_img.ravel(),
-             xp.asarray(img_origin), xp.asarray(voxsize), sino.ravel(),
-             np.int64(nLORs), xp.asarray(img_dim)))
-        xp.cuda.Device().synchronize()
+            (cp.asarray(xstart, dtype=cp.float32).ravel(),
+             cp.asarray(xend, dtype=cp.float32).ravel(), back_img.ravel(),
+             cp.asarray(img_origin, dtype=cp.float32),
+             cp.asarray(voxsize, dtype=cp.float32),
+             cp.asarray(img_fwd, dtype=cp.float32).ravel(), nLORs,
+             cp.asarray(back_img.shape, dtype=cp.int32)))
+        cp.cuda.Device().synchronize()
     else:
+        # back projection of numpy or torch CPU array
+        back_img = np.zeros(img_shape, dtype=np.float32)
+
         if num_visible_cuda_devices > 0:
             # back projection of numpy array using the cuda parallelproj lib
-            num_voxel = ctypes.c_longlong(img_dim[0] * img_dim[1] * img_dim[2])
-
+            num_voxel = ctypes.c_longlong(array_api_compat.size(back_img))
             # send image to all devices
             d_back_img = lib_parallelproj_cuda.copy_float_array_to_all_devices(
                 back_img.ravel(), num_voxel)
@@ -508,11 +530,17 @@ def joseph3d_back(xstart: XPFloat32Array,
 
             for i in range(num_chunks):
                 lib_parallelproj_cuda.joseph3d_back_cuda(
-                    xstart[ic[i]:(ic[i + 1]), :].ravel(),
-                    xend[ic[i]:(ic[i + 1]), :].ravel(), d_back_img, img_origin,
-                    voxsize,
-                    sino.ravel()[ic[i]:ic[i + 1]], ic[i + 1] - ic[i], img_dim,
-                    threadsperblock)
+                    np.asarray(xstart, dtype=np.float32).reshape(
+                        -1, 3)[ic[i]:(ic[i + 1]), :].ravel(),
+                    np.asarray(xend, dtype=np.float32).reshape(
+                        -1, 3)[ic[i]:(ic[i + 1]), :].ravel(), d_back_img,
+                    np.asarray(img_origin, dtype=np.float32),
+                    np.asarray(voxsize, dtype=np.float32),
+                    np.asarray(img_fwd,
+                               dtype=np.float32).ravel()[ic[i]:ic[i + 1]],
+                    ic[i + 1] - ic[i],
+                    np.asarray(back_img.shape,
+                               dtype=np.int32), threadsperblock)
 
             # sum all device arrays in the first device
             lib_parallelproj_cuda.sum_float_arrays_on_first_device(
@@ -526,48 +554,50 @@ def joseph3d_back(xstart: XPFloat32Array,
             lib_parallelproj_cuda.free_float_array_on_all_devices(d_back_img)
         else:
             # back projection of numpy array using the openmp parallelproj lib
-            lib_parallelproj_c.joseph3d_back(xstart.ravel(), xend.ravel(),
-                                             back_img.ravel(), img_origin,
-                                             voxsize, sino.ravel(),
-                                             np.int64(nLORs), img_dim)
+            lib_parallelproj_c.joseph3d_back(
+                np.asarray(xstart, dtype=np.float32).ravel(),
+                np.asarray(xend, dtype=np.float32).ravel(), back_img.ravel(),
+                np.asarray(img_origin, dtype=np.float32),
+                np.asarray(voxsize, dtype=np.float32),
+                np.asarray(img_fwd, dtype=np.float32).ravel(), nLORs,
+                np.asarray(back_img.shape, dtype=np.int32))
+
+    return xp.asarray(back_img, device=array_api_compat.device(img_fwd))
 
 
-def joseph3d_fwd_tof_sino(xstart: XPFloat32Array,
-                          xend: XPFloat32Array,
-                          img: XPFloat32Array,
-                          img_origin: XPFloat32Array,
-                          voxsize: XPFloat32Array,
-                          img_fwd: XPFloat32Array,
+def joseph3d_fwd_tof_sino(xstart: npt.ArrayLike,
+                          xend: npt.ArrayLike,
+                          img: npt.ArrayLike,
+                          img_origin: npt.ArrayLike,
+                          voxsize: npt.ArrayLike,
                           tofbin_width: float,
-                          sigma_tof: XPFloat32Array,
-                          tofcenter_offset: XPFloat32Array,
+                          sigma_tof: npt.ArrayLike,
+                          tofcenter_offset: npt.ArrayLike,
                           nsigmas: float,
                           ntofbins: int,
                           threadsperblock: int = 32,
-                          num_chunks: int = 1) -> None:
+                          num_chunks: int = 1) -> npt.ArrayLike:
     """TOF Joseph 3D sinogram forward projector
 
     Parameters
     ----------
-    xstart : XPFloat32Array (float32 numpy or cupy array)
+    xstart : npt.ArrayLike (numpy/cupy array or torch tensor)
         start world coordinates of the LORs, shape (nLORs, 3)
-    xend : XPFloat32Array (float32 numpy or cupy array)
+    xend : npt.ArrayLike (numpy/cupy array or torch tensor)
         end world coordinates of the LORs, shape (nLORs, 3)
-    img : XPFloat32Array (float32 numpy or cupy array)
+    img : npt.ArrayLike (numpy/cupy array or torch tensor)
         containing the 3D image to be projected
-    img_origin : XPFloat32Array (float32 numpy or cupy array)
+    img_origin : npt.ArrayLike (numpy/cupy array or torch tensor)
         containing the world coordinates of the image origin (voxel [0,0,0])
-    voxsize : XPFloat32Array (float32 numpy or cupy array)
+    voxsize : npt.ArrayLike (numpy/cupy array or torch tensor)
         array containing the voxel size
-    img_fwd : XPFloat32Array (float32 numpy or cupy array)
-        output array of size (nLORs*ntofbins) for storing the forward projection 
     tofbin_width : float
         width of the TOF bin in spatial units (same units as xstart)
-    sigma_tof : XPFloat32Array (float32 numpy or cupy array)
+    sigma_tof : npt.ArrayLike (numpy/cupy array or torch tensor)
         sigma of Gaussian TOF kernel in spatial units (same units as xstart)
         can be an array of length 1 -> same sigma for all LORs
         or an array of length nLORs -> LOR dependent sigma
-    tofcenter_offset: XPFloat32Array (float32 numpy or cupy array)
+    tofcenter_offset: npt.ArrayLike (numpy/cupy array or torch tensor)
         center offset of the central TOF bin in spatial units (same units as xstart)
         can be an array of length 1 -> same offset for all LORs
         or an array of length nLORs -> LOR dependent offset
@@ -580,36 +610,48 @@ def joseph3d_fwd_tof_sino(xstart: XPFloat32Array,
     num_chunks : int, optional
         break down the projection in hybrid mode into chunks to
         save memory on the GPU, by default 1
+
+    Returns
+    -------
+    npt.ArrayLike (numpy/cupy array or torch tensor)
     """
-    img_dim = np.array(img.shape, dtype=np.int32)
-    nLORs = xstart.shape[0]
+
+    nLORs = np.int64(array_api_compat.size(xstart) // 3)
+    xp = array_api_compat.get_namespace(img)
 
     lor_dependent_sigma_tof = np.uint8(sigma_tof.shape[0] == nLORs)
     lor_dependent_tofcenter_offset = np.uint8(
         tofcenter_offset.shape[0] == nLORs)
 
-    # check whether the input image is a numpy or cupy array
-    xp = get_array_module(img)
+    if (is_cuda_array(img)):
+        # projection of cupy or torch GPU array using the cupy raw kernel
+        img_fwd = cp.zeros(xstart.shape[:-1] + (ntofbins, ), dtype=cp.float32)
 
-    if (xp.__name__ == 'cupy'):
-        # projection of cupy GPU array using the cupy raw kernel
         _joseph3d_fwd_tof_sino_cuda_kernel(
             (math.ceil(nLORs / threadsperblock), ), (threadsperblock, ),
-            (xstart.ravel(), xend.ravel(), img.ravel(), xp.asarray(img_origin),
-             xp.asarray(voxsize), img_fwd.ravel(), np.int64(nLORs),
-             xp.asarray(img_dim), xp.int16(ntofbins), np.float32(tofbin_width),
-             xp.asarray(sigma_tof.ravel()), xp.asarray(
-                 tofcenter_offset.ravel()), xp.float32(nsigmas),
+            (cp.asarray(xstart, dtype=cp.float32).ravel(),
+             cp.asarray(xend, dtype=cp.float32).ravel(),
+             cp.asarray(img, dtype=cp.float32).ravel(),
+             cp.asarray(img_origin, dtype=cp.float32),
+             cp.asarray(voxsize, dtype=cp.float32), img_fwd.ravel(), nLORs,
+             cp.asarray(img.shape, dtype=cp.int32), np.int16(ntofbins),
+             np.float32(tofbin_width), cp.asarray(sigma_tof,
+                                                  dtype=cp.float32).ravel(),
+             cp.asarray(tofcenter_offset,
+                        dtype=cp.float32).ravel(), np.float32(nsigmas),
              lor_dependent_sigma_tof, lor_dependent_tofcenter_offset))
-        xp.cuda.Device().synchronize()
+        cp.cuda.Device().synchronize()
     else:
+        # projection of numpy or torch CPU array
+        img_fwd = np.zeros(xstart.shape[:-1] + (ntofbins, ), dtype=np.float32)
+
         if num_visible_cuda_devices > 0:
-            # back projection of numpy array using the cuda parallelproj lib
-            num_voxel = ctypes.c_longlong(img_dim[0] * img_dim[1] * img_dim[2])
+            # projection using libparallelproj_cuda
+            num_voxel = ctypes.c_longlong(array_api_compat.size(img))
 
             # send image to all devices
             d_img = lib_parallelproj_cuda.copy_float_array_to_all_devices(
-                img.ravel(), num_voxel)
+                np.asarray(img, dtype=np.float32).ravel(), num_voxel)
 
             # split call to GPU lib into chunks (useful for systems with limited memory)
             ic = calc_chunks(nLORs, num_chunks)
@@ -630,63 +672,79 @@ def joseph3d_fwd_tof_sino(xstart: XPFloat32Array,
                     ioff1 = 1
 
                 lib_parallelproj_cuda.joseph3d_fwd_tof_sino_cuda(
-                    xstart[ic[i]:(ic[i + 1]), :].ravel(),
-                    xend[ic[i]:(ic[i + 1]), :].ravel(), d_img, img_origin,
-                    voxsize, img_fwd[ic[i]:(ic[i + 1]), :].ravel(),
-                    np.int64(ic[i + 1] - ic[i]), img_dim,
+                    np.asarray(xstart, dtype=np.float32).reshape(
+                        -1, 3)[ic[i]:(ic[i + 1]), :].ravel(),
+                    np.asarray(xend, dtype=np.float32).reshape(
+                        -1, 3)[ic[i]:(ic[i + 1]), :].ravel(), d_img,
+                    np.asarray(img_origin, dtype=np.float32),
+                    np.asarray(voxsize, dtype=np.float32),
+                    img_fwd.ravel()[ic[i]:(ic[i + 1])], ic[i + 1] - ic[i],
+                    np.asarray(img.shape, dtype=np.int32),
                     np.float32(tofbin_width),
-                    sigma_tof.ravel()[isig0:isig1],
-                    tofcenter_offset.ravel()[ioff0:ioff1], np.float32(nsigmas),
-                    np.int16(ntofbins), lor_dependent_sigma_tof,
-                    lor_dependent_tofcenter_offset, threadsperblock)
+                    np.asarray(sigma_tof,
+                               dtype=np.float32).ravel()[isig0:isig1],
+                    np.asarray(tofcenter_offset,
+                               dtype=np.float32).ravel()[ioff0:ioff1],
+                    np.float32(nsigmas), np.int16(ntofbins),
+                    lor_dependent_sigma_tof, lor_dependent_tofcenter_offset,
+                    threadsperblock)
 
             # free image device arrays
             lib_parallelproj_cuda.free_float_array_on_all_devices(d_img)
         else:
-            # back projection of numpy array using the openmp parallelproj lib
+            # projection the openmp libparallelproj_c
             lib_parallelproj_c.joseph3d_fwd_tof_sino(
-                xstart.ravel(), xend.ravel(), img.ravel(), img_origin, voxsize,
-                img_fwd.ravel(), np.int64(nLORs), img_dim, tofbin_width,
-                sigma_tof.ravel(), tofcenter_offset.ravel(), nsigmas, ntofbins,
+                np.asarray(xstart, dtype=np.float32).ravel(),
+                np.asarray(xend, dtype=np.float32).ravel(),
+                np.asarray(img, dtype=np.float32).ravel(),
+                np.asarray(img_origin, dtype=np.float32),
+                np.asarray(voxsize, dtype=np.float32), img_fwd.ravel(),
+                np.int64(nLORs), np.asarray(img.shape, dtype=np.int32),
+                np.float32(tofbin_width),
+                np.asarray(sigma_tof, dtype=np.float32).ravel(),
+                np.asarray(tofcenter_offset, dtype=np.float32).ravel(),
+                np.float32(nsigmas), np.int16(ntofbins),
                 lor_dependent_sigma_tof, lor_dependent_tofcenter_offset)
 
+    return xp.asarray(img_fwd, device=array_api_compat.device(img))
 
-def joseph3d_back_tof_sino(xstart: XPFloat32Array,
-                           xend: XPFloat32Array,
-                           back_img: XPFloat32Array,
-                           img_origin: XPFloat32Array,
-                           voxsize: XPFloat32Array,
-                           sino: XPFloat32Array,
+
+def joseph3d_back_tof_sino(xstart: npt.ArrayLike,
+                           xend: npt.ArrayLike,
+                           img_shape: tuple[int, int, int],
+                           img_origin: npt.ArrayLike,
+                           voxsize: npt.ArrayLike,
+                           img_fwd: npt.ArrayLike,
                            tofbin_width: float,
-                           sigma_tof: XPFloat32Array,
-                           tofcenter_offset: XPFloat32Array,
+                           sigma_tof: npt.ArrayLike,
+                           tofcenter_offset: npt.ArrayLike,
                            nsigmas: float,
                            ntofbins: int,
                            threadsperblock: int = 32,
-                           num_chunks: int = 1) -> None:
+                           num_chunks: int = 1) -> npt.ArrayLike:
     """TOF Joseph 3D sinogram back projector
 
     Parameters
     ----------
-    xstart : XPFloat32Array (float32 numpy or cupy array)
+    xstart : npt.ArrayLike (numpy/cupy array or torch tensor)
         start world coordinates of the LORs, shape (nLORs, 3)
-    xend : XPFloat32Array (float32 numpy or cupy array)
+    xend : npt.ArrayLike (numpy/cupy array or torch tensor)
         end world coordinates of the LORs, shape (nLORs, 3)
-    back_img : XPFloat32Array (float32 numpy or cupy array)
-        output array to be back projected
-    img_origin : XPFloat32Array (float32 numpy or cupy array)
+    img_shape : tuple[int, int, int]
+        the shape of the back projected image
+    img_origin : npt.ArrayLike (numpy/cupy array or torch tensor)
         containing the world coordinates of the image origin (voxel [0,0,0])
-    voxsize : XPFloat32Array (float32 numpy or cupy array)
+    voxsize : npt.ArrayLike (numpy/cupy array or torch tensor)
         array containing the voxel size
-    sino : XPFloat32Array (float32 numpy or cupy array)
-        TOF sinogram of size (nLORs*ntofbins) to be back projected 
-    threadsperblock : int, optional
-        by default 32
-    sigma_tof : XPFloat32Array (float32 numpy or cupy array)
+    img_fwd : npt.ArrayLike (numpy/cupy array or torch tensor)
+        array of size nLOR*ntofbins containing the values to be back projected
+    tofbin_width : float
+        width of the TOF bin in spatial units (same units as xstart)
+    sigma_tof : npt.ArrayLike (numpy/cupy array or torch tensor)
         sigma of Gaussian TOF kernel in spatial units (same units as xstart)
         can be an array of length 1 -> same sigma for all LORs
         or an array of length nLORs -> LOR dependent sigma
-    tofcenter_offset: XPFloat32Array (float32 numpy or cupy array)
+    tofcenter_offset: npt.ArrayLike (numpy/cupy array or torch tensor)
         center offset of the central TOF bin in spatial units (same units as xstart)
         can be an array of length 1 -> same offset for all LORs
         or an array of length nLORs -> LOR dependent offset
@@ -694,39 +752,49 @@ def joseph3d_back_tof_sino(xstart: XPFloat32Array,
         number of sigmas to consider when Gaussian kernel is evaluated (truncated)
     ntofbins: int
         total number of TOF bins
+    threadsperblock : int, optional
+        by default 32
     num_chunks : int, optional
         break down the projection in hybrid mode into chunks to
         save memory on the GPU, by default 1
-    tofbin_width : float
-        width of the TOF bin in spatial units (same units as xstart)
+
+    Returns
+    -------
+    npt.ArrayLike (numpy/cupy array or torch tensor)
     """
 
-    img_dim = np.array(back_img.shape, dtype=np.int32)
-    nLORs = xstart.shape[0]
+    nLORs = np.int64(array_api_compat.size(xstart) // 3)
+    xp = array_api_compat.get_namespace(img_fwd)
 
     lor_dependent_sigma_tof = np.uint8(sigma_tof.shape[0] == nLORs)
     lor_dependent_tofcenter_offset = np.uint8(
         tofcenter_offset.shape[0] == nLORs)
 
-    # check whether the input image is a numpy or cupy array
-    xp = get_array_module(sino)
+    if (is_cuda_array(img_fwd)):
+        # back projection of cupy or torch GPU array using the cupy raw kernel
+        back_img = cp.zeros(img_shape, dtype=cp.float32)
 
-    if (xp.__name__ == 'cupy'):
-        # projection of cupy GPU array using the cupy raw kernel
         _joseph3d_back_tof_sino_cuda_kernel(
             (math.ceil(nLORs / threadsperblock), ), (threadsperblock, ),
-            (xstart.ravel(), xend.ravel(), back_img, xp.asarray(img_origin),
-             xp.asarray(voxsize), sino.ravel(), np.int64(nLORs),
-             xp.asarray(img_dim), np.int16(ntofbins), np.float32(tofbin_width),
-             xp.asarray(sigma_tof).ravel(),
-             xp.asarray(tofcenter_offset).ravel(), np.float32(nsigmas),
+            (cp.asarray(xstart, dtype=cp.float32).ravel(),
+             cp.asarray(xend, dtype=cp.float32).ravel(), back_img.ravel(),
+             cp.asarray(img_origin, dtype=cp.float32),
+             cp.asarray(voxsize, dtype=cp.float32),
+             cp.asarray(img_fwd, dtype=cp.float32).ravel(), nLORs,
+             cp.asarray(back_img.shape, dtype=cp.int32), np.int16(ntofbins),
+             np.float32(tofbin_width), cp.asarray(sigma_tof,
+                                                  dtype=cp.float32).ravel(),
+             cp.asarray(tofcenter_offset,
+                        dtype=cp.float32).ravel(), np.float32(nsigmas),
              lor_dependent_sigma_tof, lor_dependent_tofcenter_offset))
-        xp.cuda.Device().synchronize()
+        cp.cuda.Device().synchronize()
     else:
+        # back projection of numpy or torch CPU array
+        back_img = np.zeros(img_shape, dtype=np.float32)
+
         if num_visible_cuda_devices > 0:
             # back projection of numpy array using the cuda parallelproj lib
-            num_voxel = ctypes.c_longlong(img_dim[0] * img_dim[1] * img_dim[2])
-
+            num_voxel = ctypes.c_longlong(array_api_compat.size(back_img))
             # send image to all devices
             d_back_img = lib_parallelproj_cuda.copy_float_array_to_all_devices(
                 back_img.ravel(), num_voxel)
@@ -750,12 +818,22 @@ def joseph3d_back_tof_sino(xstart: XPFloat32Array,
                     ioff1 = 1
 
                 lib_parallelproj_cuda.joseph3d_back_tof_sino_cuda(
-                    xstart[ic[i]:(ic[i + 1]), :].ravel(),
-                    xend[ic[i]:(ic[i + 1]), :].ravel(), d_back_img, img_origin,
-                    voxsize, sino[ic[i]:(ic[i + 1]), :].ravel(),
-                    ic[i + 1] - ic[i], img_dim, tofbin_width,
-                    sigma_tof.ravel()[isig0:isig1],
-                    tofcenter_offset.ravel()[ioff0:ioff1], nsigmas, ntofbins,
+                    np.asarray(xstart, dtype=np.float32).reshape(
+                        -1, 3)[ic[i]:(ic[i + 1]), :].ravel(),
+                    np.asarray(xend, dtype=np.float32).reshape(
+                        -1, 3)[ic[i]:(ic[i + 1]), :].ravel(), d_back_img,
+                    np.asarray(img_origin, dtype=np.float32),
+                    np.asarray(voxsize, dtype=np.float32),
+                    np.asarray(img_fwd,
+                               dtype=np.float32).ravel()[ic[i]:ic[i + 1]],
+                    ic[i + 1] - ic[i],
+                    np.asarray(back_img.shape, dtype=np.int32),
+                    np.float32(tofbin_width),
+                    np.asarray(sigma_tof,
+                               dtype=np.float32).ravel()[isig0:isig1],
+                    np.asarray(tofcenter_offset,
+                               dtype=np.float32).ravel()[ioff0:ioff1],
+                    np.float32(nsigmas), np.int16(ntofbins),
                     lor_dependent_sigma_tof, lor_dependent_tofcenter_offset,
                     threadsperblock)
 
@@ -772,90 +850,107 @@ def joseph3d_back_tof_sino(xstart: XPFloat32Array,
         else:
             # back projection of numpy array using the openmp parallelproj lib
             lib_parallelproj_c.joseph3d_back_tof_sino(
-                xstart.ravel(), xend.ravel(), back_img.ravel(), img_origin,
-                voxsize, sino.ravel(), np.int64(nLORs), img_dim, tofbin_width,
-                sigma_tof.ravel(), tofcenter_offset.ravel(), nsigmas, ntofbins,
+                np.asarray(xstart, dtype=np.float32).ravel(),
+                np.asarray(xend, dtype=np.float32).ravel(), back_img.ravel(),
+                np.asarray(img_origin, dtype=np.float32),
+                np.asarray(voxsize, dtype=np.float32),
+                np.asarray(img_fwd, dtype=np.float32).ravel(), nLORs,
+                np.asarray(back_img.shape, dtype=np.int32),
+                np.float32(tofbin_width),
+                np.asarray(sigma_tof, dtype=np.float32).ravel(),
+                np.asarray(tofcenter_offset, dtype=np.float32).ravel(),
+                np.float32(nsigmas), np.int16(ntofbins),
                 lor_dependent_sigma_tof, lor_dependent_tofcenter_offset)
 
+    return xp.asarray(back_img, device=array_api_compat.device(img_fwd))
 
-def joseph3d_fwd_tof_lm(xstart: XPFloat32Array,
-                        xend: XPFloat32Array,
-                        img: XPFloat32Array,
-                        img_origin: XPFloat32Array,
-                        voxsize: XPFloat32Array,
-                        img_fwd: XPFloat32Array,
+
+def joseph3d_fwd_tof_lm(xstart: npt.ArrayLike,
+                        xend: npt.ArrayLike,
+                        img: npt.ArrayLike,
+                        img_origin: npt.ArrayLike,
+                        voxsize: npt.ArrayLike,
                         tofbin_width: float,
-                        sigma_tof: XPFloat32Array,
-                        tofcenter_offset: XPFloat32Array,
+                        sigma_tof: npt.ArrayLike,
+                        tofcenter_offset: npt.ArrayLike,
                         nsigmas: float,
-                        tofbin: XPShortArray,
+                        tofbin: npt.ArrayLike,
                         threadsperblock: int = 32,
-                        num_chunks: int = 1) -> None:
+                        num_chunks: int = 1) -> npt.ArrayLike:
     """TOF Joseph 3D listmode forward projector
 
     Parameters
     ----------
-    xstart : XPFloat32Array (float32 numpy or cupy array)
-        start world coordinates of the LORs, shape (nLORs, 3)
-    xend : XPFloat32Array (float32 numpy or cupy array)
-        end world coordinates of the LORs, shape (nLORs, 3)
-    img : XPFloat32Array (float32 numpy or cupy array)
+    xstart : npt.ArrayLike (numpy/cupy array or torch tensor)
+        start world coordinates of the event LORs, shape (num_events, 3)
+    xend : npt.ArrayLike (numpy/cupy array or torch tensor)
+        end world coordinates of the event LORs, shape (num_events, 3)
+    img : npt.ArrayLike (numpy/cupy array or torch tensor)
         containing the 3D image to be projected
-    img_origin : XPFloat32Array (float32 numpy or cupy array)
+    img_origin : npt.ArrayLike (numpy/cupy array or torch tensor)
         containing the world coordinates of the image origin (voxel [0,0,0])
-    voxsize : XPFloat32Array (float32 numpy or cupy array)
+    voxsize : npt.ArrayLike (numpy/cupy array or torch tensor)
         array containing the voxel size
-    img_fwd : XPFloat32Array (float32 numpy or cupy array)
-        output array of size (xstart.shape[0] / nevents) for storing the forward projection 
     tofbin_width : float
         width of the TOF bin in spatial units (same units as xstart)
-    sigma_tof : XPFloat32Array (float32 numpy or cupy array)
+    sigma_tof : npt.ArrayLike (numpy/cupy array or torch tensor)
         sigma of Gaussian TOF kernel in spatial units (same units as xstart)
         can be an array of length 1 -> same sigma for all LORs
         or an array of length nLORs -> LOR dependent sigma
-    tofcenter_offset: XPFloat32Array (float32 numpy or cupy array)
+    tofcenter_offset: npt.ArrayLike (numpy/cupy array or torch tensor)
         center offset of the central TOF bin in spatial units (same units as xstart)
-        can be an array of length 1 -> same offset for all LORs
-        or an array of length nLORs -> LOR dependent offset
+        can be an array of length 1 -> same offset for all events
+        or an array of length num_events -> event dependent offset
     nsigmas: float
         number of sigmas to consider when Gaussian kernel is evaluated (truncated)
-    tofbin: XPShortArray
+    tofbin: npt.ArrayLike (numpy/cupy array or torch tensor)
         array containing the tof bin of the events
     threadsperblock : int, optional
         by default 32
     num_chunks : int, optional
         break down the projection in hybrid mode into chunks to
         save memory on the GPU, by default 1
+
+    Returns
+    -------
+    npt.ArrayLike (numpy/cupy array or torch tensor)
     """
 
-    img_dim = np.array(img.shape, dtype=np.int32)
-    nLORs = xstart.shape[0]
+    nLORs = np.int64(xstart.shape[0])
+    xp = array_api_compat.get_namespace(img)
 
-    lor_dependent_sigma_tof = int(sigma_tof.shape[0] == nLORs)
-    lor_dependent_tofcenter_offset = int(tofcenter_offset.shape[0] == nLORs)
+    lor_dependent_sigma_tof = np.uint8(sigma_tof.shape[0] == nLORs)
+    lor_dependent_tofcenter_offset = np.uint8(
+        tofcenter_offset.shape[0] == nLORs)
 
-    # check whether the input image is a numpy or cupy array
-    xp = get_array_module(img)
+    if (is_cuda_array(img)):
+        # projection of cupy or torch GPU array using the cupy raw kernel
+        img_fwd = cp.zeros(nLORs, dtype=cp.float32)
 
-    if (xp.__name__ == 'cupy'):
-        # projection of cupy GPU array using the cupy raw kernel
         _joseph3d_fwd_tof_lm_cuda_kernel(
             (math.ceil(nLORs / threadsperblock), ), (threadsperblock, ),
-            (xstart.ravel(), xend.ravel(), img.ravel(), xp.asarray(img_origin),
-             xp.asarray(voxsize), img_fwd, np.int64(nLORs),
-             xp.asarray(img_dim), np.float32(tofbin_width),
-             xp.asarray(sigma_tof), xp.asarray(tofcenter_offset),
-             np.float32(nsigmas), tofbin, lor_dependent_sigma_tof,
-             lor_dependent_tofcenter_offset))
-        xp.cuda.Device().synchronize()
+            (cp.asarray(xstart, dtype=cp.float32).ravel(),
+             cp.asarray(xend, dtype=cp.float32).ravel(),
+             cp.asarray(img, dtype=cp.float32).ravel(),
+             cp.asarray(img_origin, dtype=cp.float32),
+             cp.asarray(voxsize, dtype=cp.float32), img_fwd, nLORs,
+             cp.asarray(img.shape, dtype=cp.int32), np.float32(tofbin_width),
+             cp.asarray(sigma_tof, dtype=cp.float32),
+             cp.asarray(tofcenter_offset, dtype=cp.float32),
+             np.float32(nsigmas), cp.asarray(tofbin, dtype=cp.int16),
+             lor_dependent_sigma_tof, lor_dependent_tofcenter_offset))
+        cp.cuda.Device().synchronize()
     else:
+        # projection of numpy or torch CPU array
+        img_fwd = np.zeros(nLORs, dtype=np.float32)
+
         if num_visible_cuda_devices > 0:
-            # projection of numpy array using the cuda parallelproj lib
-            num_voxel = ctypes.c_longlong(img_dim[0] * img_dim[1] * img_dim[2])
+            # projection using libparallelproj_cuda
+            num_voxel = ctypes.c_longlong(array_api_compat.size(img))
 
             # send image to all devices
             d_img = lib_parallelproj_cuda.copy_float_array_to_all_devices(
-                img.ravel(), num_voxel)
+                np.asarray(img, dtype=np.float32).ravel(), num_voxel)
 
             # split call to GPU lib into chunks (useful for systems with limited memory)
             ic = calc_chunks(nLORs, num_chunks)
@@ -876,101 +971,128 @@ def joseph3d_fwd_tof_lm(xstart: XPFloat32Array,
                     ioff1 = 1
 
                 lib_parallelproj_cuda.joseph3d_fwd_tof_lm_cuda(
-                    xstart.ravel()[(3 * ic[i]):(3 * ic[i + 1])],
-                    xend.ravel()[(3 * ic[i]):(3 * ic[i + 1])], d_img,
-                    img_origin, voxsize, img_fwd[ic[i]:ic[i + 1]],
-                    ic[i + 1] - ic[i], img_dim, tofbin_width,
-                    sigma_tof[isig0:isig1], tofcenter_offset[ioff0:ioff1],
-                    nsigmas, tofbin[ic[i]:ic[i + 1]], lor_dependent_sigma_tof,
-                    lor_dependent_tofcenter_offset, threadsperblock)
+                    np.asarray(xstart,
+                               dtype=np.float32)[ic[i]:(ic[i + 1]), :].ravel(),
+                    np.asarray(xend,
+                               dtype=np.float32)[ic[i]:(ic[i + 1]), :].ravel(),
+                    d_img, np.asarray(img_origin, dtype=np.float32),
+                    np.asarray(voxsize, dtype=np.float32),
+                    img_fwd[ic[i]:(ic[i + 1])], ic[i + 1] - ic[i],
+                    np.asarray(img.shape, dtype=np.int32),
+                    np.float32(tofbin_width),
+                    np.asarray(sigma_tof, dtype=np.float32)[isig0:isig1],
+                    np.asarray(tofcenter_offset,
+                               dtype=np.float32)[ioff0:ioff1],
+                    np.float32(nsigmas),
+                    np.asarray(tofbin, dtype=np.int16)[ic[i]:(ic[i + 1])],
+                    lor_dependent_sigma_tof, lor_dependent_tofcenter_offset,
+                    threadsperblock)
 
             # free image device arrays
-            lib_parallelproj_cuda.free_float_array_on_all_devices(
-                d_img, num_voxel)
+            lib_parallelproj_cuda.free_float_array_on_all_devices(d_img)
         else:
-            # projection of numpy array using the openmp parallelproj lib
+            # projection the openmp libparallelproj_c
             lib_parallelproj_c.joseph3d_fwd_tof_lm(
-                xstart.ravel(), xend.ravel(), img.ravel(), img_origin, voxsize,
-                img_fwd, np.int64(nLORs), img_dim, tofbin_width, sigma_tof,
-                tofcenter_offset, nsigmas, tofbin, lor_dependent_sigma_tof,
-                lor_dependent_tofcenter_offset)
+                np.asarray(xstart, dtype=np.float32).ravel(),
+                np.asarray(xend, dtype=np.float32).ravel(),
+                np.asarray(img, dtype=np.float32).ravel(),
+                np.asarray(img_origin, dtype=np.float32),
+                np.asarray(voxsize, dtype=np.float32), img_fwd,
+                np.int64(nLORs), np.asarray(img.shape, dtype=np.int32),
+                np.float32(tofbin_width),
+                np.asarray(sigma_tof, dtype=np.float32),
+                np.asarray(tofcenter_offset, dtype=np.float32),
+                np.float32(nsigmas), np.asarray(tofbin, dtype=np.int16),
+                lor_dependent_sigma_tof, lor_dependent_tofcenter_offset)
+
+    return xp.asarray(img_fwd, device=array_api_compat.device(img))
 
 
-def joseph3d_back_tof_lm(xstart: XPFloat32Array,
-                         xend: XPFloat32Array,
-                         back_img: XPFloat32Array,
-                         img_origin: XPFloat32Array,
-                         voxsize: XPFloat32Array,
-                         lst: XPFloat32Array,
+def joseph3d_back_tof_lm(xstart: npt.ArrayLike,
+                         xend: npt.ArrayLike,
+                         img_shape: tuple[int, int, int],
+                         img_origin: npt.ArrayLike,
+                         voxsize: npt.ArrayLike,
+                         img_fwd: npt.ArrayLike,
                          tofbin_width: float,
-                         sigma_tof: XPFloat32Array,
-                         tofcenter_offset: XPFloat32Array,
+                         sigma_tof: npt.ArrayLike,
+                         tofcenter_offset: npt.ArrayLike,
                          nsigmas: float,
-                         tofbin: XPShortArray,
+                         tofbin: npt.ArrayLike,
                          threadsperblock: int = 32,
-                         num_chunks: int = 1) -> None:
+                         num_chunks: int = 1) -> npt.ArrayLike:
     """TOF Joseph 3D listmode back projector
 
     Parameters
     ----------
-    xstart : XPFloat32Array (float32 numpy or cupy array)
-        start world coordinates of the LORs, shape (nLORs, 3)
-    xend : XPFloat32Array (float32 numpy or cupy array)
-        end world coordinates of the LORs, shape (nLORs, 3)
-    back_img : XPFloat32Array (float32 numpy or cupy array)
-        output array to be back projected
-    img_origin : XPFloat32Array (float32 numpy or cupy array)
+    xstart : npt.ArrayLike (numpy/cupy array or torch tensor)
+        start world coordinates of the event LORs, shape (nLORs, 3)
+    xend : npt.ArrayLike (numpy/cupy array or torch tensor)
+        end world coordinates of the event LORs, shape (nLORs, 3)
+    img_shape : tuple[int, int, int]
+        the shape of the back projected image
+    img_origin : npt.ArrayLike (numpy/cupy array or torch tensor)
         containing the world coordinates of the image origin (voxel [0,0,0])
-    voxsize : XPFloat32Array (float32 numpy or cupy array)
+    voxsize : npt.ArrayLike (numpy/cupy array or torch tensor)
         array containing the voxel size
-    lst : XPFloat32Array (float32 numpy or cupy array)
-        "list" of values to be projected
-    threadsperblock : int, optional
-        by default 32
-    sigma_tof : XPFloat32Array (float32 numpy or cupy array)
+    img_fwd : npt.ArrayLike (numpy/cupy array or torch tensor)
+        array of size num_events containing the values to be back projected
+    tofbin_width : float
+        width of the TOF bin in spatial units (same units as xstart)
+    sigma_tof : npt.ArrayLike (numpy/cupy array or torch tensor)
         sigma of Gaussian TOF kernel in spatial units (same units as xstart)
         can be an array of length 1 -> same sigma for all LORs
-        or an array of length nLORs -> LOR dependent sigma
-    tofcenter_offset: XPFloat32Array (float32 numpy or cupy array)
+        or an array of length num_events -> event dependent sigma
+    tofcenter_offset: npt.ArrayLike (numpy/cupy array or torch tensor)
         center offset of the central TOF bin in spatial units (same units as xstart)
         can be an array of length 1 -> same offset for all LORs
-        or an array of length nLORs -> LOR dependent offset
+        or an array of length num_events -> event dependent offset
     nsigmas: float
         number of sigmas to consider when Gaussian kernel is evaluated (truncated)
-    tofbin: XPShortArray
-        array containing the tof bin of the events
+    tofbin: npt.ArrayLike
+        array with the tofbin of the events
+    threadsperblock : int, optional
+        by default 32
     num_chunks : int, optional
         break down the projection in hybrid mode into chunks to
         save memory on the GPU, by default 1
-    tofbin_width : float
-        width of the TOF bin in spatial units (same units as xstart)
+
+    Returns
+    -------
+    npt.ArrayLike (numpy/cupy array or torch tensor)
     """
 
-    img_dim = np.array(back_img.shape, dtype=np.int32)
-    nLORs = xstart.shape[0]
+    nLORs = np.int64(xstart.shape[0])
+    xp = array_api_compat.get_namespace(img_fwd)
 
-    lor_dependent_sigma_tof = int(sigma_tof.shape[0] == nLORs)
-    lor_dependent_tofcenter_offset = int(tofcenter_offset.shape[0] == nLORs)
+    lor_dependent_sigma_tof = np.uint8(sigma_tof.shape[0] == nLORs)
+    lor_dependent_tofcenter_offset = np.uint8(
+        tofcenter_offset.shape[0] == nLORs)
 
-    # check whether the input is a numpy or cupy array
-    xp = get_array_module(lst)
+    if (is_cuda_array(img_fwd)):
+        # back projection of cupy or torch GPU array using the cupy raw kernel
+        back_img = cp.zeros(img_shape, dtype=cp.float32)
 
-    if (xp.__name__ == 'cupy'):
-        # projection of cupy GPU array using the cupy raw kernel
         _joseph3d_back_tof_lm_cuda_kernel(
             (math.ceil(nLORs / threadsperblock), ), (threadsperblock, ),
-            (xstart.ravel(), xend.ravel(), back_img.ravel(),
-             xp.asarray(img_origin), xp.asarray(voxsize), lst, np.int64(nLORs),
-             xp.asarray(img_dim), np.float32(tofbin_width),
-             xp.asarray(sigma_tof), xp.asarray(tofcenter_offset),
-             np.float32(nsigmas), tofbin, lor_dependent_sigma_tof,
-             lor_dependent_tofcenter_offset))
-        xp.cuda.Device().synchronize()
+            (cp.asarray(xstart, dtype=cp.float32).ravel(),
+             cp.asarray(xend, dtype=cp.float32).ravel(), back_img.ravel(),
+             cp.asarray(img_origin, dtype=cp.float32),
+             cp.asarray(voxsize, dtype=cp.float32),
+             cp.asarray(img_fwd, dtype=cp.float32), nLORs,
+             cp.asarray(back_img.shape, dtype=cp.int32),
+             np.float32(tofbin_width), cp.asarray(sigma_tof, dtype=cp.float32),
+             cp.asarray(tofcenter_offset, dtype=cp.float32),
+             np.float32(nsigmas), cp.asarray(tofbin, dtype=cp.int16),
+             lor_dependent_sigma_tof, lor_dependent_tofcenter_offset))
+        cp.cuda.Device().synchronize()
     else:
+        # back projection of numpy or torch CPU array
+        back_img = np.zeros(img_shape, dtype=np.float32)
+
         if num_visible_cuda_devices > 0:
             # back projection of numpy array using the cuda parallelproj lib
-            num_voxel = ctypes.c_longlong(img_dim[0] * img_dim[1] * img_dim[2])
-
+            num_voxel = ctypes.c_longlong(array_api_compat.size(back_img))
             # send image to all devices
             d_back_img = lib_parallelproj_cuda.copy_float_array_to_all_devices(
                 back_img.ravel(), num_voxel)
@@ -994,13 +1116,23 @@ def joseph3d_back_tof_lm(xstart: XPFloat32Array,
                     ioff1 = 1
 
                 lib_parallelproj_cuda.joseph3d_back_tof_lm_cuda(
-                    xstart.ravel()[(3 * ic[i]):(3 * ic[i + 1])],
-                    xend.ravel()[(3 * ic[i]):(3 * ic[i + 1])], d_back_img,
-                    img_origin, voxsize, lst[ic[i]:ic[i + 1]],
-                    ic[i + 1] - ic[i], img_dim, tofbin_width,
-                    sigma_tof[isig0:isig1], tofcenter_offset[ioff0:ioff1],
-                    nsigmas, tofbin[ic[i]:ic[i + 1]], lor_dependent_sigma_tof,
-                    lor_dependent_tofcenter_offset, threadsperblock)
+                    np.asarray(xstart,
+                               dtype=np.float32)[ic[i]:(ic[i + 1]), :].ravel(),
+                    np.asarray(xend,
+                               dtype=np.float32)[ic[i]:(ic[i + 1]), :].ravel(),
+                    d_back_img, np.asarray(img_origin, dtype=np.float32),
+                    np.asarray(voxsize, dtype=np.float32),
+                    np.asarray(img_fwd, dtype=np.float32)[ic[i]:ic[i + 1]],
+                    ic[i + 1] - ic[i],
+                    np.asarray(back_img.shape, dtype=np.int32),
+                    np.float32(tofbin_width),
+                    np.asarray(sigma_tof, dtype=np.float32)[isig0:isig1],
+                    np.asarray(tofcenter_offset,
+                               dtype=np.float32)[ioff0:ioff1],
+                    np.float32(nsigmas),
+                    np.asarray(tofbin, dtype=np.int16)[ic[i]:(ic[i + 1])],
+                    lor_dependent_sigma_tof, lor_dependent_tofcenter_offset,
+                    threadsperblock)
 
             # sum all device arrays in the first device
             lib_parallelproj_cuda.sum_float_arrays_on_first_device(
@@ -1011,35 +1143,20 @@ def joseph3d_back_tof_lm(xstart: XPFloat32Array,
                 d_back_img, num_voxel, 0, back_img.ravel())
 
             # free image device arrays
-            lib_parallelproj_cuda.free_float_array_on_all_devices(
-                d_back_img, num_voxel)
+            lib_parallelproj_cuda.free_float_array_on_all_devices(d_back_img)
         else:
             # back projection of numpy array using the openmp parallelproj lib
             lib_parallelproj_c.joseph3d_back_tof_lm(
-                xstart.ravel(),
-                xend.ravel(), back_img.ravel(), img_origin, voxsize, lst,
-                np.int64(nLORs), img_dim, tofbin_width, sigma_tof,
-                tofcenter_offset, nsigmas, tofbin, lor_dependent_sigma_tof,
-                lor_dependent_tofcenter_offset)
+                np.asarray(xstart, dtype=np.float32).ravel(),
+                np.asarray(xend, dtype=np.float32).ravel(), back_img.ravel(),
+                np.asarray(img_origin, dtype=np.float32),
+                np.asarray(voxsize, dtype=np.float32),
+                np.asarray(img_fwd, dtype=np.float32), nLORs,
+                np.asarray(back_img.shape, dtype=np.int32),
+                np.float32(tofbin_width),
+                np.asarray(sigma_tof, dtype=np.float32),
+                np.asarray(tofcenter_offset, dtype=np.float32),
+                np.float32(nsigmas), np.asarray(tofbin, dtype=np.int16),
+                lor_dependent_sigma_tof, lor_dependent_tofcenter_offset)
 
-
-#-----------------------------------------------------------------------------
-
-
-def get_array_module(array: npt.NDArray | cpt.NDArray) -> ModuleType:
-    """get the module of a numpy or cupy array
-
-    Parameters
-    ----------
-    array : npt.NDArray | cpt.NDArray
-        a numpy or cupy array
-
-    Returns
-    -------
-    ModuleType
-        the numpy or cupy module
-    """    
-    if cupy_enabled:
-        return cp.get_array_module(array)
-    else:
-        return np
+    return xp.asarray(back_img, device=array_api_compat.device(img_fwd))

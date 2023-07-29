@@ -5,6 +5,12 @@ Welcome to parallelproj's documentation!
 libparallelproj projector libraries written in C/OpenMP
 and cuda.
 
+.. note::
+    The aim of **parallelproj** is to provide simple and fast
+    forward and back projectors for tomographic reconstruction
+    (non-TOF and TOF) in Python that are compatible with different
+    array libraries (e.g. numpy, cupy, pytorch) and devices
+    (CPU and CUDA GPUs).
 
 .. toctree::
     :hidden:
@@ -19,6 +25,8 @@ and cuda.
     nontof_example
     tofsino_example
     toflm_example
+    nontof_2d_projector
+    nontof_3d_projector
 
 .. toctree::
     :hidden:

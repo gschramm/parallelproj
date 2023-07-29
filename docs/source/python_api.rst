@@ -21,6 +21,8 @@ high-level projection operators
 
 .. autoclass:: parallelproj.ParallelViewProjector2D
 
+.. autoclass:: parallelproj.ParallelViewProjector3D
+
 low-level non-TOF projector API
 -------------------------------
 

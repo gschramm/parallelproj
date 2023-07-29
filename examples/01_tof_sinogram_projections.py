@@ -1,12 +1,24 @@
 """minimal example that shows how to use the joseph3d TOF forward and back projector in sinogram mode"""
-import parallelproj
 
-# parallelproj tells us whether cupy is available and supported
-# if it is, we use cupy, otherwise numpy as array module (xp)
-if parallelproj.cupy_enabled:
-    import cupy as xp
-else:
-    import numpy as xp
+# parallelproj supports the numpy, cupy and pytorch array API and different devices
+# choose your preferred array API uncommenting the corresponding line
+import array_api_compat.numpy as xp
+#import array_api_compat.cupy as xp
+#import array_api_compat.torch as xp
+
+import parallelproj
+from array_api_compat import to_device, device
+
+# choose a device (CPU or CUDA GPU)
+if 'numpy' in xp.__name__:
+    # using numpy, device must be cpu
+    dev = 'cpu'
+elif 'cupy' in xp.__name__:
+    # using cupy, only cuda devices are possible
+    dev = xp.cuda.Device(0)
+elif 'torch' in xp.__name__:
+    # using torch valid choices are 'cpu' or 'cuda'
+    dev = 'cuda'
 
 #---------------------------------------------------------------
 #--- setup a simple test image ---------------------------------
@@ -14,17 +26,18 @@ else:
 
 # setup the image dimensions
 n0, n1, n2 = (7, 7, 7)
-img_dim = xp.array([n0, n1, n2])
+img_dim = (n0, n1, n2)
 
 # define the voxel sizes (in physical units)
-voxel_size = xp.array([2., 2., 2.], dtype=xp.float32)
+voxel_size = to_device(xp.asarray([2., 2., 2.], dtype=xp.float32), dev)
 # define the origin of the image (location of voxel (0,0,0) in physical units)
-img_origin = ((-img_dim / 2 + 0.5) * voxel_size).astype(xp.float32)
+img_origin = (
+    (-to_device(xp.asarray(img_dim, dtype=xp.float32), dev) / 2 + 0.5) *
+    voxel_size)
 
 # create a simple test image
-img = xp.zeros((n0,n1,n2), dtype=xp.float32)
-img[n0//2,n1//2,n2//2] = 1
-
+img = to_device(xp.zeros((n0, n1, n2), dtype=xp.float32), dev)
+img[n0 // 2, n1 // 2, n2 // 2] = 1
 
 #---------------------------------------------------------------
 #--- setup the LOR start and end points ------------------------
@@ -39,20 +52,27 @@ img[n0//2,n1//2,n2//2] = 1
 # and convert them later to physical units (as required for the projectors)
 
 # define start/end points in voxel coordinates
-vstart = xp.array([
-    [n0//2, -1, n2//2], # 
-    [n0//2, n1//2, -1], # 
-])
+vstart = to_device(
+    xp.asarray(
+        [
+            [n0 // 2, -1, n2 // 2],  # 
+            [n0 // 2, n1 // 2, -1],  # 
+        ],
+        dtype=xp.float32),
+    dev)
 
-vend = xp.array([
-    [n0//2, n1, n2//2], #           
-    [n0//2, n1//2, n2], # 
-])
+vend = to_device(
+    xp.asarray(
+        [
+            [n0 // 2, n1, n2 // 2],  #           
+            [n0 // 2, n1 // 2, n2],  # 
+        ],
+        dtype=xp.float32),
+    dev)
 
 # convert the LOR coordinates to world coordinates (physical units)
-xstart = (vstart * voxel_size + img_origin).astype(xp.float32)
-xend = (vend * voxel_size + img_origin).astype(xp.float32)
-
+xstart = vstart * voxel_size + img_origin
+xend = vend * voxel_size + img_origin
 
 #---------------------------------------------------------------
 #--- setup the TOF related parameters --------------------------
@@ -62,7 +82,7 @@ xend = (vend * voxel_size + img_origin).astype(xp.float32)
 # same unit as voxel size
 tofbin_width = 1.5
 
-# the number of TOF bins 
+# the number of TOF bins
 num_tof_bins = 17
 
 # number of sigmas after which TOF kernel is truncated
@@ -74,41 +94,41 @@ fwhm_tof = 6.
 # sigma of the Gaussian TOF kernel in physical units
 # if this is an array of length 1, the same sigma is used
 # for all LORs
-sigma_tof = xp.array([fwhm_tof / (2 * xp.sqrt(2 * xp.log(2)))],
-                     dtype=xp.float32)
+sigma_tof = to_device(xp.asarray([fwhm_tof / 2.35], dtype=xp.float32), dev)
 
 # TOF center offset for the central TOF bin in physical units
 # if this is an array of length 1, the same offset is used
 # for all LORs
-tofcenter_offset = xp.array([0], dtype=xp.float32)
+tofcenter_offset = to_device(xp.asarray([0], dtype=xp.float32), dev)
 
 #---------------------------------------------------------------
 #--- call the forward projector --------------------------------
 #---------------------------------------------------------------
 
-# allocate memory for the forward projection array 
-# its shape is (number of LORs, number of TOF bins)
-img_fwd = xp.zeros((xstart.shape[0], num_tof_bins), dtype=xp.float32)
+img_fwd = parallelproj.joseph3d_fwd_tof_sino(xstart, xend, img, img_origin,
+                                             voxel_size, tofbin_width,
+                                             sigma_tof, tofcenter_offset,
+                                             nsigmas, num_tof_bins)
 
-parallelproj.joseph3d_fwd_tof_sino(xstart, xend, img, img_origin,
-                                   voxel_size, img_fwd, tofbin_width,
-                                   sigma_tof, tofcenter_offset, nsigmas,
-                                   num_tof_bins)
-
-
+print(img_fwd)
+print(type(img_fwd))
+print(device(img_fwd))
+print('')
 
 #---------------------------------------------------------------
 #--- call the adjoint of the forward projector -----------------
 #---------------------------------------------------------------
 
-# allocate memory for the back projection array
-back_img = xp.zeros((n0,n1,n2), dtype=xp.float32)
-
 # setup a "TOF sinogram"
-sino = xp.zeros_like(img_fwd)
-sino[:,num_tof_bins//2] = 1
+sino = to_device(xp.zeros(img_fwd.shape, dtype=xp.float32), dev)
+sino[:, num_tof_bins // 2] = 1
 
-parallelproj.joseph3d_back_tof_sino(xstart, xend, back_img, img_origin,
-                                    voxel_size, sino, tofbin_width,
-                                    sigma_tof, tofcenter_offset, nsigmas,
-                                    num_tof_bins)
+back_img = parallelproj.joseph3d_back_tof_sino(xstart, xend, img_dim,
+                                               img_origin, voxel_size, sino,
+                                               tofbin_width, sigma_tof,
+                                               tofcenter_offset, nsigmas,
+                                               num_tof_bins)
+
+print(back_img[:, :, 3])
+print(type(back_img))
+print(device(back_img))
