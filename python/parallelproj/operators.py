@@ -159,7 +159,7 @@ class LinearOperator(abc.ABC):
             if verbose:
                 print(f'{(i+1):03} {self.xp.sqrt(norm_squared):.2E}')
 
-        return self.xp.sqrt(norm_squared)
+        return float(self.xp.sqrt(norm_squared))
 
 
 class MatrixOperator(LinearOperator):
