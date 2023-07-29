@@ -1,17 +1,11 @@
 """minimal example that shows how to use the joseph3d TOF forward and back projector in sinogram mode"""
 import parallelproj
 
-# parallelproj supports the different array backend (numpy, cupy, torch)
-# parallelproj tells us whether cupy is available and supported
-# if it is, we use cupy, otherwise numpy as array module (xp)
-if parallelproj.cupy_enabled:
-    import cupy as xp
-else:
-    import numpy.array_api as xp
-
-## parallelproj also supports torch tensors
-#if parallelproj.torch_enabled:
-#    import torch as xp
+# parallelproj supports the numpy, cupy and pytorch array API
+# choose your preferred array API uncommenting the corresponding line
+import array_api_compat.numpy as xp
+#import array_api_compat.cupy as xp
+#import array_api_compat.torch as xp
 
 #---------------------------------------------------------------
 #--- setup a simple test image ---------------------------------

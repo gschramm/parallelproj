@@ -1,23 +1,22 @@
 from __future__ import annotations
 
-import numpy.array_api as xp
-#import array_api_compat.cupy as xp
-#import array_api_compat.torch as xp
-
 from array_api_compat import to_device
 import parallelproj
+
+# parallelproj supports the numpy, cupy and pytorch array API
+# choose your preferred array API uncommenting the corresponding line
+import array_api_compat.numpy as xp
+#import array_api_compat.cupy as xp
+#import array_api_compat.torch as xp
 
 # choose our device depending on the array API and the availability of CUDA
 if 'numpy' in xp.__name__:
     device = 'cpu'
-else:
-    if parallelproj.cuda_present:
-        if 'cupy' in xp.__name__:
-            device = xp.cuda.Device(0)
-        else:
-            device = 'cuda'
-    else:
-        device = 'cpu'
+elif 'cupy' in xp.__name__:
+    device = xp.cuda.Device(0)
+elif 'torch' in xp.__name__:
+    # using torch valid choises are cpu or cuda
+    device = 'cpu'
 
 print(f'running on {device} device using {xp.__name__}')
 
