@@ -1,11 +1,24 @@
 """minimal example that shows how to use the joseph3d non-TOF forward and back projector"""
-import parallelproj
 
-# parallelproj supports the numpy, cupy and pytorch array API
+# parallelproj supports the numpy, cupy and pytorch array API and different devices
 # choose your preferred array API uncommenting the corresponding line
 import array_api_compat.numpy as xp
 #import array_api_compat.cupy as xp
 #import array_api_compat.torch as xp
+
+import parallelproj
+from array_api_compat import to_device, device
+
+# choose a device (CPU or CUDA GPU)
+if 'numpy' in xp.__name__:
+    # using numpy, device must be cpu
+    dev = 'cpu'
+elif 'cupy' in xp.__name__:
+    # using cupy, only cuda devices are possible
+    dev = xp.cuda.Device(0)
+elif 'torch' in xp.__name__:
+    # using torch valid choices are 'cpu' or 'cuda'
+    dev = 'cuda'
 
 #---------------------------------------------------------------
 #--- setup a simple test image ---------------------------------
@@ -16,12 +29,14 @@ n0, n1, n2 = (2, 3, 4)
 img_dim = (n0, n1, n2)
 
 # define the voxel sizes (in physical units)
-voxel_size = xp.asarray([4., 3., 2.], dtype=xp.float32)
+voxel_size = to_device(xp.asarray([4., 3., 2.], dtype=xp.float32), dev)
 # define the origin of the image (location of voxel (0,0,0) in physical units)
-img_origin = ((-xp.asarray(img_dim, dtype=xp.float32) / 2 + 0.5) * voxel_size)
+img_origin = (-to_device(xp.asarray(img_dim, dtype=xp.float32), dev) / 2 +
+              0.5) * voxel_size
 
 # create a simple test image
-img = xp.reshape(xp.arange(n0 * n1 * n2, dtype=xp.float32), (n0, n1, n2))
+img = to_device(
+    xp.reshape(xp.arange(n0 * n1 * n2, dtype=xp.float32), (n0, n1, n2)), dev)
 
 #---------------------------------------------------------------
 #--- setup the LOR start and end points ------------------------
@@ -36,35 +51,43 @@ img = xp.reshape(xp.arange(n0 * n1 * n2, dtype=xp.float32), (n0, n1, n2))
 # and convert them later to physical units (as required for the projectors)
 
 # define start/end points in voxel coordinates
-vstart = xp.asarray([
-    [0, -1, 0],  # 
-    [0, -1, 0],  #
-    [0, -1, 1],  #
-    [0, -1, 0.5],  #
-    [0, 0, -1],  #
-    [-1, 0, 0],  #
-    [n0 - 1, -1, 0],  # 
-    [n0 - 1, -1, n2 - 1],  #
-    [n0 - 1, 0, -1],  #
-    [n0 - 1, n1 - 1, -1]
-])
+vstart = to_device(
+    xp.asarray(
+        [
+            [0, -1, 0],  # 
+            [0, -1, 0],  #
+            [0, -1, 1],  #
+            [0, -1, 0.5],  #
+            [0, 0, -1],  #
+            [-1, 0, 0],  #
+            [n0 - 1, -1, 0],  # 
+            [n0 - 1, -1, n2 - 1],  #
+            [n0 - 1, 0, -1],  #
+            [n0 - 1, n1 - 1, -1]
+        ],
+        dtype=xp.float32),
+    dev)
 
-vend = xp.asarray([
-    [0, n1, 0],  #           
-    [0, n1, 0],  #           
-    [0, n1, 1],  #          
-    [0, n1, 0.5],  #         
-    [0, 0, n2],  #          
-    [n0, 0, 0],  #          
-    [n0 - 1, n1, 0],  #      
-    [n0 - 1, n1, n2 - 1],  # 
-    [n0 - 1, 0, n2],  #     
-    [n0 - 1, n1 - 1, n2]
-])
+vend = to_device(
+    xp.asarray(
+        [
+            [0, n1, 0],  #           
+            [0, n1, 0],  #           
+            [0, n1, 1],  #          
+            [0, n1, 0.5],  #         
+            [0, 0, n2],  #          
+            [n0, 0, 0],  #          
+            [n0 - 1, n1, 0],  #      
+            [n0 - 1, n1, n2 - 1],  # 
+            [n0 - 1, 0, n2],  #     
+            [n0 - 1, n1 - 1, n2]
+        ],
+        dtype=xp.float32),
+    dev)
 
 # convert the LOR coordinates to world coordinates (physical units)
-xstart = xp.asarray(vstart * voxel_size + img_origin, dtype=xp.float32)
-xend = xp.asarray(vend * voxel_size + img_origin, dtype=xp.float32)
+xstart = vstart * voxel_size + img_origin
+xend = vend * voxel_size + img_origin
 
 #---------------------------------------------------------------
 #--- call the forward projector --------------------------------
@@ -75,16 +98,21 @@ xend = xp.asarray(vend * voxel_size + img_origin, dtype=xp.float32)
 img_fwd = parallelproj.joseph3d_fwd(xstart, xend, img, img_origin, voxel_size)
 
 print(img_fwd)
+print(type(img_fwd))
+print(device(img_fwd))
+print('')
 
 #---------------------------------------------------------------
 #--- call the adjoint of the forward projector -----------------
 #---------------------------------------------------------------
 
 # setup a "sinogram" full of ones
-sino = xp.ones_like(img_fwd)
+sino = to_device(xp.ones(img_fwd.shape, dtype=xp.float32), dev)
 
 # call the back projector
 back_img = parallelproj.joseph3d_back(xstart, xend, img_dim, img_origin,
                                       voxel_size, sino)
 
 print(back_img)
+print(type(back_img))
+print(device(back_img))
