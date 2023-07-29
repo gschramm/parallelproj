@@ -6,8 +6,8 @@ dependencies:
   - python>=3.9
   - pip
   - libparallelproj
-  - numpy>=1.20
+  - numpy>=1.22
   - matplotlib
   - sphinx<7
   - sphinx_rtd_theme
-  - array-api-compat
+  - array_api_compat
