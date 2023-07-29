@@ -1,3 +1,44 @@
+## 1.5.0 (July 29, 2023)
+- chore: updated package.json, updated CHANGELOG.md, bumped 1.4.0 -> 1.5.0
+- Merge pull request #28 from gschramm/array-compat
+- update doc index page
+- correc name of array api compat package
+- update docs env file
+- add plots to the high-level examples
+- use to_device(cpu) in plots
+- update the 2D projector example
+- update examples
+- include choice of device in first 2 examples
+- update documentation
+- rename new examples
+- clean up array module imports
+- accept numpy>=1.22
+- update python dependency
+- update 3d projector example and numpy dependency
+- add new high-level projector examples
+- update documentation of example
+- change torch import for test
+- rename test function such that they don't get auto executed by pytest
+- remove np.isclose / np.allclose from tests
+- remove np.allclose from operator tests
+- add cupy.array_api to nontof test
+- add 3D parallelview projector + tests
+- make show_view method python array api compatible
+- make 2D projector array api compatible
+- test different array backends in operator tests
+- make operator classes python array api compatible
+- update formatting of test files
+- update formatting of backend file
+- update formating of examples
+- update the minimal TOF examples
+- add python array api compatible TOF LM back projector
+- add array compatible TOF LM fwd projector
+- add array api compatible tof sino back projector
+- add array api compatible tof sino forward projector
+- update backend such that we are python array-api compliant and also support torch tensors for nonTOF projections. TOF will follow soon.
+- update dependencies
+- cleanup changelog
+
 ## 1.4.0 (June 11, 2023)
 - chore: updated package.json, updated CHANGELOG.md, bumped 1.3.7 -> 1.4.0
 - add Linear Operators
