@@ -12,7 +12,7 @@ authors = [
 ]
 description = "Python wrappers for parallelproj projectors."
 readme = "README.md"
-requires-python = ">=3.6"
+requires-python = ">=3.8"
 classifiers = [
     "License :: OSI Approved :: MIT License",
     "Programming Language :: Python",
