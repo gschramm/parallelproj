@@ -32,7 +32,8 @@ class ParallelViewProjector2D(parallelproj.LinearOperator):
         voxel_size : tuple[float, float]
             the voxel size in both directions
         """
-        super().__init__(array_api_compat.get_namespace(radial_positions))
+        super().__init__()
+        self._xp = array_api_compat.get_namespace(radial_positions)
 
         self._radial_positions = radial_positions
         self._device = array_api_compat.device(radial_positions)
@@ -74,6 +75,10 @@ class ParallelViewProjector2D(parallelproj.LinearOperator):
             self._xend[:, i, 2] = -self._xp.sin(
                 phi) * self._radial_positions - self._xp.cos(
                     phi) * self._radius
+
+    @property
+    def xp(self):
+        return self._xp
 
     @property
     def in_shape(self):
@@ -245,7 +250,9 @@ class ParallelViewProjector3D(parallelproj.LinearOperator):
             maximum ring difference - default is None (no limit)
         """
 
-        super().__init__(array_api_compat.get_namespace(radial_positions))
+        super().__init__()
+        
+        self._xp = array_api_compat.get_namespace(radial_positions)
 
         self._radial_positions = radial_positions
         self._device = array_api_compat.device(radial_positions)
@@ -341,6 +348,10 @@ class ParallelViewProjector3D(parallelproj.LinearOperator):
                          2] = self._ring_positions[self._start_plane_number[i]]
             self._xend[:, :, i,
                        2] = self._ring_positions[self._end_plane_number[i]]
+
+    @property
+    def xp(self):
+        return self._xp
 
     @property
     def in_shape(self):

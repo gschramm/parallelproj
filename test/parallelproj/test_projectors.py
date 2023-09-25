@@ -29,7 +29,7 @@ def parallelviewprojector_test(xp, verbose=True):
                                                   view_angles, radius,
                                                   image_origin, voxel_size)
 
-    proj2d.adjointness_test(verbose=verbose)
+    proj2d.adjointness_test(xp, verbose=verbose)
 
     # test a simple 2D projection
     x2d = xp.reshape(xp.arange(4, dtype=xp.float32), (2, 2))
@@ -65,7 +65,7 @@ def parallelviewprojector_test(xp, verbose=True):
                                                   voxel_size3d,
                                                   ring_positions,
                                                   max_ring_diff=1)
-    proj3d.adjointness_test(verbose=verbose)
+    proj3d.adjointness_test(xp, verbose=verbose)
 
     # test a simple 3D projection
     x3d = xp.reshape(xp.arange(8, dtype=xp.float32), (2, 2, 2))
