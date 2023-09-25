@@ -24,6 +24,8 @@ def matrix_test(xp: ModuleType):
     x = xp.asarray([-2., 1.])
 
     op = parallelproj.MatrixOperator(A)
+    # test call to norm
+    op_norm = op.norm(xp)
 
     op.adjointness_test(xp)
     assert allclose(A @ x, op(x))
@@ -36,6 +38,8 @@ def elemenwise_test(xp: ModuleType):
     x = xp.asarray([-2., 1.])
 
     op = parallelproj.ElementwiseMultiplicationOperator(v)
+    # test call to norm
+    op_norm = op.norm(xp)
 
     op.adjointness_test(xp)
     assert allclose(v * x, op(x))
@@ -46,7 +50,7 @@ def gaussian_test(xp: ModuleType):
     in_shape = (32, 32)
     sigma = 2.3
 
-    op = parallelproj.GaussianFilterOperator(in_shape, xp, sigma=sigma)
+    op = parallelproj.GaussianFilterOperator(in_shape, sigma=sigma)
     op.adjointness_test(xp)
 
 
@@ -61,6 +65,8 @@ def composite_test(xp: ModuleType):
     op2 = parallelproj.MatrixOperator(A)
 
     op = parallelproj.CompositeLinearOperator([op1, op2])
+    # test call to norm
+    op_norm = op.norm(xp)
 
     op.adjointness_test(xp)
     assert allclose(v * (A @ x), op(x))
@@ -70,14 +76,16 @@ def vstack_test(xp: ModuleType):
     np.random.seed(0)
     in_shape = (16, 11)
 
-    A1 = parallelproj.GaussianFilterOperator(in_shape, xp, sigma=1.)
+    A1 = parallelproj.GaussianFilterOperator(in_shape, sigma=1.)
     A2 = parallelproj.ElementwiseMultiplicationOperator(
         xp.asarray(np.random.rand(*in_shape)))
-    A3 = parallelproj.GaussianFilterOperator(in_shape, xp, sigma=2.)
+    A3 = parallelproj.GaussianFilterOperator(in_shape, sigma=2.)
 
     A = parallelproj.VstackOperator((A1, A2, A3))
+    # test call to norm
+    A_norm = A.norm(xp)
 
-    A.adjointness_test()
+    A.adjointness_test(xp)
 
     x = xp.asarray(np.random.rand(*in_shape))
     x_fwd = A(x)
