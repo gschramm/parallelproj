@@ -171,8 +171,6 @@ class TestNonTOFJoseph(unittest.TestCase):
         if parallelproj.cupy_enabled:
             import cupy as cp
             self.assertTrue(fwd_test(cp))
-            import cupy.array_api as cparr
-            self.assertTrue(fwd_test(cparr))
 
         if parallelproj.torch_enabled:
             import torch
@@ -187,8 +185,6 @@ class TestNonTOFJoseph(unittest.TestCase):
         if parallelproj.cupy_enabled:
             import cupy as cp
             self.assertTrue(adjointness_test(cp))
-            import cupy.array_api as cparr
-            self.assertTrue(fwd_test(cparr))
 
         if parallelproj.torch_enabled:
             import torch

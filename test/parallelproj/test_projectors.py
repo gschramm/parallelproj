@@ -99,8 +99,6 @@ class TestParallelViewProjector(unittest.TestCase):
         def test_cp(self):
             import array_api_compat.cupy as cp
             parallelviewprojector_test(cp)
-            import cupy.array_api as cparr
-            parallelviewprojector_test(cparr)
 
     if parallelproj.torch_enabled:
 

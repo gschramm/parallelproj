@@ -3,6 +3,7 @@ from types import ModuleType
 import abc
 import numpy as np
 import array_api_compat
+from array_api_compat import device
 
 import parallelproj
 
@@ -81,7 +82,11 @@ class LinearOperator(abc.ABC):
         else:
             return np.conj(self._scale) * self._adjoint(y)
 
-    def adjointness_test(self, xp : ModuleType, verbose : bool =False, iscomplex : bool = False, **kwargs):
+    def adjointness_test(self,
+                         xp: ModuleType,
+                         verbose: bool = False,
+                         iscomplex: bool = False,
+                         **kwargs):
         """test whether the adjoint is correctly implemented
 
         Parameters
@@ -120,7 +125,11 @@ class LinearOperator(abc.ABC):
 
         assert (np.isclose(ip1, ip2, **kwargs))
 
-    def norm(self, xp : ModuleType, num_iter : int = 30, iscomplex : bool = False, verbose: bool = False) -> float:
+    def norm(self,
+             xp: ModuleType,
+             num_iter: int = 30,
+             iscomplex: bool = False,
+             verbose: bool = False) -> float:
         """estimate norm of the linear operator using power iterations
 
         Parameters
@@ -147,7 +156,7 @@ class LinearOperator(abc.ABC):
 
         for i in range(num_iter):
             x = self.adjoint(self.apply(x))
-            norm_squared = xp.sum(xp.abs(x)**2)
+            norm_squared = xp.sqrt(xp.sum(xp.abs(x)**2))
             x /= norm_squared
 
             if verbose:
@@ -274,7 +283,7 @@ class ElementwiseMultiplicationOperator(LinearOperator):
     @property
     def xp(self) -> ModuleType:
         return array_api_compat.get_namespace(self._values)
- 
+
     def _apply(self, x):
         """forward step y = Ax"""
         return self._values * x
@@ -387,8 +396,8 @@ class VstackOperator(LinearOperator):
         x = xp.zeros(self._in_shape, dtype=y.dtype)
 
         for i, op in enumerate(self._operators):
-            x += op.adjoint(
-                xp.reshape(y[self._slices[i]], self._out_shapes[i]))
+            x += op.adjoint(xp.reshape(y[self._slices[i]],
+                                       self._out_shapes[i]))
 
         return x
 
@@ -453,6 +462,135 @@ class SubsetOperator:
         """A_i^H x for a given subset i"""
         return self._operators[i].adjoint(x)
 
-    def norms(self):
+    def norms(self, xp: ModuleType):
         """norm(A_i) for all subsets i"""
-        return [op.norm() for op in self._operators]
+        return [op.norm(xp) for op in self._operators]
+
+
+class FiniteForwardDifference(LinearOperator):
+    """finite difference gradient operator"""
+
+    def __init__(self, in_shape: tuple[int, ...]) -> None:
+
+        if len(in_shape) > 4:
+            raise ValueError('only up to 4 dimensions supported')
+
+        self._ndim = len(in_shape)
+        self._in_shape = in_shape
+        self._out_shape = (self.ndim, ) + in_shape
+        super().__init__()
+
+    @property
+    def in_shape(self) -> tuple[int, ...]:
+        return self._in_shape
+
+    @property
+    def out_shape(self) -> tuple[int, ...]:
+        return self._out_shape
+
+    @property
+    def ndim(self) -> int:
+        return self._ndim
+
+    def _apply(self, x):
+        xp = array_api_compat.get_namespace(x)
+
+        g = xp.zeros(self.out_shape, dtype=x.dtype, device=device(x))
+
+        if self.ndim == 1:
+            g[0, :-1] = x[1:] - x[:-1]
+        elif self.ndim == 2:
+            g[0, :-1, :] = x[1:, :] - x[:-1, :]
+            g[1, :, :-1] = x[:, 1:] - x[:, :-1]
+        elif self.ndim == 3:
+            g[0, :-1, :, :] = x[1:, :, :] - x[:-1, :, :]
+            g[1, :, :-1, :] = x[:, 1:, :] - x[:, :-1, :]
+            g[2, :, :, :-1] = x[:, :, 1:] - x[:, :, :-1]
+        elif self.ndim == 4:
+            g[0, :-1, :, :, :] = x[1:, :, :, :] - x[:-1, :, :, :]
+            g[1, :, :-1, :, :] = x[:, 1:, :, :] - x[:, :-1, :, :]
+            g[2, :, :, :-1, :] = x[:, :, 1:, :] - x[:, :, :-1, :]
+            g[3, :, :, :, :-1] = x[:, :, :, 1:] - x[:, :, :, :-1]
+
+        return g
+
+    def _adjoint(self, y):
+        xp = array_api_compat.get_namespace(y)
+
+        if self.ndim == 1:
+            tmp0 = xp.asarray(y[0, ...], copy=True)
+            tmp0[-1] = 0
+
+            div0 = xp.zeros(self.in_shape, dtype=y.dtype, device=device(y))
+            div0[1:] = -tmp0[1:] + tmp0[:-1]
+            div0[0] = -tmp0[0]
+
+            res = div0
+
+        elif self.ndim == 2:
+            tmp0 = xp.asarray(y[0, ...], copy=True)
+            tmp1 = xp.asarray(y[1, ...], copy=True)
+            tmp0[-1, :] = 0
+            tmp1[:, -1] = 0
+
+            div0 = xp.zeros(self.in_shape, dtype=y.dtype, device=device(y))
+            div1 = xp.zeros(self.in_shape, dtype=y.dtype, device=device(y))
+
+            div0[1:, :] = -tmp0[1:, :] + tmp0[:-1, :]
+            div1[:, 1:] = -tmp1[:, 1:] + tmp1[:, :-1]
+
+            div0[0, :] = -tmp0[0, :]
+            div1[:, 0] = -tmp1[:, 0]
+
+            res = div0 + div1
+
+        elif self.ndim == 3:
+            tmp0 = xp.asarray(y[0, ...], copy=True)
+            tmp1 = xp.asarray(y[1, ...], copy=True)
+            tmp2 = xp.asarray(y[2, ...], copy=True)
+            tmp0[-1, :, :] = 0
+            tmp1[:, -1, :] = 0
+            tmp2[:, :, -1] = 0
+
+            div0 = xp.zeros(self.in_shape, dtype=y.dtype, device=device(y))
+            div1 = xp.zeros(self.in_shape, dtype=y.dtype, device=device(y))
+            div2 = xp.zeros(self.in_shape, dtype=y.dtype, device=device(y))
+
+            div0[1:, :, :] = -tmp0[1:, :, :] + tmp0[:-1, :, :]
+            div1[:, 1:, :] = -tmp1[:, 1:, :] + tmp1[:, :-1, :]
+            div2[:, :, 1:] = -tmp2[:, :, 1:] + tmp2[:, :, :-1]
+
+            div0[0, :, :] = -tmp0[0, :, :]
+            div1[:, 0, :] = -tmp1[:, 0, :]
+            div2[:, :, 0] = -tmp2[:, :, 0]
+
+            res = div0 + div1 + div2
+
+        elif self.ndim == 4:
+            tmp0 = xp.asarray(y[0, ...], copy=True)
+            tmp1 = xp.asarray(y[1, ...], copy=True)
+            tmp2 = xp.asarray(y[2, ...], copy=True)
+            tmp3 = xp.asarray(y[3, ...], copy=True)
+            tmp0[-1, :, :, :] = 0
+            tmp1[:, -1, :, :] = 0
+            tmp2[:, :, -1, :] = 0
+            tmp3[:, :, :, -1] = 0
+
+            div0 = xp.zeros(self.in_shape, dtype=y.dtype, device=device(y))
+            div1 = xp.zeros(self.in_shape, dtype=y.dtype, device=device(y))
+            div2 = xp.zeros(self.in_shape, dtype=y.dtype, device=device(y))
+            div3 = xp.zeros(self.in_shape, dtype=y.dtype, device=device(y))
+
+            div0[1:, :, :, :] = -tmp0[1:, :, :, :] + tmp0[:-1, :, :, :]
+            div1[:, 1:, :, :] = -tmp1[:, 1:, :, :] + tmp1[:, :-1, :, :]
+            div2[:, :, 1:, :] = -tmp2[:, :, 1:, :] + tmp2[:, :, :-1, :]
+            div3[:, :, :, 1:] = -tmp3[:, :, :, 1:] + tmp3[:, :, :, :-1]
+
+            div0[0, :, :, :] = -tmp0[0, :, :, :]
+            div1[:, 0, :, :] = -tmp1[:, 0, :, :]
+            div2[:, :, 0, :] = -tmp2[:, :, 0, :]
+            div3[:, :, :, 0] = -tmp3[:, :, :, 0]
+
+            res = div0 + div1 + div2 + div3
+
+        return res

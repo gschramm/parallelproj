@@ -7,6 +7,7 @@ import array_api_compat
 import array_api_compat.numpy as np
 
 from types import ModuleType
+from math import prod
 
 
 def allclose(x, y, atol: float = 1e-8, rtol: float = 1e-5) -> bool:
@@ -119,8 +120,75 @@ def subsets_test(xp: ModuleType):
         assert allclose(y[i], A.adjoint_subset(x_fwd[i], i))
 
 
+def finite_difference_test(xp: ModuleType, dev='cpu'):
+
+    # 2D tests
+    A = parallelproj.FiniteForwardDifference((5, 3))
+    x = xp.reshape(xp.arange(prod(A.in_shape), device=dev), A.in_shape)
+
+    # test call to norm
+    n = A.norm(xp)
+    # test adjointness
+    A.adjointness_test(xp)
+
+    # test simple forward
+    y = A(x)
+    assert xp.all(y[0, :-1, :] == 3)
+    assert xp.all(y[1, :, :-1] == 1)
+
+    # 3D tests
+    A = parallelproj.FiniteForwardDifference((5, 3, 4))
+    x = xp.reshape(xp.arange(prod(A.in_shape), device=dev), A.in_shape)
+
+    # test adjointness
+    A.adjointness_test(xp)
+
+    # test simple forward
+    y = A(x)
+    assert xp.all(y[0, :-1, :, :] == 12)
+    assert xp.all(y[1, :, :-1, :] == 4)
+    assert xp.all(y[2, :, :, :-1] == 1)
+
+    # 4D tests
+    A = parallelproj.FiniteForwardDifference((5, 3, 4, 6))
+    x = xp.reshape(xp.arange(prod(A.in_shape), device=dev), A.in_shape)
+
+    # test adjointness
+    A.adjointness_test(xp)
+
+    # test simple forward
+    y = A(x)
+    assert xp.all(y[0, :-1, :, :, :] == 72)
+    assert xp.all(y[1, :, :-1, :, :] == 24)
+    assert xp.all(y[2, :, :, :-1, :] == 6)
+    assert xp.all(y[3, :, :, :, :-1] == 1)
+
+
 #--------------------------------------------------------------------------
 class TestOperators(unittest.TestCase):
+
+    def testfinite(self):
+        finite_difference_test(np, dev='cpu')
+        if np.__version__ >= '1.25':
+            finite_difference_test(nparr, dev='cpu')
+
+    if parallelproj.cupy_enabled:
+
+        def testfinite_cp(self):
+            import array_api_compat.cupy as cp
+            finite_difference_test(cp, dev='cuda')
+
+    if parallelproj.torch_enabled:
+
+        def testfinite_torch(self):
+            import array_api_compat.torch as torch
+            finite_difference_test(torch, dev='cpu')
+
+    if parallelproj.torch_enabled and parallelproj.cuda_present:
+
+        def testfinite_torch_cuda(self):
+            import array_api_compat.torch as torch
+            finite_difference_test(torch, dev='cuda')
 
     def testmatrix(self):
         matrix_test(np)
