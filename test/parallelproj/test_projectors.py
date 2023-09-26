@@ -15,7 +15,7 @@ def allclose(x, y, atol: float = 1e-8, rtol: float = 1e-5) -> bool:
     return bool(xp.all(xp.less_equal(xp.abs(x - y), atol + rtol * xp.abs(y))))
 
 
-def parallelviewprojector_test(xp, verbose=True, dev='cpu'):
+def parallelviewprojector_test(xp, dev, verbose=True):
     image_shape = (2, 2)
     voxel_size = (2., 2.)
     image_origin = (-1., -1.)
@@ -29,7 +29,7 @@ def parallelviewprojector_test(xp, verbose=True, dev='cpu'):
                                                   view_angles, radius,
                                                   image_origin, voxel_size)
 
-    proj2d.adjointness_test(xp, verbose=verbose)
+    proj2d.adjointness_test(xp, dev, verbose=verbose)
 
     # test a simple 2D projection
     x2d = xp.reshape(xp.arange(4, dtype=xp.float32, device=dev), (2, 2))
@@ -67,7 +67,7 @@ def parallelviewprojector_test(xp, verbose=True, dev='cpu'):
                                                   voxel_size3d,
                                                   ring_positions,
                                                   max_ring_diff=1)
-    proj3d.adjointness_test(xp, verbose=verbose)
+    proj3d.adjointness_test(xp, dev, verbose=verbose)
 
     # test a simple 3D projection
     x3d = xp.reshape(xp.arange(8, dtype=xp.float32, device=dev), (2, 2, 2))
@@ -95,27 +95,28 @@ def parallelviewprojector_test(xp, verbose=True, dev='cpu'):
 class TestParallelViewProjector(unittest.TestCase):
 
     def test(self):
-        parallelviewprojector_test(np)
+        parallelviewprojector_test(np, 'cpu')
+
         if np.__version__ >= '1.25':
-            parallelviewprojector_test(nparr, dev='cpu')
+            parallelviewprojector_test(nparr, 'cpu')
 
     if parallelproj.cupy_enabled:
 
         def test_cp(self):
             import array_api_compat.cupy as cp
-            parallelviewprojector_test(cp, dev='cuda')
+            parallelviewprojector_test(cp, 'cuda')
 
     if parallelproj.torch_enabled:
 
         def test_torch(self):
             import torch
-            parallelviewprojector_test(torch, dev='cpu')
+            parallelviewprojector_test(torch, 'cpu')
 
-    #if parallelproj.torch_enabled and parallelproj.cuda_present:
+    if parallelproj.torch_enabled and parallelproj.cuda_present:
 
-    #    def test_torch_cuda(self):
-    #        import torch
-    #        parallelviewprojector_test(torch, dev='cuda')
+        def test_torch_cuda(self):
+            import torch
+            parallelviewprojector_test(torch, dev='cuda')
 
 
 if __name__ == '__main__':
