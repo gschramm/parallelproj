@@ -84,6 +84,7 @@ class LinearOperator(abc.ABC):
 
     def adjointness_test(self,
                          xp: ModuleType,
+                         dev: str,
                          verbose: bool = False,
                          iscomplex: bool = False,
                          **kwargs):
@@ -93,6 +94,8 @@ class LinearOperator(abc.ABC):
         ----------
         xp : ModuleType
             array module to use
+        dev : str
+            device (cpu or cuda)
         verbose : bool, optional
             verbose output
         iscomplex : bool, optional
@@ -101,14 +104,15 @@ class LinearOperator(abc.ABC):
             passed to np.isclose
         """
 
-        x = xp.asarray(np.random.rand(*self.in_shape))
-        y = xp.asarray(np.random.rand(*self.out_shape))
+        x = xp.asarray(np.random.rand(*self.in_shape), device=dev)
+        y = xp.asarray(np.random.rand(*self.out_shape), device=dev)
 
         if iscomplex:
-            x = x + 1j * xp.random.rand(*self.in_shape)
+            x = x + 1j * xp.asarray(np.random.rand(*self.in_shape), device=dev)
 
         if iscomplex:
-            y = y + 1j * xp.random.rand(*self.out_shape)
+            y = y + 1j * xp.asarray(np.random.rand(*self.out_shape),
+                                    device=dev)
 
         x_fwd = self.apply(x)
         y_adj = self.adjoint(y)
@@ -127,6 +131,7 @@ class LinearOperator(abc.ABC):
 
     def norm(self,
              xp: ModuleType,
+             dev: str,
              num_iter: int = 30,
              iscomplex: bool = False,
              verbose: bool = False) -> float:
@@ -136,6 +141,8 @@ class LinearOperator(abc.ABC):
         ----------
         xp : ModuleType
             array module to use
+        dev : str
+            device (cpu or cuda)
         num_iter : int, optional
             number of power iterations
         iscomplex : bool, optional
@@ -149,10 +156,10 @@ class LinearOperator(abc.ABC):
             the norm of the linear operator
         """
 
-        x = xp.asarray(np.random.rand(*self.in_shape))
+        x = xp.asarray(np.random.rand(*self.in_shape), device=dev)
 
         if iscomplex:
-            x = x + 1j * xp.asarray(np.random.rand(*self.in_shape))
+            x = x + 1j * xp.asarray(np.random.rand(*self.in_shape), device=dev)
 
         for i in range(num_iter):
             x = self.adjoint(self.apply(x))
@@ -334,12 +341,14 @@ class GaussianFilterOperator(LinearOperator):
         if parallelproj.is_cuda_array(x):
             import cupy as cp
             import cupyx.scipy.ndimage as ndimagex
-            return xp.asarray(
-                ndimagex.gaussian_filter(cp.asarray(x), **self._kwargs))
+            return xp.asarray(ndimagex.gaussian_filter(cp.asarray(x),
+                                                       **self._kwargs),
+                              device=device(x))
         else:
             import scipy.ndimage as ndimage
-            return xp.asarray(
-                ndimage.gaussian_filter(np.asarray(x), **self._kwargs))
+            return xp.asarray(ndimage.gaussian_filter(np.asarray(x),
+                                                      **self._kwargs),
+                              device=device(x))
 
     def _adjoint(self, y):
         """adjoint step x = A^H y"""
@@ -384,7 +393,7 @@ class VstackOperator(LinearOperator):
 
     def _apply(self, x):
         xp = array_api_compat.get_namespace(x)
-        y = xp.zeros(self._out_shape, dtype=x.dtype)
+        y = xp.zeros(self._out_shape, dtype=x.dtype, device=device(x))
 
         for i, op in enumerate(self._operators):
             y[self._slices[i]] = xp.reshape(op(x), (-1, ))
@@ -393,7 +402,7 @@ class VstackOperator(LinearOperator):
 
     def _adjoint(self, y):
         xp = array_api_compat.get_namespace(y)
-        x = xp.zeros(self._in_shape, dtype=y.dtype)
+        x = xp.zeros(self._in_shape, dtype=y.dtype, device=device(y))
 
         for i, op in enumerate(self._operators):
             x += op.adjoint(xp.reshape(y[self._slices[i]],
@@ -462,9 +471,9 @@ class SubsetOperator:
         """A_i^H x for a given subset i"""
         return self._operators[i].adjoint(x)
 
-    def norms(self, xp: ModuleType):
+    def norms(self, xp: ModuleType, dev: str):
         """norm(A_i) for all subsets i"""
-        return [op.norm(xp) for op in self._operators]
+        return [op.norm(xp, dev) for op in self._operators]
 
 
 class FiniteForwardDifference(LinearOperator):
