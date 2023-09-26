@@ -9,43 +9,50 @@ from types import ModuleType
 
 
 def fwd_test(xp: ModuleType,
+             dev: str,
              verbose: bool = True,
              rtol: float = 1e-5,
              atol: float = 1e-8) -> bool:
     n0, n1, n2 = (2, 3, 4)
 
     img_dim = (n0, n1, n2)
-    voxel_size = xp.asarray([4., 3., 2.], dtype=xp.float32)
-    img_origin = ((-xp.asarray(img_dim, dtype=xp.float32) / 2 + 0.5) *
-                  voxel_size)
-    img = xp.reshape(xp.arange(n0 * n1 * n2, dtype=xp.float32), (n0, n1, n2))
+    voxel_size = xp.asarray([4., 3., 2.], dtype=xp.float32, device=dev)
+    img_origin = (
+        (-xp.asarray(img_dim, dtype=xp.float32, device=dev) / 2 + 0.5) *
+        voxel_size)
+    img = xp.reshape(xp.arange(n0 * n1 * n2, dtype=xp.float32, device=dev),
+                     (n0, n1, n2))
 
     # LOR start points in voxel coordinates
-    vstart = xp.asarray([
-        [0, -1, 0],  # 
-        [0, -1, 0],  #
-        [0, -1, 1],  #
-        [0, -1, 0.5],  #
-        [0, 0, -1],  #
-        [-1, 0, 0],  #
-        [n0 - 1, -1, 0],  # 
-        [n0 - 1, -1, n2 - 1],  #
-        [n0 - 1, 0, -1],  #
-        [n0 - 1, n1 - 1, -1]
-    ])
+    vstart = xp.asarray(
+        [
+            [0, -1, 0],  # 
+            [0, -1, 0],  #
+            [0, -1, 1],  #
+            [0, -1, 0.5],  #
+            [0, 0, -1],  #
+            [-1, 0, 0],  #
+            [n0 - 1, -1, 0],  # 
+            [n0 - 1, -1, n2 - 1],  #
+            [n0 - 1, 0, -1],  #
+            [n0 - 1, n1 - 1, -1]
+        ],
+        device=dev)
 
-    vend = xp.asarray([
-        [0, n1, 0],  #           
-        [0, n1, 0],  #           
-        [0, n1, 1],  #          
-        [0, n1, 0.5],  #         
-        [0, 0, n2],  #          
-        [n0, 0, 0],  #          
-        [n0 - 1, n1, 0],  #      
-        [n0 - 1, n1, n2 - 1],  # 
-        [n0 - 1, 0, n2],  #     
-        [n0 - 1, n1 - 1, n2]
-    ])
+    vend = xp.asarray(
+        [
+            [0, n1, 0],  #           
+            [0, n1, 0],  #           
+            [0, n1, 1],  #          
+            [0, n1, 0.5],  #         
+            [0, 0, n2],  #          
+            [n0, 0, 0],  #          
+            [n0 - 1, n1, 0],  #      
+            [n0 - 1, n1, n2 - 1],  # 
+            [n0 - 1, 0, n2],  #     
+            [n0 - 1, n1 - 1, n2]
+        ],
+        device=dev)
 
     xstart = (vstart * voxel_size + img_origin)
     xend = (vend * voxel_size + img_origin)
@@ -54,7 +61,7 @@ def fwd_test(xp: ModuleType,
                                         voxel_size)
 
     # setup the expected values for the projection
-    expected_projections = xp.zeros_like(img_fwd)
+    expected_projections = xp.zeros_like(img_fwd, device=dev)
     expected_projections[0] = xp.sum(img[0, :, 0]) * voxel_size[1]
     expected_projections[1] = xp.sum(img[0, :, 0]) * voxel_size[1]
     expected_projections[2] = xp.sum(img[0, :, 1]) * voxel_size[1]
@@ -84,13 +91,14 @@ def fwd_test(xp: ModuleType,
             xp.less_equal(xp.abs(img_fwd - expected_projections),
                           atol + rtol * xp.abs(expected_projections))))
 
-    return isclose
+    assert isclose
 
 
 #--------------------------------------------------------------------------
 
 
 def adjointness_test(xp: ModuleType,
+                     dev: str,
                      nLORs: int = 1000000,
                      seed: int = 1,
                      verbose: bool = True,
@@ -104,29 +112,31 @@ def adjointness_test(xp: ModuleType,
     n0, n1, n2 = (16, 15, 17)
 
     img_dim = (n0, n1, n2)
-    voxel_size = xp.asarray([0.7, 0.8, 0.6], dtype=xp.float32)
-    img_origin = ((-xp.asarray(img_dim, dtype=xp.float32) / 2 + 0.5) *
-                  voxel_size)
+    voxel_size = xp.asarray([0.7, 0.8, 0.6], dtype=xp.float32, device=dev)
+    img_origin = (
+        (-xp.asarray(img_dim, dtype=xp.float32, device=dev) / 2 + 0.5) *
+        voxel_size)
 
-    img = xp.asarray(np.random.rand(n0, n1, n2), dtype=xp.float32)
+    img = xp.asarray(np.random.rand(n0, n1, n2), dtype=xp.float32, device=dev)
 
     # generate random LORs on a sphere around the image volume
-    R = 0.8 * xp.max((xp.asarray(img_dim, dtype=xp.float32) * voxel_size))
+    R = 0.8 * xp.max(
+        (xp.asarray(img_dim, dtype=xp.float32, device=dev) * voxel_size))
 
-    phis = xp.asarray(np.random.rand(nLORs) * 2 * np.pi)
-    costheta = xp.asarray(np.random.rand(nLORs) * 2 - 1)
+    phis = xp.asarray(np.random.rand(nLORs) * 2 * np.pi, device=dev)
+    costheta = xp.asarray(np.random.rand(nLORs) * 2 - 1, device=dev)
     sintheta = xp.sqrt(1 - costheta**2)
 
-    xstart = xp.zeros((nLORs, 3), dtype=xp.float32)
+    xstart = xp.zeros((nLORs, 3), dtype=xp.float32, device=dev)
     xstart[:, 0] = R * sintheta * xp.cos(phis)
     xstart[:, 1] = R * sintheta * xp.sin(phis)
     xstart[:, 2] = R * costheta
 
-    phis = xp.asarray(np.random.rand(nLORs) * 2 * np.pi)
-    costheta = xp.asarray(np.random.rand(nLORs) * 2 - 1)
+    phis = xp.asarray(np.random.rand(nLORs) * 2 * np.pi, device=dev)
+    costheta = xp.asarray(np.random.rand(nLORs) * 2 - 1, device=dev)
     sintheta = xp.sqrt(1 - costheta**2)
 
-    xend = xp.zeros((nLORs, 3), dtype=xp.float32)
+    xend = xp.zeros((nLORs, 3), dtype=xp.float32, device=dev)
     xend[:, 0] = R * sintheta * xp.cos(phis)
     xend[:, 1] = R * sintheta * xp.sin(phis)
     xend[:, 2] = R * costheta
@@ -136,7 +146,9 @@ def adjointness_test(xp: ModuleType,
                                         voxel_size)
 
     # backward project
-    sino = xp.asarray(np.random.rand(*img_fwd.shape), dtype=xp.float32)
+    sino = xp.asarray(np.random.rand(*img_fwd.shape),
+                      dtype=xp.float32,
+                      device=dev)
     back_img = parallelproj.joseph3d_back(xstart, xend, img.shape, img_origin,
                                           voxel_size, sino)
 
@@ -153,7 +165,7 @@ def adjointness_test(xp: ModuleType,
 
     isclose = (abs(ip_a - ip_b) <= atol + rtol * abs(ip_b))
 
-    return isclose
+    assert isclose
 
 
 #--------------------------------------------------------------------------
@@ -163,32 +175,51 @@ class TestNonTOFJoseph(unittest.TestCase):
     """test for non TOF joseph projections"""
 
     def test_fwd(self):
-        """test non TOF joseph forward projection using different backends"""
-        self.assertTrue(fwd_test(np))
+        fwd_test(np, 'cpu')
         if np.__version__ >= '1.25':
-            self.assertTrue(fwd_test(nparr))
+            fwd_test(nparr, 'cpu')
 
-        if parallelproj.cupy_enabled:
-            import cupy as cp
-            self.assertTrue(fwd_test(cp))
+    if parallelproj.cupy_enabled:
 
-        if parallelproj.torch_enabled:
-            import torch
-            self.assertTrue(fwd_test(torch))
+        def test_fwd_cp(self):
+            import array_api_compat.cupy as cp
+            fwd_test(cp, 'cuda')
+
+    if parallelproj.torch_enabled:
+
+        def test_fwd_torch(self):
+            import array_api_compat.torch as torch
+            fwd_test(torch, 'cpu')
+
+    if parallelproj.torch_enabled and parallelproj.cupy_enabled:
+
+        def test_fwd_torch_cuda(self):
+            import array_api_compat.torch as torch
+            fwd_test(torch, 'cuda')
 
     def test_adjoint(self):
         """test non TOF joseph forward projection using different backends"""
-        self.assertTrue(adjointness_test(np))
+        adjointness_test(np, 'cpu')
         if np.__version__ >= '1.25':
-            self.assertTrue(adjointness_test(nparr))
+            adjointness_test(nparr, 'cpu')
 
-        if parallelproj.cupy_enabled:
-            import cupy as cp
-            self.assertTrue(adjointness_test(cp))
+    if parallelproj.cupy_enabled:
 
-        if parallelproj.torch_enabled:
-            import torch
-            self.assertTrue(adjointness_test(torch))
+        def test_adjoint_cp(self):
+            import array_api_compat.cupy as cp
+            adjointness_test(cp, 'cuda')
+
+    if parallelproj.torch_enabled:
+
+        def test_adjoint_torch(self):
+            import array_api_compat.torch as torch
+            adjointness_test(torch, 'cpu')
+
+    if parallelproj.torch_enabled and parallelproj.cupy_enabled:
+
+        def test_adjoint_torch_cuda(self):
+            import array_api_compat.torch as torch
+            adjointness_test(torch, 'cuda')
 
 
 #--------------------------------------------------------------------------
