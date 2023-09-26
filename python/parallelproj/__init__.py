@@ -8,6 +8,6 @@ from .operators import LinearOperator, MatrixOperator, ElementwiseMultiplication
 from .operators import GaussianFilterOperator, CompositeLinearOperator, VstackOperator, SubsetOperator
 from .operators import FiniteForwardDifference
 
-from .projectors import ParallelViewProjector2D, ParallelViewProjector3D
+from .projectors import ParallelViewProjector2D, ParallelViewProjector3D, demo_ParallelViewProjector2D
 
 from .utils import tonumpy
