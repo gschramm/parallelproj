@@ -15,7 +15,7 @@ parser.add_argument('--build_dir', help = 'temp build directory',
 parser.add_argument('--source_dir', help = 'cmake source dir', 
                     default = os.path.dirname(os.path.abspath(__file__)))
 parser.add_argument('--cmake_install_prefix', help = 'cmake INSTALL_LIB_DIR - default: %(default)s', 
-                    default = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'pyparallelproj',f'{platform.system()}_{platform.architecture()[0]}'))
+                    default = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'compiled_libs',f'{platform.system()}_{platform.architecture()[0]}'))
 parser.add_argument('--keep_build_dir', help = 'do not remove tempory build dir', 
                     action = 'store_true')
 parser.add_argument('--dry', help = 'dry run - only print cmake commands', 
@@ -29,7 +29,7 @@ args = parser.parse_args()
 #---------------------------------------------------------------------------------------------
 
 if args.build_dir is None:
-  build_dir  = mkdtemp(prefix = 'build_', dir = '.')
+  build_dir  = mkdtemp(prefix = 'autobuild_', dir = '.')
 else:
   build_dir = args.build_dir
 
@@ -63,31 +63,41 @@ def generate_idl_wrapper(src_file, wrapper_file, add_extern_C = False):
     
     for func_name,val in parser.defs['functions'].items():
       # write the function with return type
-      rtype = val[0][0]
+      rtype = ''.join(val[0])
       nargs = len(val[1])
     
       f.write(f'{extern_str}{rtype} {func_name}_idl_wrapper(int argc, void *argv[])\n')
       f.write('{\n')
-      f.write(f'  {func_name}(\n')
+
+      if rtype == 'void':
+        rstatement = ''
+      else:
+        rstatement = 'return'
     
       # write the function arguments
-      for i, args in enumerate(val[1]):
-        type_qual = ''
-        if 'const' in args[1].type_quals[0]: type_qual = 'const '
+      if len(val[1]) > 0:
+        f.write(f'  {rstatement} {func_name}(\n')
+        for i, args in enumerate(val[1]):
+          type_qual = ''
+          if 'const' in args[1].type_quals[0]: type_qual = 'const '
     
-        if len(args[1]) == 2 and args[1][1] == '*':
-          prefix = f'({type_qual}{args[1][0]}*)'
-        else:
-          prefix = f'*({type_qual}{args[1][0]}*)'
-      
-        if i < (nargs - 1):
-          f.write(f'    {prefix} argv[{i}],\n')
-        else:
-          f.write(f'    {prefix} argv[{i}]);\n')
-     
-      f.write('}\n')
-    
-      f.write('\n')
+
+          if len(args[1]) == 3 and args[1][1] == '*' and args[1][2] == '*':
+            prefix = f'({type_qual}{args[1][0]}**)'
+          elif len(args[1]) == 2 and args[1][1] == '*':
+            prefix = f'({type_qual}{args[1][0]}*)'
+          else:
+            prefix = f'*({type_qual}{args[1][0]}*)'
+        
+          if i < (nargs - 1):
+            f.write(f'    {prefix} argv[{i}],\n')
+          else:
+            f.write(f'    {prefix} argv[{i}]);\n')
+
+        f.write('}\n')
+        f.write('\n')
+      else:
+          f.write(f'  {rstatement} {func_name}();\n}}\n')
 
   print(f'generated {wrapper_file}')
 
