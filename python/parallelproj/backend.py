@@ -371,7 +371,18 @@ def calc_chunks(nLORs: int | np.int64,
     return chunks
 
 
-def is_cuda_array(x) -> bool:
+def is_cuda_array(x: npt.ArrayLike) -> bool:
+    """test whether an array is a cuda array
+
+    Parameters
+    ----------
+    x : Array (numpy, cupy, torch, ...)
+        array to be tested
+
+    Returns
+    -------
+    bool
+    """    
 
     iscuda = False
 
