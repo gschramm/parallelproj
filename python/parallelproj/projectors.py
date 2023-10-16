@@ -16,7 +16,7 @@ class ParallelViewProjector2D(parallelproj.LinearOperator):
     def __init__(self, image_shape: tuple[int, int],
                  radial_positions: npt.ArrayLike, view_angles: npt.ArrayLike,
                  radius: float, image_origin: tuple[float, float],
-                 voxel_size: tuple[float, float]):
+                 voxel_size: tuple[float, float]) -> None:
         """init method
 
         Parameters
@@ -79,15 +79,15 @@ class ParallelViewProjector2D(parallelproj.LinearOperator):
                     phi) * self._radius
 
     @property
-    def xp(self):
+    def xp(self) -> ModuleType:
         return self._xp
 
     @property
-    def in_shape(self):
+    def in_shape(self) -> tuple[int, int]:
         return self._image_shape
 
     @property
-    def out_shape(self):
+    def out_shape(self) -> tuple[int, int]:
         return (self._num_rad, self._num_views)
 
     @property
@@ -119,7 +119,7 @@ class ParallelViewProjector2D(parallelproj.LinearOperator):
         return self._voxel_size
 
     @property
-    def device(self):
+    def device(self) -> str:
         return self._device
 
     def _apply(self, x: npt.ArrayLike) -> npt.ArrayLike:
@@ -134,7 +134,7 @@ class ParallelViewProjector2D(parallelproj.LinearOperator):
                                        self._image_origin, self._voxel_size, y)
         return self.xp.squeeze(x, axis=0)
 
-    def show_views(self, views_to_show=None, image=None, **kwargs):
+    def show_views(self, views_to_show=None, image=None, **kwargs) -> None:
         """visualize the geometry of certrain projection views
 
         Parameters
@@ -227,7 +227,7 @@ class ParallelViewProjector3D(parallelproj.LinearOperator):
                  voxel_size: tuple[float, float],
                  ring_positions: npt.ArrayLike,
                  span: int = 1,
-                 max_ring_diff: int | None = None):
+                 max_ring_diff: int | None = None) -> None:
         """init method
 
         Parameters
@@ -352,15 +352,15 @@ class ParallelViewProjector3D(parallelproj.LinearOperator):
                        2] = self._ring_positions[self._end_plane_number[i]]
 
     @property
-    def xp(self):
+    def xp(self) -> ModuleType:
         return self._xp
 
     @property
-    def in_shape(self):
+    def in_shape(self) -> tuple[int, int, int]:
         return self._image_shape
 
     @property
-    def out_shape(self):
+    def out_shape(self) -> tuple[int, int, int]:
         return (self._num_rad, self._num_views, self._num_planes)
 
     @property
