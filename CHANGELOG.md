@@ -1,31 +1,23 @@
 ## 1.6.0 (October 16, 2023)
-- chore: updated package.json, updated CHANGELOG.md, bumped 1.5.0 -> 1.6.0
+
+- rewrite LinearOperator base class to support python array api including devices
 - add missing type hints
-- add missing type hints and correct behavior of subset operator
-- add missing doc string
+- add finite difference operator
 - remove obsolete functions
-- rename build script for libs with IDL wrappers
-- update build script for libs including IDL wrappers
-- add simple 2D demo projector
-- adapt projector test
-- adapt sino/LM TOF tests
-- adapt nontof joseph test
-- update operator tests
-- add finite difference operator and remove cparr tests
-- update projector tests and classes
-- rewrite of LinearOperator ABC to remove xp argument
-- clean up changelog
 
 ## 1.5.0 (July 29, 2023)
+
 - add compatibility of python wrapper to python array api (via array-api-compat)
   such that numpy, cupy, pytorch arrays can be directly projected
-- no changes to the C/CUDA libs 
+- no changes to the C/CUDA libs
 
 ## 1.4.0 (June 11, 2023)
+
 - chore: updated package.json, updated CHANGELOG.md, bumped 1.3.7 -> 1.4.0
 - add Linear Operators
 
 ## 1.3.7 (April 27, 2023)
+
 - chore: updated package.json, updated CHANGELOG.md, bumped 1.3.6 -> 1.3.7
 - update documentation
 - dummy commit
