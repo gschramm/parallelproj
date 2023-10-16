@@ -1,3 +1,21 @@
+## 1.6.0 (October 16, 2023)
+- chore: updated package.json, updated CHANGELOG.md, bumped 1.5.0 -> 1.6.0
+- add missing type hints
+- add missing type hints and correct behavior of subset operator
+- add missing doc string
+- remove obsolete functions
+- rename build script for libs with IDL wrappers
+- update build script for libs including IDL wrappers
+- add simple 2D demo projector
+- adapt projector test
+- adapt sino/LM TOF tests
+- adapt nontof joseph test
+- update operator tests
+- add finite difference operator and remove cparr tests
+- update projector tests and classes
+- rewrite of LinearOperator ABC to remove xp argument
+- clean up changelog
+
 ## 1.5.0 (July 29, 2023)
 - add compatibility of python wrapper to python array api (via array-api-compat)
   such that numpy, cupy, pytorch arrays can be directly projected
