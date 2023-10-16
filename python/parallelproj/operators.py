@@ -2,6 +2,7 @@ from __future__ import annotations
 from types import ModuleType
 import abc
 import numpy as np
+import numpy.typing as npt
 import array_api_compat
 from array_api_compat import device
 
@@ -11,7 +12,7 @@ import parallelproj
 class LinearOperator(abc.ABC):
     """abstract base class for linear operators"""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self._scale = 1
 
     @property
@@ -38,21 +39,21 @@ class LinearOperator(abc.ABC):
         self._scale = value
 
     @abc.abstractmethod
-    def _apply(self, x):
+    def _apply(self, x: npt.ArrayLike) -> npt.ArrayLike:
         """forward step y = Ax"""
         raise NotImplementedError
 
     @abc.abstractmethod
-    def _adjoint(self, y):
+    def _adjoint(self, y: npt.ArrayLike) -> npt.ArrayLike:
         """adjoint step x = A^H y"""
         raise NotImplementedError
 
-    def apply(self, x):
+    def apply(self, x: npt.ArrayLike) -> npt.ArrayLike:
         """forward step y = scale * Ax
 
         Parameters
         ----------
-        x : numpy or cupy array
+        x : array (numpy, cupy, torch tensor, ...)
 
         Returns
         -------
@@ -63,15 +64,16 @@ class LinearOperator(abc.ABC):
         else:
             return self._scale * self._apply(x)
 
-    def __call__(self, x):
+    def __call__(self, x: npt.ArrayLike) -> npt.ArrayLike:
+        """alias to apply(x)"""
         return self.apply(x)
 
-    def adjoint(self, y):
+    def adjoint(self, y: npt.ArrayLike) -> npt.ArrayLike:
         """adjoint step x = conj(scale) * A^H y
 
         Parameters
         ----------
-        y : numpy or cupy array
+        y : array (numpy, cupy, torch tensor, ...)
 
         Returns
         -------
@@ -175,42 +177,42 @@ class LinearOperator(abc.ABC):
 class MatrixOperator(LinearOperator):
     """Linear Operator defined by dense matrix multiplication"""
 
-    def __init__(self, A):
+    def __init__(self, A: npt.ArrayLike) -> None:
         """init method
 
         Parameters
         ----------
-        A : 2D numpy or cupy real of complex array
+        A : 2D complex array (numpy, cupy, torch)
         """
         super().__init__()
         self._A = A
 
     @property
-    def in_shape(self):
+    def in_shape(self) -> tuple[int]:
         return (self._A.shape[1], )
 
     @property
-    def out_shape(self):
+    def out_shape(self) -> tuple[int]:
         return (self._A.shape[0], )
 
     @property
-    def A(self):
+    def A(self) -> npt.ArrayLike:
         return self._A
 
     @property
-    def xp(self):
+    def xp(self) -> ModuleType:
         return array_api_compat.get_namespace(self._A)
 
-    def iscomplex(self):
+    def iscomplex(self) -> bool:
         return self.xp.isdtype(self._A.dtype,
                                self.xp.complex64) or self.xp.isdtype(
                                    self._A.dtype, self.xp.complex128)
 
-    def _apply(self, x):
+    def _apply(self, x: npt.ArrayLike) -> npt.ArrayLike:
         """forward step y = Ax"""
         return self.xp.matmul(self._A, x)
 
-    def _adjoint(self, y):
+    def _adjoint(self, y: npt.ArrayLike) -> npt.ArrayLike:
         """adjoint step x = A^H y"""
 
         if self.iscomplex():
@@ -238,11 +240,11 @@ class CompositeLinearOperator(LinearOperator):
         self._operators = operators
 
     @property
-    def in_shape(self):
+    def in_shape(self) -> tuple[int, ...]:
         return self._operators[-1].in_shape
 
     @property
-    def out_shape(self):
+    def out_shape(self) -> tuple[int, ...]:
         return self._operators[0].out_shape
 
     @property
@@ -250,14 +252,14 @@ class CompositeLinearOperator(LinearOperator):
         """tuple of linear operators"""
         return self._operators
 
-    def _apply(self, x):
+    def _apply(self, x: npt.ArrayLike) -> npt.ArrayLike:
         """forward step y = Ax"""
         y = x
         for op in self._operators[::-1]:
             y = op(y)
         return y
 
-    def _adjoint(self, y):
+    def _adjoint(self, y: npt.ArrayLike) -> npt.ArrayLike:
         """adjoint step x = A^H y"""
         x = y
         for op in self._operators:
@@ -268,7 +270,7 @@ class CompositeLinearOperator(LinearOperator):
 class ElementwiseMultiplicationOperator(LinearOperator):
     """Element-wise multiplication operator (multiplication with a diagonal matrix)"""
 
-    def __init__(self, values):
+    def __init__(self, values: npt.ArrayLike):
         """init method
 
         Parameters
@@ -291,11 +293,11 @@ class ElementwiseMultiplicationOperator(LinearOperator):
     def xp(self) -> ModuleType:
         return array_api_compat.get_namespace(self._values)
 
-    def _apply(self, x):
+    def _apply(self, x: npt.ArrayLike) -> npt.ArrayLike:
         """forward step y = Ax"""
         return self._values * x
 
-    def _adjoint(self, y):
+    def _adjoint(self, y: npt.ArrayLike) -> npt.ArrayLike:
         """adjoint step x = A^H y"""
 
         if self.iscomplex():
@@ -303,7 +305,7 @@ class ElementwiseMultiplicationOperator(LinearOperator):
         else:
             return self._values * y
 
-    def iscomplex(self):
+    def iscomplex(self) -> bool:
         return self.xp.isdtype(self._values.dtype,
                                self.xp.complex64) or self.xp.isdtype(
                                    self._values.dtype, self.xp.complex128)
@@ -312,7 +314,7 @@ class ElementwiseMultiplicationOperator(LinearOperator):
 class GaussianFilterOperator(LinearOperator):
     """Gaussian filter operator"""
 
-    def __init__(self, in_shape, **kwargs):
+    def __init__(self, in_shape: tuple[int,...], **kwargs):
         """init method
 
         Parameters
@@ -327,14 +329,14 @@ class GaussianFilterOperator(LinearOperator):
         self._kwargs = kwargs
 
     @property
-    def in_shape(self):
+    def in_shape(self) -> tuple[int, ...]:
         return self._in_shape
 
     @property
-    def out_shape(self):
+    def out_shape(self) -> tuple[int, ...]:
         return self._in_shape
 
-    def _apply(self, x):
+    def _apply(self, x: npt.ArrayLike) -> npt.ArrayLike:
         """forward step y = Ax"""
         xp = array_api_compat.get_namespace(x)
 
@@ -350,7 +352,7 @@ class GaussianFilterOperator(LinearOperator):
                                                       **self._kwargs),
                               device=device(x))
 
-    def _adjoint(self, y):
+    def _adjoint(self, y: npt.ArrayLike) -> npt.ArrayLike:
         """adjoint step x = A^H y"""
         return self._apply(y)
 
@@ -384,14 +386,14 @@ class VstackOperator(LinearOperator):
         self._slices = tuple(self._slices)
 
     @property
-    def in_shape(self):
+    def in_shape(self) -> tuple[int, ...]:
         return self._in_shape
 
     @property
-    def out_shape(self):
+    def out_shape(self) -> tuple[int, ...]:
         return self._out_shape
 
-    def _apply(self, x):
+    def _apply(self, x: npt.ArrayLike) -> npt.ArrayLike:
         xp = array_api_compat.get_namespace(x)
         y = xp.zeros(self._out_shape, dtype=x.dtype, device=device(x))
 
@@ -400,7 +402,7 @@ class VstackOperator(LinearOperator):
 
         return y
 
-    def _adjoint(self, y):
+    def _adjoint(self, y: npt.ArrayLike) -> npt.ArrayLike:
         xp = array_api_compat.get_namespace(y)
         x = xp.zeros(self._in_shape, dtype=y.dtype, device=device(y))
 
@@ -428,11 +430,11 @@ class SubsetOperator:
         self._num_subsets = len(operators)
 
     @property
-    def in_shape(self):
+    def in_shape(self) -> tuple[int, ...]:
         return self._in_shape
 
     @property
-    def out_shapes(self):
+    def out_shapes(self) -> tuple[tuple[int, ...]]:
         return self._out_shapes
 
     @property
@@ -440,38 +442,38 @@ class SubsetOperator:
         return self._operators
 
     @property
-    def num_subsets(self):
+    def num_subsets(self) -> int:
         return self._num_subsets
 
-    def apply(self, x):
+    def apply(self, x: npt.ArrayLike) -> list[npt.ArrayLike]:
         """A_i x for all subsets i"""
 
         y = [op(x) for op in self._operators]
 
         return y
 
-    def __call__(self, x):
+    def __call__(self, x: npt.ArrayLike) -> list[npt.ArrayLike]:
         return self.apply(x)
 
-    def adjoint(self, y):
-        """A_i^H x for all subsets i"""
+    def adjoint(self, y: list[npt.ArrayLike]) -> npt.ArrayLike:
+        """A_i^H y_i for all subsets i"""
 
         x = []
 
         for i, op in enumerate(self._operators):
             x.append(op.adjoint(y[i]))
 
-        return x
+        return sum(x)
 
-    def apply_subset(self, x, i):
+    def apply_subset(self, x: npt.ArrayLike, i: int) -> npt.ArrayLike:
         """A_i x for a given subset i"""
         return self._operators[i](x)
 
-    def adjoint_subset(self, x, i):
+    def adjoint_subset(self, x: npt.ArrayLike, i: int) -> npt.ArrayLike:
         """A_i^H x for a given subset i"""
         return self._operators[i].adjoint(x)
 
-    def norms(self, xp: ModuleType, dev: str):
+    def norms(self, xp: ModuleType, dev: str) -> list[float]:
         """norm(A_i) for all subsets i"""
         return [op.norm(xp, dev) for op in self._operators]
 
@@ -501,7 +503,7 @@ class FiniteForwardDifference(LinearOperator):
     def ndim(self) -> int:
         return self._ndim
 
-    def _apply(self, x):
+    def _apply(self, x: npt.ArrayLike) -> npt.ArrayLike:
         xp = array_api_compat.get_namespace(x)
 
         g = xp.zeros(self.out_shape, dtype=x.dtype, device=device(x))
@@ -523,7 +525,7 @@ class FiniteForwardDifference(LinearOperator):
 
         return g
 
-    def _adjoint(self, y):
+    def _adjoint(self, y: npt.ArrayLike) -> npt.ArrayLike:
         xp = array_api_compat.get_namespace(y)
 
         if self.ndim == 1:

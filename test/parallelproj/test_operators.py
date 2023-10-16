@@ -120,9 +120,9 @@ def subsets_test(xp: ModuleType, dev: str):
         assert allclose(x_fwd[i], A.apply_subset(x, i))
 
     y = A.adjoint(x_fwd)
+    tmp = sum([A.adjoint_subset(x_fwd[i], i) for i in range(A.num_subsets)])
 
-    for i in range(A.num_subsets):
-        assert allclose(y[i], A.adjoint_subset(x_fwd[i], i))
+    assert allclose(y, tmp)
 
 
 def finite_difference_test(xp: ModuleType, dev: str):
