@@ -49,9 +49,13 @@ def elemenwise_test(xp: ModuleType, dev: str):
 def gaussian_test(xp: ModuleType, dev: str):
     np.random.seed(0)
     in_shape = (32, 32)
-    sigma = 2.3
+    sigma1 = 2.3
 
-    op = parallelproj.GaussianFilterOperator(in_shape, sigma=sigma)
+    op = parallelproj.GaussianFilterOperator(in_shape, sigma=sigma1)
+    op.adjointness_test(xp, dev)
+
+    sigma2 = xp.asarray([2.3, 1.2], device=dev)
+    op = parallelproj.GaussianFilterOperator(in_shape, sigma=sigma2)
     op.adjointness_test(xp, dev)
 
 

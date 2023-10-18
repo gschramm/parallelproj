@@ -314,18 +314,22 @@ class ElementwiseMultiplicationOperator(LinearOperator):
 class GaussianFilterOperator(LinearOperator):
     """Gaussian filter operator"""
 
-    def __init__(self, in_shape: tuple[int,...], **kwargs):
+    def __init__(self, in_shape: tuple[int, ...], sigma: float | npt.NDArray,
+                 **kwargs):
         """init method
 
         Parameters
         ----------
         in_shape : tuple[int, ...]
             shape of the input array
+        sigma: float | array
+            standard deviation of the gaussian filter
         **kwargs : sometype
             passed to the ndimage gaussian_filter function
         """
         super().__init__()
         self._in_shape = in_shape
+        self._sigma = sigma
         self._kwargs = kwargs
 
     @property
@@ -341,14 +345,26 @@ class GaussianFilterOperator(LinearOperator):
         xp = array_api_compat.get_namespace(x)
 
         if parallelproj.is_cuda_array(x):
-            import cupy as cp
+            import array_api_compat.cupy as cp
             import cupyx.scipy.ndimage as ndimagex
+            if array_api_compat.is_array_api_obj(self._sigma):
+                sigma = cp.asarray(self._sigma)
+            else:
+                sigma = self._sigma
+
             return xp.asarray(ndimagex.gaussian_filter(cp.asarray(x),
+                                                       sigma=sigma,
                                                        **self._kwargs),
                               device=device(x))
         else:
             import scipy.ndimage as ndimage
+            if array_api_compat.is_array_api_obj(self._sigma):
+                sigma = np.asarray(self._sigma)
+            else:
+                sigma = self._sigma
+
             return xp.asarray(ndimage.gaussian_filter(np.asarray(x),
+                                                      sigma=sigma,
                                                       **self._kwargs),
                               device=device(x))
 
