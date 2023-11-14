@@ -1,7 +1,6 @@
 ## 1.6.1 (October 18, 2023)
-- chore: updated package.json, updated CHANGELOG.md, bumped 1.6.0 -> 1.6.1
-- add sigma as explicit argument in GaussianFilterOperator and convert correctly to numpy/cupy arrays
-- clean up changelog
+
+- BUGFIX: add sigma as explicit argument in GaussianFilterOperator and convert correctly to numpy/cupy arrays
 
 ## 1.6.0 (October 16, 2023)
 
