@@ -1,5 +1,4 @@
 ## 1.6.2 (December 01, 2023)
-- chore: updated package.json, updated CHANGELOG.md, bumped 1.6.1 -> 1.6.2
 - BUGFIX: correct use of conj() of scalar value to be array api comp.
 - BUGFIX: divided by float() to be array api comp.
 - add scipy dependency
