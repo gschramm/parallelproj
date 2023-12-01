@@ -166,7 +166,7 @@ class LinearOperator(abc.ABC):
         for i in range(num_iter):
             x = self.adjoint(self.apply(x))
             norm_squared = xp.sqrt(xp.sum(xp.abs(x)**2))
-            x /= norm_squared
+            x /= float(norm_squared)
 
             if verbose:
                 print(f'{(i+1):03} {xp.sqrt(norm_squared):.2E}')
