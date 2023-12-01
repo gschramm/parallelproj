@@ -79,10 +79,11 @@ class LinearOperator(abc.ABC):
         -------
         numpy or cupy array
         """
+
         if self._scale == 1:
             return self._adjoint(y)
         else:
-            return np.conj(self._scale) * self._adjoint(y)
+            return self._scale.conjugate() * self._adjoint(y)
 
     def adjointness_test(self,
                          xp: ModuleType,
