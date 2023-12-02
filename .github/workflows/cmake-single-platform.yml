@@ -27,12 +27,6 @@ jobs:
       with:
         cuda: '12.1.0'
 
-    - run: echo "Installed cuda version is: ${{steps.cuda-toolkit.outputs.cuda}}"
-
-    - run: echo "Cuda install location: ${{steps.cuda-toolkit.outputs.CUDA_PATH}}"
-
-    - run: nvcc -V
-
     - name: Configure CMake
       # Configure CMake in a 'build' subdirectory. `CMAKE_BUILD_TYPE` is only required if you are using a single-configuration generator such as make.
       # See https://cmake.org/cmake/help/latest/variable/CMAKE_BUILD_TYPE.html?highlight=cmake_build_type
