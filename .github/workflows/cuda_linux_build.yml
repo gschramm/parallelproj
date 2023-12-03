@@ -63,7 +63,7 @@ jobs:
 
     - name: find installed libparallelproj_c
       run: |
-        find /usr/loca/lib -name "libparallelproj_c.so"
+        find /usr/local/lib -name "libparallelproj_c.so"
            
     - name: Test with pytest
       run: |
