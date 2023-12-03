@@ -68,5 +68,5 @@ jobs:
            
     - name: Test with pytest
       run: |
-        #export PARALLELPROJ_C_LIB=${{github.workspace}}/build/c/libparallelproj_c.so
+        export PARALLELPROJ_C_LIB=${CMAKE_INSTALL_PREFIX}/lib/libparallelproj_c.so
         pytest -v
