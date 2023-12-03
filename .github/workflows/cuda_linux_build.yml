@@ -21,11 +21,11 @@ jobs:
     steps:
     - uses: actions/checkout@v3
 
-    - uses: Jimver/cuda-toolkit@v0.2.11
-      id: cuda-toolkit
-      with:
-        cuda: '12.1.0'
-        method: 'network'
+#    - uses: Jimver/cuda-toolkit@v0.2.11
+#      id: cuda-toolkit
+#      with:
+#        cuda: '12.1.0'
+#        method: 'network'
 
     - name: Configure CMake
       # Configure CMake in a 'build' subdirectory. `CMAKE_BUILD_TYPE` is only required if you are using a single-configuration generator such as make.
@@ -63,4 +63,5 @@ jobs:
         
     - name: Test with pytest
       run: |
-        pytest
+        export PARALLELPROJ_C_LIB=${{github.workspace}}/build/libparallelproj_c.so
+        pytest -VV
