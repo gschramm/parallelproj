@@ -63,10 +63,9 @@ jobs:
 
     - name: find installed libparallelproj_c
       run: |
-        echo $CMAKE_INSTALL_PREFIX
-        find ${CMAKE_INSTALL_PREFIX} -name "libparallelproj_c.so"
+        find /usr/loca/lib -name "libparallelproj_c.so"
            
     - name: Test with pytest
       run: |
-        export PARALLELPROJ_C_LIB=${CMAKE_INSTALL_PREFIX}/lib/libparallelproj_c.so
+        export PARALLELPROJ_C_LIB=/usr/local/lib/libparallelproj_c.so
         pytest -v
