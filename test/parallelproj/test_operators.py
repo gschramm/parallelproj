@@ -25,11 +25,16 @@ def matrix_test(xp: ModuleType, dev: str):
     x = xp.asarray([-2., 1.], device=dev)
 
     op = parallelproj.MatrixOperator(A)
+    
+    # set scale that is not 1
+    scale_fac = -2.5
+    op.scale = scale_fac
+    
     # test call to norm
     op_norm = op.norm(xp, dev)
 
     op.adjointness_test(xp, dev)
-    assert allclose(A @ x, op(x))
+    assert allclose(scale_fac * (A @ x), op(x))
 
 
 def elemenwise_test(xp: ModuleType, dev: str):
