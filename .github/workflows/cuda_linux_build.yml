@@ -64,4 +64,4 @@ jobs:
     - name: Test with pytest
       run: |
         export PARALLELPROJ_C_LIB=${{github.workspace}}/build/libparallelproj_c.so
-        pytest -VV
+        pytest -v
