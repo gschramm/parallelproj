@@ -107,15 +107,20 @@ class LinearOperator(abc.ABC):
             passed to np.isclose
         """
 
-        x = xp.asarray(np.random.rand(*self.in_shape), device=dev)
-        y = xp.asarray(np.random.rand(*self.out_shape), device=dev)
+        if iscomplex:
+            dtype = xp.complex128
+        else:
+            dtype = xp.float64
+
+        x = xp.asarray(np.random.rand(*self.in_shape), device=dev, dtype=dtype)
+        y = xp.asarray(np.random.rand(*self.out_shape), device=dev, dtype=dtype)
 
         if iscomplex:
-            x = x + 1j * xp.asarray(np.random.rand(*self.in_shape), device=dev)
+            x = x + 1j * xp.asarray(np.random.rand(*self.in_shape), device=dev, dtype=dtype)
 
         if iscomplex:
             y = y + 1j * xp.asarray(np.random.rand(*self.out_shape),
-                                    device=dev)
+                                    device=dev, dtype=dtype)
 
         x_fwd = self.apply(x)
         y_adj = self.adjoint(y)
@@ -159,10 +164,15 @@ class LinearOperator(abc.ABC):
             the norm of the linear operator
         """
 
-        x = xp.asarray(np.random.rand(*self.in_shape), device=dev)
+        if iscomplex:
+            dtype = xp.complex128
+        else:
+            dtype = xp.float64
+
+        x = xp.asarray(np.random.rand(*self.in_shape), device=dev, dtype=dtype)
 
         if iscomplex:
-            x = x + 1j * xp.asarray(np.random.rand(*self.in_shape), device=dev)
+            x = x + 1j * xp.asarray(np.random.rand(*self.in_shape), device=dev, dtype=dtype)
 
         for i in range(num_iter):
             x = self.adjoint(self.apply(x))

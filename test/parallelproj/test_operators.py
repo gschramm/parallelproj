@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-import unittest
+import pytest
 import parallelproj
 import numpy.array_api as nparr
 import array_api_compat
@@ -9,6 +9,26 @@ import array_api_compat.numpy as np
 from types import ModuleType
 from math import prod
 
+# generate list of array_api modules / device combinations to test
+xp_dev_list = [(np, 'cpu')]
+
+if np.__version__ >= '1.25':
+    xp_dev_list.append((nparr, 'cpu'))
+
+if parallelproj.cupy_enabled:
+    import array_api_compat.cupy as cp
+    xp_dev_list.append((cp, 'cuda'))
+
+if parallelproj.torch_enabled:
+    import array_api_compat.torch as torch
+    xp_dev_list.append((torch, 'cpu'))
+
+    if parallelproj.cuda_present:
+        xp_dev_list.append((torch, 'cuda'))
+
+pytestmark = pytest.mark.parametrize("xp,dev", xp_dev_list)
+
+#---------------------------------------------------------------------------------------
 
 def allclose(x, y, atol: float = 1e-8, rtol: float = 1e-5) -> bool:
     """check if two arrays are close to each other, given absolute and relative error
@@ -17,18 +37,25 @@ def allclose(x, y, atol: float = 1e-8, rtol: float = 1e-5) -> bool:
     xp = array_api_compat.array_namespace(x)
     return bool(xp.all(xp.less_equal(xp.abs(x - y), atol + rtol * xp.abs(y))))
 
+#---------------------------------------------------------------------------------------
 
-def matrix_test(xp: ModuleType, dev: str):
+def test_matrix(xp: ModuleType, dev: str):
     np.random.seed(0)
 
     A = xp.asarray([[1., 2.], [-3., 2.], [-1., -1.]], device=dev)
     x = xp.asarray([-2., 1.], device=dev)
 
     op = parallelproj.MatrixOperator(A)
-    
+
     # set scale that is not 1
     scale_fac = -2.5
     op.scale = scale_fac
+
+    assert op.scale == scale_fac
+    assert allclose(op.A, A)
+
+    with pytest.raises(ValueError):
+        op.scale = xp.ones(1, device=dev)
     
     # test call to norm
     op_norm = op.norm(xp, dev)
@@ -36,8 +63,22 @@ def matrix_test(xp: ModuleType, dev: str):
     op.adjointness_test(xp, dev)
     assert allclose(scale_fac * (A @ x), op(x))
 
+def test_complex_matrix(xp: ModuleType, dev: str):
+    np.random.seed(0)
 
-def elemenwise_test(xp: ModuleType, dev: str):
+    A = xp.asarray([[1., 2j], [-3., 2.], [-1., -1.]], device=dev, dtype=xp.complex128)
+    x = xp.asarray([-2., 1.], device=dev, dtype=xp.complex128)
+
+    op = parallelproj.MatrixOperator(A)
+    op.adjointness_test(xp, dev, iscomplex=True)
+
+    n = op.norm(xp, dev, iscomplex=True)
+
+    assert allclose((A @ x), op(x))
+
+
+
+def test_elemenwise(xp: ModuleType, dev: str):
     np.random.seed(0)
 
     v = xp.asarray([3., -1.], device=dev)
@@ -50,8 +91,22 @@ def elemenwise_test(xp: ModuleType, dev: str):
     op.adjointness_test(xp, dev)
     assert allclose(v * x, op(x))
 
+def test_elemenwise_complex(xp: ModuleType, dev: str):
+    np.random.seed(0)
 
-def gaussian_test(xp: ModuleType, dev: str):
+    v = xp.asarray([3j, -1.], device=dev, dtype=xp.complex128)
+    x = xp.asarray([-2., 1j], device=dev, dtype=xp.complex128)
+
+    op = parallelproj.ElementwiseMultiplicationOperator(v)
+    # test call to norm
+    op_norm = op.norm(xp, dev, iscomplex = True)
+
+    op.adjointness_test(xp, dev, iscomplex = True)
+    assert allclose(v * x, op(x))
+
+
+
+def test_gaussian(xp: ModuleType, dev: str):
     np.random.seed(0)
     in_shape = (32, 32)
     sigma1 = 2.3
@@ -64,7 +119,7 @@ def gaussian_test(xp: ModuleType, dev: str):
     op.adjointness_test(xp, dev)
 
 
-def composite_test(xp: ModuleType, dev: str):
+def test_composite(xp: ModuleType, dev: str):
     np.random.seed(0)
 
     A = xp.asarray([[1., 2.], [-3., 2.], [-1., -1.]], device=dev)
@@ -75,6 +130,9 @@ def composite_test(xp: ModuleType, dev: str):
     op2 = parallelproj.MatrixOperator(A)
 
     op = parallelproj.CompositeLinearOperator([op1, op2])
+    
+    assert op.operators == [op1, op2]
+
     # test call to norm
     op_norm = op.norm(xp, dev)
 
@@ -82,7 +140,8 @@ def composite_test(xp: ModuleType, dev: str):
     assert allclose(v * (A @ x), op(x))
 
 
-def vstack_test(xp: ModuleType, dev: str):
+
+def test_vstack(xp: ModuleType, dev: str):
     np.random.seed(0)
     in_shape = (16, 11)
 
@@ -105,8 +164,7 @@ def vstack_test(xp: ModuleType, dev: str):
         xp.concat((xp.reshape(A1(x), (-1, )), xp.reshape(A2(x), (-1, )),
                    xp.reshape(A3(x), (-1, )))))
 
-
-def subsets_test(xp: ModuleType, dev: str):
+def test_subsets(xp: ModuleType, dev: str):
     np.random.seed(0)
     in_shape = (3, )
 
@@ -133,8 +191,25 @@ def subsets_test(xp: ModuleType, dev: str):
 
     assert allclose(y, tmp)
 
+    assert A.in_shape == A3.in_shape
+    assert A.out_shapes == (A1.out_shape, A2.out_shape, A3.out_shape)
+    assert A.operators == (A1, A2, A3)
 
-def finite_difference_test(xp: ModuleType, dev: str):
+
+def test_finite_difference(xp: ModuleType, dev: str):
+
+    # 1D tests
+    A = parallelproj.FiniteForwardDifference((3,))
+    x = xp.reshape(xp.arange(prod(A.in_shape), device=dev), A.in_shape)
+
+    n = A.norm(xp, dev)
+    # test adjointness
+    A.adjointness_test(xp, dev)
+
+    # test simple forward
+    y = A(x)
+    assert xp.all(y[0, :-1] == 1)
+ 
 
     # 2D tests
     A = parallelproj.FiniteForwardDifference((5, 3))
@@ -177,178 +252,5 @@ def finite_difference_test(xp: ModuleType, dev: str):
     assert xp.all(y[2, :, :, :-1, :] == 6)
     assert xp.all(y[3, :, :, :, :-1] == 1)
 
-
-#--------------------------------------------------------------------------
-class TestOperators(unittest.TestCase):
-
-    def testfinite(self):
-        finite_difference_test(np, 'cpu')
-        if np.__version__ >= '1.25':
-            finite_difference_test(nparr, 'cpu')
-
-    if parallelproj.cupy_enabled:
-
-        def testfinite_cp(self):
-            import array_api_compat.cupy as cp
-            finite_difference_test(cp, 'cuda')
-
-    if parallelproj.torch_enabled:
-
-        def testfinite_torch(self):
-            import array_api_compat.torch as torch
-            finite_difference_test(torch, 'cpu')
-
-    if parallelproj.torch_enabled and parallelproj.cuda_present:
-
-        def testfinite_torch_cuda(self):
-            import array_api_compat.torch as torch
-            finite_difference_test(torch, 'cuda')
-
-    def testmatrix(self):
-        matrix_test(np, 'cpu')
-        if np.__version__ >= '1.25':
-            matrix_test(nparr, 'cpu')
-
-    if parallelproj.cupy_enabled:
-
-        def testmatrix_cp(self):
-            import array_api_compat.cupy as cp
-            matrix_test(cp, 'cuda')
-
-    if parallelproj.torch_enabled:
-
-        def testmatrix_torch(self):
-            import array_api_compat.torch as torch
-            matrix_test(torch, 'cpu')
-
-    if parallelproj.torch_enabled and parallelproj.cuda_present:
-
-        def testmatrix_torch_cuda(self):
-            import array_api_compat.torch as torch
-            matrix_test(torch, 'cuda')
-
-    #-----------------------------------------------
-    def testelementwise(self):
-        elemenwise_test(np, 'cpu')
-        if np.__version__ >= '1.25':
-            elemenwise_test(nparr, 'cpu')
-
-    if parallelproj.cupy_enabled:
-
-        def testelementwise_cp(self):
-            import array_api_compat.cupy as cp
-            elemenwise_test(cp, 'cuda')
-
-    if parallelproj.torch_enabled:
-
-        def testelementwise_torch(self):
-            import array_api_compat.torch as torch
-            elemenwise_test(torch, 'cpu')
-
-    if parallelproj.torch_enabled and parallelproj.cuda_present:
-
-        def testelementwise_torch_cuda(self):
-            import array_api_compat.torch as torch
-            elemenwise_test(torch, 'cuda')
-
-    #-----------------------------------------------
-    def testgaussian(self):
-        gaussian_test(np, 'cpu')
-        if np.__version__ >= '1.25':
-            gaussian_test(nparr, 'cpu')
-
-    if parallelproj.cupy_enabled:
-
-        def testgaussian_cp(self):
-            import array_api_compat.cupy as cp
-            gaussian_test(cp, 'cuda')
-
-    if parallelproj.torch_enabled:
-
-        def testgaussian_torch(self):
-            import array_api_compat.torch as torch
-            gaussian_test(torch, 'cpu')
-
-    if parallelproj.torch_enabled and parallelproj.cuda_present:
-
-        def testgaussian_torch_cuda(self):
-            import array_api_compat.torch as torch
-            gaussian_test(torch, 'cuda')
-
-    #-----------------------------------------------
-    def testcomposite(self):
-        composite_test(np, 'cpu')
-        if np.__version__ >= '1.25':
-            composite_test(nparr, 'cpu')
-
-    if parallelproj.cupy_enabled:
-
-        def testcomposite_cp(self):
-            import array_api_compat.cupy as cp
-            composite_test(cp, 'cuda')
-
-    if parallelproj.torch_enabled:
-
-        def testcomposite_torch(self):
-            import array_api_compat.torch as torch
-            composite_test(torch, 'cpu')
-
-    if parallelproj.torch_enabled and parallelproj.cuda_present:
-
-        def testcomposite_torch_cuda(self):
-            import array_api_compat.torch as torch
-            composite_test(torch, 'cuda')
-
-    #-----------------------------------------------
-    def testvstack(self):
-        vstack_test(np, 'cpu')
-        if np.__version__ >= '1.25':
-            vstack_test(nparr, 'cpu')
-
-    if parallelproj.cupy_enabled:
-
-        def testvstack_cp(self):
-            import array_api_compat.cupy as cp
-            vstack_test(cp, 'cuda')
-
-    if parallelproj.torch_enabled:
-
-        def testvstack_torch(self):
-            import array_api_compat.torch as torch
-            vstack_test(torch, 'cpu')
-
-    if parallelproj.torch_enabled and parallelproj.cuda_present:
-
-        def testvstack_torch_cuda(self):
-            import array_api_compat.torch as torch
-            vstack_test(torch, 'cuda')
-
-    #-----------------------------------------------
-    def testsubsets(self):
-        subsets_test(np, 'cpu')
-        if np.__version__ >= '1.25':
-            subsets_test(nparr, 'cpu')
-
-    if parallelproj.cupy_enabled:
-
-        def testsubsets_cp(self):
-            import array_api_compat.cupy as cp
-            subsets_test(cp, 'cuda')
-
-    if parallelproj.torch_enabled:
-
-        def testsubsets_torch(self):
-            import array_api_compat.torch as torch
-            subsets_test(torch, 'cpu')
-
-    if parallelproj.torch_enabled and parallelproj.cuda_present:
-
-        def testsubsets_torch_cuda(self):
-            import array_api_compat.torch as torch
-            subsets_test(torch, 'cuda')
-
-
-#--------------------------------------------------------------------
-
-if __name__ == '__main__':
-    unittest.main()
+    with pytest.raises(ValueError):
+        A = parallelproj.FiniteForwardDifference((3,3,3,3,3))

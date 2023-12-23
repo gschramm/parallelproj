@@ -1,11 +1,32 @@
 from __future__ import annotations
 
-import unittest
+import pytest
 import parallelproj
 import numpy.array_api as nparr
 import array_api_compat
 import array_api_compat.numpy as np
+import matplotlib.pyplot as plt
 
+# generate list of array_api modules / device combinations to test
+xp_dev_list = [(np, 'cpu')]
+
+if np.__version__ >= '1.25':
+    xp_dev_list.append((nparr, 'cpu'))
+
+if parallelproj.cupy_enabled:
+    import array_api_compat.cupy as cp
+    xp_dev_list.append((cp, 'cuda'))
+
+if parallelproj.torch_enabled:
+    import array_api_compat.torch as torch
+    xp_dev_list.append((torch, 'cpu'))
+
+    if parallelproj.cuda_present:
+        xp_dev_list.append((torch, 'cuda'))
+
+pytestmark = pytest.mark.parametrize("xp,dev", xp_dev_list)
+
+#---------------------------------------------------------------------------------------
 
 def allclose(x, y, atol: float = 1e-8, rtol: float = 1e-5) -> bool:
     """check if two arrays are close to each other, given absolute and relative error
@@ -15,7 +36,7 @@ def allclose(x, y, atol: float = 1e-8, rtol: float = 1e-5) -> bool:
     return bool(xp.all(xp.less_equal(xp.abs(x - y), atol + rtol * xp.abs(y))))
 
 
-def parallelviewprojector_test(xp, dev, verbose=True):
+def test_parallelviewprojector(xp, dev, verbose=True):
     image_shape = (2, 2)
     voxel_size = (2., 2.)
     image_origin = (-1., -1.)
@@ -28,6 +49,18 @@ def parallelviewprojector_test(xp, dev, verbose=True):
                                                   radial_positions,
                                                   view_angles, radius,
                                                   image_origin, voxel_size)
+
+    assert proj2d.num_views == array_api_compat.size(view_angles)
+    assert proj2d.num_rad == array_api_compat.size(radial_positions)
+
+    xstart = proj2d.xstart
+    xend = proj2d.xend
+
+    assert allclose(proj2d.image_origin[1:], xp.asarray(image_origin, device = dev))
+    assert proj2d.image_shape == image_shape
+    assert allclose(proj2d.voxel_size[1:], xp.asarray(voxel_size, device = dev))
+    assert proj2d.device == array_api_compat.device(xstart)
+
 
     proj2d.adjointness_test(xp, dev, verbose=verbose)
 
@@ -52,6 +85,8 @@ def parallelviewprojector_test(xp, dev, verbose=True):
 
     assert allclose(x_fwd, exp_result)
 
+    fig = proj2d.show_views(image = xp.ones(image_shape, dtype=xp.float32, device=dev))
+
     # setup a simple 3D projector with 2 rings
 
     image_shape3d = (2, 2, 2)
@@ -67,6 +102,10 @@ def parallelviewprojector_test(xp, dev, verbose=True):
                                                   voxel_size3d,
                                                   ring_positions,
                                                   max_ring_diff=1)
+
+    xstart = proj3d.xstart
+    xend = proj3d.xend
+
     proj3d.adjointness_test(xp, dev, verbose=verbose)
 
     # test a simple 3D projection
@@ -88,36 +127,27 @@ def parallelviewprojector_test(xp, dev, verbose=True):
     assert allclose(x3d_fwd[..., 1], exp_result_dp1)
     assert allclose(x3d_fwd[..., 2], exp_result_dp2)
 
+    # test is max_ring_diff = None works
+    proj3d_2 = parallelproj.ParallelViewProjector3D(image_shape3d,
+                                                  radial_positions,
+                                                  view_angles,
+                                                  radius,
+                                                  image_origin3d,
+                                                  voxel_size3d,
+                                                  ring_positions,
+                                                  max_ring_diff=None)
 
-#--------------------------------------------------------------------------
+    assert proj3d_2.max_ring_diff == array_api_compat.size(ring_positions) - 1
+ 
+    # test whether span > 1 raises execption
+    with pytest.raises(Exception) as e_info:
+        proj3d_2 = parallelproj.ParallelViewProjector3D(image_shape3d,
+                                                      radial_positions,
+                                                      view_angles,
+                                                      radius,
+                                                      image_origin3d,
+                                                      voxel_size3d,
+                                                      ring_positions,
+                                                      max_ring_diff=None,
+                                                      span=3)
 
-
-class TestParallelViewProjector(unittest.TestCase):
-
-    def test(self):
-        parallelviewprojector_test(np, 'cpu')
-
-        if np.__version__ >= '1.25':
-            parallelviewprojector_test(nparr, 'cpu')
-
-    if parallelproj.cupy_enabled:
-
-        def test_cp(self):
-            import array_api_compat.cupy as cp
-            parallelviewprojector_test(cp, 'cuda')
-
-    if parallelproj.torch_enabled:
-
-        def test_torch(self):
-            import torch
-            parallelviewprojector_test(torch, 'cpu')
-
-    if parallelproj.torch_enabled and parallelproj.cuda_present:
-
-        def test_torch_cuda(self):
-            import torch
-            parallelviewprojector_test(torch, dev='cuda')
-
-
-if __name__ == '__main__':
-    unittest.main()

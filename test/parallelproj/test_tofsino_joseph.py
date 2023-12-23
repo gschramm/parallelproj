@@ -1,10 +1,30 @@
-import unittest
+import pytest
 import parallelproj
 import numpy.array_api as nparr
 import array_api_compat.numpy as np
 
 from types import ModuleType
 
+# generate list of array_api modules / device combinations to test
+xp_dev_list = [(np, 'cpu')]
+
+if np.__version__ >= '1.25':
+    xp_dev_list.append((nparr, 'cpu'))
+
+if parallelproj.cupy_enabled:
+    import array_api_compat.cupy as cp
+    xp_dev_list.append((cp, 'cuda'))
+
+if parallelproj.torch_enabled:
+    import array_api_compat.torch as torch
+    xp_dev_list.append((torch, 'cpu'))
+
+    if parallelproj.cuda_present:
+        xp_dev_list.append((torch, 'cuda'))
+
+pytestmark = pytest.mark.parametrize("xp,dev", xp_dev_list)
+
+#---------------------------------------------------------------------------------------
 
 def isclose(x: float,
             y: float,
@@ -16,7 +36,7 @@ def isclose(x: float,
     return bool(abs(x - y) <= (atol + rtol * abs(y)))
 
 
-def tof_sino_fwd_test(xp: ModuleType,
+def test_tof_sino_fwd(xp: ModuleType,
                       dev: str,
                       verbose: bool = True,
                       atol: float = 1e-6) -> bool:
@@ -109,10 +129,10 @@ def tof_sino_fwd_test(xp: ModuleType,
         )
         print('')
 
-    return bool(res1 * res2 * res3)
+    assert bool(res1 * res2 * res3)
 
 
-def adjointness_test(xp: ModuleType,
+def test_adjointness(xp: ModuleType,
                      dev: str,
                      nLORs=1000000,
                      seed=1,
@@ -188,64 +208,4 @@ def adjointness_test(xp: ModuleType,
         print('ip_b = ', ip_b)
         print('')
 
-    return isclose(ip_a, ip_b)
-
-
-#--------------------------------------------------------------------------
-
-
-class TestTOFJoseph(unittest.TestCase):
-    """test for TOF joseph projections"""
-
-    def test_fwd(self):
-        tof_sino_fwd_test(np, 'cpu')
-        if np.__version__ >= '1.25':
-            tof_sino_fwd_test(nparr, 'cpu')
-
-    if parallelproj.cupy_enabled:
-
-        def test_fwd_cp(self):
-            import array_api_compat.cupy as cp
-            tof_sino_fwd_test(cp, 'cuda')
-
-    if parallelproj.torch_enabled:
-
-        def test_fwd_torch(self):
-            import array_api_compat.torch as torch
-            tof_sino_fwd_test(torch, 'cpu')
-
-    if parallelproj.torch_enabled and parallelproj.cupy_enabled:
-
-        def test_fwd_torch_cuda(self):
-            import array_api_compat.torch as torch
-            tof_sino_fwd_test(torch, 'cuda')
-
-    def test_adjoint(self):
-        """test non TOF joseph forward projection using different backends"""
-        adjointness_test(np, 'cpu')
-        if np.__version__ >= '1.25':
-            adjointness_test(nparr, 'cpu')
-
-    if parallelproj.cupy_enabled:
-
-        def test_adjoint_cp(self):
-            import array_api_compat.cupy as cp
-            adjointness_test(cp, 'cuda')
-
-    if parallelproj.torch_enabled:
-
-        def test_adjoint_torch(self):
-            import array_api_compat.torch as torch
-            adjointness_test(torch, 'cpu')
-
-    if parallelproj.torch_enabled and parallelproj.cupy_enabled:
-
-        def test_adjoint_torch_cuda(self):
-            import array_api_compat.torch as torch
-            adjointness_test(torch, 'cuda')
-
-
-#--------------------------------------------------------------------------
-
-if __name__ == '__main__':
-    unittest.main()
+    assert isclose(ip_a, ip_b)
