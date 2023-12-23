@@ -46,16 +46,36 @@ def test_matrix(xp: ModuleType, dev: str):
     x = xp.asarray([-2., 1.], device=dev)
 
     op = parallelproj.MatrixOperator(A)
-    
+
     # set scale that is not 1
     scale_fac = -2.5
     op.scale = scale_fac
+
+    assert op.scale == scale_fac
+    assert allclose(op.A, A)
+
+    with pytest.raises(ValueError):
+        op.scale = xp.ones(1, device=dev)
     
     # test call to norm
     op_norm = op.norm(xp, dev)
 
     op.adjointness_test(xp, dev)
     assert allclose(scale_fac * (A @ x), op(x))
+
+def test_complex_matrix(xp: ModuleType, dev: str):
+    np.random.seed(0)
+
+    A = xp.asarray([[1., 2j], [-3., 2.], [-1., -1.]], device=dev, dtype=xp.complex128)
+    x = xp.asarray([-2., 1.], device=dev, dtype=xp.complex128)
+
+    op = parallelproj.MatrixOperator(A)
+    op.adjointness_test(xp, dev, iscomplex=True)
+
+    n = op.norm(xp, dev, iscomplex=True)
+
+    assert allclose((A @ x), op(x))
+
 
 
 def test_elemenwise(xp: ModuleType, dev: str):
@@ -70,6 +90,20 @@ def test_elemenwise(xp: ModuleType, dev: str):
 
     op.adjointness_test(xp, dev)
     assert allclose(v * x, op(x))
+
+def test_elemenwise_complex(xp: ModuleType, dev: str):
+    np.random.seed(0)
+
+    v = xp.asarray([3j, -1.], device=dev, dtype=xp.complex128)
+    x = xp.asarray([-2., 1j], device=dev, dtype=xp.complex128)
+
+    op = parallelproj.ElementwiseMultiplicationOperator(v)
+    # test call to norm
+    op_norm = op.norm(xp, dev, iscomplex = True)
+
+    op.adjointness_test(xp, dev, iscomplex = True)
+    assert allclose(v * x, op(x))
+
 
 
 def test_gaussian(xp: ModuleType, dev: str):
@@ -96,11 +130,15 @@ def test_composite(xp: ModuleType, dev: str):
     op2 = parallelproj.MatrixOperator(A)
 
     op = parallelproj.CompositeLinearOperator([op1, op2])
+    
+    assert op.operators == [op1, op2]
+
     # test call to norm
     op_norm = op.norm(xp, dev)
 
     op.adjointness_test(xp, dev)
     assert allclose(v * (A @ x), op(x))
+
 
 
 def test_vstack(xp: ModuleType, dev: str):
@@ -153,8 +191,25 @@ def test_subsets(xp: ModuleType, dev: str):
 
     assert allclose(y, tmp)
 
+    assert A.in_shape == A3.in_shape
+    assert A.out_shapes == (A1.out_shape, A2.out_shape, A3.out_shape)
+    assert A.operators == (A1, A2, A3)
+
 
 def test_finite_difference(xp: ModuleType, dev: str):
+
+    # 1D tests
+    A = parallelproj.FiniteForwardDifference((3,))
+    x = xp.reshape(xp.arange(prod(A.in_shape), device=dev), A.in_shape)
+
+    n = A.norm(xp, dev)
+    # test adjointness
+    A.adjointness_test(xp, dev)
+
+    # test simple forward
+    y = A(x)
+    assert xp.all(y[0, :-1] == 1)
+ 
 
     # 2D tests
     A = parallelproj.FiniteForwardDifference((5, 3))
@@ -196,3 +251,6 @@ def test_finite_difference(xp: ModuleType, dev: str):
     assert xp.all(y[1, :, :-1, :, :] == 24)
     assert xp.all(y[2, :, :, :-1, :] == 6)
     assert xp.all(y[3, :, :, :, :-1] == 1)
+
+    with pytest.raises(ValueError):
+        A = parallelproj.FiniteForwardDifference((3,3,3,3,3))

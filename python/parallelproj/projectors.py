@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-import numpy as np
+import array_api_compat.numpy as np
 import numpy.typing as npt
 import array_api_compat
 import math
@@ -134,7 +134,7 @@ class ParallelViewProjector2D(parallelproj.LinearOperator):
                                        self._image_origin, self._voxel_size, y)
         return self.xp.squeeze(x, axis=0)
 
-    def show_views(self, views_to_show=None, image=None, **kwargs) -> None:
+    def show_views(self, views_to_show=None, image=None, **kwargs) -> plt.Figure:
         """visualize the geometry of certrain projection views
 
         Parameters
@@ -158,14 +158,14 @@ class ParallelViewProjector2D(parallelproj.LinearOperator):
         img_extent = [tmp1, -tmp1, tmp2, -tmp2]
 
         for i, ip in enumerate(views_to_show):
-            ax[i].plot(array_api_compat.to_device(self._xstart[:, ip, 1],
-                                                  'cpu'),
-                       array_api_compat.to_device(self._xstart[:, ip, 2],
-                                                  'cpu'),
+            ax[i].plot(np.asarray(array_api_compat.to_device(self._xstart[:, ip, 1],
+                                                  'cpu')),
+                       np.asarray(array_api_compat.to_device(self._xstart[:, ip, 2],
+                                                  'cpu')),
                        '.',
                        ms=0.5)
-            ax[i].plot(array_api_compat.to_device(self._xend[:, ip, 1], 'cpu'),
-                       array_api_compat.to_device(self._xend[:, ip, 2], 'cpu'),
+            ax[i].plot(np.asarray(array_api_compat.to_device(self._xend[:, ip, 1], 'cpu')),
+                       np.asarray(array_api_compat.to_device(self._xend[:, ip, 2], 'cpu')),
                        '.',
                        ms=0.5)
 
@@ -350,6 +350,10 @@ class ParallelViewProjector3D(parallelproj.LinearOperator):
                          2] = self._ring_positions[self._start_plane_number[i]]
             self._xend[:, :, i,
                        2] = self._ring_positions[self._end_plane_number[i]]
+
+    @property
+    def max_ring_diff(self) -> int:
+        return self._max_ring_diff
 
     @property
     def xp(self) -> ModuleType:

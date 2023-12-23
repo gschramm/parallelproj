@@ -33,3 +33,23 @@ include = ["parallelproj*"]
 
 [tool.setuptools.package-data]
 "parallelproj" = ["py.typed"]
+
+[tool.coverage.report]
+exclude_lines = [
+    "def __repr__",
+    "if verbose:",
+    "if self._debug:",
+    "if self.debug:",
+    "if settings.DEBUG",
+    "raise AssertionError",
+    "raise NotImplementedError",
+    "if 0:",
+    "if __name__ == .__main__.:",
+    "if TYPE_CHECKING:",
+    "class .*\\bProtocol\\):",
+    "@(abc\\.)?abstractmethod",
+    "if parallelproj.is_cuda_array",
+]
+omit = [
+    "python/parallelproj/backend.py",
+    ]
