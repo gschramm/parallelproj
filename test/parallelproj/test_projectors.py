@@ -1,11 +1,31 @@
 from __future__ import annotations
 
-import unittest
+import pytest
 import parallelproj
 import numpy.array_api as nparr
 import array_api_compat
 import array_api_compat.numpy as np
 
+# generate list of array_api modules / device combinations to test
+xp_dev_list = [(np, 'cpu')]
+
+if np.__version__ >= '1.25':
+    xp_dev_list.append((nparr, 'cpu'))
+
+if parallelproj.cupy_enabled:
+    import array_api_compat.cupy as cp
+    xp_dev_list.append((cp, 'cuda'))
+
+if parallelproj.torch_enabled:
+    import array_api_compat.torch as torch
+    xp_dev_list.append((torch, 'cpu'))
+
+    if parallelproj.cuda_present:
+        xp_dev_list.append((torch, 'cuda'))
+
+pytestmark = pytest.mark.parametrize("xp,dev", xp_dev_list)
+
+#---------------------------------------------------------------------------------------
 
 def allclose(x, y, atol: float = 1e-8, rtol: float = 1e-5) -> bool:
     """check if two arrays are close to each other, given absolute and relative error
@@ -15,7 +35,7 @@ def allclose(x, y, atol: float = 1e-8, rtol: float = 1e-5) -> bool:
     return bool(xp.all(xp.less_equal(xp.abs(x - y), atol + rtol * xp.abs(y))))
 
 
-def parallelviewprojector_test(xp, dev, verbose=True):
+def test_parallelviewprojector(xp, dev, verbose=True):
     image_shape = (2, 2)
     voxel_size = (2., 2.)
     image_origin = (-1., -1.)
@@ -87,37 +107,3 @@ def parallelviewprojector_test(xp, dev, verbose=True):
     assert allclose(x3d_fwd[..., 0], exp_result_dp0)
     assert allclose(x3d_fwd[..., 1], exp_result_dp1)
     assert allclose(x3d_fwd[..., 2], exp_result_dp2)
-
-
-#--------------------------------------------------------------------------
-
-
-class TestParallelViewProjector(unittest.TestCase):
-
-    def test(self):
-        parallelviewprojector_test(np, 'cpu')
-
-        if np.__version__ >= '1.25':
-            parallelviewprojector_test(nparr, 'cpu')
-
-    if parallelproj.cupy_enabled:
-
-        def test_cp(self):
-            import array_api_compat.cupy as cp
-            parallelviewprojector_test(cp, 'cuda')
-
-    if parallelproj.torch_enabled:
-
-        def test_torch(self):
-            import torch
-            parallelviewprojector_test(torch, 'cpu')
-
-    if parallelproj.torch_enabled and parallelproj.cuda_present:
-
-        def test_torch_cuda(self):
-            import torch
-            parallelviewprojector_test(torch, dev='cuda')
-
-
-if __name__ == '__main__':
-    unittest.main()
