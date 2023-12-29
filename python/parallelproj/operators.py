@@ -40,16 +40,16 @@ class LinearOperator(abc.ABC):
 
     @abc.abstractmethod
     def _apply(self, x: Array) -> Array:
-        """forward step y = Ax"""
+        """forward step :math:`y = Ax`"""
         raise NotImplementedError
 
     @abc.abstractmethod
     def _adjoint(self, y: Array) -> Array:
-        """adjoint step x = A^H y"""
+        """adjoint step :math:`x = A^H y`"""
         raise NotImplementedError
 
     def apply(self, x: Array) -> Array:
-        """forward step y = scale * Ax
+        """(scaled) forward step :math:`y = \\alpha A x`
 
         Parameters
         ----------
@@ -69,7 +69,7 @@ class LinearOperator(abc.ABC):
         return self.apply(x)
 
     def adjoint(self, y: Array) -> Array:
-        """adjoint step x = conj(scale) * A^H y
+        """(scaled) adjoint step :math:`x = \\overline{\\alpha} A^H y`
 
         Parameters
         ----------
@@ -224,12 +224,9 @@ class MatrixOperator(LinearOperator):
                                    self._A.dtype, self.xp.complex128)
 
     def _apply(self, x: Array) -> Array:
-        """forward step y = Ax"""
         return self.xp.matmul(self._A, x)
 
     def _adjoint(self, y: Array) -> Array:
-        """adjoint step x = A^H y"""
-
         if self.iscomplex():
             return self.xp.matmul(self.xp.conj(self._A).T, y)
         else:
@@ -239,8 +236,8 @@ class MatrixOperator(LinearOperator):
 class CompositeLinearOperator(LinearOperator):
     """Composite Linear Operator defined by a sequence of Linear Operators
     
-       Given a tuple of operators (A_0, ..., A_{n-1}) the composite operator is defined as
-       A(x) = A0( A1( ... ( A_{n-1}(x) ) ) ) 
+       Given a tuple of operators :math:`(A_0, ..., A_{n-1})` the composite operator is defined as
+       :math:`A(x) = A_0( A_1( ... ( A_{n-1}(x) ) ) )` 
     """
 
     def __init__(self, operators: tuple[LinearOperator, ...]):
@@ -268,14 +265,12 @@ class CompositeLinearOperator(LinearOperator):
         return self._operators
 
     def _apply(self, x: Array) -> Array:
-        """forward step y = Ax"""
         y = x
         for op in self._operators[::-1]:
             y = op(y)
         return y
 
     def _adjoint(self, y: Array) -> Array:
-        """adjoint step x = A^H y"""
         x = y
         for op in self._operators:
             x = op.adjoint(x)
@@ -309,12 +304,9 @@ class ElementwiseMultiplicationOperator(LinearOperator):
         return array_api_compat.get_namespace(self._values)
 
     def _apply(self, x: Array) -> Array:
-        """forward step y = Ax"""
         return self._values * x
 
     def _adjoint(self, y: Array) -> Array:
-        """adjoint step x = A^H y"""
-
         if self.iscomplex():
             return self.xp.conj(self._values) * y
         else:
@@ -357,7 +349,6 @@ class GaussianFilterOperator(LinearOperator):
         return self._in_shape
 
     def _apply(self, x: Array) -> Array:
-        """forward step y = Ax"""
         xp = array_api_compat.get_namespace(x)
 
         if parallelproj.is_cuda_array(x):
@@ -385,7 +376,6 @@ class GaussianFilterOperator(LinearOperator):
                               device=device(x))
 
     def _adjoint(self, y: Array) -> Array:
-        """adjoint step x = A^H y"""
         return self._apply(y)
 
 
@@ -478,7 +468,7 @@ class SubsetOperator:
         return self._num_subsets
 
     def apply(self, x: Array) -> list[Array]:
-        """A_i x for all subsets i"""
+        """:math:`A_i(x) for all subsets :math:`i`"""
 
         y = [op(x) for op in self._operators]
 
@@ -488,7 +478,7 @@ class SubsetOperator:
         return self.apply(x)
 
     def adjoint(self, y: list[Array]) -> Array:
-        """A_i^H y_i for all subsets i"""
+        """:math:`A_i^H y_i` for all subsets :math:`i`"""
 
         x = []
 
@@ -498,15 +488,15 @@ class SubsetOperator:
         return sum(x)
 
     def apply_subset(self, x: Array, i: int) -> Array:
-        """A_i x for a given subset i"""
+        """:math:`A_i x` for a given subset :math:`i`"""
         return self._operators[i](x)
 
     def adjoint_subset(self, x: Array, i: int) -> Array:
-        """A_i^H x for a given subset i"""
+        """:math:`A_i^H x` for a given subset :math:`i`"""
         return self._operators[i].adjoint(x)
 
     def norms(self, xp: ModuleType, dev: str) -> list[float]:
-        """norm(A_i) for all subsets i"""
+        """:math:`\\text{norm}(A_i)` for all subsets :math:`i`"""
         return [op.norm(xp, dev) for op in self._operators]
 
 
