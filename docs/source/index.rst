@@ -17,6 +17,12 @@ and cuda.
     array libraries (e.g. numpy, cupy, pytorch) and devices
     (CPU and CUDA GPUs).
 
+.. toctree::
+    :hidden:
+    :caption: Getting Started
+    
+    installation
+
 .. nbgallery::
     :caption: Low-level examples
     :name: example-gallery
@@ -24,12 +30,6 @@ and cuda.
     notebooks/nontof_projections.pct.py
     notebooks/tof_sinogram_projections.pct.py
     notebooks/tof_listmode_projections.pct.py
-
-.. toctree::
-    :hidden:
-    :caption: Getting Started
-    
-    installation
 
 .. toctree::
     :hidden:

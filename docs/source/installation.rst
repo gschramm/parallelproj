@@ -13,31 +13,75 @@ Installation
 
 To install parallelproj (and the required compiled libraries) from conda-forge, run
 
-.. code-block:: console
+.. tab-set::
 
-   $ mamba install parallelproj
+    .. tab-item:: mamba
 
-or in case mamba is not available in your conda installation, run
+        .. code-block:: console
+        
+           $ mamba install parallelproj
 
-.. code-block:: console
+    .. tab-item:: conda
 
-   $ conda install -c conda-forge parallelproj
+        .. code-block:: console
+        
+           $ conda install -c conda-forge parallelproj
 
 .. tip::
 
-   parallelproj can not only project numpy CPU arrays, but also **cupy GPU arrays** (no memory transfer between host and GOU needed). To enable the latter, you have to install the cupy package as well.
+   parallelproj can not only project numpy CPU arrays, but also **cupy GPU arrays** (no memory transfer between host and GPU needed). To enable the latter, you have to install the cupy package as well.
 
 To install cupy (optional and only if you have a CUDA GPU) from conda-forge, run
 
-.. code-block:: console
+.. tab-set::
 
-   $ mamba install cupy
+    .. tab-item:: mamba
 
-or in case mamba is not available in your conda installation, run
+        .. code-block:: console
+        
+           $ mamba install cupy
 
-.. code-block:: console
+    .. tab-item:: conda
 
-   $ conda install -c conda-forge cupy
+        .. code-block:: console
+        
+           $ conda install -c conda-forge cupy
+
+.. tip::
+
+   parallelproj can also project **pytorch CPU and GPU tensors** 
+
+To install pytorch from conda-forge, run
+
+.. tab-set::
+
+    .. tab-item:: mamba
+
+        .. code-block:: console
+        
+           $ mamba install pytorch
+
+    .. tab-item:: conda
+
+        .. code-block:: console
+        
+           $ conda install -c conda-forge pytorch
+
 
 .. note::
    In case you are interested in the compiled projection libraries, but not in the python interface, you can install the **libparallelproj** package from conda-forge.
+
+.. tab-set::
+
+    .. tab-item:: mamba
+
+        .. code-block:: console
+        
+           $ mamba install libparallelproj
+
+    .. tab-item:: conda
+
+        .. code-block:: console
+        
+           $ conda install -c conda-forge libparallelproj
+
