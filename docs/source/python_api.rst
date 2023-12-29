@@ -1,3 +1,9 @@
+Scanner gemoetries
+------------------
+
+.. automodule:: parallelproj.scanners
+    :members:
+
 Linear operators
 ----------------
 

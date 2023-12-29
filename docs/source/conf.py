@@ -67,8 +67,10 @@ autodoc_default_options = {
     "private-members": False,
     "special-members": True,
     "show-inheritance": True,
-    "exclude-members": "__weakref__"
+    "exclude-members": "__weakref__",
 }
+
+autodoc_member_order = 'bysource'
 
 # -- coverage builder options -------------------------------------------------
 # Configuration of sphinx.ext.coverage

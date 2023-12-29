@@ -437,7 +437,7 @@ class ModularizedPETScannerGeometry:
 
         Returns
         -------
-        Array | cpt.NDArray
+        Array
             the 3 world coordinates of the LOR endpoints
         """
         return self.xp.take(self.all_lor_endpoints,
