@@ -60,13 +60,6 @@ epub_show_urls = 'footnote'
 napoleon_google_docstring = False
 napoleon_numpy_docstring = True
 
-#autosummary_generate = True
-#autosummary_imported_members = True
-
-# Automatically extract typehints when specified and place them in
-# descriptions of the relevant function/method.
-autodoc_typehints = "description"
-
 autodoc_default_options = {
     "members": True,
     "private-members": True,

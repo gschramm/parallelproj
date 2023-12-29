@@ -14,7 +14,7 @@ from warnings import warn
 
 import numpy as np
 import numpy.ctypeslib as npct
-import numpy.typing as npt
+from numpy.array_api._array_object import Array
 
 import array_api_compat
 
@@ -371,12 +371,12 @@ def calc_chunks(nLORs: int | np.int64,
     return chunks
 
 
-def is_cuda_array(x: npt.ArrayLike) -> bool:
+def is_cuda_array(x: Array) -> bool:
     """test whether an array is a cuda array
 
     Parameters
     ----------
-    x : Array (numpy, cupy, torch, ...)
+    x : Array
         array to be tested
 
     Returns
@@ -395,26 +395,26 @@ def is_cuda_array(x: npt.ArrayLike) -> bool:
     return iscuda
 
 
-def joseph3d_fwd(xstart: npt.ArrayLike,
-                 xend: npt.ArrayLike,
-                 img: npt.ArrayLike,
-                 img_origin: npt.ArrayLike,
-                 voxsize: npt.ArrayLike,
+def joseph3d_fwd(xstart: Array,
+                 xend: Array,
+                 img: Array,
+                 img_origin: Array,
+                 voxsize: Array,
                  threadsperblock: int = 32,
-                 num_chunks: int = 1) -> npt.ArrayLike:
+                 num_chunks: int = 1) -> Array:
     """Non-TOF Joseph 3D forward projector
 
     Parameters
     ----------
-    xstart : npt.ArrayLike (numpy/cupy array or torch tensor)
+    xstart : Array
         start world coordinates of the LORs, shape (nLORs, 3)
-    xend : npt.ArrayLike (numpy/cupy array or torch tensor)
+    xend : Array
         end world coordinates of the LORs, shape (nLORs, 3)
-    img : npt.ArrayLike (numpy/cupy array or torch tensor)
+    img : Array
         containing the 3D image to be projected
-    img_origin : npt.ArrayLike (numpy/cupy array or torch tensor)
+    img_origin : Array
         containing the world coordinates of the image origin (voxel [0,0,0])
-    voxsize : npt.ArrayLike (numpy/cupy array or torch tensor)
+    voxsize : Array
         array containing the voxel size
     threadsperblock : int, optional
         by default 32
@@ -479,29 +479,29 @@ def joseph3d_fwd(xstart: npt.ArrayLike,
     return xp.asarray(img_fwd, device=array_api_compat.device(img))
 
 
-def joseph3d_back(xstart: npt.ArrayLike,
-                  xend: npt.ArrayLike,
+def joseph3d_back(xstart: Array,
+                  xend: Array,
                   img_shape: tuple[int, int, int],
-                  img_origin: npt.ArrayLike,
-                  voxsize: npt.ArrayLike,
-                  img_fwd: npt.ArrayLike,
+                  img_origin: Array,
+                  voxsize: Array,
+                  img_fwd: Array,
                   threadsperblock: int = 32,
-                  num_chunks: int = 1) -> npt.ArrayLike:
+                  num_chunks: int = 1) -> Array:
     """Non-TOF Joseph 3D back projector
 
     Parameters
     ----------
-    xstart : npt.ArrayLike (numpy/cupy array or torch tensor)
+    xstart : Array
         start world coordinates of the LORs, shape (nLORs, 3)
-    xend : npt.ArrayLike (numpy/cupy array or torch tensor)
+    xend : Array
         end world coordinates of the LORs, shape (nLORs, 3)
     img_shape : tuple[int, int, int]
         the shape of the back projected image
-    img_origin : npt.ArrayLike (numpy/cupy array or torch tensor)
+    img_origin : Array
         containing the world coordinates of the image origin (voxel [0,0,0])
-    voxsize : npt.ArrayLike (numpy/cupy array or torch tensor)
+    voxsize : Array
         array containing the voxel size
-    img_fwd : npt.ArrayLike (numpy/cupy array or torch tensor)
+    img_fwd : Array
         array of length nLORs containing the values to be back projected
     threadsperblock : int, optional
         by default 32
@@ -576,39 +576,39 @@ def joseph3d_back(xstart: npt.ArrayLike,
     return xp.asarray(back_img, device=array_api_compat.device(img_fwd))
 
 
-def joseph3d_fwd_tof_sino(xstart: npt.ArrayLike,
-                          xend: npt.ArrayLike,
-                          img: npt.ArrayLike,
-                          img_origin: npt.ArrayLike,
-                          voxsize: npt.ArrayLike,
+def joseph3d_fwd_tof_sino(xstart: Array,
+                          xend: Array,
+                          img: Array,
+                          img_origin: Array,
+                          voxsize: Array,
                           tofbin_width: float,
-                          sigma_tof: npt.ArrayLike,
-                          tofcenter_offset: npt.ArrayLike,
+                          sigma_tof: Array,
+                          tofcenter_offset: Array,
                           nsigmas: float,
                           ntofbins: int,
                           threadsperblock: int = 32,
-                          num_chunks: int = 1) -> npt.ArrayLike:
+                          num_chunks: int = 1) -> Array:
     """TOF Joseph 3D sinogram forward projector
 
     Parameters
     ----------
-    xstart : npt.ArrayLike (numpy/cupy array or torch tensor)
+    xstart : Array
         start world coordinates of the LORs, shape (nLORs, 3)
-    xend : npt.ArrayLike (numpy/cupy array or torch tensor)
+    xend : Array
         end world coordinates of the LORs, shape (nLORs, 3)
-    img : npt.ArrayLike (numpy/cupy array or torch tensor)
+    img : Array
         containing the 3D image to be projected
-    img_origin : npt.ArrayLike (numpy/cupy array or torch tensor)
+    img_origin : Array
         containing the world coordinates of the image origin (voxel [0,0,0])
-    voxsize : npt.ArrayLike (numpy/cupy array or torch tensor)
+    voxsize : Array
         array containing the voxel size
     tofbin_width : float
         width of the TOF bin in spatial units (same units as xstart)
-    sigma_tof : npt.ArrayLike (numpy/cupy array or torch tensor)
+    sigma_tof : Array
         sigma of Gaussian TOF kernel in spatial units (same units as xstart)
         can be an array of length 1 -> same sigma for all LORs
         or an array of length nLORs -> LOR dependent sigma
-    tofcenter_offset: npt.ArrayLike (numpy/cupy array or torch tensor)
+    tofcenter_offset: Array
         center offset of the central TOF bin in spatial units (same units as xstart)
         can be an array of length 1 -> same offset for all LORs
         or an array of length nLORs -> LOR dependent offset
@@ -624,7 +624,7 @@ def joseph3d_fwd_tof_sino(xstart: npt.ArrayLike,
 
     Returns
     -------
-    npt.ArrayLike (numpy/cupy array or torch tensor)
+    Array
     """
 
     nLORs = np.int64(array_api_compat.size(xstart) // 3)
@@ -720,42 +720,42 @@ def joseph3d_fwd_tof_sino(xstart: npt.ArrayLike,
     return xp.asarray(img_fwd, device=array_api_compat.device(img))
 
 
-def joseph3d_back_tof_sino(xstart: npt.ArrayLike,
-                           xend: npt.ArrayLike,
+def joseph3d_back_tof_sino(xstart: Array,
+                           xend: Array,
                            img_shape: tuple[int, int, int],
-                           img_origin: npt.ArrayLike,
-                           voxsize: npt.ArrayLike,
-                           img_fwd: npt.ArrayLike,
+                           img_origin: Array,
+                           voxsize: Array,
+                           img_fwd: Array,
                            tofbin_width: float,
-                           sigma_tof: npt.ArrayLike,
-                           tofcenter_offset: npt.ArrayLike,
+                           sigma_tof: Array,
+                           tofcenter_offset: Array,
                            nsigmas: float,
                            ntofbins: int,
                            threadsperblock: int = 32,
-                           num_chunks: int = 1) -> npt.ArrayLike:
+                           num_chunks: int = 1) -> Array:
     """TOF Joseph 3D sinogram back projector
 
     Parameters
     ----------
-    xstart : npt.ArrayLike (numpy/cupy array or torch tensor)
+    xstart : Array
         start world coordinates of the LORs, shape (nLORs, 3)
-    xend : npt.ArrayLike (numpy/cupy array or torch tensor)
+    xend : Array
         end world coordinates of the LORs, shape (nLORs, 3)
     img_shape : tuple[int, int, int]
         the shape of the back projected image
-    img_origin : npt.ArrayLike (numpy/cupy array or torch tensor)
+    img_origin : Array
         containing the world coordinates of the image origin (voxel [0,0,0])
-    voxsize : npt.ArrayLike (numpy/cupy array or torch tensor)
+    voxsize : Array
         array containing the voxel size
-    img_fwd : npt.ArrayLike (numpy/cupy array or torch tensor)
+    img_fwd : Array
         array of size nLOR*ntofbins containing the values to be back projected
     tofbin_width : float
         width of the TOF bin in spatial units (same units as xstart)
-    sigma_tof : npt.ArrayLike (numpy/cupy array or torch tensor)
+    sigma_tof : Array
         sigma of Gaussian TOF kernel in spatial units (same units as xstart)
         can be an array of length 1 -> same sigma for all LORs
         or an array of length nLORs -> LOR dependent sigma
-    tofcenter_offset: npt.ArrayLike (numpy/cupy array or torch tensor)
+    tofcenter_offset: Array
         center offset of the central TOF bin in spatial units (same units as xstart)
         can be an array of length 1 -> same offset for all LORs
         or an array of length nLORs -> LOR dependent offset
@@ -771,7 +771,7 @@ def joseph3d_back_tof_sino(xstart: npt.ArrayLike,
 
     Returns
     -------
-    npt.ArrayLike (numpy/cupy array or torch tensor)
+    Array
     """
 
     nLORs = np.int64(array_api_compat.size(xstart) // 3)
@@ -876,45 +876,45 @@ def joseph3d_back_tof_sino(xstart: npt.ArrayLike,
     return xp.asarray(back_img, device=array_api_compat.device(img_fwd))
 
 
-def joseph3d_fwd_tof_lm(xstart: npt.ArrayLike,
-                        xend: npt.ArrayLike,
-                        img: npt.ArrayLike,
-                        img_origin: npt.ArrayLike,
-                        voxsize: npt.ArrayLike,
+def joseph3d_fwd_tof_lm(xstart: Array,
+                        xend: Array,
+                        img: Array,
+                        img_origin: Array,
+                        voxsize: Array,
                         tofbin_width: float,
-                        sigma_tof: npt.ArrayLike,
-                        tofcenter_offset: npt.ArrayLike,
+                        sigma_tof: Array,
+                        tofcenter_offset: Array,
                         nsigmas: float,
-                        tofbin: npt.ArrayLike,
+                        tofbin: Array,
                         threadsperblock: int = 32,
-                        num_chunks: int = 1) -> npt.ArrayLike:
+                        num_chunks: int = 1) -> Array:
     """TOF Joseph 3D listmode forward projector
 
     Parameters
     ----------
-    xstart : npt.ArrayLike (numpy/cupy array or torch tensor)
+    xstart : Array
         start world coordinates of the event LORs, shape (num_events, 3)
-    xend : npt.ArrayLike (numpy/cupy array or torch tensor)
+    xend : Array
         end world coordinates of the event LORs, shape (num_events, 3)
-    img : npt.ArrayLike (numpy/cupy array or torch tensor)
+    img : Array
         containing the 3D image to be projected
-    img_origin : npt.ArrayLike (numpy/cupy array or torch tensor)
+    img_origin : Array
         containing the world coordinates of the image origin (voxel [0,0,0])
-    voxsize : npt.ArrayLike (numpy/cupy array or torch tensor)
+    voxsize : Array
         array containing the voxel size
     tofbin_width : float
         width of the TOF bin in spatial units (same units as xstart)
-    sigma_tof : npt.ArrayLike (numpy/cupy array or torch tensor)
+    sigma_tof : Array
         sigma of Gaussian TOF kernel in spatial units (same units as xstart)
         can be an array of length 1 -> same sigma for all LORs
         or an array of length nLORs -> LOR dependent sigma
-    tofcenter_offset: npt.ArrayLike (numpy/cupy array or torch tensor)
+    tofcenter_offset: Array
         center offset of the central TOF bin in spatial units (same units as xstart)
         can be an array of length 1 -> same offset for all events
         or an array of length num_events -> event dependent offset
     nsigmas: float
         number of sigmas to consider when Gaussian kernel is evaluated (truncated)
-    tofbin: npt.ArrayLike (numpy/cupy array or torch tensor)
+    tofbin: Array
         array containing the tof bin of the events
     threadsperblock : int, optional
         by default 32
@@ -924,7 +924,7 @@ def joseph3d_fwd_tof_lm(xstart: npt.ArrayLike,
 
     Returns
     -------
-    npt.ArrayLike (numpy/cupy array or torch tensor)
+    Array
     """
 
     nLORs = np.int64(xstart.shape[0])
@@ -1019,48 +1019,48 @@ def joseph3d_fwd_tof_lm(xstart: npt.ArrayLike,
     return xp.asarray(img_fwd, device=array_api_compat.device(img))
 
 
-def joseph3d_back_tof_lm(xstart: npt.ArrayLike,
-                         xend: npt.ArrayLike,
+def joseph3d_back_tof_lm(xstart: Array,
+                         xend: Array,
                          img_shape: tuple[int, int, int],
-                         img_origin: npt.ArrayLike,
-                         voxsize: npt.ArrayLike,
-                         img_fwd: npt.ArrayLike,
+                         img_origin: Array,
+                         voxsize: Array,
+                         img_fwd: Array,
                          tofbin_width: float,
-                         sigma_tof: npt.ArrayLike,
-                         tofcenter_offset: npt.ArrayLike,
+                         sigma_tof: Array,
+                         tofcenter_offset: Array,
                          nsigmas: float,
-                         tofbin: npt.ArrayLike,
+                         tofbin: Array,
                          threadsperblock: int = 32,
-                         num_chunks: int = 1) -> npt.ArrayLike:
+                         num_chunks: int = 1) -> Array:
     """TOF Joseph 3D listmode back projector
 
     Parameters
     ----------
-    xstart : npt.ArrayLike (numpy/cupy array or torch tensor)
+    xstart : Array
         start world coordinates of the event LORs, shape (nLORs, 3)
-    xend : npt.ArrayLike (numpy/cupy array or torch tensor)
+    xend : Array
         end world coordinates of the event LORs, shape (nLORs, 3)
     img_shape : tuple[int, int, int]
         the shape of the back projected image
-    img_origin : npt.ArrayLike (numpy/cupy array or torch tensor)
+    img_origin : Array
         containing the world coordinates of the image origin (voxel [0,0,0])
-    voxsize : npt.ArrayLike (numpy/cupy array or torch tensor)
+    voxsize : Array
         array containing the voxel size
-    img_fwd : npt.ArrayLike (numpy/cupy array or torch tensor)
+    img_fwd : Array
         array of size num_events containing the values to be back projected
     tofbin_width : float
         width of the TOF bin in spatial units (same units as xstart)
-    sigma_tof : npt.ArrayLike (numpy/cupy array or torch tensor)
+    sigma_tof : Array
         sigma of Gaussian TOF kernel in spatial units (same units as xstart)
         can be an array of length 1 -> same sigma for all LORs
         or an array of length num_events -> event dependent sigma
-    tofcenter_offset: npt.ArrayLike (numpy/cupy array or torch tensor)
+    tofcenter_offset: Array
         center offset of the central TOF bin in spatial units (same units as xstart)
         can be an array of length 1 -> same offset for all LORs
         or an array of length num_events -> event dependent offset
     nsigmas: float
         number of sigmas to consider when Gaussian kernel is evaluated (truncated)
-    tofbin: npt.ArrayLike
+    tofbin: Array
         array with the tofbin of the events
     threadsperblock : int, optional
         by default 32
@@ -1070,7 +1070,7 @@ def joseph3d_back_tof_lm(xstart: npt.ArrayLike,
 
     Returns
     -------
-    npt.ArrayLike (numpy/cupy array or torch tensor)
+    Array
     """
 
     nLORs = np.int64(xstart.shape[0])
