@@ -17,25 +17,17 @@ and cuda.
     array libraries (e.g. numpy, cupy, pytorch) and devices
     (CPU and CUDA GPUs).
 
-.. toctree::
-    :hidden:
+.. nbgallery::
     :caption: Examples
-    
-    notebooks/00_nontof_projections
+    :name: example-gallery
+
+    notebooks/nontof_projections.pct.py
 
 .. toctree::
     :hidden:
     :caption: Getting Started
     
     installation
-
-.. toctree::
-    :hidden:
-    :caption: Minimal Python Examples
-
-    nontof_example
-    tofsino_example
-    toflm_example
 
 .. toctree::
     :hidden:

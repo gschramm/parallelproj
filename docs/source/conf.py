@@ -8,7 +8,6 @@ import sys
 # add parallelproj to the PYTHONPATH
 sys.path.insert(0, os.path.abspath(os.path.join('..', '..', 'python')))
 
-import jupytext
 import json
 
 # get version string from file
@@ -76,5 +75,5 @@ autodoc_default_options = {
 }
 
 nbsphinx_custom_formats = {
-    '.pyp': lambda s: jupytext.reads(s, '.py'),
+    '.pct.py': ['jupytext.reads', {'fmt': 'py:percent'}],
 }
