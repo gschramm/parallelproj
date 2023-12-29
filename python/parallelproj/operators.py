@@ -290,7 +290,7 @@ class ElementwiseMultiplicationOperator(LinearOperator):
 
         Parameters
         ----------
-        values : numpy or cupy array
+        values : Array
             values of the diagonal matrix
         """
         super().__init__()
@@ -321,6 +321,7 @@ class ElementwiseMultiplicationOperator(LinearOperator):
             return self._values * y
 
     def iscomplex(self) -> bool:
+        """bool whether the operator is complex"""
         return self.xp.isdtype(self._values.dtype,
                                self.xp.complex64) or self.xp.isdtype(
                                    self._values.dtype, self.xp.complex128)

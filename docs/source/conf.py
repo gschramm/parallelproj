@@ -25,7 +25,6 @@ release = version
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
 
-
 extensions = [
     'sphinx.ext.autodoc',
     'sphinx.ext.doctest',
@@ -36,6 +35,7 @@ extensions = [
     'sphinx.ext.viewcode',
     'nbsphinx',
     'sphinx_design',
+    'sphinx_copybutton',
 ]
 
 templates_path = ['_templates']
@@ -60,6 +60,7 @@ epub_show_urls = 'footnote'
 napoleon_google_docstring = False
 napoleon_numpy_docstring = True
 
+# -- autodoc options ----------------------------------------------------------
 autodoc_default_options = {
     "members": True,
     "private-members": True,
@@ -68,6 +69,12 @@ autodoc_default_options = {
     "exclude-members": "__weakref__"
 }
 
+# -- coverage builder options -------------------------------------------------
+# Configuration of sphinx.ext.coverage
+coverage_show_missing_items = True
+coverage_statistics_to_stdout = True
+
+# -- nbsphinx options ---------------------------------------------------------
 nbsphinx_custom_formats = {
     '.pct.py': ['jupytext.reads', {'fmt': 'py:percent'}],
 }
