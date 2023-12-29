@@ -1,12 +1,10 @@
 Installation
 ============
 
-.. _installation:
-
 .. note::
     The **parallelproj** package consists of a C/OpenMP (libparallelproj_c), a CUDA (libparallelproj_cuda) projection library, and a python interface module (parallelproj). 
-    We highly recommend to install parallelproj and pre-compiled version of the libs and the python interface from **conda-forge**.
-    Pre-compiled libraries are available for all major operating system (with and without CUDA).
+    We highly recommend to install parallelproj and pre-compiled versions of the libraries and the python interface from **conda-forge**.
+    which are available for all major operating system (with and without CUDA).
 
 .. tip::
 
