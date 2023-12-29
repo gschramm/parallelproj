@@ -8,6 +8,7 @@ import sys
 # add parallelproj to the PYTHONPATH
 sys.path.insert(0, os.path.abspath(os.path.join('..', '..', 'python')))
 
+import jupytext
 import json
 
 # get version string from file
@@ -31,10 +32,10 @@ extensions = [
     'sphinx.ext.doctest',
     'sphinx.ext.coverage',
     'sphinx.ext.napoleon',
-    #'sphinx.ext.autosummary',
     'sphinx.ext.intersphinx',
     'sphinx.ext.mathjax', 
-    'sphinx.ext.viewcode'
+    'sphinx.ext.viewcode',
+    'nbsphinx',
 ]
 
 templates_path = ['_templates']
@@ -50,9 +51,7 @@ intersphinx_disabled_domains = ['std']
 # -- Options for HTML output -------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
 
-#html_theme = 'alabaster'
 html_theme = 'sphinx_rtd_theme'
-#html_static_path = ['_static']
 
 # -- Options for EPUB output -------------------------------------------------
 epub_show_urls = 'footnote'
@@ -61,8 +60,8 @@ epub_show_urls = 'footnote'
 napoleon_google_docstring = False
 napoleon_numpy_docstring = True
 
-autosummary_generate = True
-autosummary_imported_members = True
+#autosummary_generate = True
+#autosummary_imported_members = True
 
 # Automatically extract typehints when specified and place them in
 # descriptions of the relevant function/method.
@@ -74,4 +73,8 @@ autodoc_default_options = {
     "special-members": True,
     "show-inheritance": True,
     "exclude-members": "__weakref__"
+}
+
+nbsphinx_custom_formats = {
+    '.pyp': lambda s: jupytext.reads(s, '.py'),
 }

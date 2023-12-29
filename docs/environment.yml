@@ -5,7 +5,7 @@ channels:
 dependencies:
   - sphinx>=7.0
   - sphinx_rtd_theme
-  - numpy>=1.22
-  - array-api-compat
-  - libparallelproj
-  - matplotlib
+  - nbsphinx
+  - jupytext
+  - ipykernel
+  - parallelproj

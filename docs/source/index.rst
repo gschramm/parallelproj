@@ -19,6 +19,12 @@ and cuda.
 
 .. toctree::
     :hidden:
+    :caption: Examples
+    
+    notebooks/00_nontof_projections
+
+.. toctree::
+    :hidden:
     :caption: Getting Started
     
     installation
