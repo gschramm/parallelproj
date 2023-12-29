@@ -13,7 +13,7 @@
 # ---
 
 # %% [markdown]
-# # Low-level non-TOF projection example
+# # non-TOF projection example
 #
 # The example below shows how to do a simple non-TOF forward projection along a set of 
 # known lines of response with known start and end points.

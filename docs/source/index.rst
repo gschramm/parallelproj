@@ -18,10 +18,12 @@ and cuda.
     (CPU and CUDA GPUs).
 
 .. nbgallery::
-    :caption: Examples
+    :caption: Low-level examples
     :name: example-gallery
 
     notebooks/nontof_projections.pct.py
+    notebooks/tof_sinogram_projections.pct.py
+    notebooks/tof_listmode_projections.pct.py
 
 .. toctree::
     :hidden:
