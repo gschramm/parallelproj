@@ -1,3 +1,8 @@
+.. parallelproj documentation master file, created by
+   sphinx-quickstart on Fri Dec 29 09:47:08 2023.
+   You can adapt this file completely to your liking, but it should at least
+   contain the root `toctree` directive.
+
 Welcome to parallelproj's documentation!
 ========================================
 
@@ -18,15 +23,13 @@ and cuda.
     
     installation
 
-.. toctree::
-    :hidden:
-    :caption: Minimal Python Examples
+.. nbgallery::
+    :caption: Low-level examples
+    :name: example-gallery
 
-    nontof_example
-    tofsino_example
-    toflm_example
-    nontof_2d_projector
-    nontof_3d_projector
+    notebooks/nontof_projections.pct.py
+    notebooks/tof_sinogram_projections.pct.py
+    notebooks/tof_listmode_projections.pct.py
 
 .. toctree::
     :hidden:
@@ -43,3 +46,7 @@ and cuda.
     cuda_kernels
 
 
+Indices and tables
+==================
+* :ref:`genindex`
+* :ref:`modindex`

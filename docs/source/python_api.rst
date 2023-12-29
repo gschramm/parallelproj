@@ -1,44 +1,17 @@
-linear operators
+Linear operators
 ----------------
 
-.. autoclass:: parallelproj.LinearOperator
+.. automodule:: parallelproj.operators
+    :members:
 
-.. autoclass:: parallelproj.MatrixOperator
+Low-level projector functions
+-----------------------------
 
-.. autoclass:: parallelproj.ElementwiseMultiplicationOperator
+.. automodule:: parallelproj.backend
+    :members:
 
-.. autoclass:: parallelproj.GaussianFilterOperator
+High-level projector classes
+----------------------------
 
-.. autoclass:: parallelproj.CompositeLinearOperator
-
-.. autoclass:: parallelproj.VstackOperator
-
-.. autoclass:: parallelproj.SubsetOperator
-
-
-high-level projection operators
--------------------------------
-
-.. autoclass:: parallelproj.ParallelViewProjector2D
-
-.. autoclass:: parallelproj.ParallelViewProjector3D
-
-low-level non-TOF projector API
--------------------------------
-
-.. autofunction:: parallelproj.joseph3d_fwd
-
-.. autofunction:: parallelproj.joseph3d_back
-
-
-low-level TOF projector API
----------------------------
-
-.. autofunction:: parallelproj.joseph3d_fwd_tof_sino
-.. autofunction:: parallelproj.joseph3d_back_tof_sino
-
-low-level TOF listmode projector API
-------------------------------------
-
-.. autofunction:: parallelproj.joseph3d_fwd_tof_lm
-.. autofunction:: parallelproj.joseph3d_back_tof_lm
+.. automodule:: parallelproj.projectors
+    :members:

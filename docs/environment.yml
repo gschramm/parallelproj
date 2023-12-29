@@ -3,11 +3,11 @@ channels:
   - conda-forge
   - defaults
 dependencies:
-  - python>=3.9
-  - pip
-  - libparallelproj
-  - numpy>=1.22
-  - matplotlib
-  - sphinx<7
+  - sphinx>=7.0
   - sphinx_rtd_theme
-  - array-api-compat
+  - nbsphinx
+  - sphinx-design
+  - sphinx-copybutton
+  - jupytext
+  - ipykernel
+  - parallelproj

@@ -1,9 +1,8 @@
 from __future__ import annotations
 
 import array_api_compat.numpy as np
-import numpy.typing as npt
+from numpy.array_api._array_object import Array
 import array_api_compat
-import math
 import matplotlib.pyplot as plt
 from matplotlib.patches import Rectangle
 from types import ModuleType
@@ -14,7 +13,7 @@ class ParallelViewProjector2D(parallelproj.LinearOperator):
     """2D non-TOF parallel view projector"""
 
     def __init__(self, image_shape: tuple[int, int],
-                 radial_positions: npt.ArrayLike, view_angles: npt.ArrayLike,
+                 radial_positions: Array, view_angles: Array,
                  radius: float, image_origin: tuple[float, float],
                  voxel_size: tuple[float, float]) -> None:
         """init method
@@ -23,9 +22,9 @@ class ParallelViewProjector2D(parallelproj.LinearOperator):
         ----------
         image_shape : tuple[int, int]
             shape of the input image (n1, n2)
-        radial_positions : npt.ArrayLike (numpy, cupy or torch array)
+        radial_positions : Array
             radial positions of the projection views in world coordinates
-        view angles : np.ArrayLike (numpy, cupy or torch array)
+        view_angles : Array
             angles of the projection views in radians
         radius : float
             radius of the scanner
@@ -99,15 +98,15 @@ class ParallelViewProjector2D(parallelproj.LinearOperator):
         return self._num_rad
 
     @property
-    def xstart(self) -> npt.ArrayLike:
+    def xstart(self) -> Array:
         return self._xstart
 
     @property
-    def xend(self) -> npt.ArrayLike:
+    def xend(self) -> Array:
         return self._xend
 
     @property
-    def image_origin(self) -> npt.ArrayLike:
+    def image_origin(self) -> Array:
         return self._image_origin
 
     @property
@@ -115,33 +114,33 @@ class ParallelViewProjector2D(parallelproj.LinearOperator):
         return self._image_shape
 
     @property
-    def voxel_size(self) -> npt.ArrayLike:
+    def voxel_size(self) -> Array:
         return self._voxel_size
 
     @property
     def device(self) -> str:
         return self._device
 
-    def _apply(self, x: npt.ArrayLike) -> npt.ArrayLike:
+    def _apply(self, x: Array) -> Array:
         y = parallelproj.joseph3d_fwd(self._xstart, self._xend,
                                       self.xp.expand_dims(x, axis=0),
                                       self._image_origin, self._voxel_size)
         return y
 
-    def _adjoint(self, y: npt.ArrayLike) -> npt.ArrayLike:
+    def _adjoint(self, y: Array) -> Array:
         x = parallelproj.joseph3d_back(self._xstart, self._xend,
                                        (1, ) + self._image_shape,
                                        self._image_origin, self._voxel_size, y)
         return self.xp.squeeze(x, axis=0)
 
-    def show_views(self, views_to_show=None, image=None, **kwargs) -> plt.Figure:
+    def show_views(self, views_to_show : None | Array = None, image: None | Array = None, **kwargs) -> plt.Figure:
         """visualize the geometry of certrain projection views
 
         Parameters
         ----------
-        views_to_show : numpy array of integers
+        views_to_show : None | Array
             view numbers to show
-        image : numpy array or cupy array, optional
+        image : None | Array
             show an image inside the projector geometry
         **kwargs : some type
             passed to matplotlib.pyplot.imshow
@@ -220,12 +219,12 @@ class ParallelViewProjector3D(parallelproj.LinearOperator):
 
     def __init__(self,
                  image_shape: tuple[int, int, int],
-                 radial_positions: npt.ArrayLike,
-                 view_angles: npt.ArrayLike,
+                 radial_positions: Array,
+                 view_angles: Array,
                  radius: float,
                  image_origin: tuple[float, float, float],
                  voxel_size: tuple[float, float],
-                 ring_positions: npt.ArrayLike,
+                 ring_positions: Array,
                  span: int = 1,
                  max_ring_diff: int | None = None) -> None:
         """init method
@@ -234,9 +233,9 @@ class ParallelViewProjector3D(parallelproj.LinearOperator):
         ----------
         image_shape : tuple[int, int, int]
             shape of the input image (n0, n1, n2) (last direction is axial)
-        radial_positions : npt.ArrayLike (numpy, cupy or torch array)
+        radial_positions : Array
             radial positions of the projection views in world coordinates
-        view angles : np.ArrayLike (numpy, cupy or torch array)
+        view_angles : Array
             angles of the projection views in radians
         radius : float
             radius of the scanner
@@ -244,7 +243,7 @@ class ParallelViewProjector3D(parallelproj.LinearOperator):
             world coordinates of the [0,0,0] voxel
         voxel_size : tuple[float, float, float]
             the voxel size in all directions (last direction is axial)
-        ring_positions : numpy or cupy array
+        ring_positions : Array
             position of the rings in world coordinates
         span : int
             span of the sinogram - default is 1
@@ -368,11 +367,11 @@ class ParallelViewProjector3D(parallelproj.LinearOperator):
         return (self._num_rad, self._num_views, self._num_planes)
 
     @property
-    def voxel_size(self) -> npt.ArrayLike:
+    def voxel_size(self) -> Array:
         return self._voxel_size
 
     @property
-    def image_origin(self) -> npt.ArrayLike:
+    def image_origin(self) -> Array:
         return self._image_origin
 
     @property
@@ -380,19 +379,19 @@ class ParallelViewProjector3D(parallelproj.LinearOperator):
         return self._image_shape
 
     @property
-    def xstart(self) -> npt.ArrayLike:
+    def xstart(self) -> Array:
         return self._xstart
 
     @property
-    def xend(self) -> npt.ArrayLike:
+    def xend(self) -> Array:
         return self._xend
 
-    def _apply(self, x: npt.ArrayLike) -> npt.ArrayLike:
+    def _apply(self, x: Array) -> Array:
         y = parallelproj.joseph3d_fwd(self._xstart, self._xend, x,
                                       self.image_origin, self.voxel_size)
         return y
 
-    def _adjoint(self, y: npt.ArrayLike) -> npt.ArrayLike:
+    def _adjoint(self, y: Array) -> Array:
         x = parallelproj.joseph3d_back(self._xstart, self._xend,
                                        self.image_shape, self.image_origin,
                                        self.voxel_size, y)
