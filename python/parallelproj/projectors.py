@@ -483,9 +483,10 @@ class RegularPolygonPETProjector(LinearOperator):
 
     @tof.setter
     def tof(self, value: bool) -> None:
-        if not isinstance(value, bool):
-            raise ValueError('tof must be a boolean')
         self._tof = value
+
+        if self.tof_parameters is None:
+            raise ValueError('tof_parameters must not be None')
 
     @property
     def tof_parameters(self) -> TOFParameters | None:
@@ -505,6 +506,10 @@ class RegularPolygonPETProjector(LinearOperator):
     @property
     def img_origin(self) -> Array:
         return self._img_origin
+
+    @property
+    def views(self) -> Array:
+        return self._views
 
     def _apply(self, x):
         """nonTOF forward projection of input image x including image based resolution model"""
