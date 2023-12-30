@@ -2,33 +2,13 @@ from __future__ import annotations
 
 import pytest
 import parallelproj
-import numpy.array_api as nparr
 import array_api_compat
 import array_api_compat.numpy as np
 
 from types import ModuleType
 from math import prod
 
-# generate list of array_api modules / device combinations to test
-xp_dev_list = [(np, 'cpu')]
-
-if np.__version__ >= '1.25':
-    xp_dev_list.append((nparr, 'cpu'))
-
-if parallelproj.cupy_enabled:
-    import array_api_compat.cupy as cp
-    xp_dev_list.append((cp, 'cuda'))
-
-if parallelproj.torch_enabled:
-    import array_api_compat.torch as torch
-    xp_dev_list.append((torch, 'cpu'))
-
-    if parallelproj.cuda_present:
-        xp_dev_list.append((torch, 'cuda'))
-
-pytestmark = pytest.mark.parametrize("xp,dev", xp_dev_list)
-
-#---------------------------------------------------------------------------------------
+from config import pytestmark
 
 def allclose(x, y, atol: float = 1e-8, rtol: float = 1e-5) -> bool:
     """check if two arrays are close to each other, given absolute and relative error
