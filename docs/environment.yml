@@ -10,4 +10,4 @@ dependencies:
   - sphinx-copybutton
   - jupytext
   - ipykernel
-#  - parallelproj
+  - libparallelproj
