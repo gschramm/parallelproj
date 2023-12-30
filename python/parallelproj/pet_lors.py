@@ -10,7 +10,7 @@ from mpl_toolkits.mplot3d.art3d import Line3DCollection
 from types import ModuleType
 from array_api_compat import to_device
 
-from .pet_scanners import ModularizedPETScannerGeometry, RegularPolygonPETScannerGeometry, DemoPETScannerGeometry
+from .pet_scanners import ModularizedPETScannerGeometry, RegularPolygonPETScannerGeometry
 
 class SinogramSpatialAxisOrder(enum.Enum):
     """order of spatial axis in a sinogram R (radial), V (view), P (plane)"""

@@ -8,8 +8,12 @@ from matplotlib.patches import Rectangle
 from types import ModuleType
 import parallelproj
 
+from .operators import LinearOperator
+from .pet_lors import RegularPolygonPETLORDescriptor
+from .tof import TOFParameters
 
-class ParallelViewProjector2D(parallelproj.LinearOperator):
+
+class ParallelViewProjector2D(LinearOperator):
     """2D non-TOF parallel view projector"""
 
     def __init__(self, image_shape: tuple[int, int],
@@ -214,7 +218,7 @@ class ParallelViewProjector2D(parallelproj.LinearOperator):
 #-------------------------------------------------------------------------------
 
 
-class ParallelViewProjector3D(parallelproj.LinearOperator):
+class ParallelViewProjector3D(LinearOperator):
     """3D non-TOF parallel view projector"""
 
     def __init__(self,
@@ -396,3 +400,154 @@ class ParallelViewProjector3D(parallelproj.LinearOperator):
                                        self.image_shape, self.image_origin,
                                        self.voxel_size, y)
         return x
+
+
+class RegularPolygonPETProjector(LinearOperator):
+
+    def __init__(self,
+                 lor_descriptor: RegularPolygonPETLORDescriptor,
+                 img_shape: tuple[int, int, int],
+                 voxel_size: tuple[float, float, float],
+                 img_origin: None | Array = None,
+                 views: None | Array = None) -> None:
+        """Regular polygon PET projector
+
+        Parameters
+        ----------
+        lor_descriptor : RegularPolygonPETLORDescriptor
+            descriptor of the LOR start / end points
+        img_shape : tuple[int, int, int]
+            shape of the image to be projected
+        voxel_size : tuple[float, float, float]
+            the voxel size of the image to be projected
+        img_origin : None | Array, optional
+            the origin of the image to be projected, by default None
+            means that image is "centered" in the scanner
+        views : None | Array, optional
+            sinogram views to be projected, by default None
+            means that all views are being projected
+        """
+
+        super().__init__()
+        self._dev = lor_descriptor.dev
+
+        self._lor_descriptor = lor_descriptor
+        self._img_shape = img_shape
+        self._voxel_size = self.xp.asarray(voxel_size,
+                                           dtype=self.xp.float32,
+                                           device=self._dev)
+
+        if img_origin is None:
+            self._img_origin = (-(self.xp.asarray(
+                self._img_shape, dtype=self.xp.float32, device=self._dev) / 2)
+                                + 0.5) * self._voxel_size
+        else:
+            self._img_origin = self.xp.asarray(img_origin,
+                                               dtype=self.xp.float32,
+                                               device=self._dev)
+
+        if views is None:
+            self._views = self.xp.arange(self._lor_descriptor.num_views,
+                                         device=self._dev)
+        else:
+            self._views = views
+
+        self._xstart, self._xend = lor_descriptor.get_lor_coordinates(views=self._views)
+
+        self._tof_parameters = None
+        self._tof = False
+
+    @property
+    def in_shape(self) -> tuple[int, int, int]:
+        return self._img_shape
+
+    @property
+    def out_shape(self) -> tuple[int, int, int]:
+        if self.tof:
+            out_shape = (self._lor_descriptor.num_rad, self._views.shape[0],
+                         self._lor_descriptor.num_planes,
+                         self.tof_parameters.num_tofbins)
+        else:
+            out_shape = (self._lor_descriptor.num_rad, self._views.shape[0],
+                         self._lor_descriptor.num_planes)
+
+        return out_shape
+
+    @property
+    def xp(self) -> ModuleType:
+        return self._lor_descriptor.xp
+
+    @property
+    def tof(self) -> bool:
+        return self._tof
+
+    @tof.setter
+    def tof(self, value: bool) -> None:
+        if not isinstance(value, bool):
+            raise ValueError('tof must be a boolean')
+        self._tof = value
+
+    @property
+    def tof_parameters(self) -> TOFParameters | None:
+        return self._tof_parameters
+
+    @tof_parameters.setter
+    def tof_parameters(self, value: TOFParameters | None) -> None:
+        if not (isinstance(value, TOFParameters) or value is None):
+            raise ValueError('tof_parameters must be a TOFParameters object or None')
+        self._tof_parameters = value
+
+        if value is None:
+            self._tof = False
+        else:
+            self._tof = True
+
+    @property
+    def img_origin(self) -> Array:
+        return self._img_origin
+
+    def _apply(self, x):
+        """nonTOF forward projection of input image x including image based resolution model"""
+
+        dev = array_api_compat.device(x)
+
+        if not self.tof:
+            x_fwd = parallelproj.joseph3d_fwd(self._xstart, self._xend, x,
+                                              self._img_origin,
+                                              self._voxel_size)
+        else:
+            x_fwd = parallelproj.joseph3d_fwd_tof_sino(
+                self._xstart, self._xend, x, self._img_origin,
+                self._voxel_size, self._tof_parameters.tofbin_width,
+                self.xp.asarray([self._tof_parameters.sigma_tof],
+                                dtype=self.xp.float32,
+                                device=dev),
+                self.xp.asarray([self._tof_parameters.tofcenter_offset],
+                                dtype=self.xp.float32,
+                                device=dev), self.tof_parameters.num_sigmas,
+                self.tof_parameters.num_tofbins)
+
+        return x_fwd
+
+    def _adjoint(self, y):
+        """nonTOF back projection of sinogram y"""
+        dev = array_api_compat.device(y)
+
+        if not self.tof:
+            y_back = parallelproj.joseph3d_back(self._xstart, self._xend,
+                                                self._img_shape,
+                                                self._img_origin,
+                                                self._voxel_size, y)
+        else:
+            y_back = parallelproj.joseph3d_back_tof_sino(
+                self._xstart, self._xend, self._img_shape, self._img_origin,
+                self._voxel_size, y, self._tof_parameters.tofbin_width,
+                self.xp.asarray([self._tof_parameters.sigma_tof],
+                                dtype=self.xp.float32,
+                                device=dev),
+                self.xp.asarray([self._tof_parameters.tofcenter_offset],
+                                dtype=self.xp.float32,
+                                device=dev), self.tof_parameters.num_sigmas,
+                self.tof_parameters.num_tofbins)
+
+        return y_back

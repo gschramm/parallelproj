@@ -606,18 +606,26 @@ class DemoPETScannerGeometry(RegularPolygonPETScannerGeometry):
                  xp: ModuleType,
                  dev: str,
                  num_rings: int = 36,
+                 ring_distance: float = 5.32,
+                 ring_gap: float = 2.8,
+                 num_rings_per_block: int = 9,
+                 radius: float = 0.5 * (744.1 + 2 * 8.51),
+                 num_sides: int = 34,
+                 num_lor_endpoints_per_side: int = 16,
+                 lor_spacing: float = 4.03125,
                  symmetry_axis: int = 2) -> None:
 
-        ring_positions = 5.32 * xp.arange(
+        ring_positions = ring_distance * xp.arange(
             num_rings, device=dev, dtype=xp.float32) + (xp.astype(
-                xp.arange(num_rings, device=dev) // 9, xp.float32)) * 2.8
+                xp.arange(num_rings, device=dev) // num_rings_per_block, xp.float32)) * ring_gap
         ring_positions -= 0.5 * xp.max(ring_positions)
+
         super().__init__(xp,
                          dev,
-                         radius=0.5 * (744.1 + 2 * 8.51),
-                         num_sides=34,
-                         num_lor_endpoints_per_side=16,
-                         lor_spacing=4.03125,
+                         radius=radius,
+                         num_sides=num_sides,
+                         num_lor_endpoints_per_side=num_lor_endpoints_per_side,
+                         lor_spacing=lor_spacing,
                          num_rings=num_rings,
                          ring_positions=ring_positions,
                          symmetry_axis=symmetry_axis)
