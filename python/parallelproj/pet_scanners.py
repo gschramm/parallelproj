@@ -600,7 +600,7 @@ class RegularPolygonPETScannerGeometry(ModularizedPETScannerGeometry):
         return self._ring_positions
 
 
-class DemoPETScanner(RegularPolygonPETScannerGeometry):
+class DemoPETScannerGeometry(RegularPolygonPETScannerGeometry):
 
     def __init__(self,
                  xp: ModuleType,

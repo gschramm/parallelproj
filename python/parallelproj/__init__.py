@@ -10,4 +10,4 @@ from .operators import FiniteForwardDifference
 
 from .projectors import ParallelViewProjector2D, ParallelViewProjector3D
 
-from .scanners import RegularPolygonPETScannerModule, RegularPolygonPETScannerGeometry, DemoPETScanner
+from .pet_scanners import RegularPolygonPETScannerModule, RegularPolygonPETScannerGeometry, DemoPETScannerGeometry

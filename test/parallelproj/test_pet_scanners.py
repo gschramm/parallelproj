@@ -29,7 +29,7 @@ pytestmark = pytest.mark.parametrize("xp,dev", xp_dev_list)
 
 #---------------------------------------------------------------------------------------
 
-def test_regular_polygon_module(xp: ModuleType, dev: str) -> None:
+def test_regular_polygon_pet_module(xp: ModuleType, dev: str) -> None:
     
     radius = 700.
     num_sides = 28
@@ -88,12 +88,12 @@ def test_regular_polygon_module(xp: ModuleType, dev: str) -> None:
     assert xp.all(mod2.affine_transformation_matrix == aff_mat2)
 
 
-def test_regular_polygon_scanner(xp: ModuleType, dev: str) -> None:
+def test_regular_polygon_pet_scanner(xp: ModuleType, dev: str) -> None:
 
     num_rings = 4
 
     for symmetry_axis in [0,1,2]:
-        scanner = parallelproj.DemoPETScanner(xp, dev, num_rings = num_rings, symmetry_axis = symmetry_axis)
+        scanner = parallelproj.DemoPETScannerGeometry(xp, dev, num_rings = num_rings, symmetry_axis = symmetry_axis)
 
         num_sides = 34
         num_lor_endpoints_per_side = 16
