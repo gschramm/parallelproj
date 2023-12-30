@@ -11,3 +11,4 @@ from .operators import FiniteForwardDifference
 from .projectors import ParallelViewProjector2D, ParallelViewProjector3D
 
 from .pet_scanners import RegularPolygonPETScannerModule, RegularPolygonPETScannerGeometry, DemoPETScannerGeometry
+from .pet_lors import SinogramSpatialAxisOrder, RegularPolygonPETLORDescriptor

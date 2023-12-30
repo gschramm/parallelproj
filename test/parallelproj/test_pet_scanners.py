@@ -1,9 +1,6 @@
 from __future__ import annotations
 
-import pytest
 import parallelproj
-import numpy.array_api as nparr
-import array_api_compat.numpy as np
 import matplotlib.pyplot as plt
 
 from types import ModuleType
