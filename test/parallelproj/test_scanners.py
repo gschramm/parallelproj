@@ -29,8 +29,7 @@ pytestmark = pytest.mark.parametrize("xp,dev", xp_dev_list)
 
 #---------------------------------------------------------------------------------------
 
-def test_regular_polygon_module(xp: ModuleType,
-             dev: str) -> None:
+def test_regular_polygon_module(xp: ModuleType, dev: str) -> None:
     
     radius = 700.
     num_sides = 28
@@ -73,5 +72,68 @@ def test_regular_polygon_module(xp: ModuleType,
 
     fig = plt.figure()
     ax = fig.add_subplot(111, projection='3d')
-    mod.show_lor_endpoints(ax)
+    mod.show_lor_endpoints(ax, transformed = False)
+    mod.show_lor_endpoints(ax, transformed = True, annotation_fontsize = 8)
     fig.show()
+
+    # test module withput affine transformation matrix
+    mod2 = parallelproj.RegularPolygonPETScannerModule(xp, dev, radius = radius,
+                 num_sides = num_sides,
+                 num_lor_endpoints_per_side = num_lor_endpoints_per_side,
+                 lor_spacing = lor_spacing, ax0 = ax0, ax1 = ax1)
+
+    aff_mat2 = xp.eye(4, device = dev)
+    aff_mat2[-1,-1] = 0
+
+    assert xp.all(mod2.affine_transformation_matrix == aff_mat2)
+
+
+def test_regular_polygon_scanner(xp: ModuleType, dev: str) -> None:
+
+    num_rings = 4
+
+    for symmetry_axis in [0,1,2]:
+        scanner = parallelproj.DemoPETScanner(xp, dev, num_rings = num_rings, symmetry_axis = symmetry_axis)
+
+        num_sides = 34
+        num_lor_endpoints_per_side = 16
+
+        assert scanner.num_rings == num_rings
+        assert scanner.symmetry_axis == symmetry_axis
+
+        assert scanner.radius == 0.5 * (744.1 + 2 * 8.51)
+        assert scanner.num_sides == num_sides
+
+        assert scanner.num_lor_endpoints_per_side == num_lor_endpoints_per_side
+        assert scanner.lor_spacing == 4.03125
+
+        assert scanner.num_lor_endpoints_per_ring == num_sides * num_lor_endpoints_per_side
+
+        ring_positions = scanner.ring_positions 
+        
+        mods = scanner.modules
+        assert scanner.num_modules == num_rings
+        
+        endpoint_coords = scanner.all_lor_endpoints
+        endpoint_mod_number = scanner.all_lor_endpoints_module_number
+        endpoint_index_offset = scanner.all_lor_endpoints_index_offset
+
+        mods = xp.asarray([0,0,1], device = dev)
+        in_mods = xp.asarray([0,1,0], device = dev)
+        lin_index = scanner.linear_lor_endpoint_index(mods, in_mods)
+
+        assert xp.all(lin_index == xp.asarray([0,1,scanner.num_lor_endpoints_per_ring], device = dev))
+
+        x_lor = scanner.get_lor_endpoints(mods, in_mods)
+
+        assert xp.all(x_lor == xp.take(endpoint_coords, lin_index, axis = 0))
+
+        i_in_ring = scanner.all_lor_endpoints_index_in_ring
+
+        assert xp.all(i_in_ring == (xp.arange(num_rings * scanner.num_lor_endpoints_per_ring, device = dev) % scanner.num_lor_endpoints_per_ring))
+
+        fig = plt.figure()
+        ax = fig.add_subplot(111, projection='3d')
+        scanner.show_lor_endpoints(ax, show_linear_index = False)
+        scanner.show_lor_endpoints(ax, show_linear_index = True)
+        fig.show()
