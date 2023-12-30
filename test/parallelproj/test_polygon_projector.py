@@ -87,6 +87,6 @@ def test_polygon_projector(xp: ModuleType, dev: str) -> None:
     assert proj2.tof == False
 
     with pytest.raises(ValueError):
-        # should raise an error if we don't pass None | ToFParameters
+        # should raise an error if we don't pass None | TOFParameters
         proj2.tof_parameters = 3.5
 

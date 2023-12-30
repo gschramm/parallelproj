@@ -1,3 +1,4 @@
+"""high-level geometrical forward and back projectors"""
 from __future__ import annotations
 
 import array_api_compat.numpy as np

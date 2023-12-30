@@ -1,4 +1,6 @@
+"""basic linear operators"""
 from __future__ import annotations
+
 from types import ModuleType
 import abc
 import numpy as np

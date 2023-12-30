@@ -1,3 +1,4 @@
+"""description of PET LORs (and sinograms bins) consisting of two detector endpoints"""
 from __future__ import annotations
 
 import abc

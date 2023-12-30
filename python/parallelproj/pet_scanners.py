@@ -1,3 +1,4 @@
+"""description of PET scanner geometries (detector coordinates)"""
 from __future__ import annotations
 
 import abc

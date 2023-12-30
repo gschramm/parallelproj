@@ -1,3 +1,4 @@
+"""PET time-of-flight (TOF) related classes and functions"""
 from __future__ import annotations
 
 from dataclasses import dataclass

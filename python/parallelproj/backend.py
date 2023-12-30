@@ -1,3 +1,4 @@
+"""backend functions that interface the parallelproj C/CUDA libraries"""
 from __future__ import annotations
 
 import os

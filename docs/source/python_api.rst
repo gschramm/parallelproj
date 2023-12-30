@@ -1,23 +1,35 @@
-PET scanners
-------------
-
-.. automodule:: parallelproj.pet_scanners
-    :members:
-
-Linear operators
-----------------
-
-.. automodule:: parallelproj.operators
-    :members:
-
 Low-level projector functions
 -----------------------------
 
 .. automodule:: parallelproj.backend
     :members:
 
-High-level projector classes
-----------------------------
+PET scanner geometries
+----------------------
+
+.. automodule:: parallelproj.pet_scanners
+    :members:
+
+PET LOR / sinogram descriptors
+------------------------------
+
+.. automodule:: parallelproj.pet_lors
+    :members:
+
+PET TOF parameters
+------------------
+
+.. automodule:: parallelproj.tof
+    :members:
+
+PET projectors
+--------------
 
 .. automodule:: parallelproj.projectors
+    :members:
+
+Linear operators
+----------------
+
+.. automodule:: parallelproj.operators
     :members:
