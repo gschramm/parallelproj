@@ -1,7 +1,7 @@
-Scanner gemoetries
-------------------
+PET scanners
+------------
 
-.. automodule:: parallelproj.scanners
+.. automodule:: parallelproj.pet_scanners
     :members:
 
 Linear operators
