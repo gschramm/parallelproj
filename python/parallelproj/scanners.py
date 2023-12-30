@@ -586,7 +586,7 @@ class RegularPolygonPETScannerGeometry(ModularizedPETScannerGeometry):
 
     @property
     def all_lor_endpoints_index_in_ring(self) -> Array:
-        """the index withing the ring (regular polygon) number of all LOR endpoints"""
+        """the index within the ring (regular polygon) of all LOR endpoints"""
         return self._all_lor_endpoints_index_in_ring
 
     @property
