@@ -15,7 +15,7 @@ def test_regular_polygon_pet_module(xp: ModuleType, dev: str) -> None:
     num_lor_endpoints_per_side = 16
     lor_spacing = 4.
 
-    aff_mat = xp.zeros((4, 4), dtype=xp.float32)
+    aff_mat = xp.zeros((4, 4), device = dev, dtype=xp.float32)
     aff_mat[0, 0] = 1.
     aff_mat[1, 1] = 1.
     aff_mat[2, 2] = 1.
