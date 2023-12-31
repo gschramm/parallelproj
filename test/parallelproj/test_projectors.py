@@ -37,7 +37,7 @@ def test_parallelviewprojector(xp, dev, verbose=True):
     assert allclose(proj2d.image_origin[1:], xp.asarray(image_origin, device = dev))
     assert proj2d.image_shape == image_shape
     assert allclose(proj2d.voxel_size[1:], xp.asarray(voxel_size, device = dev))
-    assert proj2d.device == array_api_compat.device(xstart)
+    assert proj2d.dev == array_api_compat.device(xstart)
 
 
     proj2d.adjointness_test(xp, dev, verbose=verbose)

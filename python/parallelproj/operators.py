@@ -303,6 +303,7 @@ class ElementwiseMultiplicationOperator(LinearOperator):
 
     @property
     def xp(self) -> ModuleType:
+        """array module of the operator"""
         return array_api_compat.get_namespace(self._values)
 
     def _apply(self, x: Array) -> Array:
@@ -455,18 +456,22 @@ class SubsetOperator:
 
     @property
     def in_shape(self) -> tuple[int, ...]:
+        """shape of the input array"""
         return self._in_shape
 
     @property
     def out_shapes(self) -> tuple[tuple[int, ...]]:
+        """shapes of the output array of all subset operators"""
         return self._out_shapes
 
     @property
     def operators(self) -> tuple[LinearOperator, ...]:
+        """all subset operators"""
         return self._operators
 
     @property
     def num_subsets(self) -> int:
+        """number of subsets"""
         return self._num_subsets
 
     def apply(self, x: Array) -> list[Array]:
@@ -517,14 +522,17 @@ class FiniteForwardDifference(LinearOperator):
 
     @property
     def in_shape(self) -> tuple[int, ...]:
+        """shape of the input array"""
         return self._in_shape
 
     @property
     def out_shape(self) -> tuple[int, ...]:
+        """shape of the output array"""
         return self._out_shape
 
     @property
     def ndim(self) -> int:
+        """number of dimensions of the input array"""
         return self._ndim
 
     def _apply(self, x: Array) -> Array:

@@ -397,11 +397,12 @@ class ModularizedPETScannerGeometry:
 
     @property
     def xp(self) -> ModuleType:
-        """module indicating whether the LOR endpoints are stored as numpy or cupy array"""
+        """array module to use for storing the LOR endpoints"""
         return self._modules[0].xp
 
     @property
     def dev(self) -> str:
+        """device to use for storing the LOR endpoints"""
         return self._modules[0].dev
 
     def linear_lor_endpoint_index(

@@ -84,6 +84,7 @@ class ParallelViewProjector2D(LinearOperator):
 
     @property
     def xp(self) -> ModuleType:
+        """array module"""
         return self._xp
 
     @property
@@ -96,34 +97,42 @@ class ParallelViewProjector2D(LinearOperator):
 
     @property
     def num_views(self) -> int:
+        """number of views"""
         return self._num_views
 
     @property
     def num_rad(self) -> int:
+        """number of radial elements"""
         return self._num_rad
 
     @property
     def xstart(self) -> Array:
+        """coordinates of LOR start points"""
         return self._xstart
 
     @property
     def xend(self) -> Array:
+        """coordinates of LOR end points"""
         return self._xend
 
     @property
     def image_origin(self) -> Array:
+        """image origin - world coordinates of the [0,0] voxel"""
         return self._image_origin
 
     @property
     def image_shape(self) -> tuple[int, int]:
+        """image shape"""
         return self._image_shape
 
     @property
     def voxel_size(self) -> Array:
+        """voxel size"""
         return self._voxel_size
 
     @property
-    def device(self) -> str:
+    def dev(self) -> str:
+        """device used for storage of LOR endpoints"""
         return self._device
 
     def _apply(self, x: Array) -> Array:
@@ -214,9 +223,6 @@ class ParallelViewProjector2D(LinearOperator):
         fig.tight_layout()
 
         return fig
-
-
-#-------------------------------------------------------------------------------
 
 
 class ParallelViewProjector3D(LinearOperator):
@@ -357,10 +363,12 @@ class ParallelViewProjector3D(LinearOperator):
 
     @property
     def max_ring_diff(self) -> int:
+        """maximum ring difference"""
         return self._max_ring_diff
 
     @property
     def xp(self) -> ModuleType:
+        """array module"""
         return self._xp
 
     @property
@@ -373,22 +381,27 @@ class ParallelViewProjector3D(LinearOperator):
 
     @property
     def voxel_size(self) -> Array:
+        """the voxel size in all directions"""
         return self._voxel_size
 
     @property
     def image_origin(self) -> Array:
+        """image origin - world coordinates of the [0,0,0] voxel"""
         return self._image_origin
 
     @property
     def image_shape(self) -> tuple[int, int, int]:
+        """image shape"""
         return self._image_shape
 
     @property
     def xstart(self) -> Array:
+        """coordinates of LOR start points"""
         return self._xstart
 
     @property
     def xend(self) -> Array:
+        """coordinates of LOR end points"""
         return self._xend
 
     def _apply(self, x: Array) -> Array:
@@ -423,7 +436,7 @@ class RegularPolygonPETProjector(LinearOperator):
             the voxel size of the image to be projected
         img_origin : None | Array, optional
             the origin of the image to be projected, by default None
-            means that image is "centered" in the scanner
+            means that the center of the image is at world coordinate (0,0,0)
         views : None | Array, optional
             sinogram views to be projected, by default None
             means that all views are being projected
@@ -476,10 +489,12 @@ class RegularPolygonPETProjector(LinearOperator):
 
     @property
     def xp(self) -> ModuleType:
+        """array module"""
         return self._lor_descriptor.xp
 
     @property
     def tof(self) -> bool:
+        """bool indicating whether to use TOF or not"""
         return self._tof
 
     @tof.setter
@@ -491,6 +506,7 @@ class RegularPolygonPETProjector(LinearOperator):
 
     @property
     def tof_parameters(self) -> TOFParameters | None:
+        """TOF parameters"""
         return self._tof_parameters
 
     @tof_parameters.setter
@@ -506,10 +522,12 @@ class RegularPolygonPETProjector(LinearOperator):
 
     @property
     def img_origin(self) -> Array:
+        """image origin - world coordinates of the [0,0,0] voxel"""
         return self._img_origin
 
     @property
     def views(self) -> Array:
+        """view numbers to be projected"""
         return self._views
 
     def _apply(self, x):

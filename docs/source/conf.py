@@ -85,7 +85,7 @@ nbsphinx_custom_formats = {
 # -- print warnings for undocumented things ------------------------------------
 # https://stackoverflow.com/questions/14141170/how-can-i-just-list-undocumented-members-with-sphinx-autodoc
 # set up the types of member to check that are documented
-members_to_watch = ['function','class','method','attribute']
+members_to_watch = ['function','class','method','attribute','property']
 
 def warn_undocumented_members(app, what, name, obj, options, lines):
     if(what in members_to_watch and len(lines)==0):
