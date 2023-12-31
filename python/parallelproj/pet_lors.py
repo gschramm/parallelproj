@@ -70,6 +70,10 @@ class PETLORDescriptor(abc.ABC):
 
 
 class RegularPolygonPETLORDescriptor(PETLORDescriptor):
+    """Coincidence descriptor for a regular polygon PET scanner where
+       we have coincidences within and between "rings (polygons of modules)"
+       The geometrical LORs can be sorted into a sinogram having a
+       "plane", "view" and "radial" axis."""
 
     def __init__(
         self,
@@ -78,10 +82,7 @@ class RegularPolygonPETLORDescriptor(PETLORDescriptor):
         max_ring_difference: int | None = None,
         sinogram_order: SinogramSpatialAxisOrder = SinogramSpatialAxisOrder.RVP
     ) -> None:
-        """Coincidence descriptor for a regular polygon PET scanner where
-           we have coincidences within and between "rings (polygons of modules)"
-           The geometrical LORs can be sorted into a sinogram having a
-           "plane", "view" and "radial" axis.
+        """
 
         Parameters
         ----------

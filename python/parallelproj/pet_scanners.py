@@ -11,13 +11,14 @@ from array_api_compat import to_device, size
 
 
 class PETScannerModule(abc.ABC):
+    """abstract base class for PET scanner module"""
 
     def __init__(self,
                  xp: ModuleType,
                  dev: str,
                  num_lor_endpoints: int,
                  affine_transformation_matrix: Array | None = None) -> None:
-        """abstract base class for PET scanner module
+        """
 
         Parameters
         ----------
@@ -178,6 +179,7 @@ class PETScannerModule(abc.ABC):
 
 
 class RegularPolygonPETScannerModule(PETScannerModule):
+    """Regular polygon PET scanner module (detectors on a regular polygon)"""
 
     def __init__(self,
                  xp: ModuleType,
@@ -189,7 +191,7 @@ class RegularPolygonPETScannerModule(PETScannerModule):
                  ax0: int = 2,
                  ax1: int = 1,
                  affine_transformation_matrix: Array | None = None) -> None:
-        """regular Polygon PET scanner module
+        """
 
         Parameters
         ----------
@@ -602,24 +604,46 @@ class RegularPolygonPETScannerGeometry(ModularizedPETScannerGeometry):
 
 
 class DemoPETScannerGeometry(RegularPolygonPETScannerGeometry):
+    """Demo PET scanner geometry consisting of a 34-ogon with 16 LOR endpoints per side and 36 rings"""
 
     def __init__(self,
                  xp: ModuleType,
                  dev: str,
-                 num_rings: int = 36,
-                 ring_distance: float = 5.32,
-                 ring_gap: float = 2.8,
-                 num_rings_per_block: int = 9,
                  radius: float = 0.5 * (744.1 + 2 * 8.51),
                  num_sides: int = 34,
                  num_lor_endpoints_per_side: int = 16,
                  lor_spacing: float = 4.03125,
+                 num_rings: int = 36,
+                 ring_positions: Array | None = None,
                  symmetry_axis: int = 2) -> None:
+        """
+        Parameters
+        ----------
+        xp : ModuleType
+            array module
+        dev : str
+            the device to use
+        radius : float, optional
+            radius of the regular polygon, by default 0.5*(744.1 + 2 * 8.51)
+        num_sides : int, optional
+            number of sides of the polygon, by default 34
+        num_lor_endpoints_per_side : int, optional
+            number of LOR endpoints per side, by default 16
+        lor_spacing : float, optional
+            spacing between the LOR endpoints, by default 4.03125
+        num_rings : int, optional
+            number of rings, by default 36
+        ring_positions : Array | None, optional
+            position of the rings, by default None means equally spaced rings 5.32mm apart
+        symmetry_axis : int, optional
+            symmetry (axial) axis of the scanner, by default 2
+        """
 
-        ring_positions = ring_distance * xp.arange(
-            num_rings, device=dev, dtype=xp.float32) + (xp.astype(
-                xp.arange(num_rings, device=dev) // num_rings_per_block, xp.float32)) * ring_gap
-        ring_positions -= 0.5 * xp.max(ring_positions)
+        if ring_positions is None:
+            ring_positions = 5.32 * xp.arange(
+                num_rings, device=dev, dtype=xp.float32) + (xp.astype(
+                    xp.arange(num_rings, device=dev) // 9, xp.float32)) * 2.8
+            ring_positions -= 0.5 * xp.max(ring_positions)
 
         super().__init__(xp,
                          dev,

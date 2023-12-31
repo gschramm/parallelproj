@@ -66,12 +66,11 @@ autodoc_default_options = {
     "undoc-members": True,
     "inherited-members": True,
     "private-members": False,
-    "special-members": "__init__,__call__",
+    "special-members": "__call__",
     "show-inheritance": True,
-    "exclude-members": "__weakref__",
 }
 
-autodoc_member_order = 'bysource'
+autoclass_content = 'both'
 
 # -- coverage builder options -------------------------------------------------
 # Configuration of sphinx.ext.coverage
@@ -82,3 +81,18 @@ coverage_statistics_to_stdout = True
 nbsphinx_custom_formats = {
     '.pct.py': ['jupytext.reads', {'fmt': 'py:percent'}],
 }
+
+# -- print warnings for undocumented things ------------------------------------
+# https://stackoverflow.com/questions/14141170/how-can-i-just-list-undocumented-members-with-sphinx-autodoc
+# set up the types of member to check that are documented
+members_to_watch = ['function','class','method','attribute']
+
+def warn_undocumented_members(app, what, name, obj, options, lines):
+    if(what in members_to_watch and len(lines)==0):
+        # warn to terminal during build
+        print("WARNING: ", what, "is undocumented: ", name, "(%d)"% len(lines))
+        # or modify the docstring so the rendered output is highlights the omission
+        lines.append(".. Warning:: %s '%s' undocumented" % (what, name))
+
+def setup(app):
+    app.connect('autodoc-process-docstring', warn_undocumented_members)
