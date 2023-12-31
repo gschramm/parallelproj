@@ -171,9 +171,9 @@ class PETScannerModule(abc.ABC):
 
         if annotation_fontsize > 0:
             for i in self.lor_endpoint_numbers:
-                ax.text(all_lor_endpoints[i, 0],
-                        all_lor_endpoints[i, 1],
-                        all_lor_endpoints[i, 2],
+                ax.text(all_lor_endpoints[int(i), 0],
+                        all_lor_endpoints[int(i), 1],
+                        all_lor_endpoints[int(i), 2],
                         f'{annotation_prefix}{i+annotation_offset}',
                         fontsize=annotation_fontsize)
 
