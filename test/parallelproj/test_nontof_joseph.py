@@ -8,6 +8,7 @@ from types import ModuleType
 # import the global pytestmark variable containing the xp/dev matrix we want to test
 from config import pytestmark
 
+
 def test_fwd(xp: ModuleType,
              dev: str,
              verbose: bool = True,

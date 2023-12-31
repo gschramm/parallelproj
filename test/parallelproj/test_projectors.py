@@ -6,6 +6,7 @@ import array_api_compat
 
 from config import pytestmark
 
+
 def allclose(x, y, atol: float = 1e-8, rtol: float = 1e-5) -> bool:
     """check if two arrays are close to each other, given absolute and relative error
        inspired by numpy.allclose
@@ -34,11 +35,11 @@ def test_parallelviewprojector(xp, dev, verbose=True):
     xstart = proj2d.xstart
     xend = proj2d.xend
 
-    assert allclose(proj2d.image_origin[1:], xp.asarray(image_origin, device = dev))
+    assert allclose(proj2d.image_origin[1:],
+                    xp.asarray(image_origin, device=dev))
     assert proj2d.image_shape == image_shape
-    assert allclose(proj2d.voxel_size[1:], xp.asarray(voxel_size, device = dev))
+    assert allclose(proj2d.voxel_size[1:], xp.asarray(voxel_size, device=dev))
     assert proj2d.dev == array_api_compat.device(xstart)
-
 
     proj2d.adjointness_test(xp, dev, verbose=verbose)
 
@@ -63,7 +64,8 @@ def test_parallelviewprojector(xp, dev, verbose=True):
 
     assert allclose(x_fwd, exp_result)
 
-    fig = proj2d.show_views(image = xp.ones(image_shape, dtype=xp.float32, device=dev))
+    fig = proj2d.show_views(
+        image=xp.ones(image_shape, dtype=xp.float32, device=dev))
 
     # setup a simple 3D projector with 2 rings
 
@@ -107,25 +109,24 @@ def test_parallelviewprojector(xp, dev, verbose=True):
 
     # test is max_ring_diff = None works
     proj3d_2 = parallelproj.ParallelViewProjector3D(image_shape3d,
-                                                  radial_positions,
-                                                  view_angles,
-                                                  radius,
-                                                  image_origin3d,
-                                                  voxel_size3d,
-                                                  ring_positions,
-                                                  max_ring_diff=None)
+                                                    radial_positions,
+                                                    view_angles,
+                                                    radius,
+                                                    image_origin3d,
+                                                    voxel_size3d,
+                                                    ring_positions,
+                                                    max_ring_diff=None)
 
     assert proj3d_2.max_ring_diff == array_api_compat.size(ring_positions) - 1
- 
+
     # test whether span > 1 raises execption
     with pytest.raises(Exception) as e_info:
         proj3d_2 = parallelproj.ParallelViewProjector3D(image_shape3d,
-                                                      radial_positions,
-                                                      view_angles,
-                                                      radius,
-                                                      image_origin3d,
-                                                      voxel_size3d,
-                                                      ring_positions,
-                                                      max_ring_diff=None,
-                                                      span=3)
-
+                                                        radial_positions,
+                                                        view_angles,
+                                                        radius,
+                                                        image_origin3d,
+                                                        voxel_size3d,
+                                                        ring_positions,
+                                                        max_ring_diff=None,
+                                                        span=3)

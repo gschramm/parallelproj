@@ -10,6 +10,7 @@ from math import prod
 
 from config import pytestmark
 
+
 def allclose(x, y, atol: float = 1e-8, rtol: float = 1e-5) -> bool:
     """check if two arrays are close to each other, given absolute and relative error
        inspired by numpy.allclose
@@ -17,7 +18,9 @@ def allclose(x, y, atol: float = 1e-8, rtol: float = 1e-5) -> bool:
     xp = array_api_compat.array_namespace(x)
     return bool(xp.all(xp.less_equal(xp.abs(x - y), atol + rtol * xp.abs(y))))
 
+
 #---------------------------------------------------------------------------------------
+
 
 def test_matrix(xp: ModuleType, dev: str):
     np.random.seed(0)
@@ -36,17 +39,20 @@ def test_matrix(xp: ModuleType, dev: str):
 
     with pytest.raises(ValueError):
         op.scale = xp.ones(1, device=dev)
-    
+
     # test call to norm
     op_norm = op.norm(xp, dev)
 
     op.adjointness_test(xp, dev)
     assert allclose(scale_fac * (A @ x), op(x))
 
+
 def test_complex_matrix(xp: ModuleType, dev: str):
     np.random.seed(0)
 
-    A = xp.asarray([[1., 2j], [-3., 2.], [-1., -1.]], device=dev, dtype=xp.complex128)
+    A = xp.asarray([[1., 2j], [-3., 2.], [-1., -1.]],
+                   device=dev,
+                   dtype=xp.complex128)
     x = xp.asarray([-2., 1.], device=dev, dtype=xp.complex128)
 
     op = parallelproj.MatrixOperator(A)
@@ -55,7 +61,6 @@ def test_complex_matrix(xp: ModuleType, dev: str):
     n = op.norm(xp, dev, iscomplex=True)
 
     assert allclose((A @ x), op(x))
-
 
 
 def test_elemenwise(xp: ModuleType, dev: str):
@@ -71,6 +76,7 @@ def test_elemenwise(xp: ModuleType, dev: str):
     op.adjointness_test(xp, dev)
     assert allclose(v * x, op(x))
 
+
 def test_elemenwise_complex(xp: ModuleType, dev: str):
     np.random.seed(0)
 
@@ -79,11 +85,10 @@ def test_elemenwise_complex(xp: ModuleType, dev: str):
 
     op = parallelproj.ElementwiseMultiplicationOperator(v)
     # test call to norm
-    op_norm = op.norm(xp, dev, iscomplex = True)
+    op_norm = op.norm(xp, dev, iscomplex=True)
 
-    op.adjointness_test(xp, dev, iscomplex = True)
+    op.adjointness_test(xp, dev, iscomplex=True)
     assert allclose(v * x, op(x))
-
 
 
 def test_gaussian(xp: ModuleType, dev: str):
@@ -110,7 +115,7 @@ def test_composite(xp: ModuleType, dev: str):
     op2 = parallelproj.MatrixOperator(A)
 
     op = parallelproj.CompositeLinearOperator([op1, op2])
-    
+
     assert op.operators == [op1, op2]
 
     # test call to norm
@@ -118,7 +123,6 @@ def test_composite(xp: ModuleType, dev: str):
 
     op.adjointness_test(xp, dev)
     assert allclose(v * (A @ x), op(x))
-
 
 
 def test_vstack(xp: ModuleType, dev: str):
@@ -143,6 +147,7 @@ def test_vstack(xp: ModuleType, dev: str):
         x_fwd,
         xp.concat((xp.reshape(A1(x), (-1, )), xp.reshape(A2(x), (-1, )),
                    xp.reshape(A3(x), (-1, )))))
+
 
 def test_subsets(xp: ModuleType, dev: str):
     np.random.seed(0)
@@ -179,7 +184,7 @@ def test_subsets(xp: ModuleType, dev: str):
 def test_finite_difference(xp: ModuleType, dev: str):
 
     # 1D tests
-    A = parallelproj.FiniteForwardDifference((3,))
+    A = parallelproj.FiniteForwardDifference((3, ))
     x = xp.reshape(xp.arange(prod(A.in_shape), device=dev), A.in_shape)
 
     n = A.norm(xp, dev)
@@ -189,7 +194,6 @@ def test_finite_difference(xp: ModuleType, dev: str):
     # test simple forward
     y = A(x)
     assert xp.all(y[0, :-1] == 1)
- 
 
     # 2D tests
     A = parallelproj.FiniteForwardDifference((5, 3))
@@ -233,4 +237,4 @@ def test_finite_difference(xp: ModuleType, dev: str):
     assert xp.all(y[3, :, :, :, :-1] == 1)
 
     with pytest.raises(ValueError):
-        A = parallelproj.FiniteForwardDifference((3,3,3,3,3))
+        A = parallelproj.FiniteForwardDifference((3, 3, 3, 3, 3))

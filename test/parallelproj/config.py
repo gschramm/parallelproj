@@ -22,4 +22,3 @@ if parallelproj.torch_enabled:
         xp_dev_list.append((torch, 'cuda'))
 
 pytestmark = pytest.mark.parametrize("xp,dev", xp_dev_list)
-
