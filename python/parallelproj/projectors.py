@@ -17,9 +17,9 @@ from .tof import TOFParameters
 class ParallelViewProjector2D(LinearOperator):
     """2D non-TOF parallel view projector"""
 
-    def __init__(self, image_shape: tuple[int, int],
-                 radial_positions: Array, view_angles: Array,
-                 radius: float, image_origin: tuple[float, float],
+    def __init__(self, image_shape: tuple[int, int], radial_positions: Array,
+                 view_angles: Array, radius: float, image_origin: tuple[float,
+                                                                        float],
                  voxel_size: tuple[float, float]) -> None:
         """init method
 
@@ -147,7 +147,10 @@ class ParallelViewProjector2D(LinearOperator):
                                        self._image_origin, self._voxel_size, y)
         return self.xp.squeeze(x, axis=0)
 
-    def show_views(self, views_to_show : None | Array = None, image: None | Array = None, **kwargs) -> plt.Figure:
+    def show_views(self,
+                   views_to_show: None | Array = None,
+                   image: None | Array = None,
+                   **kwargs) -> plt.Figure:
         """visualize the geometry of certrain projection views
 
         Parameters
@@ -171,14 +174,18 @@ class ParallelViewProjector2D(LinearOperator):
         img_extent = [tmp1, -tmp1, tmp2, -tmp2]
 
         for i, ip in enumerate(views_to_show):
-            ax[i].plot(np.asarray(array_api_compat.to_device(self._xstart[:, ip, 1],
-                                                  'cpu')),
-                       np.asarray(array_api_compat.to_device(self._xstart[:, ip, 2],
-                                                  'cpu')),
+            ax[i].plot(np.asarray(
+                array_api_compat.to_device(self._xstart[:, ip, 1], 'cpu')),
+                       np.asarray(
+                           array_api_compat.to_device(self._xstart[:, ip, 2],
+                                                      'cpu')),
                        '.',
                        ms=0.5)
-            ax[i].plot(np.asarray(array_api_compat.to_device(self._xend[:, ip, 1], 'cpu')),
-                       np.asarray(array_api_compat.to_device(self._xend[:, ip, 2], 'cpu')),
+            ax[i].plot(np.asarray(
+                array_api_compat.to_device(self._xend[:, ip, 1], 'cpu')),
+                       np.asarray(
+                           array_api_compat.to_device(self._xend[:, ip, 2],
+                                                      'cpu')),
                        '.',
                        ms=0.5)
 
@@ -466,7 +473,8 @@ class RegularPolygonPETProjector(LinearOperator):
         else:
             self._views = views
 
-        self._xstart, self._xend = lor_descriptor.get_lor_coordinates(views=self._views)
+        self._xstart, self._xend = lor_descriptor.get_lor_coordinates(
+            views=self._views)
 
         self._tof_parameters = None
         self._tof = False
@@ -512,7 +520,8 @@ class RegularPolygonPETProjector(LinearOperator):
     @tof_parameters.setter
     def tof_parameters(self, value: TOFParameters | None) -> None:
         if not (isinstance(value, TOFParameters) or value is None):
-            raise ValueError('tof_parameters must be a TOFParameters object or None')
+            raise ValueError(
+                'tof_parameters must be a TOFParameters object or None')
         self._tof_parameters = value
 
         if value is None:

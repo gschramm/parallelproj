@@ -41,7 +41,7 @@ class PETScannerModule(abc.ABC):
 
         if affine_transformation_matrix is None:
             aff_mat = self.xp.eye(4, device=self.dev)
-            aff_mat[-1,-1] = 0
+            aff_mat[-1, -1] = 0
             self._affine_transformation_matrix = aff_mat
         else:
             self._affine_transformation_matrix = affine_transformation_matrix
@@ -427,7 +427,8 @@ class ModularizedPETScannerGeometry:
         #    index_in_module = self._xp.asarray(index_in_module)
 
         return self.xp.take(self.all_lor_endpoints_index_offset,
-                            module, axis = 0) + index_in_module
+                            module,
+                            axis=0) + index_in_module
 
     def get_lor_endpoints(self, module: Array,
                           index_in_module: Array) -> Array:

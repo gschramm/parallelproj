@@ -383,7 +383,7 @@ def is_cuda_array(x: Array) -> bool:
     Returns
     -------
     bool
-    """    
+    """
 
     iscuda = False
 

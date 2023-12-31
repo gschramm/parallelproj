@@ -115,14 +115,17 @@ class LinearOperator(abc.ABC):
             dtype = xp.float64
 
         x = xp.asarray(np.random.rand(*self.in_shape), device=dev, dtype=dtype)
-        y = xp.asarray(np.random.rand(*self.out_shape), device=dev, dtype=dtype)
+        y = xp.asarray(np.random.rand(*self.out_shape),
+                       device=dev,
+                       dtype=dtype)
 
         if iscomplex:
-            x = x + 1j * xp.asarray(np.random.rand(*self.in_shape), device=dev, dtype=dtype)
+            x = x + 1j * xp.asarray(
+                np.random.rand(*self.in_shape), device=dev, dtype=dtype)
 
         if iscomplex:
-            y = y + 1j * xp.asarray(np.random.rand(*self.out_shape),
-                                    device=dev, dtype=dtype)
+            y = y + 1j * xp.asarray(
+                np.random.rand(*self.out_shape), device=dev, dtype=dtype)
 
         x_fwd = self.apply(x)
         y_adj = self.adjoint(y)
@@ -174,7 +177,8 @@ class LinearOperator(abc.ABC):
         x = xp.asarray(np.random.rand(*self.in_shape), device=dev, dtype=dtype)
 
         if iscomplex:
-            x = x + 1j * xp.asarray(np.random.rand(*self.in_shape), device=dev, dtype=dtype)
+            x = x + 1j * xp.asarray(
+                np.random.rand(*self.in_shape), device=dev, dtype=dtype)
 
         for i in range(num_iter):
             x = self.adjoint(self.apply(x))

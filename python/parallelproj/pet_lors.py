@@ -13,6 +13,7 @@ from array_api_compat import to_device
 
 from .pet_scanners import ModularizedPETScannerGeometry, RegularPolygonPETScannerGeometry
 
+
 class SinogramSpatialAxisOrder(enum.Enum):
     """order of spatial axis in a sinogram R (radial), V (view), P (plane)"""
 
@@ -241,9 +242,8 @@ class RegularPolygonPETLORDescriptor(PETLORDescriptor):
                                                 self._end_in_ring_index + n)
 
     def get_lor_indices(
-        self,
-        views: None | Array = None
-    ) -> tuple[Array, Array, Array, Array]:
+            self,
+            views: None | Array = None) -> tuple[Array, Array, Array, Array]:
         """return the start and end indices of all LORs / or a subset of views
 
         Parameters
@@ -279,7 +279,7 @@ class RegularPolygonPETLORDescriptor(PETLORDescriptor):
         start_inds = self.xp.reshape(start_inds, sinogram_spatial_shape)
         end_inds = self.xp.reshape(end_inds, sinogram_spatial_shape)
 
-        new_order = (0, 1, 2) # new order for PVR sinogram shape
+        new_order = (0, 1, 2)  # new order for PVR sinogram shape
 
         if self.sinogram_order is not SinogramSpatialAxisOrder.PVR:
             if self.sinogram_order is SinogramSpatialAxisOrder.RVP:
@@ -305,7 +305,6 @@ class RegularPolygonPETLORDescriptor(PETLORDescriptor):
         self,
         views: None | Array = None,
     ) -> tuple[Array, Array]:
-
         """return the start and end coordinates of all LORs / or a subset of views
 
         Parameters
@@ -321,7 +320,8 @@ class RegularPolygonPETLORDescriptor(PETLORDescriptor):
            2 dimensional floating point arrays containing the start and end coordinates of all LORs
         """
 
-        start_mods, end_mods, start_inds, end_inds = self.get_lor_indices(views)
+        start_mods, end_mods, start_inds, end_inds = self.get_lor_indices(
+            views)
         sinogram_spatial_shape = start_mods.shape
 
         start_mods = self.xp.reshape(start_mods, (-1, ))
@@ -362,8 +362,10 @@ class RegularPolygonPETLORDescriptor(PETLORDescriptor):
         xs, xe = self.get_lor_coordinates(views=views)
         print(xs.shape)
 
-        xs = self.xp.reshape(self.xp.take(xs, planes, axis=self.plane_axis_num), (-1, 3))
-        xe = self.xp.reshape(self.xp.take(xe, planes, axis=self.plane_axis_num), (-1, 3))
+        xs = self.xp.reshape(
+            self.xp.take(xs, planes, axis=self.plane_axis_num), (-1, 3))
+        xe = self.xp.reshape(
+            self.xp.take(xe, planes, axis=self.plane_axis_num), (-1, 3))
 
         p1s = np.asarray(to_device(xs, 'cpu'))
         p2s = np.asarray(to_device(xe, 'cpu'))

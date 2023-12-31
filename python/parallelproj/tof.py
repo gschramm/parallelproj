@@ -3,6 +3,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+
 @dataclass
 class TOFParameters:
     """
@@ -21,6 +22,7 @@ class TOFParameters:
     """
     num_tofbins: int = 29
     tofbin_width: float = 13 * 0.01302 * 299.792 / 2  # 13 TOF "small" TOF bins of 0.01302[ns] * (speed of light / 2) [mm/ns]
-    sigma_tof: float = (299.792 / 2) * (0.385 / 2.355)  # (speed_of_light [mm/ns] / 2) * TOF FWHM [ns] / 2.355
+    sigma_tof: float = (299.792 / 2) * (
+        0.385 / 2.355)  # (speed_of_light [mm/ns] / 2) * TOF FWHM [ns] / 2.355
     num_sigmas: float = 3.
     tofcenter_offset: float = 0
