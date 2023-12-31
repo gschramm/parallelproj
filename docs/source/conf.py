@@ -63,6 +63,7 @@ napoleon_numpy_docstring = True
 # -- autodoc options ----------------------------------------------------------
 autodoc_default_options = {
     "members": True,
+    "undoc-members": True,
     "inherited-members": True,
     "private-members": False,
     "special-members": "__init__,__call__",
