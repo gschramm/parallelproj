@@ -46,7 +46,7 @@ def test_regular_polygon_pet_module(xp: ModuleType, dev: str) -> None:
 
     assert mod.num_lor_endpoints == num_sides * num_lor_endpoints_per_side
     assert bool(
-        xp.all(mod.lor_endpoint_numbers == xp.arange(mod.num_lor_endpoints)))
+        xp.all(mod.lor_endpoint_numbers == xp.arange(mod.num_lor_endpoints, device=dev)))
     assert xp.all(mod.affine_transformation_matrix == aff_mat)
 
     assert ax0 == mod.ax0
