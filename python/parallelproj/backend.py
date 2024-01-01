@@ -19,6 +19,8 @@ from numpy.array_api._array_object import Array
 
 import array_api_compat
 
+from types import ModuleType
+
 # check if cuda is present
 cuda_present = distutils.spawn.find_executable('nvidia-smi') is not None
 
@@ -394,6 +396,23 @@ def is_cuda_array(x: Array) -> bool:
             iscuda = True
 
     return iscuda
+
+
+def empty_cuda_cache(xp: ModuleType) -> None:
+    """Empty the CUDA cache
+
+    Parameters
+    ----------
+    xp : ModuleType
+        array module type supporting CUDA arrays (cupy or torch)
+    """
+    if xp.__name__ == 'array_api_compat.cupy':
+        xp.get_default_memory_pool().free_all_blocks()
+        xp.get_default_pinned_memory_pool().free_all_blocks()
+    elif xp.__name__ == 'array_api_compat.torch':
+        xp.torch.cuda.empty_cache()
+    elif xp.__name__ == 'torch':
+        xp.cuda.empty_cache()
 
 
 def joseph3d_fwd(xstart: Array,
