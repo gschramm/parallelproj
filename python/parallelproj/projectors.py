@@ -12,7 +12,7 @@ import parallelproj
 from .operators import LinearOperator
 from .pet_lors import RegularPolygonPETLORDescriptor
 from .tof import TOFParameters
-from .backend import empty_cuda_cache
+from .backend import is_cuda_array, empty_cuda_cache
 
 
 class ParallelViewProjector2D(LinearOperator):
@@ -480,7 +480,7 @@ class RegularPolygonPETProjector(LinearOperator):
         self._tof_parameters = None
         self._tof = False
 
-        if self._dev == 'cuda':
+        if is_cuda_array(self._xstart):
             empty_cuda_cache(self.xp)
 
     @property

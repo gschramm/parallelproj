@@ -49,6 +49,7 @@ exclude_lines = [
     "class .*\\bProtocol\\):",
     "@(abc\\.)?abstractmethod",
     "if parallelproj.is_cuda_array",
+    "if is_cuda_array",
 ]
 omit = [
     "python/parallelproj/backend.py",
