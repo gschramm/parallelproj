@@ -12,6 +12,7 @@ import parallelproj
 from .operators import LinearOperator
 from .pet_lors import RegularPolygonPETLORDescriptor
 from .tof import TOFParameters
+from .backend import empty_cuda_cache
 
 
 class ParallelViewProjector2D(LinearOperator):
@@ -478,6 +479,9 @@ class RegularPolygonPETProjector(LinearOperator):
 
         self._tof_parameters = None
         self._tof = False
+
+        if self._dev == 'cuda':
+            empty_cuda_cache(self.xp)
 
     @property
     def in_shape(self) -> tuple[int, int, int]:

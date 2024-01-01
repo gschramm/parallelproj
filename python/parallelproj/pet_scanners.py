@@ -9,7 +9,6 @@ import matplotlib.pyplot as plt
 from types import ModuleType
 from array_api_compat import to_device, size
 
-
 class PETScannerModule(abc.ABC):
     """abstract base class for PET scanner module"""
 
