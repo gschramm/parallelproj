@@ -1,4 +1,4 @@
-from .backend import cuda_present, cupy_enabled, torch_enabled, is_cuda_array
+from .backend import cuda_present, cupy_enabled, torch_enabled, is_cuda_array, empty_cuda_cache
 from .backend import num_visible_cuda_devices
 from .backend import joseph3d_fwd, joseph3d_back
 from .backend import joseph3d_fwd_tof_sino, joseph3d_back_tof_sino
