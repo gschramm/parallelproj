@@ -3,6 +3,7 @@ from __future__ import annotations
 import pytest
 import parallelproj
 import array_api_compat
+import array_api_compat.numpy as np
 
 from config import pytestmark
 
@@ -130,3 +131,44 @@ def test_parallelviewprojector(xp, dev, verbose=True):
                                                         ring_positions,
                                                         max_ring_diff=None,
                                                         span=3)
+
+def test_minimal_reg_polygon_projector(xp, dev) -> None:
+    """test forward joseph non-tof forward projection with a minimal scanner geometry
+       using a 3x3x3 image and a single voxel !=0 at the center of the image
+    """
+
+    radius = 12.
+    z = radius / float(np.sqrt(2.))
+    vox_size = 1.8
+    vox_value = 2.7
+    img_shape = (3, 3, 3)
+    
+    scanner = parallelproj.RegularPolygonPETScannerGeometry(
+        xp, dev, radius = radius, num_sides = 8,
+        num_lor_endpoints_per_side = 1, lor_spacing = 1.,
+        num_rings = 3, ring_positions = xp.asarray([-z, 0, z], device = dev),
+        symmetry_axis = 2)
+    
+    lor_desc = parallelproj.RegularPolygonPETLORDescriptor(scanner, radial_trim = 1)
+    
+    proj = parallelproj.RegularPolygonPETProjector(lor_desc, img_shape = img_shape, voxel_size = 3*(vox_size,))
+    
+    # setup a test image
+    x = xp.zeros(img_shape, device = dev)
+    x[img_shape[0]//2, img_shape[1]//2, img_shape[2]//2] = vox_value
+    
+    x_fwd = proj(x)
+    
+    # check "corner to corner" projection which should be vox size * vox value * sqrt(3)
+    assert np.isclose(float(x_fwd[2,0,-1]), vox_value * vox_size * np.sqrt(3))
+    assert np.isclose(float(x_fwd[2,2,-1]), vox_value * vox_size * np.sqrt(3))
+    assert np.isclose(float(x_fwd[2,0,-2]), vox_value * vox_size * np.sqrt(3))
+    assert np.isclose(float(x_fwd[2,2,-2]), vox_value * vox_size * np.sqrt(3))
+    
+    # check "central" (straight through) projection which should be vox size * vox value
+    assert np.isclose(float(x_fwd[2,1,1]), vox_value * vox_size)
+    assert np.isclose(float(x_fwd[2,3,1]), vox_value * vox_size)
+    
+    # check "corner to corner" projection which should be vox size * vox value * sqrt(2)
+    assert np.isclose(float(x_fwd[2,0,1]), vox_value * vox_size * np.sqrt(2))
+    assert np.isclose(float(x_fwd[2,2,1]), vox_value * vox_size * np.sqrt(2))

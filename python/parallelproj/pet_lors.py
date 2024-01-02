@@ -360,7 +360,6 @@ class RegularPolygonPETLORDescriptor(PETLORDescriptor):
         """
 
         xs, xe = self.get_lor_coordinates(views=views)
-        print(xs.shape)
 
         xs = self.xp.reshape(
             self.xp.take(xs, planes, axis=self.plane_axis_num), (-1, 3))
