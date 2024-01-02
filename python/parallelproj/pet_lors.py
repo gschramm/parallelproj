@@ -287,9 +287,8 @@ class RegularPolygonPETLORDescriptor(PETLORDescriptor):
         # --- (2) stack copies of the plane 0 LOR start / end points for all planes with updated "z" coordinates 
 
         for i in range(self.num_planes):
-            #xstart = self.xp.asarray(xstart_2d, copy = True, device = self.dev)
-            #xend = self.xp.asarray(xend_2d, copy = True, device = self.dev)
-
+            # make a copy of the 2D coordinates
+            # stupid way of adding 0, since asarray with torch and cuda does not seem to work
             xstart = xstart_2d + 0
             xend = xend_2d + 0
 
