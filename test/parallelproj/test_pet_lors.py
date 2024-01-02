@@ -45,9 +45,8 @@ def test_pet_lors(xp: ModuleType, dev: str) -> None:
                             planes=xp.asarray([0], device=dev),
                             lw=0.1)
         fig.show()
+        plt.close(fig)
 
     # test lor descriptor without max_ring_difference and radial_trim
     lor_desc2 = parallelproj.RegularPolygonPETLORDescriptor(
         scanner, radial_trim=radial_trim, max_ring_difference=None)
-
-    lor_inds = lor_desc2.get_lor_indices(views=None)

@@ -45,11 +45,6 @@ class PETLORDescriptor(abc.ABC):
         self._scanner = scanner
 
     @abc.abstractmethod
-    def get_lor_indices(self) -> tuple[Array, Array, Array, Array]:
-        """return the start and end indices of all LORs / or a subset of LORs"""
-        raise NotImplementedError
-
-    @abc.abstractmethod
     def get_lor_coordinates(self) -> tuple[Array, Array]:
         """return the start and end coordinates of all (or a subset of) LORs"""
         raise NotImplementedError
@@ -250,66 +245,6 @@ class RegularPolygonPETLORDescriptor(PETLORDescriptor):
                                                 self._end_in_ring_index,
                                                 self._end_in_ring_index + n)
 
-    def get_lor_indices(
-            self,
-            views: None | Array = None) -> tuple[Array, Array, Array, Array]:
-        """return the start and end indices of all LORs / or a subset of views
-
-        Parameters
-        ----------
-        views : None | Array, optional
-            the views to consider, by default None means all views
-        Returns
-        -------
-        start_mods, end_mods, start_inds, end_inds
-        """
-
-        if views is None:
-            views = self.xp.arange(self.num_views, device=self.dev)
-
-        # setup the module and in_module (in_ring) indices for all LORs in PVR order
-        start_inring_inds = self.xp.reshape(
-            self.xp.take(self.start_in_ring_index, views, axis=0), (-1, ))
-        end_inring_inds = self.xp.reshape(
-            self.xp.take(self.end_in_ring_index, views, axis=0), (-1, ))
-
-        start_mods, start_inds = self.xp.meshgrid(self.start_plane_index,
-                                                  start_inring_inds,
-                                                  indexing='ij')
-        end_mods, end_inds = self.xp.meshgrid(self.end_plane_index,
-                                              end_inring_inds,
-                                              indexing='ij')
-
-        # reshape to PVR dimensions (radial moving fastest, planes moving slowest)
-        sinogram_spatial_shape = (self.num_planes, views.shape[0],
-                                  self.num_rad)
-        start_mods = self.xp.reshape(start_mods, sinogram_spatial_shape)
-        end_mods = self.xp.reshape(end_mods, sinogram_spatial_shape)
-        start_inds = self.xp.reshape(start_inds, sinogram_spatial_shape)
-        end_inds = self.xp.reshape(end_inds, sinogram_spatial_shape)
-
-        new_order = (0, 1, 2)  # new order for PVR sinogram shape
-
-        if self.sinogram_order is not SinogramSpatialAxisOrder.PVR:
-            if self.sinogram_order is SinogramSpatialAxisOrder.RVP:
-                new_order = (2, 1, 0)
-            elif self.sinogram_order is SinogramSpatialAxisOrder.RPV:
-                new_order = (2, 0, 1)
-            elif self.sinogram_order is SinogramSpatialAxisOrder.VRP:
-                new_order = (1, 2, 0)
-            elif self.sinogram_order is SinogramSpatialAxisOrder.VPR:
-                new_order = (1, 0, 2)
-            elif self.sinogram_order is SinogramSpatialAxisOrder.PRV:
-                new_order = (0, 2, 1)
-
-            start_mods = self.xp.permute_dims(start_mods, new_order)
-            end_mods = self.xp.permute_dims(end_mods, new_order)
-
-            start_inds = self.xp.permute_dims(start_inds, new_order)
-            end_inds = self.xp.permute_dims(end_inds, new_order)
-
-        return start_mods, end_mods, start_inds, end_inds
-
     def get_lor_coordinates(
         self,
         views: None | Array = None,
@@ -320,8 +255,6 @@ class RegularPolygonPETLORDescriptor(PETLORDescriptor):
         ----------
         views : None | Array, optional
             the views to consider, by default None means all views
-        sinogram_order : SinogramSpatialAxisOrder, optional
-            the order of the sinogram axes, by default SinogramSpatialAxisOrder.RVP
 
         Returns
         -------
@@ -329,24 +262,43 @@ class RegularPolygonPETLORDescriptor(PETLORDescriptor):
            2 dimensional floating point arrays containing the start and end coordinates of all LORs
         """
 
-        start_mods, end_mods, start_inds, end_inds = self.get_lor_indices(
-            views)
-        sinogram_spatial_shape = start_mods.shape
+        # --- (1) setup the LOR start / end points for all views of plane 0
 
-        start_mods = self.xp.reshape(start_mods, (-1, ))
-        start_inds = self.xp.reshape(start_inds, (-1, ))
+        start_in_ring_index = self.xp.take(self.start_in_ring_index, views, axis = 0)
+        end_in_ring_index = self.xp.take(self.end_in_ring_index, views, axis = 0)
+    
+        if self.view_axis_num > self.radial_axis_num:
+            start_in_ring_index = start_in_ring_index.T
+            end_in_ring_index = end_in_ring_index.T
+    
+        shape_2d = start_in_ring_index.shape
+    
+        start_inds_2d = self.xp.reshape(start_in_ring_index, (-1,))
+        end_inds_2d = self.xp.reshape(end_in_ring_index, (-1,))
 
-        end_mods = self.xp.reshape(end_mods, (-1, ))
-        end_inds = self.xp.reshape(end_inds, (-1, ))
+        xstart_2d = self.xp.reshape(self.scanner.get_lor_endpoints(self.xp.zeros_like(start_inds_2d), start_inds_2d),
+                    shape_2d + (3, ))
+        xend_2d = self.xp.reshape(self.scanner.get_lor_endpoints(self.xp.zeros_like(end_inds_2d), end_inds_2d),
+                    shape_2d + (3, ))
 
-        x_start = self.xp.reshape(
-            self.scanner.get_lor_endpoints(start_mods, start_inds),
-            sinogram_spatial_shape + (3, ))
-        x_end = self.xp.reshape(
-            self.scanner.get_lor_endpoints(end_mods, end_inds),
-            sinogram_spatial_shape + (3, ))
+        xstart_3d = []
+        xend_3d = []
+    
+        # --- (2) stack copies of the plane 0 LOR start / end points for all planes with updated "z" coordinates 
 
-        return x_start, x_end
+        for i in range(self.num_planes):
+            xstart = self.xp.asarray(xstart_2d, copy = True, device = self.dev)
+            xend = self.xp.asarray(xend_2d, copy = True, device = self.dev)
+            xstart[...,self.scanner.symmetry_axis] = float(self.scanner.ring_positions[self.start_plane_index[i]])
+            xend[...,self.scanner.symmetry_axis] = float(self.scanner.ring_positions[self.end_plane_index[i]])
+    
+            xstart_3d.append(xstart)
+            xend_3d.append(xend)
+    
+        xstart_3d = self.xp.stack(xstart_3d, axis = self.plane_axis_num)
+        xend_3d = self.xp.stack(xend_3d, axis = self.plane_axis_num)
+
+        return xstart_3d, xend_3d
 
     def show_views(self,
                    ax: plt.Axes,

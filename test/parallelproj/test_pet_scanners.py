@@ -61,6 +61,7 @@ def test_regular_polygon_pet_module(xp: ModuleType, dev: str) -> None:
     mod.show_lor_endpoints(ax, transformed=False)
     mod.show_lor_endpoints(ax, transformed=True, annotation_fontsize=8)
     fig.show()
+    plt.close(fig)
 
     # test module withput affine transformation matrix
     mod2 = parallelproj.RegularPolygonPETScannerModule(
@@ -132,3 +133,4 @@ def test_regular_polygon_pet_scanner(xp: ModuleType, dev: str) -> None:
         scanner.show_lor_endpoints(ax, show_linear_index=False)
         scanner.show_lor_endpoints(ax, show_linear_index=True)
         fig.show()
+        plt.close(fig)

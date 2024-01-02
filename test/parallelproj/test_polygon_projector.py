@@ -120,7 +120,8 @@ def test_minimal_reg_polygon_projector(xp, dev) -> None:
         num_rings = 3, ring_positions = xp.asarray([-z, 0, z], device = dev),
         symmetry_axis = 2)
     
-    lor_desc = parallelproj.RegularPolygonPETLORDescriptor(scanner, radial_trim = 1)
+    sinogram_order = parallelproj.SinogramSpatialAxisOrder.RVP
+    lor_desc = parallelproj.RegularPolygonPETLORDescriptor(scanner, radial_trim = 1, sinogram_order = sinogram_order)
     
     proj = parallelproj.RegularPolygonPETProjector(lor_desc, img_shape = img_shape, voxel_size = 3*(vox_size,))
     
