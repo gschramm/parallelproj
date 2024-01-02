@@ -55,6 +55,5 @@ exclude_lines = [
     "def empty_cuda_cache",
     "if num_visible_cuda_devices > 0",
     "if cupy_enabled",
-    "if 'PARALLELPROJ_C_LIB' in os.environ",
-    "if lib_parallelproj_c_fname is None",
+    "lib_parallelproj_c_fname",
 ]
