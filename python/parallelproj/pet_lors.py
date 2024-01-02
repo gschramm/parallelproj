@@ -287,8 +287,12 @@ class RegularPolygonPETLORDescriptor(PETLORDescriptor):
         # --- (2) stack copies of the plane 0 LOR start / end points for all planes with updated "z" coordinates 
 
         for i in range(self.num_planes):
-            xstart = self.xp.asarray(xstart_2d, copy = True, device = self.dev)
-            xend = self.xp.asarray(xend_2d, copy = True, device = self.dev)
+            #xstart = self.xp.asarray(xstart_2d, copy = True, device = self.dev)
+            #xend = self.xp.asarray(xend_2d, copy = True, device = self.dev)
+
+            xstart = xstart_2d + 0
+            xend = xend_2d + 0
+
             xstart[...,self.scanner.symmetry_axis] = float(self.scanner.ring_positions[self.start_plane_index[i]])
             xend[...,self.scanner.symmetry_axis] = float(self.scanner.ring_positions[self.end_plane_index[i]])
     
