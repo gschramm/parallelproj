@@ -50,7 +50,11 @@ exclude_lines = [
     "@(abc\\.)?abstractmethod",
     "if parallelproj.is_cuda_array",
     "if is_cuda_array",
+    "if cuda_present:",
+    "def is_cuda_array",
+    "def empty_cuda_cache",
+    "if num_visible_cuda_devices > 0",
+    "if cupy_enabled",
+    "if 'PARALLELPROJ_C_LIB' in os.environ",
+    "if lib_parallelproj_c_fname is None",
 ]
-omit = [
-    "python/parallelproj/backend.py",
-    ]

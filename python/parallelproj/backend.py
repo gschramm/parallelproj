@@ -352,8 +352,8 @@ if cuda_present:
             warn('cannot find cuda kernel file for cupy kernels')
 
 
-def calc_chunks(nLORs: int | np.int64,
-                num_chunks: int) -> list[int] | list[np.int64]:
+def calc_chunks(nLORs: int,
+                num_chunks: int) -> list[int] | list[int]:
     """ calculate indices to split an array of length nLORs into num_chunks chunks
 
         example: splitting an array of length 10 into 3 chunks returns [0,4,7,10]
@@ -532,7 +532,7 @@ def joseph3d_back(xstart: Array,
     nLORs = np.int64(array_api_compat.size(xstart) // 3)
     xp = array_api_compat.get_namespace(img_fwd)
 
-    if (is_cuda_array(img_fwd)):
+    if is_cuda_array(img_fwd):
         # back projection of cupy or torch GPU array using the cupy raw kernel
         back_img = cp.zeros(img_shape, dtype=cp.float32)
 
@@ -654,7 +654,7 @@ def joseph3d_fwd_tof_sino(xstart: Array,
     lor_dependent_tofcenter_offset = np.uint8(
         tofcenter_offset.shape[0] == nLORs)
 
-    if (is_cuda_array(img)):
+    if is_cuda_array(img):
         # projection of cupy or torch GPU array using the cupy raw kernel
         img_fwd = cp.zeros(xstart.shape[:-1] + (ntofbins, ), dtype=cp.float32)
 
@@ -801,7 +801,7 @@ def joseph3d_back_tof_sino(xstart: Array,
     lor_dependent_tofcenter_offset = np.uint8(
         tofcenter_offset.shape[0] == nLORs)
 
-    if (is_cuda_array(img_fwd)):
+    if is_cuda_array(img_fwd):
         # back projection of cupy or torch GPU array using the cupy raw kernel
         back_img = cp.zeros(img_shape, dtype=cp.float32)
 
@@ -954,7 +954,7 @@ def joseph3d_fwd_tof_lm(xstart: Array,
     lor_dependent_tofcenter_offset = np.uint8(
         tofcenter_offset.shape[0] == nLORs)
 
-    if (is_cuda_array(img)):
+    if is_cuda_array(img):
         # projection of cupy or torch GPU array using the cupy raw kernel
         img_fwd = cp.zeros(nLORs, dtype=cp.float32)
 
@@ -1100,7 +1100,7 @@ def joseph3d_back_tof_lm(xstart: Array,
     lor_dependent_tofcenter_offset = np.uint8(
         tofcenter_offset.shape[0] == nLORs)
 
-    if (is_cuda_array(img_fwd)):
+    if is_cuda_array(img_fwd):
         # back projection of cupy or torch GPU array using the cupy raw kernel
         back_img = cp.zeros(img_shape, dtype=cp.float32)
 
