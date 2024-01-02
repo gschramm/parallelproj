@@ -498,15 +498,13 @@ class RegularPolygonPETProjector(LinearOperator):
 
     @property
     def out_shape(self) -> tuple[int, int, int]:
-        if self.tof:
-            out_shape = (self._lor_descriptor.num_rad, self._views.shape[0],
-                         self._lor_descriptor.num_planes,
-                         self.tof_parameters.num_tofbins)
-        else:
-            out_shape = (self._lor_descriptor.num_rad, self._views.shape[0],
-                         self._lor_descriptor.num_planes)
+        out_shape = list(self._lor_descriptor.spatial_sinogram_shape)
+        out_shape[self._lor_descriptor.view_axis_num] = self._views.shape[0]
 
-        return out_shape
+        if self.tof:
+            out_shape += [self.tof_parameters.num_tofbins]
+
+        return tuple(out_shape)
 
     @property
     def xp(self) -> ModuleType:

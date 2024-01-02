@@ -182,6 +182,15 @@ class RegularPolygonPETLORDescriptor(PETLORDescriptor):
         """the axis number of the view axis"""
         return self.sinogram_order.name.find('V')
 
+    @property
+    def spatial_sinogram_shape(self) -> tuple[int, int, int]:
+        """the shape of the sinogram in spatial order"""
+        shape = [0,0,0]
+        shape[self.plane_axis_num] = self.num_planes
+        shape[self.view_axis_num] = self.num_views
+        shape[self.radial_axis_num] = self.num_rad
+        return tuple(shape)
+
     def _setup_plane_indices(self) -> None:
         """setup the start / end plane indices (similar to a Michelogram)
         """
