@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import parallelproj
+import array_api_compat.numpy as np
+from array_api_compat import to_device
 import pytest
 from types import ModuleType
 
@@ -98,3 +100,76 @@ def test_polygon_projector(xp: ModuleType, dev: str) -> None:
     with pytest.raises(ValueError):
         # should raise an error if we don't pass None | TOFParameters
         proj2.tof_parameters = 3.5
+
+def test_minimal_reg_polygon_projector(xp, dev) -> None:
+    """test forward joseph non-tof forward projection with a minimal scanner geometry
+       using a 3x3x3 image and a single voxel !=0 at the center of the image
+    """
+
+    radius = 12.
+    z = radius / float(np.sqrt(2.))
+    vox_size = 1.8
+    vox_value = 2.7
+    img_size = 3
+
+    img_shape = 3*(img_size,)
+    
+    scanner = parallelproj.RegularPolygonPETScannerGeometry(
+        xp, dev, radius = radius, num_sides = 8,
+        num_lor_endpoints_per_side = 1, lor_spacing = 1.,
+        num_rings = 3, ring_positions = xp.asarray([-z, 0, z], device = dev),
+        symmetry_axis = 2)
+    
+    lor_desc = parallelproj.RegularPolygonPETLORDescriptor(scanner, radial_trim = 1)
+    
+    proj = parallelproj.RegularPolygonPETProjector(lor_desc, img_shape = img_shape, voxel_size = 3*(vox_size,))
+    
+    # setup a test image with a single voxel != 0 at the center of the image
+    x = xp.zeros(img_shape, device = dev)
+    x[img_shape[0]//2, img_shape[1]//2, img_shape[2]//2] = vox_value
+    x_fwd = proj(x)
+    
+    # check "corner to corner" projection which should be vox size * vox value * sqrt(3)
+    assert np.isclose(float(x_fwd[2,0,-1]), vox_value * vox_size * np.sqrt(3))
+    assert np.isclose(float(x_fwd[2,2,-1]), vox_value * vox_size * np.sqrt(3))
+    assert np.isclose(float(x_fwd[2,0,-2]), vox_value * vox_size * np.sqrt(3))
+    assert np.isclose(float(x_fwd[2,2,-2]), vox_value * vox_size * np.sqrt(3))
+    
+    # check "central" (straight through) projection which should be vox size * vox value
+    assert np.isclose(float(x_fwd[2,1,1]), vox_value * vox_size)
+    assert np.isclose(float(x_fwd[2,3,1]), vox_value * vox_size)
+    
+    # check "corner to corner" projection which should be vox size * vox value * sqrt(2)
+    assert np.isclose(float(x_fwd[2,0,1]), vox_value * vox_size * np.sqrt(2))
+    assert np.isclose(float(x_fwd[2,2,1]), vox_value * vox_size * np.sqrt(2))
+
+    # setup a test image where all voxels have the same value
+    x2 = vox_value*xp.ones(img_shape, device = dev)
+    x_fwd2 = proj(x2)
+
+    # check "corner to corner" projection which should be vox size * vox value * sqrt(3)
+    assert np.isclose(float(x_fwd2[2,0,-1]), img_size * vox_value * vox_size * np.sqrt(3))
+    assert np.isclose(float(x_fwd2[2,2,-1]), img_size * vox_value * vox_size * np.sqrt(3))
+    assert np.isclose(float(x_fwd2[2,0,-2]), img_size * vox_value * vox_size * np.sqrt(3))
+    assert np.isclose(float(x_fwd2[2,2,-2]), img_size * vox_value * vox_size * np.sqrt(3))
+    
+    # check "central" (straight through) projection which should be vox size * vox value
+    assert np.isclose(float(x_fwd2[2,1,1]), img_size * vox_value * vox_size)
+    assert np.isclose(float(x_fwd2[2,3,1]), img_size * vox_value * vox_size)
+    
+    # check "corner to corner" projection which should be vox size * vox value * sqrt(2)
+    assert np.isclose(float(x_fwd2[2,0,1]), img_size * vox_value * vox_size * np.sqrt(2))
+    assert np.isclose(float(x_fwd2[2,2,1]), img_size * vox_value * vox_size * np.sqrt(2))
+
+    # setup the same projector without caching of the LOR endpoints
+    projb = parallelproj.RegularPolygonPETProjector(lor_desc, img_shape = img_shape, voxel_size = 3*(vox_size,), cache_lor_endpoints = False)
+    x_fwd2b = projb(x2)
+
+    projb.adjointness_test(xp, dev)
+
+    assert projb.xstart is None
+    assert projb.xend is None
+    assert projb.lor_descriptor == lor_desc
+
+    # check whether the projections with and without caching the LOR endpoints are the same
+    assert np.allclose(np.asarray(to_device(x_fwd2b, 'cpu')), np.asarray(to_device(x_fwd2, 'cpu')))
