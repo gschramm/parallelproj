@@ -52,6 +52,31 @@ intersphinx_disabled_domains = ['std']
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
 
 html_theme = 'sphinx_rtd_theme'
+html_logo = 'parllelproj-logo2.svg'
+
+html_theme_options = {
+    'logo_only': True,
+    'display_version': True,
+    'prev_next_buttons_location': 'bottom',
+    'style_external_links': False,
+    'vcs_pageview_mode': '',
+    #'style_nav_header_background': '#1e8449',
+    # Toc options
+    'collapse_navigation': True,
+    'sticky_navigation': True,
+    'navigation_depth': 4,
+    'includehidden': True,
+    'titles_only': False,
+}
+
+html_context = {
+  'display_github': True,
+  'github_user': 'gschramm',
+  'github_repo': 'parallelproj',
+  'github_version': 'master/docs/source/',
+}
+
+
 
 # -- Options for EPUB output -------------------------------------------------
 epub_show_urls = 'footnote'

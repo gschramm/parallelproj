@@ -3,23 +3,28 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Welcome to parallelproj's documentation!
-========================================
+parallelproj: a Python array API compatible library for fast tomographic projections
+====================================================================================
 
-**parallelproj** is a Python interface library for the
-libparallelproj projector libraries written in C/OpenMP
-and cuda.
+**parallelproj** provides simple and fast
+forward and back projectors for tomographic reconstruction
+(non-TOF and TOF, sinogram ans listmode) in Python that are `python array API <https://data-apis.org/array-api/latest/>`_ 
+compatible meaning that they can be used with a variety of python
+array libraries (e.g. numpy, cupy, pytorch) and devices (CPU and CUDA GPUs).
 
-.. note::
-    The aim of **parallelproj** is to provide simple and fast
-    forward and back projectors for tomographic reconstruction
-    (non-TOF and TOF) in Python that are compatible with different
-    array libraries (e.g. numpy, cupy, pytorch) and devices
-    (CPU and CUDA GPUs).
+**github repository** `<https://github.com/gschramm/parallelproj>`_
+
+Features
+--------
+
+* **C/OpenMP** and **CUDA** implementations of **3D Joseph matched forward and back projectors**
+* **Python array API compatible Python interface** (e.g. directly compatible with numpy, cupy, **pytorch**) 
+* **non-TOF** and **TOF** versions of the projectors
+* dedicated **sinogram** and **listmode** versions of the projectors
+* available from `conda-forge <https://github.com/conda-forge/parallelproj-feedstock>`_
 
 .. toctree::
     :hidden:
-    :caption: Getting Started
     
     installation
 
