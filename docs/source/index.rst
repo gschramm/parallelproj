@@ -27,14 +27,20 @@ Features
     :hidden:
     
     installation
+..
+  .. nbgallery::
+      :caption: Low-level examples
+      :name: example-gallery
+  
+      notebooks/nontof_projections.pct.py
+      notebooks/tof_sinogram_projections.pct.py
+      notebooks/tof_listmode_projections.pct.py
 
-.. nbgallery::
-    :caption: Low-level examples
-    :name: example-gallery
+.. toctree::
+    :hidden:
+    :caption: Examples
 
-    notebooks/nontof_projections.pct.py
-    notebooks/tof_sinogram_projections.pct.py
-    notebooks/tof_listmode_projections.pct.py
+    auto_examples/index
 
 .. toctree::
     :hidden:

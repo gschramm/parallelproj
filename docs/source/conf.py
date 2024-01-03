@@ -33,7 +33,7 @@ extensions = [
     'sphinx.ext.intersphinx',
     'sphinx.ext.mathjax', 
     'sphinx.ext.viewcode',
-    'nbsphinx',
+    'sphinx_gallery.gen_gallery',
     'sphinx_design',
     'sphinx_copybutton',
 ]
@@ -47,6 +47,27 @@ intersphinx_mapping = {
 }
 intersphinx_disabled_domains = ['std']
 
+
+sphinx_gallery_conf = {
+    "examples_dirs": ["../../examples"],
+    #"gallery_dirs": "auto_examples",  # path to where to save gallery generated output
+    "filename_pattern": "/demo_",
+    "run_stale_examples": True,
+    "ignore_pattern": r"__init__\.py",
+    "reference_url": {
+        # The module you locally document uses None
+        "sphinx_gallery": None
+    },
+    # directory where function/class granular galleries are stored
+    "backreferences_dir": "gen_modules/backreferences",
+    # Modules for which function/class level galleries are created. In
+    # this case sphinx_gallery and numpy in a tuple of strings.
+    "doc_module": ("parallelproj"),
+    # objects to exclude from implicit backreferences. The default option
+    # is an empty set, i.e. exclude nothing.
+    "exclude_implicit_doc": {},
+    "nested_sections": False,
+}
 
 # -- Options for HTML output -------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
