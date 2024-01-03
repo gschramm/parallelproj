@@ -485,8 +485,7 @@ class RegularPolygonPETScannerGeometry(ModularizedPETScannerGeometry):
 
     def __init__(self, xp: ModuleType, dev: str, radius: float, num_sides: int,
                  num_lor_endpoints_per_side: int, lor_spacing: float,
-                 num_rings: int, ring_positions: Array,
-                 symmetry_axis: int) -> None:
+                 ring_positions: Array, symmetry_axis: int) -> None:
         """
         Parameters
         ----------
@@ -502,8 +501,6 @@ class RegularPolygonPETScannerGeometry(ModularizedPETScannerGeometry):
             number of LOR endpoints in each side (face) of each polygon
         lor_spacing : float
             spacing between the LOR endpoints in each side
-        num_rings : int
-            the number of rings (regular polygons)
         ring_positions : Array
             1D array with the coordinate of the rings along the ring axis
         symmetry_axis : int
@@ -513,7 +510,6 @@ class RegularPolygonPETScannerGeometry(ModularizedPETScannerGeometry):
         self._radius = radius
         self._num_sides = num_sides
         self._num_lor_endpoints_per_side = num_lor_endpoints_per_side
-        self._num_rings = num_rings
         self._lor_spacing = lor_spacing
         self._symmetry_axis = symmetry_axis
         self._ring_positions = ring_positions
@@ -530,7 +526,7 @@ class RegularPolygonPETScannerGeometry(ModularizedPETScannerGeometry):
 
         modules = []
 
-        for ring in range(num_rings):
+        for ring in range(self.num_rings):
             aff_mat = xp.eye(4, device=dev)
             aff_mat[symmetry_axis, -1] = ring_positions[ring]
 
@@ -571,7 +567,7 @@ class RegularPolygonPETScannerGeometry(ModularizedPETScannerGeometry):
     @property
     def num_rings(self) -> int:
         """number of rings (regular polygons)"""
-        return self._num_rings
+        return self._ring_positions.shape[0]
 
     @property
     def lor_spacing(self) -> float:
@@ -615,7 +611,6 @@ class DemoPETScannerGeometry(RegularPolygonPETScannerGeometry):
                  num_lor_endpoints_per_side: int = 16,
                  lor_spacing: float = 4.03125,
                  num_rings: int = 36,
-                 ring_positions: Array | None = None,
                  symmetry_axis: int = 2) -> None:
         """
         Parameters
@@ -634,17 +629,14 @@ class DemoPETScannerGeometry(RegularPolygonPETScannerGeometry):
             spacing between the LOR endpoints, by default 4.03125
         num_rings : int, optional
             number of rings, by default 36
-        ring_positions : Array | None, optional
-            position of the rings, by default None means equally spaced rings 5.32mm apart
         symmetry_axis : int, optional
             symmetry (axial) axis of the scanner, by default 2
         """
 
-        if ring_positions is None:
-            ring_positions = 5.32 * xp.arange(
-                num_rings, device=dev, dtype=xp.float32) + (xp.astype(
-                    xp.arange(num_rings, device=dev) // 9, xp.float32)) * 2.8
-            ring_positions -= 0.5 * xp.max(ring_positions)
+        ring_positions = 5.32 * xp.arange(
+            num_rings, device=dev, dtype=xp.float32) + (xp.astype(
+                xp.arange(num_rings, device=dev) // 9, xp.float32)) * 2.8
+        ring_positions -= 0.5 * xp.max(ring_positions)
 
         super().__init__(xp,
                          dev,
@@ -652,6 +644,5 @@ class DemoPETScannerGeometry(RegularPolygonPETScannerGeometry):
                          num_sides=num_sides,
                          num_lor_endpoints_per_side=num_lor_endpoints_per_side,
                          lor_spacing=lor_spacing,
-                         num_rings=num_rings,
                          ring_positions=ring_positions,
                          symmetry_axis=symmetry_axis)

@@ -134,7 +134,7 @@ def test_minimal_reg_polygon_projector(xp, dev) -> None:
         scanner = parallelproj.RegularPolygonPETScannerGeometry(
             xp, dev, radius = radius, num_sides = 8,
             num_lor_endpoints_per_side = 1, lor_spacing = 1.,
-            num_rings = 3, ring_positions = xp.asarray([-z, 0, z], device = dev),
+            ring_positions = xp.asarray([-z, 0, z], device = dev),
             symmetry_axis = symmetry_axis)
     
         for sinogram_order in parallelproj.SinogramSpatialAxisOrder:
