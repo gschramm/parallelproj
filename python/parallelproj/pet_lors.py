@@ -262,6 +262,9 @@ class RegularPolygonPETLORDescriptor(PETLORDescriptor):
            2 dimensional floating point arrays containing the start and end coordinates of all LORs
         """
 
+        if views is None:
+            views = self.xp.arange(self.num_views, device=self.dev)
+
         # --- (1) setup the LOR start / end points for all views of plane 0
 
         start_in_ring_index = self.xp.take(self.start_in_ring_index, views, axis = 0)

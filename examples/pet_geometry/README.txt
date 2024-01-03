@@ -1,2 +1,0 @@
-PET scanner geometries
-----------------------
