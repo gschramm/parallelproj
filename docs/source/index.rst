@@ -23,23 +23,18 @@ Features
 * dedicated **sinogram** and **listmode** versions of the projectors
 * available from `conda-forge <https://github.com/conda-forge/parallelproj-feedstock>`_
 
+Publication
+-----------
+
+*If you are using parallelproj, we highly recommend to read and cite our publication*
+
+* G. Schramm, K. Thielemans: "*PARALLELPROJ - An open-source framework for fast calculation of projections in tomography*", Front. Nucl. Med., Volume 3 - 2023, doi: 10.3389/fnume.2023.1324562, `link to paper <https://www.frontiersin.org/articles/10.3389/fnume.2023.1324562/abstract>`_, `link to arxiv version <https://arxiv.org/abs/2212.12519>`_
+
 .. toctree::
     :hidden:
-    
+    :caption: Getting started
+
     installation
-..
-  .. nbgallery::
-      :caption: Low-level examples
-      :name: example-gallery
-  
-      notebooks/nontof_projections.pct.py
-      notebooks/tof_sinogram_projections.pct.py
-      notebooks/tof_listmode_projections.pct.py
-
-.. toctree::
-    :hidden:
-    :caption: Examples
-
     auto_examples/index
 
 .. toctree::

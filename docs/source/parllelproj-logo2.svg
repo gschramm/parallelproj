@@ -14,6 +14,7 @@
    inkscape:export-ydpi="96"
    xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
    xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:xlink="http://www.w3.org/1999/xlink"
    xmlns="http://www.w3.org/2000/svg"
    xmlns:svg="http://www.w3.org/2000/svg">
   <sodipodi:namedview
@@ -38,26 +39,39 @@
      inkscape:export-bgcolor="#ffffff00"
      showgrid="false" />
   <defs
-     id="defs1" />
+     id="defs1">
+    <linearGradient
+       id="linearGradient3"
+       inkscape:collect="always">
+      <stop
+         style="stop-color:#416486;stop-opacity:1;"
+         offset="0"
+         id="stop3" />
+      <stop
+         style="stop-color:#2d394c;stop-opacity:1;"
+         offset="1"
+         id="stop4" />
+    </linearGradient>
+    <radialGradient
+       inkscape:collect="always"
+       xlink:href="#linearGradient3"
+       id="radialGradient4"
+       cx="86.34243"
+       cy="29.910528"
+       fx="86.34243"
+       fy="29.910528"
+       r="31.6838"
+       gradientTransform="matrix(0.56813056,3.4256235,-3.1625956,0.52453011,111.79575,-254.13411)"
+       gradientUnits="userSpaceOnUse" />
+  </defs>
   <g
      inkscape:label="Layer 1"
      inkscape:groupmode="layer"
      id="layer1"
      transform="translate(-10.865799,-47.67251)">
-    <text
-       xml:space="preserve"
-       style="font-weight:bold;font-size:16.9333px;font-family:Arial;-inkscape-font-specification:'Arial Bold';fill:#ffffff;fill-opacity:1;stroke-width:0.264583"
-       x="99.55658"
-       y="88.832359"
-       id="text1"><tspan
-         sodipodi:role="line"
-         id="tspan1"
-         style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:16.9333px;font-family:Futura;-inkscape-font-specification:'Futura Bold';fill:#ffffff;fill-opacity:1;stroke-width:0.264583"
-         x="99.55658"
-         y="88.832359">parallelproj</tspan></text>
     <path
        sodipodi:type="star"
-       style="fill:#416486;fill-opacity:0.80530971;stroke-width:0.264583"
+       style="fill:url(#radialGradient4);fill-opacity:1;stroke-width:0.265;stroke:#000000;stroke-opacity:1;stroke-dasharray:none"
        id="path1"
        inkscape:flatsided="true"
        sodipodi:sides="6"
@@ -71,14 +85,21 @@
        inkscape:randomized="0"
        d="m 98.688911,76.955763 -31.683799,18.29265 -31.6838,-18.29265 0,-36.585301 31.6838,-18.29265 31.683799,18.292651 z"
        transform="rotate(-30,107.27804,95.035188)" />
+    <text
+       xml:space="preserve"
+       style="font-weight:bold;font-size:16.9333px;font-family:Arial;-inkscape-font-specification:'Arial Bold';fill:#ffffff;fill-opacity:1;stroke-width:0.264583"
+       x="99.55658"
+       y="88.832359"
+       id="text1"><tspan
+         sodipodi:role="line"
+         id="tspan1"
+         style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:16.9333px;font-family:Futura;-inkscape-font-specification:'Futura Bold';fill:#ffffff;fill-opacity:1;stroke-width:0.264583"
+         x="99.55658"
+         y="88.832359">parallelproj</tspan></text>
     <path
        style="fill:#f9f9f9;stroke-width:0.264583"
        d="M 17.62932,83.672509 71.435363,51.988708"
        id="path2" />
-    <path
-       style="fill:none;fill-opacity:1;stroke:#d6e3f0;stroke-width:0.6;stroke-dasharray:none;stroke-opacity:1"
-       d="M 17.62932,83.672509 71.435363,51.988708 35.554004,115.35631"
-       id="path8" />
     <path
        style="fill:none;fill-opacity:1;stroke:#d6e3f0;stroke-width:0.6;stroke-dasharray:none;stroke-opacity:1"
        d="M 35.554004,51.988708 90.799933,83.672509 H 17.62932"
@@ -87,46 +108,45 @@
        style="fill:none;fill-opacity:1;stroke:#d7e4f1;stroke-width:0.6;stroke-dasharray:none;stroke-opacity:1"
        d="M 72.983973,114.88289 17.62932,83.672509"
        id="path10" />
-    <g
-       id="g8"
-       style="fill:#8eb2d6;fill-opacity:1"
-       transform="translate(-40.778027,2.6743568)">
-      <circle
-         style="fill:#8eb2d6;fill-opacity:1;stroke:none;stroke-width:0.132292;stroke-opacity:1"
-         id="path4"
-         cx="58.407349"
-         cy="80.998154"
-         r="1.9418418" />
-      <circle
-         style="fill:#8eb2d6;fill-opacity:1;stroke:none;stroke-width:0.132292;stroke-opacity:1"
-         id="circle4"
-         cx="76.332031"
-         cy="49.31435"
-         r="1.9418418" />
-      <circle
-         style="fill:#8eb2d6;fill-opacity:1;stroke:none;stroke-width:0.132292;stroke-opacity:1"
-         id="circle5"
-         cx="112.21339"
-         cy="49.31435"
-         r="1.9418418" />
-      <circle
-         style="fill:#8eb2d6;fill-opacity:1;stroke:none;stroke-width:0.132292;stroke-opacity:1"
-         id="circle6"
-         cx="131.57796"
-         cy="80.998154"
-         r="1.9418418" />
-      <circle
-         style="fill:#8eb2d6;fill-opacity:1;stroke:none;stroke-width:0.132292;stroke-opacity:1"
-         id="circle7"
-         cx="114.15523"
-         cy="112.68195"
-         r="1.9418418" />
-      <circle
-         style="fill:#8eb2d6;fill-opacity:1;stroke:none;stroke-width:0.132292;stroke-opacity:1"
-         id="circle8"
-         cx="76.332031"
-         cy="112.68195"
-         r="1.9418418" />
-    </g>
+    <circle
+       style="fill:#8eb2d6;fill-opacity:1;stroke:none;stroke-width:0.132292;stroke-opacity:1"
+       id="path4"
+       cx="17.629322"
+       cy="83.672508"
+       r="1.9418418" />
+    <circle
+       style="fill:#8eb2d6;fill-opacity:1;stroke:none;stroke-width:0.132292;stroke-opacity:1"
+       id="circle4"
+       cx="35.554005"
+       cy="51.988708"
+       r="1.9418418" />
+    <circle
+       style="fill:#fbbb03;fill-opacity:1;stroke:none;stroke-width:0.132292;stroke-opacity:1"
+       id="circle5"
+       cx="71.435356"
+       cy="51.988708"
+       r="1.9418418" />
+    <circle
+       style="fill:#8eb2d6;fill-opacity:1;stroke:none;stroke-width:0.132292;stroke-opacity:1"
+       id="circle6"
+       cx="90.799927"
+       cy="83.672508"
+       r="1.9418418" />
+    <circle
+       style="fill:#8eb2d6;fill-opacity:1;stroke:none;stroke-width:0.132292;stroke-opacity:1"
+       id="circle7"
+       cx="73.377197"
+       cy="115.35631"
+       r="1.9418418" />
+    <circle
+       style="fill:#fbbb03;fill-opacity:1;stroke:none;stroke-width:0.132292;stroke-opacity:1"
+       id="circle8"
+       cx="35.554005"
+       cy="115.35631"
+       r="1.9418418" />
+    <path
+       style="fill:none;fill-opacity:1;stroke:#fbbb03;stroke-width:0.600001;stroke-opacity:1"
+       d="M 71.435363,51.988708 35.554004,115.35631"
+       id="path5" />
   </g>
 </svg>
