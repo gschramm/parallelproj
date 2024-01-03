@@ -32,6 +32,12 @@ elif 'torch' in xp.__name__:
 
 
 # %%
+# Define four different PET scanners with different geometries
+# ------------------------------------------------------------
+#
+# foo bar
+#
+            
 scanner1 = parallelproj.RegularPolygonPETScannerGeometry(xp,
                                               dev,
                                               radius = 65.,
