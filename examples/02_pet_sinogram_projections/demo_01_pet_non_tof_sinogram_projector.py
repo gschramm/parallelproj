@@ -17,7 +17,8 @@ import array_api_compat.numpy as xp
 
 # %%
 import parallelproj
-from array_api_compat import to_device, device
+from array_api_compat import to_device
+import array_api_compat.numpy as np
 import matplotlib.pyplot as plt
 
 # choose a device (CPU or CUDA GPU)
@@ -112,7 +113,7 @@ vmax = float(xp.max(x_fwd))
 for i in range(20):
     axx = ax.ravel()[i]
     if i < proj.lor_descriptor.num_planes:
-        axx.imshow(x_fwd[:,:,i].T, cmap='Greys', vmin = 0, vmax = vmax)
+        axx.imshow(np.asarray(to_device(x_fwd[:,:,i].T, 'cpu')), cmap='Greys', vmin = 0, vmax = vmax)
         axx.set_title(f'sino plane {i}', fontsize = 'medium')
     else:
      axx.set_axis_off()
@@ -124,7 +125,7 @@ fig2, ax2 = plt.subplots(3,3, figsize = (8, 8))
 vmax = float(xp.max(x))
 for i in range(8):
     axx = ax2.ravel()[i]
-    axx.imshow(x[:,i,:].T, cmap='Greys', vmin = 0, vmax = vmax)
+    axx.imshow(np.asarray(to_device(x[:,i,:].T, 'cpu')), cmap='Greys', vmin = 0, vmax = vmax)
     axx.set_title(f'img plane {i}', fontsize = 'medium')
 ax2.ravel()[-1].set_axis_off()
 fig2.tight_layout()
@@ -143,13 +144,13 @@ x_fwd_back = proj.adjoint(x_fwd)
 # Adding an image-based resolution model
 # --------------------------------------
 #
-# :class:`.GaussianFilterOperator` and class:`.CompositeLinearOperator` can be used
+# The :class:`.GaussianFilterOperator` and :class:`.CompositeLinearOperator` can be used
 # to setup a projection operator that includes an image-based resolution model
 #
 # If our forward operator :math:`A = P G` is given by the composition of an 
 # image-based resolution model :math:`G` and a projection operator :math:`P`, 
 # its adjoint is given by :math:`A^H = G^H P^H` which is implemented by
-# :method:`.CompositeLinearOperator.adjoint`
+# :meth:`.CompositeLinearOperator.adjoint`
 
 
 # setup a simple image-based resolution model with an Gaussian FWHM of 4.5mm
@@ -167,7 +168,7 @@ vmax = float(xp.max(x_fwd2))
 for i in range(20):
     axx = ax.ravel()[i]
     if i < proj.lor_descriptor.num_planes:
-        axx.imshow(x_fwd2[:,:,i].T, cmap='Greys', vmin = 0, vmax = vmax)
+        axx.imshow(np.asarray(to_device(x_fwd2[:,:,i].T, 'cpu')), cmap='Greys', vmin = 0, vmax = vmax)
         axx.set_title(f'sino plane {i}', fontsize = 'medium')
     else:
      axx.set_axis_off()
@@ -181,6 +182,9 @@ fig.show()
 #
 # :class:`.ElementwiseMultiplicationOperator` can be used to add effect of attenuation
 # which is modeled as an element-wise multiplication in the sinogram domain
+#
+# Including the effect of attenuation, our forward operator can now be
+# described as :math:`A = \text{diag}(a) P G`, where :math:`a` is the attenuation sinogram
 
 # setup an attenuation image containing the attenuation coeff. of water (in 1/mm)
 x_att = xp.full(proj.in_shape, 0.01, device = dev, dtype = xp.float32)
@@ -207,7 +211,7 @@ vmax = float(xp.max(x_fwd3))
 for i in range(20):
     axx = ax.ravel()[i]
     if i < proj.lor_descriptor.num_planes:
-        axx.imshow(x_fwd3[:,:,i].T, cmap='Greys', vmin = 0, vmax = vmax)
+        axx.imshow(np.asarray(to_device(x_fwd3[:,:,i].T, 'cpu')), cmap='Greys', vmin = 0, vmax = vmax)
         axx.set_title(f'sino plane {i}', fontsize = 'medium')
     else:
      axx.set_axis_off()
@@ -219,7 +223,7 @@ fig2, ax2 = plt.subplots(3,3, figsize = (8, 8))
 vmax = float(xp.max(x_fwd3_back))
 for i in range(8):
     axx = ax2.ravel()[i]
-    axx.imshow(x_fwd3_back[:,i,:].T, cmap='Greys', vmin = 0, vmax = vmax)
+    axx.imshow(np.asarray(to_device(x_fwd3_back[:,i,:].T, 'cpu')), cmap='Greys', vmin = 0, vmax = vmax)
     axx.set_title(f'img plane {i}', fontsize = 'medium')
 ax2.ravel()[-1].set_axis_off()
 fig2.tight_layout()

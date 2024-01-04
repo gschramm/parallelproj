@@ -137,3 +137,4 @@ wip/*
 *.qdrep
 .vscode/*
 compiled_libs/*
+.DS_Store
