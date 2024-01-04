@@ -935,7 +935,9 @@ def joseph3d_fwd_tof_lm(xstart: Array,
     nsigmas: float
         number of sigmas to consider when Gaussian kernel is evaluated (truncated)
     tofbin: Array
-        array containing the tof bin of the events
+        signed integer array with the tofbin of the events
+        the center of TOF bin 0 is assumed to be at the center of the LOR
+        (shifted by the tofcenter_offset)
     threadsperblock : int, optional
         by default 32
     num_chunks : int, optional
@@ -949,6 +951,9 @@ def joseph3d_fwd_tof_lm(xstart: Array,
 
     nLORs = np.int64(xstart.shape[0])
     xp = array_api_compat.get_namespace(img)
+
+    if not xp.isdtype(tofbin.dtype, 'integral'):
+        raise TypeError('tofbin must be an int array')
 
     lor_dependent_sigma_tof = np.uint8(sigma_tof.shape[0] == nLORs)
     lor_dependent_tofcenter_offset = np.uint8(
@@ -1081,7 +1086,9 @@ def joseph3d_back_tof_lm(xstart: Array,
     nsigmas: float
         number of sigmas to consider when Gaussian kernel is evaluated (truncated)
     tofbin: Array
-        array with the tofbin of the events
+        signed integer array with the tofbin of the events
+        the center of TOF bin 0 is assumed to be at the center of the LOR
+        (shifted by the tofcenter_offset)
     threadsperblock : int, optional
         by default 32
     num_chunks : int, optional
@@ -1095,6 +1102,9 @@ def joseph3d_back_tof_lm(xstart: Array,
 
     nLORs = np.int64(xstart.shape[0])
     xp = array_api_compat.get_namespace(img_fwd)
+
+    if not xp.isdtype(tofbin.dtype, 'integral'):
+        raise TypeError('tofbin must be an int array')
 
     lor_dependent_sigma_tof = np.uint8(sigma_tof.shape[0] == nLORs)
     lor_dependent_tofcenter_offset = np.uint8(

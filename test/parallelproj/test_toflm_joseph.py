@@ -2,6 +2,7 @@ import parallelproj
 import array_api_compat.numpy as np
 
 from types import ModuleType
+import pytest
 
 from config import pytestmark
 
@@ -72,6 +73,21 @@ def test_tof_lm_fwd(xp: ModuleType,
 
     # check if sum of the projection is correct (should be equal to the voxel size)
     res1 = isclose(xp.sum(img_fwd), voxsize)
+
+    # check if get an error if the tof_bin is not int
+    tof_bin_float = xp.arange(num_tof_bins, dtype=xp.float32,
+                        device=dev) - num_tof_bins // 2
+    with pytest.raises(TypeError):
+        tmp = parallelproj.joseph3d_fwd_tof_lm(xstart, xend, img, img_origin,
+                                                   voxel_size, tofbin_width,
+                                                   sigma_tof, tofcenter_offset,
+                                                   nsigmas, tof_bin_float)
+
+    with pytest.raises(TypeError):
+        tmp_back = parallelproj.joseph3d_back_tof_lm(xstart, xend, img.shape, img_origin,
+                                                   voxel_size, img_fwd, tofbin_width,
+                                                   sigma_tof, tofcenter_offset,
+                                                   nsigmas, tof_bin_float)
 
     # check if the FWHM in the projected profile is correct
     # to do so, we check if the interpolated profile - 0.5max(profile) at +/- FWHM/2 is 0
