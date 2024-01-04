@@ -10,7 +10,7 @@ from config import pytestmark
 
 def test_pet_lors(xp: ModuleType, dev: str) -> None:
 
-    num_rings = 4
+    num_rings = 3
     symmetry_axis = 2
     scanner = parallelproj.DemoPETScannerGeometry(xp,
                                                   dev,
@@ -36,6 +36,8 @@ def test_pet_lors(xp: ModuleType, dev: str) -> None:
         assert lor_desc.plane_axis_num == sinogram_order.name.find('P')
         assert lor_desc.radial_axis_num == sinogram_order.name.find('R')
         assert lor_desc.view_axis_num == sinogram_order.name.find('V')
+
+        lor_coords = lor_desc.get_lor_coordinates()
 
         fig = plt.figure()
         ax = fig.add_subplot(111, projection='3d')

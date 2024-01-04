@@ -4,6 +4,7 @@ import parallelproj
 import array_api_compat.numpy as np
 from array_api_compat import to_device
 import pytest
+import matplotlib.pyplot as plt
 from types import ModuleType
 
 from config import pytestmark
@@ -100,6 +101,12 @@ def test_polygon_projector(xp: ModuleType, dev: str) -> None:
     with pytest.raises(ValueError):
         # should raise an error if we don't pass None | TOFParameters
         proj2.tof_parameters = 3.5
+
+    fig = plt.figure(figsize=(8, 8))
+    ax = fig.add_subplot(121, projection='3d')
+    proj.show_geometry(ax)
+    plt.close(fig)
+
 
 def _get_slice(r, v, p, lor_descriptor):
 

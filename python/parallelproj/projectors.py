@@ -565,6 +565,11 @@ class RegularPolygonPETProjector(LinearOperator):
         """cached coordinates of LOR end points"""
         return self._xend
 
+    @property
+    def voxel_size(self) -> Array:
+        """voxel size"""
+        return self._voxel_size
+
     def _apply(self, x):
         """nonTOF forward projection of input image x including image based resolution model"""
 
@@ -644,3 +649,50 @@ class RegularPolygonPETProjector(LinearOperator):
                 self._xend = None
 
         return y_back
+
+    def show_geometry(self,
+                      ax: plt.Axes,
+                      color: tuple[float, float, float] = (1.,0.,0.),
+                      edgecolor: str = 'grey',
+                      alpha : float = 0.1) -> None:
+        """show the geometry of the scanner and the FOV of the image
+
+        Parameters
+        ----------
+        ax : plt.Axes
+            matplotlib axes object with projection = '3d'
+        color : tuple[float, float, float], optional
+            color to use for the FOV cube, by default (1.,0.,0.)
+        edgecolor : str, optional
+            edgecolor to use for the FOV cube, by default 'grey'
+        alpha : float, optional
+            alpha value of the FOV cube, by default 0.1
+        """
+
+        # dimensions of the "voxel" array for the FOV cube
+        # (1,1,1) means that FOV cube is represented by a single voxel
+        sh = (1,1,1)
+
+        x, y, z = np.indices((sh[0]+1,sh[1]+1,sh[2]+1)).astype(float)
+        
+        x /= sh[0]
+        y /= sh[1]
+        z /= sh[2]
+        
+        x *= int(self.in_shape[0]) * float(self.voxel_size[0])
+        y *= int(self.in_shape[1]) * float(self.voxel_size[1])
+        z *= int(self.in_shape[2]) * float(self.voxel_size[2])
+        
+        x += (float(self.img_origin[0]) - 0.5 * float(self.voxel_size[0]))
+        y += (float(self.img_origin[1]) - 0.5 * float(self.voxel_size[1]))
+        z += (float(self.img_origin[2]) - 0.5 * float(self.voxel_size[2]))
+        
+        colors = np.empty(sh + (4,), dtype=np.float32)
+        colors[...,0] = color[0]
+        colors[...,1] = color[1]
+        colors[...,2] = color[2]
+        colors[...,3] = alpha
+
+        ax.voxels(x, y, z, filled = np.ones(sh, dtype=np.bool), facecolors=colors, edgecolors=edgecolor)
+
+        self.lor_descriptor.scanner.show_lor_endpoints(ax)
