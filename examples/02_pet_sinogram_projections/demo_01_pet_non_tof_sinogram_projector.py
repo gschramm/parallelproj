@@ -98,15 +98,15 @@ fig.show()
 # the geometrical forward projection (line integrals by Joseph's method)
 # though a voxelize image.
 
-# setup a simple test image containing a few "point rods"
-
+# setup a simple test image containing a few "hot rods"
 x = xp.zeros(proj.in_shape, device = dev, dtype = xp.float32)
-x[proj.in_shape[0]//2, :, proj.in_shape[2]//2] = 2.
-x[0, :, proj.in_shape[2]//2] = 1.5
-x[proj.in_shape[0]//2, :, 0] = 1.
+x[proj.in_shape[0]//2, :, proj.in_shape[2]//2] = 1.
+x[4, :, proj.in_shape[2]//2] = 1.
+x[proj.in_shape[0]//2, :, 4] = 1.
 
 x_fwd = proj(x)
 
+# visualize the forward projection
 fig, ax = plt.subplots(4,5, figsize = (2*5, 2*4))
 vmax = float(xp.max(x_fwd))
 for i in range(20):
@@ -119,18 +119,43 @@ for i in range(20):
 fig.tight_layout()
 fig.show()
 
+# visualize the back projection including the attenuation resolution model
+fig2, ax2 = plt.subplots(3,3, figsize = (8, 8))
+vmax = float(xp.max(x))
+for i in range(8):
+    axx = ax2.ravel()[i]
+    axx.imshow(x[:,i,:].T, cmap='Greys', vmin = 0, vmax = vmax)
+    axx.set_title(f'img plane {i}', fontsize = 'medium')
+ax2.ravel()[-1].set_axis_off()
+fig2.tight_layout()
+fig2.show()
+
+
+# %% 
+# Simple geometrical back projections
+# --------------------------------------
+#
+# :meth:`.RegularPolygonPETProjector.adjoint` allows us to calculate
+# the geometrical back projection (the adjoint of the forward projection)
+
+x_fwd_back = proj.adjoint(x_fwd)
 
 # %%
 # Adding an image-based resolution model
 # --------------------------------------
+#
+# :class:`.GaussianFilterOperator` and class:`.CompositeLinearOperator` can be used
+# to setup a projection operator that includes an image-based resolution model
 
 # setup a simple image-based resolution model with an Gaussian FWHM of 4.5mm
 res_model = parallelproj.GaussianFilterOperator(proj.in_shape, sigma = 4.5 / (2.35*proj.voxel_size))
 
 proj_with_res_model = parallelproj.CompositeLinearOperator((proj, res_model))
 
+# forward project with resolution model
 x_fwd2 = proj_with_res_model(x)
 
+# visualize the forward projection including the resolution model
 fig, ax = plt.subplots(4,5, figsize = (2*5, 2*4))
 vmax = float(xp.max(x_fwd2))
 for i in range(20):
@@ -147,6 +172,9 @@ fig.show()
 # %%
 # Adding the effect of attenuation
 # --------------------------------
+#
+# :class:`.ElementwiseMultiplicationOperator` can be used to add effect of attenuation
+# which is modeled as an element-wise multiplication in the sinogram domain
 
 # setup an attenuation image containing the attenuation coeff. of water (in 1/mm)
 x_att = xp.full(proj.in_shape, 0.01, device = dev, dtype = xp.float32)
@@ -161,8 +189,13 @@ att_op = parallelproj.ElementwiseMultiplicationOperator(att_sino)
 # setup a forward projector containing the attenuation and resolution
 proj_with_att_and_res_model = parallelproj.CompositeLinearOperator((att_op, proj, res_model))
 
+# forward project with resolution and attenuation model
 x_fwd3 = proj_with_att_and_res_model(x)
 
+# back project the forward projection including the resolution and attenuation model
+x_fwd3_back = proj_with_att_and_res_model.adjoint(x_fwd3)
+
+# visualize the forward projection including the attenuation resolution model
 fig, ax = plt.subplots(4,5, figsize = (2*5, 2*4))
 vmax = float(xp.max(x_fwd3))
 for i in range(20):
@@ -174,5 +207,16 @@ for i in range(20):
      axx.set_axis_off()
 fig.tight_layout()
 fig.show()
+
+# visualize the back projection including the attenuation resolution model
+fig2, ax2 = plt.subplots(3,3, figsize = (8, 8))
+vmax = float(xp.max(x_fwd3_back))
+for i in range(8):
+    axx = ax2.ravel()[i]
+    axx.imshow(x_fwd3_back[:,i,:].T, cmap='Greys', vmin = 0, vmax = vmax)
+    axx.set_title(f'img plane {i}', fontsize = 'medium')
+ax2.ravel()[-1].set_axis_off()
+fig2.tight_layout()
+fig2.show()
 
 
