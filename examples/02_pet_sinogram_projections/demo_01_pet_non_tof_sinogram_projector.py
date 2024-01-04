@@ -137,7 +137,6 @@ fig2.show()
 #
 # :meth:`.RegularPolygonPETProjector.adjoint` allows us to calculate
 # the geometrical back projection (the adjoint of the forward projection)
-
 x_fwd_back = proj.adjoint(x_fwd)
 
 # %%
@@ -146,6 +145,12 @@ x_fwd_back = proj.adjoint(x_fwd)
 #
 # :class:`.GaussianFilterOperator` and class:`.CompositeLinearOperator` can be used
 # to setup a projection operator that includes an image-based resolution model
+#
+# If our forward operator :math:`A = P G` is given by the composition of an 
+# image-based resolution model :math:`G` and a projection operator :math:`P`, 
+# its adjoint is given by :math:`A^H = G^H P^H` which is implemented by
+# :method:`.CompositeLinearOperator.adjoint`
+
 
 # setup a simple image-based resolution model with an Gaussian FWHM of 4.5mm
 res_model = parallelproj.GaussianFilterOperator(proj.in_shape, sigma = 4.5 / (2.35*proj.voxel_size))
@@ -154,6 +159,7 @@ proj_with_res_model = parallelproj.CompositeLinearOperator((proj, res_model))
 
 # forward project with resolution model
 x_fwd2 = proj_with_res_model(x)
+x_fwd2_back = proj_with_res_model.adjoint(x_fwd2)
 
 # visualize the forward projection including the resolution model
 fig, ax = plt.subplots(4,5, figsize = (2*5, 2*4))
