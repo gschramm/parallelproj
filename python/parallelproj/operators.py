@@ -310,6 +310,11 @@ class ElementwiseMultiplicationOperator(LinearOperator):
         """array module of the operator"""
         return array_api_compat.get_namespace(self._values)
 
+    @property
+    def values(self) -> Array:
+        """values that get multiplied"""
+        return self._values
+
     def _apply(self, x: Array) -> Array:
         return self._values * x
 
@@ -324,6 +329,66 @@ class ElementwiseMultiplicationOperator(LinearOperator):
         return self.xp.isdtype(self._values.dtype,
                                self.xp.complex64) or self.xp.isdtype(
                                    self._values.dtype, self.xp.complex128)
+
+class TOFNonTOFElementwiseMultiplicationOperator(LinearOperator):
+    """Element-wise multiplication operator between a non-TOF and TOF sinogram"""
+
+    def __init__(self, in_shape: tuple[int, ...], values: Array):
+        """init method
+
+        Parameters
+        ----------
+        in_shape: tuple[int, ...]
+            shape of the TOF sinogram
+        values : Array
+            a non-TOF sinogram
+        """
+        super().__init__()
+        self._in_shape = in_shape
+        self._values = values
+
+    @property
+    def in_shape(self) -> tuple[int, ...]:
+        return self._in_shape
+
+    @property
+    def out_shape(self) -> tuple[int, ...]:
+        return self._in_shape
+
+    @property
+    def xp(self) -> ModuleType:
+        """array module of the operator"""
+        return array_api_compat.get_namespace(self._values)
+
+    @property
+    def values(self) -> Array:
+        """values that get multiplied"""
+        return self._values
+
+    def _apply(self, x: Array) -> Array:
+        y = 1*x # suboptimal to copy array, but bug in torch asarray with copy = True
+        for i in range(x.shape[-1]):
+            y[..., i] *= self._values
+        return y
+
+    def _adjoint(self, y: Array) -> Array:
+        x = 1*y # suboptimal to copy array
+        if self.iscomplex():
+            tmp = self.xp.conj(self._values)
+        else:
+            tmp = self._values
+
+        for i in range(x.shape[-1]):
+            x[...,i] *= tmp
+
+        return x
+
+    def iscomplex(self) -> bool:
+        """bool whether the operator is complex"""
+        return self.xp.isdtype(self._values.dtype,
+                               self.xp.complex64) or self.xp.isdtype(
+                                   self._values.dtype, self.xp.complex128)
+
 
 
 class GaussianFilterOperator(LinearOperator):
