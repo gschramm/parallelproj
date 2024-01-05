@@ -63,7 +63,7 @@ def test_complex_matrix(xp: ModuleType, dev: str):
     assert allclose((A @ x), op(x))
 
 
-def test_elemenwise(xp: ModuleType, dev: str):
+def test_elementwise(xp: ModuleType, dev: str):
     np.random.seed(0)
 
     v = xp.asarray([3., -1.], device=dev)
@@ -73,9 +73,25 @@ def test_elemenwise(xp: ModuleType, dev: str):
     # test call to norm
     op_norm = op.norm(xp, dev)
 
+    assert xp.all(op.values == v)
+
     op.adjointness_test(xp, dev)
     assert allclose(v * x, op(x))
 
+def test_tofnontofelemenwise(xp: ModuleType, dev: str):
+    np.random.seed(0)
+
+    x = xp.reshape(xp.arange(3*3*2, device = dev, dtype = xp.float32), (3,3,2))
+    v = xp.reshape(xp.arange(3*3, device = dev, dtype = xp.float32), (3,3))
+
+    op = parallelproj.TOFNonTOFElementwiseMultiplicationOperator(x.shape, v)
+    # test call to norm
+
+    assert xp.all(op.values == v)
+
+    op.adjointness_test(xp, dev)
+    assert allclose(v * x[...,0], op(x)[...,0])
+    assert allclose(v * x[...,1], op(x)[...,1])
 
 def test_elemenwise_complex(xp: ModuleType, dev: str):
     np.random.seed(0)
@@ -89,6 +105,24 @@ def test_elemenwise_complex(xp: ModuleType, dev: str):
 
     op.adjointness_test(xp, dev, iscomplex=True)
     assert allclose(v * x, op(x))
+
+def test_tofnontofelemenwise_complex(xp: ModuleType, dev: str):
+    np.random.seed(0)
+
+    x = xp.ones((3,3,2), device = dev, dtype = xp.complex128)
+    x[0,0,1] = 2. + 1j
+    x[1,1,0] = 1. - 2j
+    v = xp.ones((3,3), device = dev, dtype = xp.complex128)
+    v[2,2] = 3. + 2j
+    v[1,2] = -4. + 1j
+
+    op = parallelproj.TOFNonTOFElementwiseMultiplicationOperator(x.shape, v)
+    # test call to norm
+
+    op.adjointness_test(xp, dev, iscomplex=True)
+    assert allclose(v * x[...,0], op(x)[...,0])
+    assert allclose(v * x[...,1], op(x)[...,1])
+
 
 
 def test_gaussian(xp: ModuleType, dev: str):
