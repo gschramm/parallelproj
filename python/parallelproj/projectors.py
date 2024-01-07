@@ -761,19 +761,55 @@ class ListmodePETProjector(LinearOperator):
         return (self._xstart.shape[0], )
 
     @property
+    def num_events(self) -> int:
+        """number of events"""
+        return self._xstart.shape[0]
+
+    @property
     def xp(self) -> ModuleType:
         """array module"""
         return self._xp
 
     @property
-    def dev(self) -> str:
-        """device used for storage of LOR endpoints"""
-        return self._dev
-
-    @property
     def tof(self) -> bool:
         """bool indicating whether to use TOF projections or not"""
         return self._tof
+
+    @tof.setter
+    def tof(self, value: bool) -> None:
+        if (value == True) and (self.tof_parameters is None):
+            raise ValueError('must set tof_parameters first')
+        if (value == True) and (self.event_tofbins is None):
+            raise ValueError('must set event_tofbins first')
+
+        self._tof = value
+
+    @property
+    def tof_parameters(self) -> TOFParameters | None:
+        """TOF parameters"""
+        return self._tof_parameters
+
+    @tof_parameters.setter
+    def tof_parameters(self, value: TOFParameters | None) -> None:
+        if not (isinstance(value, TOFParameters) or value is None):
+            raise ValueError(
+                'tof_parameters must be a TOFParameters object or None')
+        self._tof_parameters = value
+
+    @property
+    def event_tofbins(self) -> None | Array:
+        """TOF bin of each event"""
+        return self._tofbin
+
+    @event_tofbins.setter
+    def event_tofbins(self, value: None | Array) -> None:
+        if value is None:
+            self._tofbin = None
+        else:
+            if value.shape[0] != self.num_events:
+                raise ValueError(
+                    'tofbin must have the same number of elements as events')
+            self._tofbin = value
 
     @property
     def event_start_coordinates(self) -> Array:
@@ -786,22 +822,44 @@ class ListmodePETProjector(LinearOperator):
         return self._xend
 
     def _apply(self, x: Array) -> Array:
+        dev = array_api_compat.device(x)
+
         if not self.tof:
             x_fwd = parallelproj.joseph3d_fwd(self._xstart, self._xend, x,
                                               self._img_origin,
                                               self._voxel_size)
         else:
-            x_fwd = 1
+            x_fwd = parallelproj.joseph3d_fwd_tof_lm(
+                self._xstart, self._xend, x, self._img_origin,
+                self._voxel_size, self._tof_parameters.tofbin_width,
+                self.xp.asarray([self._tof_parameters.sigma_tof],
+                                dtype=self.xp.float32,
+                                device=dev),
+                self.xp.asarray([self._tof_parameters.tofcenter_offset],
+                                dtype=self.xp.float32,
+                                device=dev), self.tof_parameters.num_sigmas,
+                self._tofbin)
 
         return x_fwd
 
     def _adjoint(self, y: Array) -> Array:
+        dev = array_api_compat.device(y)
+
         if not self.tof:
             y_back = parallelproj.joseph3d_back(self._xstart, self._xend,
                                                 self._img_shape,
                                                 self._img_origin,
                                                 self._voxel_size, y)
         else:
-            y_back = 1
+            y_back = parallelproj.joseph3d_back_tof_lm(
+                self._xstart, self._xend, self._img_shape, self._img_origin,
+                self._voxel_size, y, self._tof_parameters.tofbin_width,
+                self.xp.asarray([self._tof_parameters.sigma_tof],
+                                dtype=self.xp.float32,
+                                device=dev),
+                self.xp.asarray([self._tof_parameters.tofcenter_offset],
+                                dtype=self.xp.float32,
+                                device=dev), self.tof_parameters.num_sigmas,
+                self._tofbin)
 
         return y_back

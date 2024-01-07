@@ -132,7 +132,9 @@ def test_parallelviewprojector(xp, dev, verbose=True):
                                                         span=3)
 
 
-def test_lmprojector(xp, dev, verbose=True):
+def test_lmprojector(xp, dev, verbose=True,
+                     rtol: float = 1e-5,
+                     atol: float = 1e-8) -> bool:
 
     n0, n1, n2 = (2, 3, 4)
 
@@ -181,4 +183,61 @@ def test_lmprojector(xp, dev, verbose=True):
     lm_proj = parallelproj.ListmodePETProjector(
         xstart, xend, img_dim, voxel_size, img_origin)
 
+    assert lm_proj.xp == xp
+
+    assert xp.all(lm_proj.event_start_coordinates == xstart)
+    assert xp.all(lm_proj.event_end_coordinates == xend)
+
+    assert lm_proj.num_events == xstart.shape[0]
+
     assert lm_proj.adjointness_test(xp, dev)
+
+    img_fwd = lm_proj(img)
+
+    # setup the expected values for the projection
+    expected_projections = xp.zeros_like(img_fwd, device=dev)
+    expected_projections[0] = xp.sum(img[0, :, 0]) * voxel_size[1]
+    expected_projections[1] = xp.sum(img[0, :, 0]) * voxel_size[1]
+    expected_projections[2] = xp.sum(img[0, :, 1]) * voxel_size[1]
+    expected_projections[3] = 0.5 * (expected_projections[0] +
+                                     expected_projections[2])
+    expected_projections[4] = xp.sum(img[0, 0, :]) * voxel_size[2]
+    expected_projections[5] = xp.sum(img[:, 0, 0]) * voxel_size[0]
+    expected_projections[6] = xp.sum(img[n0 - 1, :, 0]) * voxel_size[1]
+    expected_projections[7] = xp.sum(img[n0 - 1, :, n2 - 1]) * voxel_size[1]
+    expected_projections[8] = xp.sum(img[n0 - 1, 0, :]) * voxel_size[2]
+    expected_projections[9] = xp.sum(img[n0 - 1, n1 - 1, :]) * voxel_size[2]
+
+    isclose = bool(
+        xp.all(
+            xp.less_equal(xp.abs(img_fwd - expected_projections),
+                          atol + rtol * xp.abs(expected_projections))))
+
+    assert isclose
+
+    # TOF LM tests
+    tof_params = parallelproj.TOFParameters()
+    with pytest.raises(Exception) as e_info:
+        # raises an exception because TOFParameters and event_tofbins are not set
+        lm_proj.tof = True
+
+    # set TOF parameters
+    lm_proj.tof_parameters = tof_params
+
+    with pytest.raises(Exception) as e_info:
+        # raises an exception because event_tofbins are not set
+        lm_proj.tof = True
+
+    # set event TOF bins
+    lm_proj.event_tofbins = xp.asarray(
+        [0, 1, -1, 0, 2, -2, 0, 1, -1, 0], dtype=xp.int16, device=dev)
+    # now we can set the tof property to True
+    lm_proj.tof = True
+
+    assert lm_proj.tof == True
+
+    assert lm_proj.adjointness_test(xp, dev)
+
+    # test a projector with img_origin = None
+    lm_proj2 = parallelproj.ListmodePETProjector(
+        xstart, xend, img_dim, voxel_size)
