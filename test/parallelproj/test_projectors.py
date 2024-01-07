@@ -222,6 +222,10 @@ def test_lmprojector(xp, dev, verbose=True,
         # set
         lm_proj.tof = True
 
+    with pytest.raises(Exception) as e_info:
+        # tof_parameters must be of type TOFParameters or None
+        lm_proj.tof_parameters = "nonsense"
+
     # set TOF parameters
     lm_proj.tof_parameters = tof_params
 
@@ -230,6 +234,12 @@ def test_lmprojector(xp, dev, verbose=True,
         lm_proj.tof = True
 
     # set event TOF bins
+    with pytest.raises(Exception) as e_info:
+        # raises an exception because event_tofbins have not the
+        # same length as num_events
+        lm_proj.event_tofbins = xp.asarray(
+            [0, 1, -1, 0, 2, -2, 0, 1, -1], dtype=xp.int16, device=dev)
+
     lm_proj.event_tofbins = xp.asarray(
         [0, 1, -1, 0, 2, -2, 0, 1, -1, 0], dtype=xp.int16, device=dev)
     # now we can set the tof property to True
@@ -238,6 +248,17 @@ def test_lmprojector(xp, dev, verbose=True,
     assert lm_proj.tof
 
     assert lm_proj.adjointness_test(xp, dev)
+
+    # unset the tof parameters and check if tof gets set to False
+    lm_proj.tof_parameters = None
+    assert lm_proj.tof == False
+
+    lm_proj.tof_parameters = tof_params
+    lm_proj.tof = True
+
+    # unset the event_tofbins and check if tof gets set to False
+    lm_proj.event_tofbins = None
+    assert lm_proj.tof == False
 
     # test a projector with img_origin = None
     lm_proj2 = parallelproj.ListmodePETProjector(

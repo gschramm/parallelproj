@@ -796,6 +796,9 @@ class ListmodePETProjector(LinearOperator):
                 'tof_parameters must be a TOFParameters object or None')
         self._tof_parameters = value
 
+        if value is None:
+            self._tof = False
+
     @property
     def event_tofbins(self) -> None | Array:
         """TOF bin of each event"""
@@ -805,6 +808,7 @@ class ListmodePETProjector(LinearOperator):
     def event_tofbins(self, value: None | Array) -> None:
         if value is None:
             self._tofbin = None
+            self._tof = False
         else:
             if value.shape[0] != self.num_events:
                 raise ValueError(
