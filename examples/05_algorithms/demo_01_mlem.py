@@ -35,11 +35,11 @@ elif "torch" in xp.__name__:
 
 # %%
 
-A = xp.asarray([[1, 4], [3, 2]], dtype=xp.float64, device=dev)
+A = xp.asarray([[1, 4, 2], [3, 2, 5], [0, 1, 4]], dtype=xp.float64, device=dev)
 
 op = parallelproj.MatrixOperator(A)
 
-x_true = xp.asarray([5.5, 10.5], dtype=xp.float64, device=dev)
+x_true = xp.asarray([5.5, 10.7, 8.2], dtype=xp.float64, device=dev)
 
 noise_free_data = op(x_true)
 
@@ -52,7 +52,7 @@ noisy_data = xp.asarray(
 
 # noisy_data = xp.floor(noise_free_data)
 
-contamination = xp.asarray([0.1, 0.1], dtype=xp.float64, device=dev)
+contamination = xp.asarray([0.1, 0.1, 0.1], dtype=xp.float64, device=dev)
 
 # %%
 
@@ -63,7 +63,7 @@ x_ref = A_inv @ (noisy_data - contamination)
 exp_ref = op(x_ref) + contamination
 cost_ref = float(xp.sum(exp_ref - noisy_data * xp.log(exp_ref)))
 # %%
-num_iter = 500
+num_iter = 1000
 
 x = xp.ones(op.in_shape, dtype=xp.float64, device=dev)
 ones_back = op.adjoint(xp.ones(op.out_shape, dtype=xp.float64, device=dev))
