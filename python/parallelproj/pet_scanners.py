@@ -117,7 +117,8 @@ class PETScannerModule(abc.ABC):
         Returns
         -------
         Array
-            a 3 x len(inds) float array with the world coordinates of the LOR endpoints including an affine transformation
+            a 3 x len(inds) float array with the world coordinates of the LOR endpoints including an
+            affine transformation
         """
 
         raw_lor_endpoints = self.get_raw_lor_endpoints(inds)
@@ -470,7 +471,7 @@ class ModularizedPETScannerGeometry:
             if show_linear_index:
                 offset = np.asarray(
                     to_device(self.all_lor_endpoints_index_offset[i], 'cpu'))
-                prefix = f''
+                prefix = ''
             else:
                 offset = 0
                 prefix = f'{i},'

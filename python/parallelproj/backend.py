@@ -330,8 +330,6 @@ if cuda_present:
             raise ImportError('No kernel file found.')
 
         if cuda_kernel_file is not None:
-            import cupy as cp
-
             # load a kernel defined in a external file
             with open(cuda_kernel_file, 'r', encoding='utf8') as f:
                 lines = f.read()
