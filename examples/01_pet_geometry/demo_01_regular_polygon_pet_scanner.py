@@ -11,8 +11,8 @@ endpoints can be modeled as a stack of regular polygons.
 # choose your preferred array API uncommenting the corresponding line
 
 import array_api_compat.numpy as xp
-#import array_api_compat.cupy as xp
-#import array_api_compat.torch as xp
+# import array_api_compat.cupy as xp
+# import array_api_compat.torch as xp
 
 # %%
 import parallelproj
@@ -42,42 +42,58 @@ elif 'torch' in xp.__name__:
 # Here we create four different PET scanners with different geometries.
 # Note that `symmetry_axis` can be used to define which of the three axis is
 # used as the cylinder (symmetry) axis.
-            
-scanner1 = parallelproj.RegularPolygonPETScannerGeometry(xp,
-                                              dev,
-                                              radius = 65.,
-                                              num_sides = 12,
-                                              num_lor_endpoints_per_side = 8,
-                                              lor_spacing = 4.,
-                                              ring_positions = xp.linspace(-4,4,3),
-                                              symmetry_axis=2)
 
-scanner2 = parallelproj.RegularPolygonPETScannerGeometry(xp,
-                                              dev,
-                                              radius = 65.,
-                                              num_sides = 12,
-                                              num_lor_endpoints_per_side = 8,
-                                              lor_spacing = 4.,
-                                              ring_positions = xp.linspace(-4,4,3),
-                                              symmetry_axis=1)
+scanner1 = parallelproj.RegularPolygonPETScannerGeometry(
+    xp,
+    dev,
+    radius=65.,
+    num_sides=12,
+    num_lor_endpoints_per_side=8,
+    lor_spacing=4.,
+    ring_positions=xp.linspace(
+        -4,
+        4,
+        3),
+    symmetry_axis=2)
 
-scanner3 = parallelproj.RegularPolygonPETScannerGeometry(xp,
-                                              dev,
-                                              radius = 400.,
-                                              num_sides = 32,
-                                              num_lor_endpoints_per_side = 16,
-                                              lor_spacing = 4.3,
-                                              ring_positions = xp.linspace(-70,70,36),
-                                              symmetry_axis=2)
+scanner2 = parallelproj.RegularPolygonPETScannerGeometry(
+    xp,
+    dev,
+    radius=65.,
+    num_sides=12,
+    num_lor_endpoints_per_side=8,
+    lor_spacing=4.,
+    ring_positions=xp.linspace(
+        -4,
+        4,
+        3),
+    symmetry_axis=1)
 
-scanner4 = parallelproj.RegularPolygonPETScannerGeometry(xp,
-                                              dev,
-                                              radius = 400.,
-                                              num_sides = 32,
-                                              num_lor_endpoints_per_side = 16,
-                                              lor_spacing = 4.3,
-                                              ring_positions = xp.linspace(-70,70,36),
-                                              symmetry_axis=0)
+scanner3 = parallelproj.RegularPolygonPETScannerGeometry(
+    xp,
+    dev,
+    radius=400.,
+    num_sides=32,
+    num_lor_endpoints_per_side=16,
+    lor_spacing=4.3,
+    ring_positions=xp.linspace(
+        -70,
+        70,
+        36),
+    symmetry_axis=2)
+
+scanner4 = parallelproj.RegularPolygonPETScannerGeometry(
+    xp,
+    dev,
+    radius=400.,
+    num_sides=32,
+    num_lor_endpoints_per_side=16,
+    lor_spacing=4.3,
+    ring_positions=xp.linspace(
+        -70,
+        70,
+        36),
+    symmetry_axis=0)
 
 # %%
 # Obtaining world coordinates of LOR endpoints
@@ -88,10 +104,12 @@ scanner4 = parallelproj.RegularPolygonPETScannerGeometry(xp,
 
 # get the word coordinates of the 4th LOR endpoint in the 1st "ring" (polygon)
 # and the 5th LOR endpoint in the 2nd "ring" (polygon)
-print('scanner1') 
-print(scanner1.get_lor_endpoints(xp.asarray([0,1], device=dev),xp.asarray([3,4], device=dev)))
-print('scanner2') 
-print(scanner2.get_lor_endpoints(xp.asarray([0,1], device=dev),xp.asarray([3,4], device=dev)))
+print('scanner1')
+print(scanner1.get_lor_endpoints(xp.asarray(
+    [0, 1], device=dev), xp.asarray([3, 4], device=dev)))
+print('scanner2')
+print(scanner2.get_lor_endpoints(xp.asarray(
+    [0, 1], device=dev), xp.asarray([3, 4], device=dev)))
 
 # %%
 # Visualize the defined LOR endpoints

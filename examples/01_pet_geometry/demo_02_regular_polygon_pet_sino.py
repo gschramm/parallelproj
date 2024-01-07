@@ -13,8 +13,8 @@ This example shows how this can be using the :class:`.RegularPolygonPETLORDescri
 # choose your preferred array API uncommenting the corresponding line
 
 import array_api_compat.numpy as xp
-#import array_api_compat.cupy as xp
-#import array_api_compat.torch as xp
+# import array_api_compat.cupy as xp
+# import array_api_compat.torch as xp
 
 # %%
 import parallelproj
@@ -35,16 +35,20 @@ elif 'torch' in xp.__name__:
 
 # %%
 # setup a small regular polygon PET scanner with 5 rings (polygons)
-           
+
 num_rings = 5
-scanner = parallelproj.RegularPolygonPETScannerGeometry(xp,
-                                              dev,
-                                              radius = 65.,
-                                              num_sides = 12,
-                                              num_lor_endpoints_per_side = 4,
-                                              lor_spacing = 8.,
-                                              ring_positions = xp.linspace(-8,8,num_rings),
-                                              symmetry_axis=1)
+scanner = parallelproj.RegularPolygonPETScannerGeometry(
+    xp,
+    dev,
+    radius=65.,
+    num_sides=12,
+    num_lor_endpoints_per_side=4,
+    lor_spacing=8.,
+    ring_positions=xp.linspace(
+        -8,
+        8,
+        num_rings),
+    symmetry_axis=1)
 
 # %%
 # Defining a sinogram using an LOR descriptor
@@ -90,7 +94,8 @@ print(f'radial axis num: {lor_desc2.radial_axis_num}  view axis num: {lor_desc2.
 #
 # Every LOR is defined by two LOR endpoints.
 # :meth:`.RegularPolygonPETLORDescriptor.get_lor_coordinates` can be used to
-# to obtain the 3 world coordinates of them (for all views or a subset of views).
+# to obtain the 3 world coordinates of them (for all views or a subset of
+# views).
 
 lor_start_points1, lor_end_points1 = lor_desc1.get_lor_coordinates()
 print(lor_start_points1.shape, lor_end_points1.shape)
@@ -121,7 +126,8 @@ print(lor_end_points2[1, 2, 0, :])
 for i in range(lor_desc1.num_planes):
     st_pl = lor_desc1.start_plane_index[i]
     end_pl = lor_desc1.end_plane_index[i]
-    print(f'plane num: {i:02} - start ring {st_pl} - end ring {end_pl} - ring diff. {(end_pl-st_pl):>2}')
+    print(
+        f'plane num: {i:02} - start ring {st_pl} - end ring {end_pl} - ring diff. {(end_pl-st_pl):>2}')
 
 # %%
 # Visualize the defined LOR endpoints
@@ -135,13 +141,13 @@ ax1 = fig.add_subplot(121, projection='3d')
 ax2 = fig.add_subplot(122, projection='3d')
 scanner.show_lor_endpoints(ax1)
 lor_desc1.show_views(ax1,
-                    views=xp.asarray([0], device=dev),
-                    planes=xp.asarray([num_rings//2], device=dev),
-                    lw=0.5, color = 'k')
+                     views=xp.asarray([0], device=dev),
+                     planes=xp.asarray([num_rings // 2], device=dev),
+                     lw=0.5, color='k')
 scanner.show_lor_endpoints(ax2)
 lor_desc1.show_views(ax2,
-                    views=xp.asarray([lor_desc1.num_views//2], device=dev),
-                    planes=xp.asarray([lor_desc1.num_planes-1], device=dev),
-                    lw=0.5, color = 'k')
+                     views=xp.asarray([lor_desc1.num_views // 2], device=dev),
+                     planes=xp.asarray([lor_desc1.num_planes - 1], device=dev),
+                     lw=0.5, color='k')
 fig.tight_layout()
 fig.show()

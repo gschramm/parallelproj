@@ -10,8 +10,8 @@ minimal example that shows how to use the joseph3d TOF forward and back projecto
 # choose your preferred array API uncommenting the corresponding line
 
 import array_api_compat.numpy as xp
-#import array_api_compat.cupy as xp
-#import array_api_compat.torch as xp
+# import array_api_compat.cupy as xp
+# import array_api_compat.torch as xp
 
 import parallelproj
 from array_api_compat import to_device, device
@@ -62,8 +62,8 @@ img[n0 // 2, n1 // 2, n2 // 2] = 1
 vstart = to_device(
     xp.asarray(
         [
-            [n0 // 2, -1, n2 // 2],  # 
-            [n0 // 2, n1 // 2, -1],  # 
+            [n0 // 2, -1, n2 // 2],  #
+            [n0 // 2, n1 // 2, -1],  #
         ],
         dtype=xp.float32),
     dev)
@@ -71,8 +71,8 @@ vstart = to_device(
 vend = to_device(
     xp.asarray(
         [
-            [n0 // 2, n1, n2 // 2],  #           
-            [n0 // 2, n1 // 2, n2],  # 
+            [n0 // 2, n1, n2 // 2],
+            [n0 // 2, n1 // 2, n2],  #
         ],
         dtype=xp.float32),
     dev)

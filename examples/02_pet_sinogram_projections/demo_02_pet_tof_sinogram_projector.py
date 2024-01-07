@@ -3,7 +3,7 @@ PET TOF sinogram projector
 ==========================
 
 In this example we will show how to setup and use TOF PET sinogram projector
-consisting of the geometrical forward projection, resolution model and 
+consisting of the geometrical forward projection, resolution model and
 correction for attenuation.
 """
 
@@ -12,8 +12,8 @@ correction for attenuation.
 # choose your preferred array API uncommenting the corresponding line
 
 import array_api_compat.numpy as xp
-#import array_api_compat.cupy as xp
-#import array_api_compat.torch as xp
+# import array_api_compat.cupy as xp
+# import array_api_compat.torch as xp
 
 # %%
 import parallelproj
@@ -61,7 +61,7 @@ lor_desc = parallelproj.RegularPolygonPETLORDescriptor(
 #
 # :class:`.RegularPolygonPETProjector` can be used to define a non-TOF projector
 # that combines the scanner, LOR and image geometry. The letter is defined by
-# the image shape and the voxel size. 
+# the image shape and the voxel size.
 
 # define a first projector using an image with 40x8x40 voxels of size 2x2x2 mm
 # where the image center is at world coordinate (0, 0, 0)
@@ -88,14 +88,16 @@ fig.show()
 # --------------------------------------
 
 # setup a simple image-based resolution model with an Gaussian FWHM of 4.5mm
-res_model = parallelproj.GaussianFilterOperator(proj.in_shape, sigma = 4.5 / (2.35*proj.voxel_size))
+res_model = parallelproj.GaussianFilterOperator(
+    proj.in_shape, sigma=4.5 / (2.35 * proj.voxel_size))
 
 # %%
 # Adding an image-based resolution model
 # --------------------------------------
 
-# setup an attenuation image containing the attenuation coeff. of water (in 1/mm)
-x_att = xp.full(proj.in_shape, 0.01, device = dev, dtype = xp.float32)
+# setup an attenuation image containing the attenuation coeff. of water
+# (in 1/mm)
+x_att = xp.full(proj.in_shape, 0.01, device=dev, dtype=xp.float32)
 
 # forward project the attenuation image
 x_att_fwd = proj(x_att)
@@ -107,12 +109,12 @@ att_sino = xp.exp(-x_att_fwd)
 # Adding time-of-flight to the projector
 # --------------------------------------
 
-proj.tof_parameters = parallelproj.TOFParameters(num_tofbins = 9)
+proj.tof_parameters = parallelproj.TOFParameters(num_tofbins=9)
 
 # %%
 # Combining resolution model, TOF projector and attenuation model
 # ---------------------------------------------------------------
-# 
+#
 # Since the attenuation sinogram is a non-TOF sinogram with shape = (161, 90, 7) and
 # the output of the projector is a TOF sinogram with shape = (161, 90, 7, num_tofbins),
 # we have to use the :class:`.TOFNonTOFElementwiseMultiplicationOperator` add attenuation
@@ -121,10 +123,12 @@ proj.tof_parameters = parallelproj.TOFParameters(num_tofbins = 9)
 print(f'atten. sino shape {att_sino.shape}')
 print(f'proj output shape {proj.out_shape}')
 
-att_op = parallelproj.TOFNonTOFElementwiseMultiplicationOperator(proj.out_shape, att_sino)
+att_op = parallelproj.TOFNonTOFElementwiseMultiplicationOperator(
+    proj.out_shape, att_sino)
 
 # setup a forward projector containing the attenuation and resolution
-proj_with_att_and_res_model = parallelproj.CompositeLinearOperator((att_op, proj, res_model))
+proj_with_att_and_res_model = parallelproj.CompositeLinearOperator(
+    (att_op, proj, res_model))
 
 
 # %%
@@ -132,10 +136,10 @@ proj_with_att_and_res_model = parallelproj.CompositeLinearOperator((att_op, proj
 # -----------------------------------------------------
 
 # setup a simple test image containing a few "hot rods"
-x = xp.zeros(proj.in_shape, device = dev, dtype = xp.float32)
-x[proj.in_shape[0]//2, :, proj.in_shape[2]//2] = 1.
-x[4, 3:, proj.in_shape[2]//2] = 1.
-x[proj.in_shape[0]//2, :-3, 4] = 1.
+x = xp.zeros(proj.in_shape, device=dev, dtype=xp.float32)
+x[proj.in_shape[0] // 2, :, proj.in_shape[2] // 2] = 1.
+x[4, 3:, proj.in_shape[2] // 2] = 1.
+x[proj.in_shape[0] // 2, :-3, 4] = 1.
 
 
 # %%
@@ -149,30 +153,31 @@ x_fwd_back = proj_with_att_and_res_model.adjoint(x_fwd)
 # visualize the forward and the back projection
 # ---------------------------------------------
 
-fig, ax = plt.subplots(7,9, figsize = (1.4*9, 1.2*7), sharex = True, sharey = True)
+fig, ax = plt.subplots(7, 9, figsize=(1.4 * 9, 1.2 * 7),
+                       sharex=True, sharey=True)
 vmax = float(xp.max(x_fwd))
 for i in range(7):
     for j in range(9):
-        ax[i,j].imshow(np.asarray(to_device(x_fwd[:,:,i,j].T, 'cpu')), cmap='Greys', vmin = 0, vmax = vmax)
+        ax[i, j].imshow(np.asarray(to_device(x_fwd[:, :, i, j].T,
+                        'cpu')), cmap='Greys', vmin=0, vmax=vmax)
         if i == 0:
-            ax[i,j].set_title(f'tof bin {j}', fontsize = 'medium')
+            ax[i, j].set_title(f'tof bin {j}', fontsize='medium')
         if j == 0:
-            ax[i,j].set_ylabel(f'sino pl. {i}', fontsize = 'medium')
-        #ax[i,j].set_axis_off()
+            ax[i, j].set_ylabel(f'sino pl. {i}', fontsize='medium')
+        # ax[i,j].set_axis_off()
 fig.tight_layout()
 fig.show()
 
 
-
 # visualize the back projection including the attenuation resolution model
-fig2, ax2 = plt.subplots(3,3, figsize = (8, 8))
+fig2, ax2 = plt.subplots(3, 3, figsize=(8, 8))
 vmax = float(xp.max(x_fwd_back))
 for i, axx in enumerate(ax2.ravel()):
     if i < x_fwd_back.shape[1]:
-        axx.imshow(np.asarray(to_device(x_fwd_back[:,i,:].T, 'cpu')), cmap='Greys', vmin = 0, vmax = vmax)
-        axx.set_title(f'img plane {i}', fontsize = 'medium')
+        axx.imshow(np.asarray(to_device(
+            x_fwd_back[:, i, :].T, 'cpu')), cmap='Greys', vmin=0, vmax=vmax)
+        axx.set_title(f'img plane {i}', fontsize='medium')
     else:
         axx.set_axis_off()
 fig2.tight_layout()
 fig2.show()
-

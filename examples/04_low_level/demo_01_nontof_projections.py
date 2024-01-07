@@ -10,8 +10,8 @@ known lines of response with known start and end points.
 # choose your preferred array API uncommenting the corresponding line
 
 import array_api_compat.numpy as xp
-#import array_api_compat.cupy as xp
-#import array_api_compat.torch as xp
+# import array_api_compat.cupy as xp
+# import array_api_compat.torch as xp
 
 import parallelproj
 from array_api_compat import to_device, device
@@ -61,13 +61,13 @@ img = to_device(
 vstart = to_device(
     xp.asarray(
         [
-            [0, -1, 0],  # 
+            [0, -1, 0],  #
             [0, -1, 0],  #
             [0, -1, 1],  #
             [0, -1, 0.5],  #
             [0, 0, -1],  #
             [-1, 0, 0],  #
-            [n0 - 1, -1, 0],  # 
+            [n0 - 1, -1, 0],  #
             [n0 - 1, -1, n2 - 1],  #
             [n0 - 1, 0, -1],  #
             [n0 - 1, n1 - 1, -1]
@@ -78,15 +78,15 @@ vstart = to_device(
 vend = to_device(
     xp.asarray(
         [
-            [0, n1, 0],  #           
-            [0, n1, 0],  #           
-            [0, n1, 1],  #          
-            [0, n1, 0.5],  #         
-            [0, 0, n2],  #          
-            [n0, 0, 0],  #          
-            [n0 - 1, n1, 0],  #      
-            [n0 - 1, n1, n2 - 1],  # 
-            [n0 - 1, 0, n2],  #     
+            [0, n1, 0],
+            [0, n1, 0],
+            [0, n1, 1],
+            [0, n1, 0.5],
+            [0, 0, n2],
+            [n0, 0, 0],
+            [n0 - 1, n1, 0],
+            [n0 - 1, n1, n2 - 1],  #
+            [n0 - 1, 0, n2],
             [n0 - 1, n1 - 1, n2]
         ],
         dtype=xp.float32),
