@@ -13,7 +13,7 @@ from config import pytestmark
 
 def allclose(x, y, atol: float = 1e-8, rtol: float = 1e-5) -> bool:
     """check if two arrays are close to each other, given absolute and relative error
-       inspired by numpy.allclose
+    inspired by numpy.allclose
     """
     xp = array_api_compat.array_namespace(x)
     return bool(xp.all(xp.less_equal(xp.abs(x - y), atol + rtol * xp.abs(y))))
@@ -25,8 +25,8 @@ def allclose(x, y, atol: float = 1e-8, rtol: float = 1e-5) -> bool:
 def test_matrix(xp: ModuleType, dev: str):
     np.random.seed(0)
 
-    A = xp.asarray([[1., 2.], [-3., 2.], [-1., -1.]], device=dev)
-    x = xp.asarray([-2., 1.], device=dev)
+    A = xp.asarray([[1.0, 2.0], [-3.0, 2.0], [-1.0, -1.0]], device=dev)
+    x = xp.asarray([-2.0, 1.0], device=dev)
 
     op = parallelproj.MatrixOperator(A)
 
@@ -50,10 +50,10 @@ def test_matrix(xp: ModuleType, dev: str):
 def test_complex_matrix(xp: ModuleType, dev: str):
     np.random.seed(0)
 
-    A = xp.asarray([[1., 2j], [-3., 2.], [-1., -1.]],
-                   device=dev,
-                   dtype=xp.complex128)
-    x = xp.asarray([-2., 1.], device=dev, dtype=xp.complex128)
+    A = xp.asarray(
+        [[1.0, 2j], [-3.0, 2.0], [-1.0, -1.0]], device=dev, dtype=xp.complex128
+    )
+    x = xp.asarray([-2.0, 1.0], device=dev, dtype=xp.complex128)
 
     op = parallelproj.MatrixOperator(A)
     assert op.adjointness_test(xp, dev, iscomplex=True)
@@ -66,8 +66,8 @@ def test_complex_matrix(xp: ModuleType, dev: str):
 def test_elementwise(xp: ModuleType, dev: str):
     np.random.seed(0)
 
-    v = xp.asarray([3., -1.], device=dev)
-    x = xp.asarray([-2., 1.], device=dev)
+    v = xp.asarray([3.0, -1.0], device=dev)
+    x = xp.asarray([-2.0, 1.0], device=dev)
 
     op = parallelproj.ElementwiseMultiplicationOperator(v)
     # test call to norm
@@ -82,14 +82,7 @@ def test_elementwise(xp: ModuleType, dev: str):
 def test_tofnontofelemenwise(xp: ModuleType, dev: str):
     np.random.seed(0)
 
-    x = xp.reshape(
-        xp.arange(
-            3 * 3 * 2,
-            device=dev,
-            dtype=xp.float32),
-        (3,
-         3,
-         2))
+    x = xp.reshape(xp.arange(3 * 3 * 2, device=dev, dtype=xp.float32), (3, 3, 2))
     v = xp.reshape(xp.arange(3 * 3, device=dev, dtype=xp.float32), (3, 3))
 
     op = parallelproj.TOFNonTOFElementwiseMultiplicationOperator(x.shape, v)
@@ -105,8 +98,8 @@ def test_tofnontofelemenwise(xp: ModuleType, dev: str):
 def test_elemenwise_complex(xp: ModuleType, dev: str):
     np.random.seed(0)
 
-    v = xp.asarray([3j, -1.], device=dev, dtype=xp.complex128)
-    x = xp.asarray([-2., 1j], device=dev, dtype=xp.complex128)
+    v = xp.asarray([3j, -1.0], device=dev, dtype=xp.complex128)
+    x = xp.asarray([-2.0, 1j], device=dev, dtype=xp.complex128)
 
     op = parallelproj.ElementwiseMultiplicationOperator(v)
     # test call to norm
@@ -120,11 +113,11 @@ def test_tofnontofelemenwise_complex(xp: ModuleType, dev: str):
     np.random.seed(0)
 
     x = xp.ones((3, 3, 2), device=dev, dtype=xp.complex128)
-    x[0, 0, 1] = 2. + 1j
-    x[1, 1, 0] = 1. - 2j
+    x[0, 0, 1] = 2.0 + 1j
+    x[1, 1, 0] = 1.0 - 2j
     v = xp.ones((3, 3), device=dev, dtype=xp.complex128)
-    v[2, 2] = 3. + 2j
-    v[1, 2] = -4. + 1j
+    v[2, 2] = 3.0 + 2j
+    v[1, 2] = -4.0 + 1j
 
     op = parallelproj.TOFNonTOFElementwiseMultiplicationOperator(x.shape, v)
     # test call to norm
@@ -150,9 +143,9 @@ def test_gaussian(xp: ModuleType, dev: str):
 def test_composite(xp: ModuleType, dev: str):
     np.random.seed(0)
 
-    A = xp.asarray([[1., 2.], [-3., 2.], [-1., -1.]], device=dev)
-    x = xp.asarray([-2., 1.], device=dev)
-    v = xp.asarray([3., -1., 2.], device=dev)
+    A = xp.asarray([[1.0, 2.0], [-3.0, 2.0], [-1.0, -1.0]], device=dev)
+    x = xp.asarray([-2.0, 1.0], device=dev)
+    v = xp.asarray([3.0, -1.0, 2.0], device=dev)
 
     op1 = parallelproj.ElementwiseMultiplicationOperator(v)
     op2 = parallelproj.MatrixOperator(A)
@@ -172,10 +165,11 @@ def test_vstack(xp: ModuleType, dev: str):
     np.random.seed(0)
     in_shape = (16, 11)
 
-    A1 = parallelproj.GaussianFilterOperator(in_shape, sigma=1.)
+    A1 = parallelproj.GaussianFilterOperator(in_shape, sigma=1.0)
     A2 = parallelproj.ElementwiseMultiplicationOperator(
-        xp.asarray(np.random.rand(*in_shape), device=dev))
-    A3 = parallelproj.GaussianFilterOperator(in_shape, sigma=2.)
+        xp.asarray(np.random.rand(*in_shape), device=dev)
+    )
+    A3 = parallelproj.GaussianFilterOperator(in_shape, sigma=2.0)
 
     A = parallelproj.VstackOperator((A1, A2, A3))
     # test call to norm
@@ -188,20 +182,23 @@ def test_vstack(xp: ModuleType, dev: str):
 
     assert allclose(
         x_fwd,
-        xp.concat((xp.reshape(A1(x), (-1, )), xp.reshape(A2(x), (-1, )),
-                   xp.reshape(A3(x), (-1, )))))
+        xp.concat(
+            (
+                xp.reshape(A1(x), (-1,)),
+                xp.reshape(A2(x), (-1,)),
+                xp.reshape(A3(x), (-1,)),
+            )
+        ),
+    )
 
 
 def test_subsets(xp: ModuleType, dev: str):
     np.random.seed(0)
-    in_shape = (3, )
+    in_shape = (3,)
 
-    A1 = parallelproj.MatrixOperator(
-        xp.asarray(np.random.randn(4, 3), device=dev))
-    A2 = parallelproj.MatrixOperator(
-        xp.asarray(np.random.randn(5, 3), device=dev))
-    A3 = parallelproj.MatrixOperator(
-        xp.asarray(np.random.randn(2, 3), device=dev))
+    A1 = parallelproj.MatrixOperator(xp.asarray(np.random.randn(4, 3), device=dev))
+    A2 = parallelproj.MatrixOperator(xp.asarray(np.random.randn(5, 3), device=dev))
+    A3 = parallelproj.MatrixOperator(xp.asarray(np.random.randn(2, 3), device=dev))
 
     A = parallelproj.SubsetOperator((A1, A2, A3))
 
@@ -225,9 +222,8 @@ def test_subsets(xp: ModuleType, dev: str):
 
 
 def test_finite_difference(xp: ModuleType, dev: str):
-
     # 1D tests
-    A = parallelproj.FiniteForwardDifference((3, ))
+    A = parallelproj.FiniteForwardDifference((3,))
     x = xp.reshape(xp.arange(prod(A.in_shape), device=dev), A.in_shape)
 
     n = A.norm(xp, dev)
