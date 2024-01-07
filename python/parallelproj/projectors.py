@@ -19,10 +19,15 @@ from .backend import is_cuda_array, empty_cuda_cache
 class ParallelViewProjector2D(LinearOperator):
     """2D non-TOF parallel view projector"""
 
-    def __init__(self, image_shape: tuple[int, int], radial_positions: Array,
-                 view_angles: Array, radius: float, image_origin: tuple[float,
-                                                                        float],
-                 voxel_size: tuple[float, float]) -> None:
+    def __init__(
+        self,
+        image_shape: tuple[int, int],
+        radial_positions: Array,
+        view_angles: Array,
+        radius: float,
+        image_origin: tuple[float, float],
+        voxel_size: tuple[float, float],
+    ) -> None:
         """init method
 
         Parameters
@@ -48,11 +53,11 @@ class ParallelViewProjector2D(LinearOperator):
 
         self._image_shape = image_shape
         self._image_origin = array_api_compat.to_device(
-            self.xp.asarray((0, ) + image_origin, dtype=self.xp.float32),
-            self._device)
+            self.xp.asarray((0,) + image_origin, dtype=self.xp.float32), self._device
+        )
         self._voxel_size = array_api_compat.to_device(
-            self.xp.asarray((1, ) + voxel_size, dtype=self.xp.float32),
-            self._device)
+            self.xp.asarray((1,) + voxel_size, dtype=self.xp.float32), self._device
+        )
 
         self._view_angles = view_angles
         self._num_views = self._view_angles.shape[0]
@@ -62,27 +67,33 @@ class ParallelViewProjector2D(LinearOperator):
         self._radius = radius
 
         self._xstart = array_api_compat.to_device(
-            self.xp.zeros((self._num_rad, self._num_views, 3),
-                          dtype=self.xp.float32), self._device)
+            self.xp.zeros((self._num_rad, self._num_views, 3), dtype=self.xp.float32),
+            self._device,
+        )
         self._xend = array_api_compat.to_device(
-            self.xp.zeros((self._num_rad, self._num_views, 3),
-                          dtype=self.xp.float32), self._device)
+            self.xp.zeros((self._num_rad, self._num_views, 3), dtype=self.xp.float32),
+            self._device,
+        )
 
         for i, phi in enumerate(self._view_angles):
             # world coordinates of LOR start points
-            self._xstart[:, i, 1] = self._xp.cos(
-                phi) * self._radial_positions + self._xp.sin(
-                    phi) * self._radius
-            self._xstart[:, i, 2] = -self._xp.sin(
-                phi) * self._radial_positions + self._xp.cos(
-                    phi) * self._radius
+            self._xstart[:, i, 1] = (
+                self._xp.cos(phi) * self._radial_positions
+                + self._xp.sin(phi) * self._radius
+            )
+            self._xstart[:, i, 2] = (
+                -self._xp.sin(phi) * self._radial_positions
+                + self._xp.cos(phi) * self._radius
+            )
             # world coordinates of LOR endpoints
-            self._xend[:, i, 1] = self._xp.cos(
-                phi) * self._radial_positions - self._xp.sin(
-                    phi) * self._radius
-            self._xend[:, i, 2] = -self._xp.sin(
-                phi) * self._radial_positions - self._xp.cos(
-                    phi) * self._radius
+            self._xend[:, i, 1] = (
+                self._xp.cos(phi) * self._radial_positions
+                - self._xp.sin(phi) * self._radius
+            )
+            self._xend[:, i, 2] = (
+                -self._xp.sin(phi) * self._radial_positions
+                - self._xp.cos(phi) * self._radius
+            )
 
     @property
     def xp(self) -> ModuleType:
@@ -138,21 +149,29 @@ class ParallelViewProjector2D(LinearOperator):
         return self._device
 
     def _apply(self, x: Array) -> Array:
-        y = parallelproj.joseph3d_fwd(self._xstart, self._xend,
-                                      self.xp.expand_dims(x, axis=0),
-                                      self._image_origin, self._voxel_size)
+        y = parallelproj.joseph3d_fwd(
+            self._xstart,
+            self._xend,
+            self.xp.expand_dims(x, axis=0),
+            self._image_origin,
+            self._voxel_size,
+        )
         return y
 
     def _adjoint(self, y: Array) -> Array:
-        x = parallelproj.joseph3d_back(self._xstart, self._xend,
-                                       (1, ) + self._image_shape,
-                                       self._image_origin, self._voxel_size, y)
+        x = parallelproj.joseph3d_back(
+            self._xstart,
+            self._xend,
+            (1,) + self._image_shape,
+            self._image_origin,
+            self._voxel_size,
+            y,
+        )
         return self.xp.squeeze(x, axis=0)
 
-    def show_views(self,
-                   views_to_show: None | Array = None,
-                   image: None | Array = None,
-                   **kwargs) -> plt.Figure:
+    def show_views(
+        self, views_to_show: None | Array = None, image: None | Array = None, **kwargs
+    ) -> plt.Figure:
         """visualize the geometry of certrain projection views
 
         Parameters
@@ -176,58 +195,61 @@ class ParallelViewProjector2D(LinearOperator):
         img_extent = [tmp1, -tmp1, tmp2, -tmp2]
 
         for i, ip in enumerate(views_to_show):
-            ax[i].plot(np.asarray(
-                array_api_compat.to_device(self._xstart[:, ip, 1], 'cpu')),
-                np.asarray(
-                array_api_compat.to_device(self._xstart[:, ip, 2],
-                                           'cpu')),
-                '.',
-                ms=0.5)
-            ax[i].plot(np.asarray(
-                array_api_compat.to_device(self._xend[:, ip, 1], 'cpu')),
-                np.asarray(
-                array_api_compat.to_device(self._xend[:, ip, 2],
-                                           'cpu')),
-                '.',
-                ms=0.5)
+            ax[i].plot(
+                np.asarray(array_api_compat.to_device(self._xstart[:, ip, 1], "cpu")),
+                np.asarray(array_api_compat.to_device(self._xstart[:, ip, 2], "cpu")),
+                ".",
+                ms=0.5,
+            )
+            ax[i].plot(
+                np.asarray(array_api_compat.to_device(self._xend[:, ip, 1], "cpu")),
+                np.asarray(array_api_compat.to_device(self._xend[:, ip, 2], "cpu")),
+                ".",
+                ms=0.5,
+            )
 
             for k in np.linspace(0, self._num_rad - 1, 7).astype(int):
-                ax[i].plot([
-                    float(self._xstart[k, ip, 1]),
-                    float(self._xend[k, ip, 1])
-                ], [
-                    float(self._xstart[k, ip, 2]),
-                    float(self._xend[k, ip, 2])
-                ],
-                    'k-',
-                    lw=0.5)
-                ax[i].annotate(f'{k}', (float(
-                    self._xstart[k, ip, 1]), float(self._xstart[k, ip, 2])),
-                    fontsize='xx-small')
+                ax[i].plot(
+                    [float(self._xstart[k, ip, 1]), float(self._xend[k, ip, 1])],
+                    [float(self._xstart[k, ip, 2]), float(self._xend[k, ip, 2])],
+                    "k-",
+                    lw=0.5,
+                )
+                ax[i].annotate(
+                    f"{k}",
+                    (float(self._xstart[k, ip, 1]), float(self._xstart[k, ip, 2])),
+                    fontsize="xx-small",
+                )
 
             pmax = 1.5 * float(self.xp.max(self._xstart[..., 1]))
             ax[i].set_xlim(-pmax, pmax)
             ax[i].set_ylim(-pmax, pmax)
-            ax[i].grid(ls=':')
-            ax[i].set_aspect('equal')
+            ax[i].grid(ls=":")
+            ax[i].set_aspect("equal")
 
             if image is not None:
                 ax[i].add_patch(
-                    Rectangle((tmp1, tmp2),
-                              float(self.in_shape[0] * self._voxel_size[1]),
-                              float(self.in_shape[1] * self._voxel_size[2]),
-                              edgecolor='r',
-                              facecolor='none',
-                              linestyle=':'))
+                    Rectangle(
+                        (tmp1, tmp2),
+                        float(self.in_shape[0] * self._voxel_size[1]),
+                        float(self.in_shape[1] * self._voxel_size[2]),
+                        edgecolor="r",
+                        facecolor="none",
+                        linestyle=":",
+                    )
+                )
 
-                ax[i].imshow(array_api_compat.to_device(image, 'cpu').T,
-                             origin='lower',
-                             extent=img_extent,
-                             **kwargs)
+                ax[i].imshow(
+                    array_api_compat.to_device(image, "cpu").T,
+                    origin="lower",
+                    extent=img_extent,
+                    **kwargs,
+                )
 
             ax[i].set_title(
-                f'view {ip:03} - phi {(180/np.pi)*self._view_angles[ip]} deg',
-                fontsize='small')
+                f"view {ip:03} - phi {(180/np.pi)*self._view_angles[ip]} deg",
+                fontsize="small",
+            )
 
         fig.tight_layout()
 
@@ -237,16 +259,18 @@ class ParallelViewProjector2D(LinearOperator):
 class ParallelViewProjector3D(LinearOperator):
     """3D non-TOF parallel view projector"""
 
-    def __init__(self,
-                 image_shape: tuple[int, int, int],
-                 radial_positions: Array,
-                 view_angles: Array,
-                 radius: float,
-                 image_origin: tuple[float, float, float],
-                 voxel_size: tuple[float, float],
-                 ring_positions: Array,
-                 span: int = 1,
-                 max_ring_diff: int | None = None) -> None:
+    def __init__(
+        self,
+        image_shape: tuple[int, int, int],
+        radial_positions: Array,
+        view_angles: Array,
+        radius: float,
+        image_origin: tuple[float, float, float],
+        voxel_size: tuple[float, float],
+        ring_positions: Array,
+        span: int = 1,
+        max_ring_diff: int | None = None,
+    ) -> None:
         """init method
 
         Parameters
@@ -280,9 +304,11 @@ class ParallelViewProjector3D(LinearOperator):
 
         self._image_shape = image_shape
         self._image_origin = array_api_compat.to_device(
-            self.xp.asarray(image_origin, dtype=self.xp.float32), self._device)
+            self.xp.asarray(image_origin, dtype=self.xp.float32), self._device
+        )
         self._voxel_size = array_api_compat.to_device(
-            self.xp.asarray(voxel_size, dtype=self.xp.float32), self._device)
+            self.xp.asarray(voxel_size, dtype=self.xp.float32), self._device
+        )
 
         self._view_angles = view_angles
         self._num_views = self._view_angles.shape[0]
@@ -292,27 +318,33 @@ class ParallelViewProjector3D(LinearOperator):
         self._radius = radius
 
         xstart2d = array_api_compat.to_device(
-            self.xp.zeros((self._num_rad, self._num_views, 2),
-                          dtype=self.xp.float32), self._device)
+            self.xp.zeros((self._num_rad, self._num_views, 2), dtype=self.xp.float32),
+            self._device,
+        )
         xend2d = array_api_compat.to_device(
-            self.xp.zeros((self._num_rad, self._num_views, 2),
-                          dtype=self.xp.float32), self._device)
+            self.xp.zeros((self._num_rad, self._num_views, 2), dtype=self.xp.float32),
+            self._device,
+        )
 
         for i, phi in enumerate(self._view_angles):
             # world coordinates of LOR start points
-            xstart2d[:, i, 0] = self._xp.cos(
-                phi) * self._radial_positions + self._xp.sin(
-                    phi) * self._radius
-            xstart2d[:, i, 1] = -self._xp.sin(
-                phi) * self._radial_positions + self._xp.cos(
-                    phi) * self._radius
+            xstart2d[:, i, 0] = (
+                self._xp.cos(phi) * self._radial_positions
+                + self._xp.sin(phi) * self._radius
+            )
+            xstart2d[:, i, 1] = (
+                -self._xp.sin(phi) * self._radial_positions
+                + self._xp.cos(phi) * self._radius
+            )
             # world coordinates of LOR endpoints
-            xend2d[:, i, 0] = self._xp.cos(
-                phi) * self._radial_positions - self._xp.sin(
-                    phi) * self._radius
-            xend2d[:, i, 1] = -self._xp.sin(
-                phi) * self._radial_positions - self._xp.cos(
-                    phi) * self._radius
+            xend2d[:, i, 0] = (
+                self._xp.cos(phi) * self._radial_positions
+                - self._xp.sin(phi) * self._radius
+            )
+            xend2d[:, i, 1] = (
+                -self._xp.sin(phi) * self._radial_positions
+                - self._xp.cos(phi) * self._radius
+            )
 
         self._ring_positions = ring_positions
         self._num_rings = ring_positions.shape[0]
@@ -325,14 +357,13 @@ class ParallelViewProjector3D(LinearOperator):
 
         if self._span == 1:
             self._num_segments = 2 * self._max_ring_diff + 1
-            self._segment_numbers = np.zeros(self._num_segments,
-                                             dtype=np.int32)
+            self._segment_numbers = np.zeros(self._num_segments, dtype=np.int32)
             self._segment_numbers[0::2] = np.arange(self._max_ring_diff + 1)
-            self._segment_numbers[1::2] = -np.arange(1,
-                                                     self._max_ring_diff + 1)
+            self._segment_numbers[1::2] = -np.arange(1, self._max_ring_diff + 1)
 
             self._num_planes_per_segment = self._num_rings - np.abs(
-                self._segment_numbers)
+                self._segment_numbers
+            )
 
             self._start_plane_number = []
             self._end_plane_number = []
@@ -350,25 +381,29 @@ class ParallelViewProjector3D(LinearOperator):
             self._end_plane_number = np.concatenate(self._end_plane_number)
             self._num_planes = self._start_plane_number.shape[0]
         else:
-            raise ValueError('span > 1 not implemented yet')
+            raise ValueError("span > 1 not implemented yet")
 
         self._xstart = array_api_compat.to_device(
             self._xp.zeros(
                 (self._num_rad, self._num_views, self._num_planes, 3),
-                dtype=self._xp.float32), self._device)
+                dtype=self._xp.float32,
+            ),
+            self._device,
+        )
         self._xend = array_api_compat.to_device(
             self._xp.zeros(
                 (self._num_rad, self._num_views, self._num_planes, 3),
-                dtype=self._xp.float32), self._device)
+                dtype=self._xp.float32,
+            ),
+            self._device,
+        )
 
         for i in range(self._num_planes):
             self._xstart[:, :, i, :2] = xstart2d
             self._xend[:, :, i, :2] = xend2d
 
-            self._xstart[:, :, i,
-                         2] = self._ring_positions[self._start_plane_number[i]]
-            self._xend[:, :, i,
-                       2] = self._ring_positions[self._end_plane_number[i]]
+            self._xstart[:, :, i, 2] = self._ring_positions[self._start_plane_number[i]]
+            self._xend[:, :, i, 2] = self._ring_positions[self._end_plane_number[i]]
 
     @property
     def max_ring_diff(self) -> int:
@@ -414,26 +449,33 @@ class ParallelViewProjector3D(LinearOperator):
         return self._xend
 
     def _apply(self, x: Array) -> Array:
-        y = parallelproj.joseph3d_fwd(self._xstart, self._xend, x,
-                                      self.image_origin, self.voxel_size)
+        y = parallelproj.joseph3d_fwd(
+            self._xstart, self._xend, x, self.image_origin, self.voxel_size
+        )
         return y
 
     def _adjoint(self, y: Array) -> Array:
-        x = parallelproj.joseph3d_back(self._xstart, self._xend,
-                                       self.image_shape, self.image_origin,
-                                       self.voxel_size, y)
+        x = parallelproj.joseph3d_back(
+            self._xstart,
+            self._xend,
+            self.image_shape,
+            self.image_origin,
+            self.voxel_size,
+            y,
+        )
         return x
 
 
 class RegularPolygonPETProjector(LinearOperator):
-
-    def __init__(self,
-                 lor_descriptor: RegularPolygonPETLORDescriptor,
-                 img_shape: tuple[int, int, int],
-                 voxel_size: tuple[float, float, float],
-                 img_origin: None | Array = None,
-                 views: None | Array = None,
-                 cache_lor_endpoints: bool = True) -> None:
+    def __init__(
+        self,
+        lor_descriptor: RegularPolygonPETLORDescriptor,
+        img_shape: tuple[int, int, int],
+        voxel_size: tuple[float, float, float],
+        img_origin: None | Array = None,
+        views: None | Array = None,
+        cache_lor_endpoints: bool = True,
+    ) -> None:
         """Regular polygon PET projector
 
         Parameters
@@ -460,22 +502,29 @@ class RegularPolygonPETProjector(LinearOperator):
 
         self._lor_descriptor = lor_descriptor
         self._img_shape = img_shape
-        self._voxel_size = self.xp.asarray(voxel_size,
-                                           dtype=self.xp.float32,
-                                           device=self._dev)
+        self._voxel_size = self.xp.asarray(
+            voxel_size, dtype=self.xp.float32, device=self._dev
+        )
 
         if img_origin is None:
-            self._img_origin = (-(self.xp.asarray(
-                self._img_shape, dtype=self.xp.float32, device=self._dev) / 2)
-                + 0.5) * self._voxel_size
+            self._img_origin = (
+                -(
+                    self.xp.asarray(
+                        self._img_shape, dtype=self.xp.float32, device=self._dev
+                    )
+                    / 2
+                )
+                + 0.5
+            ) * self._voxel_size
         else:
-            self._img_origin = self.xp.asarray(img_origin,
-                                               dtype=self.xp.float32,
-                                               device=self._dev)
+            self._img_origin = self.xp.asarray(
+                img_origin, dtype=self.xp.float32, device=self._dev
+            )
 
         if views is None:
-            self._views = self.xp.arange(self._lor_descriptor.num_views,
-                                         device=self._dev)
+            self._views = self.xp.arange(
+                self._lor_descriptor.num_views, device=self._dev
+            )
         else:
             self._views = views
 
@@ -489,7 +538,8 @@ class RegularPolygonPETProjector(LinearOperator):
 
         if self._cache_lor_endpoints:
             self._xstart, self._xend = lor_descriptor.get_lor_coordinates(
-                views=self._views)
+                views=self._views
+            )
             if is_cuda_array(self._xstart):
                 empty_cuda_cache(self.xp)
 
@@ -522,7 +572,7 @@ class RegularPolygonPETProjector(LinearOperator):
         self._tof = value
 
         if self.tof_parameters is None:
-            raise ValueError('tof_parameters must not be None')
+            raise ValueError("tof_parameters must not be None")
 
     @property
     def tof_parameters(self) -> TOFParameters | None:
@@ -532,8 +582,7 @@ class RegularPolygonPETProjector(LinearOperator):
     @tof_parameters.setter
     def tof_parameters(self, value: TOFParameters | None) -> None:
         if not (isinstance(value, TOFParameters) or value is None):
-            raise ValueError(
-                'tof_parameters must be a TOFParameters object or None')
+            raise ValueError("tof_parameters must be a TOFParameters object or None")
         self._tof_parameters = value
 
         if value is None:
@@ -579,25 +628,34 @@ class RegularPolygonPETProjector(LinearOperator):
         # cache LOR endpoints if not cached
         if not self._cache_lor_endpoints:
             self._xstart, self._xend = self._lor_descriptor.get_lor_coordinates(
-                views=self._views)
+                views=self._views
+            )
             if is_cuda_array(self._xstart):
                 empty_cuda_cache(self.xp)
 
         if not self.tof:
-            x_fwd = parallelproj.joseph3d_fwd(self._xstart, self._xend, x,
-                                              self._img_origin,
-                                              self._voxel_size)
+            x_fwd = parallelproj.joseph3d_fwd(
+                self._xstart, self._xend, x, self._img_origin, self._voxel_size
+            )
         else:
             x_fwd = parallelproj.joseph3d_fwd_tof_sino(
-                self._xstart, self._xend, x, self._img_origin,
-                self._voxel_size, self._tof_parameters.tofbin_width,
-                self.xp.asarray([self._tof_parameters.sigma_tof],
-                                dtype=self.xp.float32,
-                                device=dev),
-                self.xp.asarray([self._tof_parameters.tofcenter_offset],
-                                dtype=self.xp.float32,
-                                device=dev), self.tof_parameters.num_sigmas,
-                self.tof_parameters.num_tofbins)
+                self._xstart,
+                self._xend,
+                x,
+                self._img_origin,
+                self._voxel_size,
+                self._tof_parameters.tofbin_width,
+                self.xp.asarray(
+                    [self._tof_parameters.sigma_tof], dtype=self.xp.float32, device=dev
+                ),
+                self.xp.asarray(
+                    [self._tof_parameters.tofcenter_offset],
+                    dtype=self.xp.float32,
+                    device=dev,
+                ),
+                self.tof_parameters.num_sigmas,
+                self.tof_parameters.num_tofbins,
+            )
 
         # set LOR endpoints to None and clear cuda cache if needed
         if not self._cache_lor_endpoints:
@@ -618,26 +676,40 @@ class RegularPolygonPETProjector(LinearOperator):
         # cache LOR endpoints if not cached
         if not self._cache_lor_endpoints:
             self._xstart, self._xend = self._lor_descriptor.get_lor_coordinates(
-                views=self._views)
+                views=self._views
+            )
             if is_cuda_array(self._xstart):
                 empty_cuda_cache(self.xp)
 
         if not self.tof:
-            y_back = parallelproj.joseph3d_back(self._xstart, self._xend,
-                                                self._img_shape,
-                                                self._img_origin,
-                                                self._voxel_size, y)
+            y_back = parallelproj.joseph3d_back(
+                self._xstart,
+                self._xend,
+                self._img_shape,
+                self._img_origin,
+                self._voxel_size,
+                y,
+            )
         else:
             y_back = parallelproj.joseph3d_back_tof_sino(
-                self._xstart, self._xend, self._img_shape, self._img_origin,
-                self._voxel_size, y, self._tof_parameters.tofbin_width,
-                self.xp.asarray([self._tof_parameters.sigma_tof],
-                                dtype=self.xp.float32,
-                                device=dev),
-                self.xp.asarray([self._tof_parameters.tofcenter_offset],
-                                dtype=self.xp.float32,
-                                device=dev), self.tof_parameters.num_sigmas,
-                self.tof_parameters.num_tofbins)
+                self._xstart,
+                self._xend,
+                self._img_shape,
+                self._img_origin,
+                self._voxel_size,
+                y,
+                self._tof_parameters.tofbin_width,
+                self.xp.asarray(
+                    [self._tof_parameters.sigma_tof], dtype=self.xp.float32, device=dev
+                ),
+                self.xp.asarray(
+                    [self._tof_parameters.tofcenter_offset],
+                    dtype=self.xp.float32,
+                    device=dev,
+                ),
+                self.tof_parameters.num_sigmas,
+                self.tof_parameters.num_tofbins,
+            )
 
         # set LOR endpoints to None and clear cuda cache if needed
         if not self._cache_lor_endpoints:
@@ -651,11 +723,13 @@ class RegularPolygonPETProjector(LinearOperator):
 
         return y_back
 
-    def show_geometry(self,
-                      ax: plt.Axes,
-                      color: tuple[float, float, float] = (1., 0., 0.),
-                      edgecolor: str = 'grey',
-                      alpha: float = 0.1) -> None:
+    def show_geometry(
+        self,
+        ax: plt.Axes,
+        color: tuple[float, float, float] = (1.0, 0.0, 0.0),
+        edgecolor: str = "grey",
+        alpha: float = 0.1,
+    ) -> None:
         """show the geometry of the scanner and the FOV of the image
 
         Parameters
@@ -684,9 +758,9 @@ class RegularPolygonPETProjector(LinearOperator):
         y *= int(self.in_shape[1]) * float(self.voxel_size[1])
         z *= int(self.in_shape[2]) * float(self.voxel_size[2])
 
-        x += (float(self.img_origin[0]) - 0.5 * float(self.voxel_size[0]))
-        y += (float(self.img_origin[1]) - 0.5 * float(self.voxel_size[1]))
-        z += (float(self.img_origin[2]) - 0.5 * float(self.voxel_size[2]))
+        x += float(self.img_origin[0]) - 0.5 * float(self.voxel_size[0])
+        y += float(self.img_origin[1]) - 0.5 * float(self.voxel_size[1])
+        z += float(self.img_origin[2]) - 0.5 * float(self.voxel_size[2])
 
         colors = np.empty(sh + (4,), dtype=np.float32)
         colors[..., 0] = color[0]
@@ -694,20 +768,27 @@ class RegularPolygonPETProjector(LinearOperator):
         colors[..., 2] = color[2]
         colors[..., 3] = alpha
 
-        ax.voxels(x, y, z, filled=np.ones(sh, dtype=np.bool),
-                  facecolors=colors, edgecolors=edgecolor)
+        ax.voxels(
+            x,
+            y,
+            z,
+            filled=np.ones(sh, dtype=np.bool),
+            facecolors=colors,
+            edgecolors=edgecolor,
+        )
 
         self.lor_descriptor.scanner.show_lor_endpoints(ax)
 
 
 class ListmodePETProjector(LinearOperator):
-
-    def __init__(self,
-                 event_start_coordinates: Array,
-                 event_end_coordinates: Array,
-                 img_shape: tuple[int, int, int],
-                 voxel_size: tuple[float, float, float],
-                 img_origin: None | Array = None) -> None:
+    def __init__(
+        self,
+        event_start_coordinates: Array,
+        event_end_coordinates: Array,
+        img_shape: tuple[int, int, int],
+        voxel_size: tuple[float, float, float],
+        img_origin: None | Array = None,
+    ) -> None:
         """Listmode PET projector
 
         Parameters
@@ -735,18 +816,24 @@ class ListmodePETProjector(LinearOperator):
         self._dev = device(event_start_coordinates)
 
         self._img_shape = img_shape
-        self._voxel_size = self.xp.asarray(voxel_size,
-                                           dtype=self.xp.float32,
-                                           device=self._dev)
+        self._voxel_size = self.xp.asarray(
+            voxel_size, dtype=self.xp.float32, device=self._dev
+        )
 
         if img_origin is None:
-            self._img_origin = (-(self.xp.asarray(
-                self._img_shape, dtype=self.xp.float32, device=self._dev) / 2)
-                + 0.5) * self._voxel_size
+            self._img_origin = (
+                -(
+                    self.xp.asarray(
+                        self._img_shape, dtype=self.xp.float32, device=self._dev
+                    )
+                    / 2
+                )
+                + 0.5
+            ) * self._voxel_size
         else:
-            self._img_origin = self.xp.asarray(img_origin,
-                                               dtype=self.xp.float32,
-                                               device=self._dev)
+            self._img_origin = self.xp.asarray(
+                img_origin, dtype=self.xp.float32, device=self._dev
+            )
 
         self._tof_parameters = None
         self._tof = False
@@ -758,7 +845,7 @@ class ListmodePETProjector(LinearOperator):
 
     @property
     def out_shape(self) -> tuple[int]:
-        return (self._xstart.shape[0], )
+        return (self._xstart.shape[0],)
 
     @property
     def num_events(self) -> int:
@@ -778,9 +865,9 @@ class ListmodePETProjector(LinearOperator):
     @tof.setter
     def tof(self, value: bool) -> None:
         if (value) and (self.tof_parameters is None):
-            raise ValueError('must set tof_parameters first')
+            raise ValueError("must set tof_parameters first")
         if (value) and (self.event_tofbins is None):
-            raise ValueError('must set event_tofbins first')
+            raise ValueError("must set event_tofbins first")
 
         self._tof = value
 
@@ -792,8 +879,7 @@ class ListmodePETProjector(LinearOperator):
     @tof_parameters.setter
     def tof_parameters(self, value: TOFParameters | None) -> None:
         if not (isinstance(value, TOFParameters) or value is None):
-            raise ValueError(
-                'tof_parameters must be a TOFParameters object or None')
+            raise ValueError("tof_parameters must be a TOFParameters object or None")
         self._tof_parameters = value
 
         if value is None:
@@ -812,7 +898,8 @@ class ListmodePETProjector(LinearOperator):
         else:
             if value.shape[0] != self.num_events:
                 raise ValueError(
-                    'tofbin must have the same number of elements as events')
+                    "tofbin must have the same number of elements as events"
+                )
             self._tofbin = value
 
     @property
@@ -829,20 +916,28 @@ class ListmodePETProjector(LinearOperator):
         dev = array_api_compat.device(x)
 
         if not self.tof:
-            x_fwd = parallelproj.joseph3d_fwd(self._xstart, self._xend, x,
-                                              self._img_origin,
-                                              self._voxel_size)
+            x_fwd = parallelproj.joseph3d_fwd(
+                self._xstart, self._xend, x, self._img_origin, self._voxel_size
+            )
         else:
             x_fwd = parallelproj.joseph3d_fwd_tof_lm(
-                self._xstart, self._xend, x, self._img_origin,
-                self._voxel_size, self._tof_parameters.tofbin_width,
-                self.xp.asarray([self._tof_parameters.sigma_tof],
-                                dtype=self.xp.float32,
-                                device=dev),
-                self.xp.asarray([self._tof_parameters.tofcenter_offset],
-                                dtype=self.xp.float32,
-                                device=dev), self.tof_parameters.num_sigmas,
-                self._tofbin)
+                self._xstart,
+                self._xend,
+                x,
+                self._img_origin,
+                self._voxel_size,
+                self._tof_parameters.tofbin_width,
+                self.xp.asarray(
+                    [self._tof_parameters.sigma_tof], dtype=self.xp.float32, device=dev
+                ),
+                self.xp.asarray(
+                    [self._tof_parameters.tofcenter_offset],
+                    dtype=self.xp.float32,
+                    device=dev,
+                ),
+                self.tof_parameters.num_sigmas,
+                self._tofbin,
+            )
 
         return x_fwd
 
@@ -850,20 +945,33 @@ class ListmodePETProjector(LinearOperator):
         dev = array_api_compat.device(y)
 
         if not self.tof:
-            y_back = parallelproj.joseph3d_back(self._xstart, self._xend,
-                                                self._img_shape,
-                                                self._img_origin,
-                                                self._voxel_size, y)
+            y_back = parallelproj.joseph3d_back(
+                self._xstart,
+                self._xend,
+                self._img_shape,
+                self._img_origin,
+                self._voxel_size,
+                y,
+            )
         else:
             y_back = parallelproj.joseph3d_back_tof_lm(
-                self._xstart, self._xend, self._img_shape, self._img_origin,
-                self._voxel_size, y, self._tof_parameters.tofbin_width,
-                self.xp.asarray([self._tof_parameters.sigma_tof],
-                                dtype=self.xp.float32,
-                                device=dev),
-                self.xp.asarray([self._tof_parameters.tofcenter_offset],
-                                dtype=self.xp.float32,
-                                device=dev), self.tof_parameters.num_sigmas,
-                self._tofbin)
+                self._xstart,
+                self._xend,
+                self._img_shape,
+                self._img_origin,
+                self._voxel_size,
+                y,
+                self._tof_parameters.tofbin_width,
+                self.xp.asarray(
+                    [self._tof_parameters.sigma_tof], dtype=self.xp.float32, device=dev
+                ),
+                self.xp.asarray(
+                    [self._tof_parameters.tofcenter_offset],
+                    dtype=self.xp.float32,
+                    device=dev,
+                ),
+                self.tof_parameters.num_sigmas,
+                self._tofbin,
+            )
 
         return y_back

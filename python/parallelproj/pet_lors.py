@@ -11,7 +11,10 @@ from mpl_toolkits.mplot3d.art3d import Line3DCollection
 from types import ModuleType
 from array_api_compat import to_device
 
-from .pet_scanners import ModularizedPETScannerGeometry, RegularPolygonPETScannerGeometry
+from .pet_scanners import (
+    ModularizedPETScannerGeometry,
+    RegularPolygonPETScannerGeometry,
+)
 
 
 class SinogramSpatialAxisOrder(enum.Enum):
@@ -33,7 +36,7 @@ class SinogramSpatialAxisOrder(enum.Enum):
 
 class PETLORDescriptor(abc.ABC):
     """abstract base class to describe which modules / indices in modules of a
-       modularized PET scanner are in coincidence; defining geometrical LORs"""
+    modularized PET scanner are in coincidence; defining geometrical LORs"""
 
     def __init__(self, scanner: ModularizedPETScannerGeometry) -> None:
         """
@@ -67,16 +70,16 @@ class PETLORDescriptor(abc.ABC):
 
 class RegularPolygonPETLORDescriptor(PETLORDescriptor):
     """Coincidence descriptor for a regular polygon PET scanner where
-       we have coincidences within and between "rings (polygons of modules)"
-       The geometrical LORs can be sorted into a sinogram having a
-       "plane", "view" and "radial" axis."""
+    we have coincidences within and between "rings (polygons of modules)"
+    The geometrical LORs can be sorted into a sinogram having a
+    "plane", "view" and "radial" axis."""
 
     def __init__(
         self,
         scanner: RegularPolygonPETScannerGeometry,
         radial_trim: int = 3,
         max_ring_difference: int | None = None,
-        sinogram_order: SinogramSpatialAxisOrder = SinogramSpatialAxisOrder.RVP
+        sinogram_order: SinogramSpatialAxisOrder = SinogramSpatialAxisOrder.RVP,
     ) -> None:
         """
 
@@ -103,8 +106,7 @@ class RegularPolygonPETLORDescriptor(PETLORDescriptor):
         else:
             self._max_ring_difference = max_ring_difference
 
-        self._num_rad = (scanner.num_lor_endpoints_per_ring +
-                         1) - 2 * self._radial_trim
+        self._num_rad = (scanner.num_lor_endpoints_per_ring + 1) - 2 * self._radial_trim
         self._num_views = scanner.num_lor_endpoints_per_ring // 2
 
         self._sinogram_order = sinogram_order
@@ -165,17 +167,17 @@ class RegularPolygonPETLORDescriptor(PETLORDescriptor):
     @property
     def plane_axis_num(self) -> int:
         """the axis number of the plane axis"""
-        return self.sinogram_order.name.find('P')
+        return self.sinogram_order.name.find("P")
 
     @property
     def radial_axis_num(self) -> int:
         """the axis number of the radial axis"""
-        return self.sinogram_order.name.find('R')
+        return self.sinogram_order.name.find("R")
 
     @property
     def view_axis_num(self) -> int:
         """the axis number of the view axis"""
-        return self.sinogram_order.name.find('V')
+        return self.sinogram_order.name.find("V")
 
     @property
     def spatial_sinogram_shape(self) -> tuple[int, int, int]:
@@ -187,63 +189,66 @@ class RegularPolygonPETLORDescriptor(PETLORDescriptor):
         return tuple(shape)
 
     def _setup_plane_indices(self) -> None:
-        """setup the start / end plane indices (similar to a Michelogram)
-        """
-        self._start_plane_index = self.xp.arange(self.scanner.num_rings,
-                                                 dtype=self.xp.int32,
-                                                 device=self.dev)
-        self._end_plane_index = self.xp.arange(self.scanner.num_rings,
-                                               dtype=self.xp.int32,
-                                               device=self.dev)
+        """setup the start / end plane indices (similar to a Michelogram)"""
+        self._start_plane_index = self.xp.arange(
+            self.scanner.num_rings, dtype=self.xp.int32, device=self.dev
+        )
+        self._end_plane_index = self.xp.arange(
+            self.scanner.num_rings, dtype=self.xp.int32, device=self.dev
+        )
 
         for i in range(1, self._max_ring_difference + 1):
-            tmp1 = self.xp.arange(self.scanner.num_rings - i,
-                                  dtype=self.xp.int16,
-                                  device=self.dev)
-            tmp2 = self.xp.arange(self.scanner.num_rings - i,
-                                  dtype=self.xp.int16,
-                                  device=self.dev) + i
+            tmp1 = self.xp.arange(
+                self.scanner.num_rings - i, dtype=self.xp.int16, device=self.dev
+            )
+            tmp2 = (
+                self.xp.arange(
+                    self.scanner.num_rings - i, dtype=self.xp.int16, device=self.dev
+                )
+                + i
+            )
 
             self._start_plane_index = self.xp.concat(
-                (self._start_plane_index, tmp1, tmp2))
-            self._end_plane_index = self.xp.concat(
-                (self._end_plane_index, tmp2, tmp1))
+                (self._start_plane_index, tmp1, tmp2)
+            )
+            self._end_plane_index = self.xp.concat((self._end_plane_index, tmp2, tmp1))
 
         self._num_planes = self._start_plane_index.shape[0]
 
     def _setup_view_indices(self) -> None:
-        """setup the start / end view indices
-        """
+        """setup the start / end view indices"""
         n = self.scanner.num_lor_endpoints_per_ring
 
         m = 2 * (n // 2)
 
         self._start_in_ring_index = self.xp.zeros(
-            (self._num_views, self._num_rad),
-            dtype=self.xp.int32,
-            device=self.dev)
+            (self._num_views, self._num_rad), dtype=self.xp.int32, device=self.dev
+        )
         self._end_in_ring_index = self.xp.zeros(
-            (self._num_views, self._num_rad),
-            dtype=self.xp.int32,
-            device=self.dev)
+            (self._num_views, self._num_rad), dtype=self.xp.int32, device=self.dev
+        )
 
         for view in np.arange(self._num_views):
             self._start_in_ring_index[view, :] = (
-                self.xp.concat(
-                    (self.xp.arange(m) // 2, self.xp.asarray([n // 2]))) -
-                view)[self._radial_trim:-self._radial_trim]
+                self.xp.concat((self.xp.arange(m) // 2, self.xp.asarray([n // 2])))
+                - view
+            )[self._radial_trim : -self._radial_trim]
             self._end_in_ring_index[view, :] = (
-                self.xp.concat(
-                    (self.xp.asarray([-1]), -((self.xp.arange(m) + 4) // 2))) -
-                view)[self._radial_trim:-self._radial_trim]
+                self.xp.concat((self.xp.asarray([-1]), -((self.xp.arange(m) + 4) // 2)))
+                - view
+            )[self._radial_trim : -self._radial_trim]
 
         # shift the negative indices
         self._start_in_ring_index = self.xp.where(
-            self._start_in_ring_index >= 0, self._start_in_ring_index,
-            self._start_in_ring_index + n)
-        self._end_in_ring_index = self.xp.where(self._end_in_ring_index >= 0,
-                                                self._end_in_ring_index,
-                                                self._end_in_ring_index + n)
+            self._start_in_ring_index >= 0,
+            self._start_in_ring_index,
+            self._start_in_ring_index + n,
+        )
+        self._end_in_ring_index = self.xp.where(
+            self._end_in_ring_index >= 0,
+            self._end_in_ring_index,
+            self._end_in_ring_index + n,
+        )
 
     def get_lor_coordinates(
         self,
@@ -267,8 +272,7 @@ class RegularPolygonPETLORDescriptor(PETLORDescriptor):
 
         # --- (1) setup the LOR start / end points for all views of plane 0
 
-        start_in_ring_index = self.xp.take(
-            self.start_in_ring_index, views, axis=0)
+        start_in_ring_index = self.xp.take(self.start_in_ring_index, views, axis=0)
         end_in_ring_index = self.xp.take(self.end_in_ring_index, views, axis=0)
 
         if self.view_axis_num > self.radial_axis_num:
@@ -280,10 +284,18 @@ class RegularPolygonPETLORDescriptor(PETLORDescriptor):
         start_inds_2d = self.xp.reshape(start_in_ring_index, (-1,))
         end_inds_2d = self.xp.reshape(end_in_ring_index, (-1,))
 
-        xstart_2d = self.xp.reshape(self.scanner.get_lor_endpoints(
-            self.xp.zeros_like(start_inds_2d), start_inds_2d), shape_2d + (3, ))
-        xend_2d = self.xp.reshape(self.scanner.get_lor_endpoints(
-            self.xp.zeros_like(end_inds_2d), end_inds_2d), shape_2d + (3, ))
+        xstart_2d = self.xp.reshape(
+            self.scanner.get_lor_endpoints(
+                self.xp.zeros_like(start_inds_2d), start_inds_2d
+            ),
+            shape_2d + (3,),
+        )
+        xend_2d = self.xp.reshape(
+            self.scanner.get_lor_endpoints(
+                self.xp.zeros_like(end_inds_2d), end_inds_2d
+            ),
+            shape_2d + (3,),
+        )
 
         xstart_3d = []
         xend_3d = []
@@ -298,9 +310,11 @@ class RegularPolygonPETLORDescriptor(PETLORDescriptor):
             xend = xend_2d + 0
 
             xstart[..., self.scanner.symmetry_axis] = float(
-                self.scanner.ring_positions[self.start_plane_index[i]])
+                self.scanner.ring_positions[self.start_plane_index[i]]
+            )
             xend[..., self.scanner.symmetry_axis] = float(
-                self.scanner.ring_positions[self.end_plane_index[i]])
+                self.scanner.ring_positions[self.end_plane_index[i]]
+            )
 
             xstart_3d.append(xstart)
             xend_3d.append(xend)
@@ -310,12 +324,9 @@ class RegularPolygonPETLORDescriptor(PETLORDescriptor):
 
         return xstart_3d, xend_3d
 
-    def show_views(self,
-                   ax: plt.Axes,
-                   views: Array,
-                   planes: Array,
-                   lw: float = 0.2,
-                   **kwargs) -> None:
+    def show_views(
+        self, ax: plt.Axes, views: Array, planes: Array, lw: float = 0.2, **kwargs
+    ) -> None:
         """show all LORs of a single view in a given plane
 
         Parameters
@@ -333,12 +344,14 @@ class RegularPolygonPETLORDescriptor(PETLORDescriptor):
         xs, xe = self.get_lor_coordinates(views=views)
 
         xs = self.xp.reshape(
-            self.xp.take(xs, planes, axis=self.plane_axis_num), (-1, 3))
+            self.xp.take(xs, planes, axis=self.plane_axis_num), (-1, 3)
+        )
         xe = self.xp.reshape(
-            self.xp.take(xe, planes, axis=self.plane_axis_num), (-1, 3))
+            self.xp.take(xe, planes, axis=self.plane_axis_num), (-1, 3)
+        )
 
-        p1s = np.asarray(to_device(xs, 'cpu'))
-        p2s = np.asarray(to_device(xe, 'cpu'))
+        p1s = np.asarray(to_device(xs, "cpu"))
+        p2s = np.asarray(to_device(xe, "cpu"))
 
         ls = np.hstack([p1s, p2s]).copy()
         ls = ls.reshape((-1, 2, 3))

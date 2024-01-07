@@ -87,12 +87,14 @@ class LinearOperator(abc.ABC):
         else:
             return self._scale.conjugate() * self._adjoint(y)
 
-    def adjointness_test(self,
-                         xp: ModuleType,
-                         dev: str,
-                         verbose: bool = False,
-                         iscomplex: bool = False,
-                         **kwargs) -> bool:
+    def adjointness_test(
+        self,
+        xp: ModuleType,
+        dev: str,
+        verbose: bool = False,
+        iscomplex: bool = False,
+        **kwargs,
+    ) -> bool:
         """test whether the adjoint is correctly implemented
 
         Parameters
@@ -120,17 +122,17 @@ class LinearOperator(abc.ABC):
             dtype = xp.float64
 
         x = xp.asarray(np.random.rand(*self.in_shape), device=dev, dtype=dtype)
-        y = xp.asarray(np.random.rand(*self.out_shape),
-                       device=dev,
-                       dtype=dtype)
+        y = xp.asarray(np.random.rand(*self.out_shape), device=dev, dtype=dtype)
 
         if iscomplex:
             x = x + 1j * xp.asarray(
-                np.random.rand(*self.in_shape), device=dev, dtype=dtype)
+                np.random.rand(*self.in_shape), device=dev, dtype=dtype
+            )
 
         if iscomplex:
             y = y + 1j * xp.asarray(
-                np.random.rand(*self.out_shape), device=dev, dtype=dtype)
+                np.random.rand(*self.out_shape), device=dev, dtype=dtype
+            )
 
         x_fwd = self.apply(x)
         y_adj = self.adjoint(y)
@@ -147,12 +149,14 @@ class LinearOperator(abc.ABC):
 
         return np.isclose(ip1, ip2, **kwargs)
 
-    def norm(self,
-             xp: ModuleType,
-             dev: str,
-             num_iter: int = 30,
-             iscomplex: bool = False,
-             verbose: bool = False) -> float:
+    def norm(
+        self,
+        xp: ModuleType,
+        dev: str,
+        num_iter: int = 30,
+        iscomplex: bool = False,
+        verbose: bool = False,
+    ) -> float:
         """estimate norm of the linear operator using power iterations
 
         Parameters
@@ -183,15 +187,16 @@ class LinearOperator(abc.ABC):
 
         if iscomplex:
             x = x + 1j * xp.asarray(
-                np.random.rand(*self.in_shape), device=dev, dtype=dtype)
+                np.random.rand(*self.in_shape), device=dev, dtype=dtype
+            )
 
         for i in range(num_iter):
             x = self.adjoint(self.apply(x))
-            norm_squared = xp.sqrt(xp.sum(xp.abs(x)**2))
+            norm_squared = xp.sqrt(xp.sum(xp.abs(x) ** 2))
             x /= float(norm_squared)
 
             if verbose:
-                print(f'{(i+1):03} {xp.sqrt(norm_squared):.2E}')
+                print(f"{(i+1):03} {xp.sqrt(norm_squared):.2E}")
 
         return float(xp.sqrt(norm_squared))
 
@@ -212,11 +217,11 @@ class MatrixOperator(LinearOperator):
 
     @property
     def in_shape(self) -> tuple[int]:
-        return (self._A.shape[1], )
+        return (self._A.shape[1],)
 
     @property
     def out_shape(self) -> tuple[int]:
-        return (self._A.shape[0], )
+        return (self._A.shape[0],)
 
     @property
     def A(self) -> Array:
@@ -230,9 +235,9 @@ class MatrixOperator(LinearOperator):
 
     def iscomplex(self) -> bool:
         """bool whether the operator is complex"""
-        return self.xp.isdtype(self._A.dtype,
-                               self.xp.complex64) or self.xp.isdtype(
-                                   self._A.dtype, self.xp.complex128)
+        return self.xp.isdtype(self._A.dtype, self.xp.complex64) or self.xp.isdtype(
+            self._A.dtype, self.xp.complex128
+        )
 
     def _apply(self, x: Array) -> Array:
         return self.xp.matmul(self._A, x)
@@ -247,8 +252,8 @@ class MatrixOperator(LinearOperator):
 class CompositeLinearOperator(LinearOperator):
     """Composite Linear Operator defined by a sequence of Linear Operators
 
-       Given a tuple of operators :math:`(A_0, ..., A_{n-1})` the composite operator is defined as
-       :math:`A(x) = A_0( A_1( ... ( A_{n-1}(x) ) ) )`
+    Given a tuple of operators :math:`(A_0, ..., A_{n-1})` the composite operator is defined as
+    :math:`A(x) = A_0( A_1( ... ( A_{n-1}(x) ) ) )`
     """
 
     def __init__(self, operators: tuple[LinearOperator, ...]):
@@ -331,9 +336,9 @@ class ElementwiseMultiplicationOperator(LinearOperator):
 
     def iscomplex(self) -> bool:
         """bool whether the operator is complex"""
-        return self.xp.isdtype(self._values.dtype,
-                               self.xp.complex64) or self.xp.isdtype(
-                                   self._values.dtype, self.xp.complex128)
+        return self.xp.isdtype(
+            self._values.dtype, self.xp.complex64
+        ) or self.xp.isdtype(self._values.dtype, self.xp.complex128)
 
 
 class TOFNonTOFElementwiseMultiplicationOperator(LinearOperator):
@@ -391,16 +396,15 @@ class TOFNonTOFElementwiseMultiplicationOperator(LinearOperator):
 
     def iscomplex(self) -> bool:
         """bool whether the operator is complex"""
-        return self.xp.isdtype(self._values.dtype,
-                               self.xp.complex64) or self.xp.isdtype(
-                                   self._values.dtype, self.xp.complex128)
+        return self.xp.isdtype(
+            self._values.dtype, self.xp.complex64
+        ) or self.xp.isdtype(self._values.dtype, self.xp.complex128)
 
 
 class GaussianFilterOperator(LinearOperator):
     """Gaussian filter operator"""
 
-    def __init__(self, in_shape: tuple[int, ...], sigma: float | Array,
-                 **kwargs):
+    def __init__(self, in_shape: tuple[int, ...], sigma: float | Array, **kwargs):
         """init method
 
         Parameters
@@ -431,26 +435,28 @@ class GaussianFilterOperator(LinearOperator):
         if parallelproj.is_cuda_array(x):
             import array_api_compat.cupy as cp
             import cupyx.scipy.ndimage as ndimagex
+
             if array_api_compat.is_array_api_obj(self._sigma):
                 sigma = cp.asarray(self._sigma)
             else:
                 sigma = self._sigma
 
-            return xp.asarray(ndimagex.gaussian_filter(cp.asarray(x),
-                                                       sigma=sigma,
-                                                       **self._kwargs),
-                              device=device(x))
+            return xp.asarray(
+                ndimagex.gaussian_filter(cp.asarray(x), sigma=sigma, **self._kwargs),
+                device=device(x),
+            )
         else:
             import scipy.ndimage as ndimage
+
             if array_api_compat.is_array_api_obj(self._sigma):
                 sigma = np.asarray(self._sigma)
             else:
                 sigma = self._sigma
 
-            return xp.asarray(ndimage.gaussian_filter(np.asarray(x),
-                                                      sigma=sigma,
-                                                      **self._kwargs),
-                              device=device(x))
+            return xp.asarray(
+                ndimage.gaussian_filter(np.asarray(x), sigma=sigma, **self._kwargs),
+                device=device(x),
+            )
 
     def _adjoint(self, y: Array) -> Array:
         return self._apply(y)
@@ -471,9 +477,8 @@ class VstackOperator(LinearOperator):
         self._operators = operators
         self._in_shape = self._operators[0].in_shape
         self._out_shapes = tuple([x.out_shape for x in operators])
-        self._raveled_out_shapes = tuple(
-            [np.prod(x) for x in self._out_shapes])
-        self._out_shape = (sum(self._raveled_out_shapes), )
+        self._raveled_out_shapes = tuple([np.prod(x) for x in self._out_shapes])
+        self._out_shape = (sum(self._raveled_out_shapes),)
 
         # setup the slices for slicing the raveled output array
         self._slices = []
@@ -497,7 +502,7 @@ class VstackOperator(LinearOperator):
         y = xp.zeros(self._out_shape, dtype=x.dtype, device=device(x))
 
         for i, op in enumerate(self._operators):
-            y[self._slices[i]] = xp.reshape(op(x), (-1, ))
+            y[self._slices[i]] = xp.reshape(op(x), (-1,))
 
         return y
 
@@ -506,8 +511,7 @@ class VstackOperator(LinearOperator):
         x = xp.zeros(self._in_shape, dtype=y.dtype, device=device(y))
 
         for i, op in enumerate(self._operators):
-            x += op.adjoint(xp.reshape(y[self._slices[i]],
-                                       self._out_shapes[i]))
+            x += op.adjoint(xp.reshape(y[self._slices[i]], self._out_shapes[i]))
 
         return x
 
@@ -585,13 +589,12 @@ class FiniteForwardDifference(LinearOperator):
     """finite difference gradient operator"""
 
     def __init__(self, in_shape: tuple[int, ...]) -> None:
-
         if len(in_shape) > 4:
-            raise ValueError('only up to 4 dimensions supported')
+            raise ValueError("only up to 4 dimensions supported")
 
         self._ndim = len(in_shape)
         self._in_shape = in_shape
-        self._out_shape = (self.ndim, ) + in_shape
+        self._out_shape = (self.ndim,) + in_shape
         super().__init__()
 
     @property

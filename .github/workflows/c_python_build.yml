@@ -52,7 +52,8 @@ jobs:
     - name: Lint with flake8
       run: |
         # stop the build if there are Python syntax errors or undefined names
-        flake8 --count --show-source --statistics --max-line-length 127 python/parallelproj
+        # E203 seems not pep8 compatible, so we ignore it
+        flake8 --count --show-source --statistics --max-line-length 127 --extend-ignore=E203 python/parallelproj
 
     - name: find installed libparallelproj_c
       run: |
