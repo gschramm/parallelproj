@@ -197,6 +197,8 @@ def test_lmprojector(
 
     assert lm_proj.adjointness_test(xp, dev)
 
+    assert xp.all(lm_proj.voxel_size == xp.asarray(voxel_size, device=dev))
+
     img_fwd = lm_proj(img)
 
     # setup the expected values for the projection
