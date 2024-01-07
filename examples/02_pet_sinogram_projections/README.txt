@@ -1,2 +1,2 @@
-High-level PET sinogram projections
------------------------------------
+High-level PET sinogram projector examples
+------------------------------------------

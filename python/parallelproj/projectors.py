@@ -912,6 +912,11 @@ class ListmodePETProjector(LinearOperator):
         """coordinates of LOR end points"""
         return self._xend
 
+    @property
+    def voxel_size(self) -> Array:
+        """voxel size"""
+        return self._voxel_size
+
     def _apply(self, x: Array) -> Array:
         dev = array_api_compat.device(x)
 

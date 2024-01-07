@@ -1,2 +1,2 @@
-PET scanner and sinogram geometry examples
+High-level PET listmode projector examples
 ------------------------------------------
