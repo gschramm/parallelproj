@@ -92,7 +92,7 @@ class LinearOperator(abc.ABC):
                          dev: str,
                          verbose: bool = False,
                          iscomplex: bool = False,
-                         **kwargs):
+                         **kwargs) -> bool:
         """test whether the adjoint is correctly implemented
 
         Parameters
@@ -107,6 +107,11 @@ class LinearOperator(abc.ABC):
             use complex arrays
         **kwargs : dict
             passed to np.isclose
+
+        Returns
+        -------
+        bool
+            whether the adjoint is correctly implemented
         """
 
         if iscomplex:
@@ -140,7 +145,7 @@ class LinearOperator(abc.ABC):
         if verbose:
             print(ip1, ip2)
 
-        assert (np.isclose(ip1, ip2, **kwargs))
+        return np.isclose(ip1, ip2, **kwargs)
 
     def norm(self,
              xp: ModuleType,
@@ -241,7 +246,7 @@ class MatrixOperator(LinearOperator):
 
 class CompositeLinearOperator(LinearOperator):
     """Composite Linear Operator defined by a sequence of Linear Operators
-    
+
        Given a tuple of operators :math:`(A_0, ..., A_{n-1})` the composite operator is defined as
        :math:`A(x) = A_0( A_1( ... ( A_{n-1}(x) ) ) )` 
     """
@@ -330,6 +335,7 @@ class ElementwiseMultiplicationOperator(LinearOperator):
                                self.xp.complex64) or self.xp.isdtype(
                                    self._values.dtype, self.xp.complex128)
 
+
 class TOFNonTOFElementwiseMultiplicationOperator(LinearOperator):
     """Element-wise multiplication operator between a non-TOF and TOF sinogram"""
 
@@ -366,20 +372,20 @@ class TOFNonTOFElementwiseMultiplicationOperator(LinearOperator):
         return self._values
 
     def _apply(self, x: Array) -> Array:
-        y = 1*x # suboptimal to copy array, but bug in torch asarray with copy = True
+        y = 1*x  # suboptimal to copy array, but bug in torch asarray with copy = True
         for i in range(x.shape[-1]):
             y[..., i] *= self._values
         return y
 
     def _adjoint(self, y: Array) -> Array:
-        x = 1*y # suboptimal to copy array
+        x = 1*y  # suboptimal to copy array
         if self.iscomplex():
             tmp = self.xp.conj(self._values)
         else:
             tmp = self._values
 
         for i in range(x.shape[-1]):
-            x[...,i] *= tmp
+            x[..., i] *= tmp
 
         return x
 
@@ -388,7 +394,6 @@ class TOFNonTOFElementwiseMultiplicationOperator(LinearOperator):
         return self.xp.isdtype(self._values.dtype,
                                self.xp.complex64) or self.xp.isdtype(
                                    self._values.dtype, self.xp.complex128)
-
 
 
 class GaussianFilterOperator(LinearOperator):

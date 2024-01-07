@@ -41,7 +41,7 @@ def test_parallelviewprojector(xp, dev, verbose=True):
     assert allclose(proj2d.voxel_size[1:], xp.asarray(voxel_size, device=dev))
     assert proj2d.dev == array_api_compat.device(xstart)
 
-    proj2d.adjointness_test(xp, dev, verbose=verbose)
+    assert proj2d.adjointness_test(xp, dev, verbose=verbose)
 
     # test a simple 2D projection
     x2d = xp.reshape(xp.arange(4, dtype=xp.float32, device=dev), (2, 2))
@@ -86,7 +86,7 @@ def test_parallelviewprojector(xp, dev, verbose=True):
     xstart = proj3d.xstart
     xend = proj3d.xend
 
-    proj3d.adjointness_test(xp, dev, verbose=verbose)
+    assert proj3d.adjointness_test(xp, dev, verbose=verbose)
 
     # test a simple 3D projection
     x3d = xp.reshape(xp.arange(8, dtype=xp.float32, device=dev), (2, 2, 2))
@@ -181,4 +181,4 @@ def test_lmprojector(xp, dev, verbose=True):
     lm_proj = parallelproj.ListmodePETProjector(
         xstart, xend, img_dim, voxel_size, img_origin)
 
-    lm_proj.adjointness_test(xp, dev)
+    assert lm_proj.adjointness_test(xp, dev)

@@ -19,7 +19,7 @@ def allclose(x, y, atol: float = 1e-8, rtol: float = 1e-5) -> bool:
     return bool(xp.all(xp.less_equal(xp.abs(x - y), atol + rtol * xp.abs(y))))
 
 
-#---------------------------------------------------------------------------------------
+# ---------------------------------------------------------------------------------------
 
 
 def test_matrix(xp: ModuleType, dev: str):
@@ -43,7 +43,7 @@ def test_matrix(xp: ModuleType, dev: str):
     # test call to norm
     op_norm = op.norm(xp, dev)
 
-    op.adjointness_test(xp, dev)
+    assert op.adjointness_test(xp, dev)
     assert allclose(scale_fac * (A @ x), op(x))
 
 
@@ -56,7 +56,7 @@ def test_complex_matrix(xp: ModuleType, dev: str):
     x = xp.asarray([-2., 1.], device=dev, dtype=xp.complex128)
 
     op = parallelproj.MatrixOperator(A)
-    op.adjointness_test(xp, dev, iscomplex=True)
+    assert op.adjointness_test(xp, dev, iscomplex=True)
 
     n = op.norm(xp, dev, iscomplex=True)
 
@@ -75,23 +75,25 @@ def test_elementwise(xp: ModuleType, dev: str):
 
     assert xp.all(op.values == v)
 
-    op.adjointness_test(xp, dev)
+    assert op.adjointness_test(xp, dev)
     assert allclose(v * x, op(x))
+
 
 def test_tofnontofelemenwise(xp: ModuleType, dev: str):
     np.random.seed(0)
 
-    x = xp.reshape(xp.arange(3*3*2, device = dev, dtype = xp.float32), (3,3,2))
-    v = xp.reshape(xp.arange(3*3, device = dev, dtype = xp.float32), (3,3))
+    x = xp.reshape(xp.arange(3*3*2, device=dev, dtype=xp.float32), (3, 3, 2))
+    v = xp.reshape(xp.arange(3*3, device=dev, dtype=xp.float32), (3, 3))
 
     op = parallelproj.TOFNonTOFElementwiseMultiplicationOperator(x.shape, v)
     # test call to norm
 
     assert xp.all(op.values == v)
 
-    op.adjointness_test(xp, dev)
-    assert allclose(v * x[...,0], op(x)[...,0])
-    assert allclose(v * x[...,1], op(x)[...,1])
+    assert op.adjointness_test(xp, dev)
+    assert allclose(v * x[..., 0], op(x)[..., 0])
+    assert allclose(v * x[..., 1], op(x)[..., 1])
+
 
 def test_elemenwise_complex(xp: ModuleType, dev: str):
     np.random.seed(0)
@@ -103,26 +105,26 @@ def test_elemenwise_complex(xp: ModuleType, dev: str):
     # test call to norm
     op_norm = op.norm(xp, dev, iscomplex=True)
 
-    op.adjointness_test(xp, dev, iscomplex=True)
+    assert op.adjointness_test(xp, dev, iscomplex=True)
     assert allclose(v * x, op(x))
+
 
 def test_tofnontofelemenwise_complex(xp: ModuleType, dev: str):
     np.random.seed(0)
 
-    x = xp.ones((3,3,2), device = dev, dtype = xp.complex128)
-    x[0,0,1] = 2. + 1j
-    x[1,1,0] = 1. - 2j
-    v = xp.ones((3,3), device = dev, dtype = xp.complex128)
-    v[2,2] = 3. + 2j
-    v[1,2] = -4. + 1j
+    x = xp.ones((3, 3, 2), device=dev, dtype=xp.complex128)
+    x[0, 0, 1] = 2. + 1j
+    x[1, 1, 0] = 1. - 2j
+    v = xp.ones((3, 3), device=dev, dtype=xp.complex128)
+    v[2, 2] = 3. + 2j
+    v[1, 2] = -4. + 1j
 
     op = parallelproj.TOFNonTOFElementwiseMultiplicationOperator(x.shape, v)
     # test call to norm
 
-    op.adjointness_test(xp, dev, iscomplex=True)
-    assert allclose(v * x[...,0], op(x)[...,0])
-    assert allclose(v * x[...,1], op(x)[...,1])
-
+    assert op.adjointness_test(xp, dev, iscomplex=True)
+    assert allclose(v * x[..., 0], op(x)[..., 0])
+    assert allclose(v * x[..., 1], op(x)[..., 1])
 
 
 def test_gaussian(xp: ModuleType, dev: str):
@@ -131,11 +133,11 @@ def test_gaussian(xp: ModuleType, dev: str):
     sigma1 = 2.3
 
     op = parallelproj.GaussianFilterOperator(in_shape, sigma=sigma1)
-    op.adjointness_test(xp, dev)
+    assert op.adjointness_test(xp, dev)
 
     sigma2 = xp.asarray([2.3, 1.2], device=dev)
     op = parallelproj.GaussianFilterOperator(in_shape, sigma=sigma2)
-    op.adjointness_test(xp, dev)
+    assert op.adjointness_test(xp, dev)
 
 
 def test_composite(xp: ModuleType, dev: str):
@@ -155,7 +157,7 @@ def test_composite(xp: ModuleType, dev: str):
     # test call to norm
     op_norm = op.norm(xp, dev)
 
-    op.adjointness_test(xp, dev)
+    assert op.adjointness_test(xp, dev)
     assert allclose(v * (A @ x), op(x))
 
 
@@ -172,7 +174,7 @@ def test_vstack(xp: ModuleType, dev: str):
     # test call to norm
     A_norm = A.norm(xp, dev)
 
-    A.adjointness_test(xp, dev)
+    assert A.adjointness_test(xp, dev)
 
     x = xp.asarray(np.random.rand(*in_shape), device=dev)
     x_fwd = A(x)
@@ -223,7 +225,7 @@ def test_finite_difference(xp: ModuleType, dev: str):
 
     n = A.norm(xp, dev)
     # test adjointness
-    A.adjointness_test(xp, dev)
+    assert A.adjointness_test(xp, dev)
 
     # test simple forward
     y = A(x)
@@ -236,7 +238,7 @@ def test_finite_difference(xp: ModuleType, dev: str):
     # test call to norm
     n = A.norm(xp, dev)
     # test adjointness
-    A.adjointness_test(xp, dev)
+    assert A.adjointness_test(xp, dev)
 
     # test simple forward
     y = A(x)
@@ -248,7 +250,7 @@ def test_finite_difference(xp: ModuleType, dev: str):
     x = xp.reshape(xp.arange(prod(A.in_shape), device=dev), A.in_shape)
 
     # test adjointness
-    A.adjointness_test(xp, dev)
+    assert A.adjointness_test(xp, dev)
 
     # test simple forward
     y = A(x)
@@ -261,7 +263,7 @@ def test_finite_difference(xp: ModuleType, dev: str):
     x = xp.reshape(xp.arange(prod(A.in_shape), device=dev), A.in_shape)
 
     # test adjointness
-    A.adjointness_test(xp, dev)
+    assert A.adjointness_test(xp, dev)
 
     # test simple forward
     y = A(x)
