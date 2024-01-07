@@ -8,7 +8,7 @@ from .operators import LinearOperator, MatrixOperator, ElementwiseMultiplication
 from .operators import GaussianFilterOperator, CompositeLinearOperator, VstackOperator, SubsetOperator
 from .operators import FiniteForwardDifference
 
-from .projectors import ParallelViewProjector2D, ParallelViewProjector3D, RegularPolygonPETProjector
+from .projectors import ParallelViewProjector2D, ParallelViewProjector3D, RegularPolygonPETProjector, ListmodePETProjector
 
 from .pet_scanners import RegularPolygonPETScannerModule, RegularPolygonPETScannerGeometry, DemoPETScannerGeometry
 from .pet_lors import SinogramSpatialAxisOrder, RegularPolygonPETLORDescriptor

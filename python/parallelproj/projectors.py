@@ -7,6 +7,7 @@ import array_api_compat
 import matplotlib.pyplot as plt
 from matplotlib.patches import Rectangle
 from types import ModuleType
+from array_api_compat import device, get_namespace
 import parallelproj
 
 from .operators import LinearOperator
@@ -177,18 +178,18 @@ class ParallelViewProjector2D(LinearOperator):
         for i, ip in enumerate(views_to_show):
             ax[i].plot(np.asarray(
                 array_api_compat.to_device(self._xstart[:, ip, 1], 'cpu')),
-                       np.asarray(
-                           array_api_compat.to_device(self._xstart[:, ip, 2],
-                                                      'cpu')),
-                       '.',
-                       ms=0.5)
+                np.asarray(
+                array_api_compat.to_device(self._xstart[:, ip, 2],
+                                           'cpu')),
+                '.',
+                ms=0.5)
             ax[i].plot(np.asarray(
                 array_api_compat.to_device(self._xend[:, ip, 1], 'cpu')),
-                       np.asarray(
-                           array_api_compat.to_device(self._xend[:, ip, 2],
-                                                      'cpu')),
-                       '.',
-                       ms=0.5)
+                np.asarray(
+                array_api_compat.to_device(self._xend[:, ip, 2],
+                                           'cpu')),
+                '.',
+                ms=0.5)
 
             for k in np.linspace(0, self._num_rad - 1, 7).astype(int):
                 ax[i].plot([
@@ -198,11 +199,11 @@ class ParallelViewProjector2D(LinearOperator):
                     float(self._xstart[k, ip, 2]),
                     float(self._xend[k, ip, 2])
                 ],
-                           'k-',
-                           lw=0.5)
+                    'k-',
+                    lw=0.5)
                 ax[i].annotate(f'{k}', (float(
                     self._xstart[k, ip, 1]), float(self._xstart[k, ip, 2])),
-                               fontsize='xx-small')
+                    fontsize='xx-small')
 
             pmax = 1.5 * float(self.xp.max(self._xstart[..., 1]))
             ax[i].set_xlim(-pmax, pmax)
@@ -466,7 +467,7 @@ class RegularPolygonPETProjector(LinearOperator):
         if img_origin is None:
             self._img_origin = (-(self.xp.asarray(
                 self._img_shape, dtype=self.xp.float32, device=self._dev) / 2)
-                                + 0.5) * self._voxel_size
+                + 0.5) * self._voxel_size
         else:
             self._img_origin = self.xp.asarray(img_origin,
                                                dtype=self.xp.float32,
@@ -652,9 +653,9 @@ class RegularPolygonPETProjector(LinearOperator):
 
     def show_geometry(self,
                       ax: plt.Axes,
-                      color: tuple[float, float, float] = (1.,0.,0.),
+                      color: tuple[float, float, float] = (1., 0., 0.),
                       edgecolor: str = 'grey',
-                      alpha : float = 0.1) -> None:
+                      alpha: float = 0.1) -> None:
         """show the geometry of the scanner and the FOV of the image
 
         Parameters
@@ -671,28 +672,136 @@ class RegularPolygonPETProjector(LinearOperator):
 
         # dimensions of the "voxel" array for the FOV cube
         # (1,1,1) means that FOV cube is represented by a single voxel
-        sh = (1,1,1)
+        sh = (1, 1, 1)
 
-        x, y, z = np.indices((sh[0]+1,sh[1]+1,sh[2]+1)).astype(float)
-        
+        x, y, z = np.indices((sh[0]+1, sh[1]+1, sh[2]+1)).astype(float)
+
         x /= sh[0]
         y /= sh[1]
         z /= sh[2]
-        
+
         x *= int(self.in_shape[0]) * float(self.voxel_size[0])
         y *= int(self.in_shape[1]) * float(self.voxel_size[1])
         z *= int(self.in_shape[2]) * float(self.voxel_size[2])
-        
+
         x += (float(self.img_origin[0]) - 0.5 * float(self.voxel_size[0]))
         y += (float(self.img_origin[1]) - 0.5 * float(self.voxel_size[1]))
         z += (float(self.img_origin[2]) - 0.5 * float(self.voxel_size[2]))
-        
-        colors = np.empty(sh + (4,), dtype=np.float32)
-        colors[...,0] = color[0]
-        colors[...,1] = color[1]
-        colors[...,2] = color[2]
-        colors[...,3] = alpha
 
-        ax.voxels(x, y, z, filled = np.ones(sh, dtype=np.bool), facecolors=colors, edgecolors=edgecolor)
+        colors = np.empty(sh + (4,), dtype=np.float32)
+        colors[..., 0] = color[0]
+        colors[..., 1] = color[1]
+        colors[..., 2] = color[2]
+        colors[..., 3] = alpha
+
+        ax.voxels(x, y, z, filled=np.ones(sh, dtype=np.bool),
+                  facecolors=colors, edgecolors=edgecolor)
 
         self.lor_descriptor.scanner.show_lor_endpoints(ax)
+
+
+class ListmodePETProjector(LinearOperator):
+
+    def __init__(self,
+                 event_start_coordinates: Array,
+                 event_end_coordinates: Array,
+                 img_shape: tuple[int, int, int],
+                 voxel_size: tuple[float, float, float],
+                 img_origin: None | Array = None) -> None:
+        """Listmode PET projector
+
+        Parameters
+        ----------
+        event_start_coordinates : Array
+            float world coordinates of event LOR start points, shape (num_events, 3)
+        event_end_coordinates : Array
+            float world coordinates of event LOR end points, shape (num_events, 3)
+        img_shape : tuple[int, int, int]
+            shape of the image to be projected
+        voxel_size : tuple[float, float, float]
+            the voxel size of the image to be projected
+        img_origin : None | Array, optional
+            the origin of the image to be projected, by default None
+            means that the center of the image is at world coordinate (0,0,0)
+        """
+
+        super().__init__()
+
+        self._xstart = event_start_coordinates
+        self._xend = event_end_coordinates
+
+        self._xp = get_namespace(self._xstart)
+
+        self._dev = device(event_start_coordinates)
+
+        self._img_shape = img_shape
+        self._voxel_size = self.xp.asarray(voxel_size,
+                                           dtype=self.xp.float32,
+                                           device=self._dev)
+
+        if img_origin is None:
+            self._img_origin = (-(self.xp.asarray(
+                self._img_shape, dtype=self.xp.float32, device=self._dev) / 2)
+                + 0.5) * self._voxel_size
+        else:
+            self._img_origin = self.xp.asarray(img_origin,
+                                               dtype=self.xp.float32,
+                                               device=self._dev)
+
+        self._tof_parameters = None
+        self._tof = False
+        self._tofbin = None
+
+    @property
+    def in_shape(self) -> tuple[int, int, int]:
+        return self._img_shape
+
+    @property
+    def out_shape(self) -> tuple[int]:
+        return (self._xstart.shape[0], )
+
+    @property
+    def xp(self) -> ModuleType:
+        """array module"""
+        return self._xp
+
+    @property
+    def dev(self) -> str:
+        """device used for storage of LOR endpoints"""
+        return self._dev
+
+    @property
+    def tof(self) -> bool:
+        """bool indicating whether to use TOF projections or not"""
+        return self._tof
+
+    @property
+    def event_start_coordinates(self) -> Array:
+        """coordinates of LOR start points"""
+        return self._xstart
+
+    @property
+    def event_end_coordinates(self) -> Array:
+        """coordinates of LOR end points"""
+        return self._xend
+
+    def _apply(self, x: Array) -> Array:
+        if not self.tof:
+            x_fwd = parallelproj.joseph3d_fwd(self._xstart, self._xend, x,
+                                              self._img_origin,
+                                              self._voxel_size)
+        else:
+            x_fwd = 1
+
+        return x_fwd
+
+    def _adjoint(self, y: Array) -> Array:
+        if not self.tof:
+            y_back = parallelproj.joseph3d_back(self._xstart, self._xend,
+                                                self._img_shape,
+                                                self._img_origin,
+                                                self._voxel_size, y)
+        else:
+            y_back = 1
+
+        return y_back

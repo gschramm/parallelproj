@@ -131,3 +131,54 @@ def test_parallelviewprojector(xp, dev, verbose=True):
                                                         max_ring_diff=None,
                                                         span=3)
 
+
+def test_lmprojector(xp, dev, verbose=True):
+
+    n0, n1, n2 = (2, 3, 4)
+
+    img_dim = (n0, n1, n2)
+    voxel_size = xp.asarray([4., 3., 2.], dtype=xp.float32, device=dev)
+    img_origin = (
+        (-xp.asarray(img_dim, dtype=xp.float32, device=dev) / 2 + 0.5) *
+        voxel_size)
+    img = xp.reshape(xp.arange(n0 * n1 * n2, dtype=xp.float32, device=dev),
+                     (n0, n1, n2))
+
+    # LOR start points in voxel coordinates
+    vstart = xp.asarray(
+        [
+            [0, -1, 0],  #
+            [0, -1, 0],  #
+            [0, -1, 1],  #
+            [0, -1, 0.5],  #
+            [0, 0, -1],  #
+            [-1, 0, 0],  #
+            [n0 - 1, -1, 0],  #
+            [n0 - 1, -1, n2 - 1],  #
+            [n0 - 1, 0, -1],  #
+            [n0 - 1, n1 - 1, -1]
+        ],
+        device=dev)
+
+    vend = xp.asarray(
+        [
+            [0, n1, 0],
+            [0, n1, 0],
+            [0, n1, 1],
+            [0, n1, 0.5],
+            [0, 0, n2],
+            [n0, 0, 0],
+            [n0 - 1, n1, 0],
+            [n0 - 1, n1, n2 - 1],  #
+            [n0 - 1, 0, n2],
+            [n0 - 1, n1 - 1, n2]
+        ],
+        device=dev)
+
+    xstart = (vstart * voxel_size + img_origin)
+    xend = (vend * voxel_size + img_origin)
+
+    lm_proj = parallelproj.ListmodePETProjector(
+        xstart, xend, img_dim, voxel_size, img_origin)
+
+    lm_proj.adjointness_test(xp, dev)
