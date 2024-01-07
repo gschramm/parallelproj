@@ -64,11 +64,13 @@ def test_tof_sino_fwd(xp: ModuleType,
                                                  sigma_tof, tofcenter_offset,
                                                  nsigmas, num_tof_bins)
 
-    # check if sum of the projection is correct (should be equal to the voxel size)
+    # check if sum of the projection is correct (should be equal to the voxel
+    # size)
     res1 = isclose(xp.sum(img_fwd), voxsize)
 
     # check if the FWHM in the projected profile is correct
-    # to do so, we check if the interpolated profile - 0.5 * max(profile) at +/- FWHM/2 is 0
+    # to do so, we check if the interpolated profile - 0.5 * max(profile) at
+    # +/- FWHM/2 is 0
     r = (xp.arange(num_tof_bins, dtype=xp.float32, device=dev) -
          0.5 * num_tof_bins + 0.5) * tofbin_width
 
@@ -79,26 +81,26 @@ def test_tof_sino_fwd(xp: ModuleType,
             cp.interp(cp.asarray([fwhm_tof / 2]), cp.asarray(r),
                       cp.asarray(img_fwd[0, :] -
                                  0.5 * xp.max(img_fwd[0, :])))[0]),
-                       0,
-                       atol=atol)
+            0,
+            atol=atol)
         res3 = isclose(float(
             cp.interp(cp.asarray([-fwhm_tof / 2]), cp.asarray(r),
                       cp.asarray(img_fwd[0, :] -
                                  0.5 * xp.max(img_fwd[0, :])))[0]),
-                       0,
-                       atol=atol)
+            0,
+            atol=atol)
 
     else:
         res2 = isclose(float(
             np.interp(np.asarray([fwhm_tof / 2]), r,
                       img_fwd[0, :] - 0.5 * xp.max(img_fwd[0, :]))[0]),
-                       0,
-                       atol=atol)
+            0,
+            atol=atol)
         res3 = isclose(float(
             np.interp(np.asarray([-fwhm_tof / 2]), r,
                       img_fwd[0, :] - 0.5 * xp.max(img_fwd[0, :]))[0]),
-                       0,
-                       atol=atol)
+            0,
+            atol=atol)
 
     if verbose:
         print(

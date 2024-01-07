@@ -5,7 +5,8 @@ import array_api_compat.numpy as np
 
 from types import ModuleType
 
-# import the global pytestmark variable containing the xp/dev matrix we want to test
+# import the global pytestmark variable containing the xp/dev matrix we
+# want to test
 from config import pytestmark
 
 
@@ -27,13 +28,13 @@ def test_fwd(xp: ModuleType,
     # LOR start points in voxel coordinates
     vstart = xp.asarray(
         [
-            [0, -1, 0],  # 
+            [0, -1, 0],  #
             [0, -1, 0],  #
             [0, -1, 1],  #
             [0, -1, 0.5],  #
             [0, 0, -1],  #
             [-1, 0, 0],  #
-            [n0 - 1, -1, 0],  # 
+            [n0 - 1, -1, 0],  #
             [n0 - 1, -1, n2 - 1],  #
             [n0 - 1, 0, -1],  #
             [n0 - 1, n1 - 1, -1]
@@ -42,15 +43,15 @@ def test_fwd(xp: ModuleType,
 
     vend = xp.asarray(
         [
-            [0, n1, 0],  #           
-            [0, n1, 0],  #           
-            [0, n1, 1],  #          
-            [0, n1, 0.5],  #         
-            [0, 0, n2],  #          
-            [n0, 0, 0],  #          
-            [n0 - 1, n1, 0],  #      
-            [n0 - 1, n1, n2 - 1],  # 
-            [n0 - 1, 0, n2],  #     
+            [0, n1, 0],
+            [0, n1, 0],
+            [0, n1, 1],
+            [0, n1, 0.5],
+            [0, 0, n2],
+            [n0, 0, 0],
+            [n0 - 1, n1, 0],
+            [n0 - 1, n1, n2 - 1],  #
+            [n0 - 1, 0, n2],
             [n0 - 1, n1 - 1, n2]
         ],
         device=dev)
@@ -95,7 +96,7 @@ def test_fwd(xp: ModuleType,
     assert isclose
 
 
-#--------------------------------------------------------------------------
+# --------------------------------------------------------------------------
 
 
 def test_adjointness(xp: ModuleType,

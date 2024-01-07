@@ -82,8 +82,15 @@ def test_elementwise(xp: ModuleType, dev: str):
 def test_tofnontofelemenwise(xp: ModuleType, dev: str):
     np.random.seed(0)
 
-    x = xp.reshape(xp.arange(3*3*2, device=dev, dtype=xp.float32), (3, 3, 2))
-    v = xp.reshape(xp.arange(3*3, device=dev, dtype=xp.float32), (3, 3))
+    x = xp.reshape(
+        xp.arange(
+            3 * 3 * 2,
+            device=dev,
+            dtype=xp.float32),
+        (3,
+         3,
+         2))
+    v = xp.reshape(xp.arange(3 * 3, device=dev, dtype=xp.float32), (3, 3))
 
     op = parallelproj.TOFNonTOFElementwiseMultiplicationOperator(x.shape, v)
     # test call to norm

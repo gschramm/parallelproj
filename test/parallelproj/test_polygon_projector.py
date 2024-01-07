@@ -86,13 +86,13 @@ def test_polygon_projector(xp: ModuleType, dev: str) -> None:
     proj2.tof = True
 
     assert proj2.tof_parameters == tof_params
-    assert proj2.tof == True
+    assert proj2.tof
 
     proj2.tof = False
     assert proj2.tof == False
 
     proj2.tof_parameters = tof_params
-    assert proj2.tof == True
+    assert proj2.tof
 
     # setting tof_parameters to None should set tof to False
     proj2.tof_parameters = None
@@ -130,13 +130,13 @@ def test_minimal_reg_polygon_projector(xp, dev) -> None:
     vox_value = 2.7
     img_size = 3
 
-    img_shape = 3*(img_size,)
+    img_shape = 3 * (img_size,)
 
     # setup a test image with a single voxel != 0 at the center of the image
     x = xp.zeros(img_shape, device=dev)
-    x[img_shape[0]//2, img_shape[1]//2, img_shape[2]//2] = vox_value
+    x[img_shape[0] // 2, img_shape[1] // 2, img_shape[2] // 2] = vox_value
     # setup a test image where all voxels have the same value
-    x2 = vox_value*xp.ones(img_shape, device=dev)
+    x2 = vox_value * xp.ones(img_shape, device=dev)
 
     for symmetry_axis in [0, 1, 2]:
         scanner = parallelproj.RegularPolygonPETScannerGeometry(
@@ -150,27 +150,30 @@ def test_minimal_reg_polygon_projector(xp, dev) -> None:
                 scanner, radial_trim=1, sinogram_order=sinogram_order)
 
             proj = parallelproj.RegularPolygonPETProjector(
-                lor_desc, img_shape=img_shape, voxel_size=3*(vox_size,))
+                lor_desc, img_shape=img_shape, voxel_size=3 * (vox_size,))
 
             x_fwd = proj(x)
 
-            # check "corner to corner" projection which should be vox size * vox value * sqrt(3)
+            # check "corner to corner" projection which should be vox size *
+            # vox value * sqrt(3)
             assert np.isclose(float(x_fwd[_get_slice(
-                2, 0, lor_desc.num_planes-1, lor_desc)][0, 0, 0]), vox_value * vox_size * np.sqrt(3))
+                2, 0, lor_desc.num_planes - 1, lor_desc)][0, 0, 0]), vox_value * vox_size * np.sqrt(3))
             assert np.isclose(float(x_fwd[_get_slice(
-                2, 2, lor_desc.num_planes-1, lor_desc)][0, 0, 0]), vox_value * vox_size * np.sqrt(3))
+                2, 2, lor_desc.num_planes - 1, lor_desc)][0, 0, 0]), vox_value * vox_size * np.sqrt(3))
             assert np.isclose(float(x_fwd[_get_slice(
-                2, 0, lor_desc.num_planes-2, lor_desc)][0, 0, 0]), vox_value * vox_size * np.sqrt(3))
+                2, 0, lor_desc.num_planes - 2, lor_desc)][0, 0, 0]), vox_value * vox_size * np.sqrt(3))
             assert np.isclose(float(x_fwd[_get_slice(
-                2, 2, lor_desc.num_planes-2, lor_desc)][0, 0, 0]), vox_value * vox_size * np.sqrt(3))
+                2, 2, lor_desc.num_planes - 2, lor_desc)][0, 0, 0]), vox_value * vox_size * np.sqrt(3))
 
-            # check "central" (straight through) projection which should be vox size * vox value
+            # check "central" (straight through) projection which should be vox
+            # size * vox value
             assert np.isclose(
                 float(x_fwd[_get_slice(2, 1, 1, lor_desc)][0, 0, 0]), vox_value * vox_size)
             assert np.isclose(
                 float(x_fwd[_get_slice(2, 3, 1, lor_desc)][0, 0, 0]), vox_value * vox_size)
 
-            # check "corner to corner" projection which should be vox size * vox value * sqrt(2)
+            # check "corner to corner" projection which should be vox size *
+            # vox value * sqrt(2)
             assert np.isclose(float(x_fwd[_get_slice(
                 2, 0, 1, lor_desc)][0, 0, 0]), vox_value * vox_size * np.sqrt(2))
             assert np.isclose(float(x_fwd[_get_slice(
@@ -178,23 +181,46 @@ def test_minimal_reg_polygon_projector(xp, dev) -> None:
 
             x_fwd2 = proj(x2)
 
-            # check "corner to corner" projection which should be vox size * vox value * sqrt(3)
-            assert np.isclose(float(x_fwd2[_get_slice(
-                2, 0, lor_desc.num_planes-1, lor_desc)][0, 0, 0]), img_size * vox_value * vox_size * np.sqrt(3))
-            assert np.isclose(float(x_fwd2[_get_slice(
-                2, 2, lor_desc.num_planes-1, lor_desc)][0, 0, 0]), img_size * vox_value * vox_size * np.sqrt(3))
-            assert np.isclose(float(x_fwd2[_get_slice(
-                2, 0, lor_desc.num_planes-2, lor_desc)][0, 0, 0]), img_size * vox_value * vox_size * np.sqrt(3))
-            assert np.isclose(float(x_fwd2[_get_slice(
-                2, 2, lor_desc.num_planes-2, lor_desc)][0, 0, 0]), img_size * vox_value * vox_size * np.sqrt(3))
+            # check "corner to corner" projection which should be vox size *
+            # vox value * sqrt(3)
+            assert np.isclose(float(x_fwd2[_get_slice(2,
+                                                      0,
+                                                      lor_desc.num_planes - 1,
+                                                      lor_desc)][0,
+                                                                 0,
+                                                                 0]),
+                              img_size * vox_value * vox_size * np.sqrt(3))
+            assert np.isclose(float(x_fwd2[_get_slice(2,
+                                                      2,
+                                                      lor_desc.num_planes - 1,
+                                                      lor_desc)][0,
+                                                                 0,
+                                                                 0]),
+                              img_size * vox_value * vox_size * np.sqrt(3))
+            assert np.isclose(float(x_fwd2[_get_slice(2,
+                                                      0,
+                                                      lor_desc.num_planes - 2,
+                                                      lor_desc)][0,
+                                                                 0,
+                                                                 0]),
+                              img_size * vox_value * vox_size * np.sqrt(3))
+            assert np.isclose(float(x_fwd2[_get_slice(2,
+                                                      2,
+                                                      lor_desc.num_planes - 2,
+                                                      lor_desc)][0,
+                                                                 0,
+                                                                 0]),
+                              img_size * vox_value * vox_size * np.sqrt(3))
 
-            # check "central" (straight through) projection which should be vox size * vox value
+            # check "central" (straight through) projection which should be vox
+            # size * vox value
             assert np.isclose(float(x_fwd2[_get_slice(
                 2, 1, 1, lor_desc)][0, 0, 0]), img_size * vox_value * vox_size)
             assert np.isclose(float(x_fwd2[_get_slice(
                 2, 3, 1, lor_desc)][0, 0, 0]), img_size * vox_value * vox_size)
 
-            # check "corner to corner" projection which should be vox size * vox value * sqrt(2)
+            # check "corner to corner" projection which should be vox size *
+            # vox value * sqrt(2)
             assert np.isclose(float(x_fwd2[_get_slice(
                 2, 0, 1, lor_desc)][0, 0, 0]), img_size * vox_value * vox_size * np.sqrt(2))
             assert np.isclose(float(x_fwd2[_get_slice(
@@ -202,7 +228,7 @@ def test_minimal_reg_polygon_projector(xp, dev) -> None:
 
             # setup the same projector without caching of the LOR endpoints
             projb = parallelproj.RegularPolygonPETProjector(
-                lor_desc, img_shape=img_shape, voxel_size=3*(vox_size,), cache_lor_endpoints=False)
+                lor_desc, img_shape=img_shape, voxel_size=3 * (vox_size,), cache_lor_endpoints=False)
             x_fwd2b = projb(x2)
 
             assert projb.adjointness_test(xp, dev)
@@ -211,6 +237,7 @@ def test_minimal_reg_polygon_projector(xp, dev) -> None:
             assert projb.xend is None
             assert projb.lor_descriptor == lor_desc
 
-            # check whether the projections with and without caching the LOR endpoints are the same
+            # check whether the projections with and without caching the LOR
+            # endpoints are the same
             assert np.allclose(np.asarray(to_device(x_fwd2b, 'cpu')),
                                np.asarray(to_device(x_fwd2, 'cpu')))

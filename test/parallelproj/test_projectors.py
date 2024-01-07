@@ -218,7 +218,8 @@ def test_lmprojector(xp, dev, verbose=True,
     # TOF LM tests
     tof_params = parallelproj.TOFParameters()
     with pytest.raises(Exception) as e_info:
-        # raises an exception because TOFParameters and event_tofbins are not set
+        # raises an exception because TOFParameters and event_tofbins are not
+        # set
         lm_proj.tof = True
 
     # set TOF parameters
@@ -234,7 +235,7 @@ def test_lmprojector(xp, dev, verbose=True,
     # now we can set the tof property to True
     lm_proj.tof = True
 
-    assert lm_proj.tof == True
+    assert lm_proj.tof
 
     assert lm_proj.adjointness_test(xp, dev)
 

@@ -15,7 +15,7 @@ def test_regular_polygon_pet_module(xp: ModuleType, dev: str) -> None:
     num_lor_endpoints_per_side = 16
     lor_spacing = 4.
 
-    aff_mat = xp.zeros((4, 4), device = dev, dtype=xp.float32)
+    aff_mat = xp.zeros((4, 4), device=dev, dtype=xp.float32)
     aff_mat[0, 0] = 1.
     aff_mat[1, 1] = 1.
     aff_mat[2, 2] = 1.
@@ -46,7 +46,10 @@ def test_regular_polygon_pet_module(xp: ModuleType, dev: str) -> None:
 
     assert mod.num_lor_endpoints == num_sides * num_lor_endpoints_per_side
     assert bool(
-        xp.all(mod.lor_endpoint_numbers == xp.arange(mod.num_lor_endpoints, device=dev)))
+        xp.all(
+            mod.lor_endpoint_numbers == xp.arange(
+                mod.num_lor_endpoints,
+                device=dev)))
     assert xp.all(mod.affine_transformation_matrix == aff_mat)
 
     assert ax0 == mod.ax0
@@ -126,7 +129,7 @@ def test_regular_polygon_pet_scanner(xp: ModuleType, dev: str) -> None:
 
         assert xp.all(i_in_ring == (xp.arange(
             num_rings * scanner.num_lor_endpoints_per_ring, device=dev) %
-                                    scanner.num_lor_endpoints_per_ring))
+            scanner.num_lor_endpoints_per_ring))
 
         fig = plt.figure()
         ax = fig.add_subplot(111, projection='3d')
