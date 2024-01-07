@@ -180,7 +180,7 @@ class RegularPolygonPETLORDescriptor(PETLORDescriptor):
     @property
     def spatial_sinogram_shape(self) -> tuple[int, int, int]:
         """the shape of the sinogram in spatial order"""
-        shape = [0,0,0]
+        shape = [0, 0, 0]
         shape[self.plane_axis_num] = self.num_planes
         shape[self.view_axis_num] = self.num_views
         shape[self.radial_axis_num] = self.num_rad
@@ -267,42 +267,46 @@ class RegularPolygonPETLORDescriptor(PETLORDescriptor):
 
         # --- (1) setup the LOR start / end points for all views of plane 0
 
-        start_in_ring_index = self.xp.take(self.start_in_ring_index, views, axis = 0)
-        end_in_ring_index = self.xp.take(self.end_in_ring_index, views, axis = 0)
-    
+        start_in_ring_index = self.xp.take(
+            self.start_in_ring_index, views, axis=0)
+        end_in_ring_index = self.xp.take(self.end_in_ring_index, views, axis=0)
+
         if self.view_axis_num > self.radial_axis_num:
             start_in_ring_index = start_in_ring_index.T
             end_in_ring_index = end_in_ring_index.T
-    
+
         shape_2d = start_in_ring_index.shape
-    
+
         start_inds_2d = self.xp.reshape(start_in_ring_index, (-1,))
         end_inds_2d = self.xp.reshape(end_in_ring_index, (-1,))
 
-        xstart_2d = self.xp.reshape(self.scanner.get_lor_endpoints(self.xp.zeros_like(start_inds_2d), start_inds_2d),
-                    shape_2d + (3, ))
-        xend_2d = self.xp.reshape(self.scanner.get_lor_endpoints(self.xp.zeros_like(end_inds_2d), end_inds_2d),
-                    shape_2d + (3, ))
+        xstart_2d = self.xp.reshape(self.scanner.get_lor_endpoints(
+            self.xp.zeros_like(start_inds_2d), start_inds_2d), shape_2d + (3, ))
+        xend_2d = self.xp.reshape(self.scanner.get_lor_endpoints(
+            self.xp.zeros_like(end_inds_2d), end_inds_2d), shape_2d + (3, ))
 
         xstart_3d = []
         xend_3d = []
-    
-        # --- (2) stack copies of the plane 0 LOR start / end points for all planes with updated "z" coordinates 
+
+        # --- (2) stack copies of the plane 0 LOR start / end points for all planes with updated "z" coordinates
 
         for i in range(self.num_planes):
             # make a copy of the 2D coordinates
-            # stupid way of adding 0, since asarray with torch and cuda does not seem to work
+            # stupid way of adding 0, since asarray with torch and cuda does
+            # not seem to work
             xstart = xstart_2d + 0
             xend = xend_2d + 0
 
-            xstart[...,self.scanner.symmetry_axis] = float(self.scanner.ring_positions[self.start_plane_index[i]])
-            xend[...,self.scanner.symmetry_axis] = float(self.scanner.ring_positions[self.end_plane_index[i]])
-    
+            xstart[..., self.scanner.symmetry_axis] = float(
+                self.scanner.ring_positions[self.start_plane_index[i]])
+            xend[..., self.scanner.symmetry_axis] = float(
+                self.scanner.ring_positions[self.end_plane_index[i]])
+
             xstart_3d.append(xstart)
             xend_3d.append(xend)
-    
-        xstart_3d = self.xp.stack(xstart_3d, axis = self.plane_axis_num)
-        xend_3d = self.xp.stack(xend_3d, axis = self.plane_axis_num)
+
+        xstart_3d = self.xp.stack(xstart_3d, axis=self.plane_axis_num)
+        xend_3d = self.xp.stack(xend_3d, axis=self.plane_axis_num)
 
         return xstart_3d, xend_3d
 

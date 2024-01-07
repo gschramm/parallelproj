@@ -248,7 +248,7 @@ class CompositeLinearOperator(LinearOperator):
     """Composite Linear Operator defined by a sequence of Linear Operators
 
        Given a tuple of operators :math:`(A_0, ..., A_{n-1})` the composite operator is defined as
-       :math:`A(x) = A_0( A_1( ... ( A_{n-1}(x) ) ) )` 
+       :math:`A(x) = A_0( A_1( ... ( A_{n-1}(x) ) ) )`
     """
 
     def __init__(self, operators: tuple[LinearOperator, ...]):
@@ -372,13 +372,13 @@ class TOFNonTOFElementwiseMultiplicationOperator(LinearOperator):
         return self._values
 
     def _apply(self, x: Array) -> Array:
-        y = 1*x  # suboptimal to copy array, but bug in torch asarray with copy = True
+        y = 1 * x  # suboptimal to copy array, but bug in torch asarray with copy = True
         for i in range(x.shape[-1]):
             y[..., i] *= self._values
         return y
 
     def _adjoint(self, y: Array) -> Array:
-        x = 1*y  # suboptimal to copy array
+        x = 1 * y  # suboptimal to copy array
         if self.iscomplex():
             tmp = self.xp.conj(self._values)
         else:

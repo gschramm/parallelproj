@@ -39,8 +39,8 @@ ar_1d_single = npct.ndpointer(dtype=ctypes.c_float, ndim=1, flags='C')
 ar_1d_int = npct.ndpointer(dtype=ctypes.c_int, ndim=1, flags='C')
 ar_1d_short = npct.ndpointer(dtype=ctypes.c_short, ndim=1, flags='C')
 
-#---------------------------------------------------------------------------------------
-#---- find the compiled C / CUDA libraries
+# ---------------------------------------------------------------------------------------
+# ---- find the compiled C / CUDA libraries
 
 lib_parallelproj_c_fname = None
 if 'PARALLELPROJ_C_LIB' in os.environ:
@@ -76,18 +76,18 @@ else:
         ar_1d_single,  # img
         ar_1d_single,  # img_origin
         ar_1d_single,  # voxsize
-        ar_1d_single,  # p            
+        ar_1d_single,  # p
         ctypes.c_ulonglong,  # nlors
         ar_1d_int  # img_dim
     ]
     lib_parallelproj_c.joseph3d_fwd_tof_sino.restype = None
     lib_parallelproj_c.joseph3d_fwd_tof_sino.argtypes = [
-        ar_1d_single,  #  xstart
-        ar_1d_single,  #  xend
-        ar_1d_single,  #  img
-        ar_1d_single,  #  img_origin
-        ar_1d_single,  #  voxsize
-        ar_1d_single,  #  p         
+        ar_1d_single,  # xstart
+        ar_1d_single,  # xend
+        ar_1d_single,  # img
+        ar_1d_single,  # img_origin
+        ar_1d_single,  # voxsize
+        ar_1d_single,  # p
         ctypes.c_longlong,  # nlors
         ar_1d_int,  # img_dim
         ctypes.c_float,  # tofbin_width
@@ -106,7 +106,7 @@ else:
         ar_1d_single,  # img
         ar_1d_single,  # img_origin
         ar_1d_single,  # voxsize
-        ar_1d_single,  # p         
+        ar_1d_single,  # p
         ctypes.c_longlong,  # nlors
         ar_1d_int,  # img_dim
         ctypes.c_float,  # tofbin_width
@@ -125,7 +125,7 @@ else:
         ar_1d_single,  # img
         ar_1d_single,  # img_origin
         ar_1d_single,  # voxsize
-        ar_1d_single,  # p         
+        ar_1d_single,  # p
         ctypes.c_longlong,  # nlors
         ar_1d_int,  # img_dim
         ctypes.c_float,  # tofbin_width
@@ -144,7 +144,7 @@ else:
         ar_1d_single,  # img
         ar_1d_single,  # img_origin
         ar_1d_single,  # voxsize
-        ar_1d_single,  # p         
+        ar_1d_single,  # p
         ctypes.c_longlong,  # nlors
         ar_1d_int,  # img_dim
         ctypes.c_float,  # tofbin_width
@@ -156,7 +156,7 @@ else:
         ctypes.c_ubyte  # LOR dep. TOF center offset
     ]
 
-#---------------------------------------------------------------------------------------
+# ---------------------------------------------------------------------------------------
 
 num_visible_cuda_devices = 0
 
@@ -315,7 +315,7 @@ if cuda_present:
             ar_1d_single  # h_array
         ]
 
-    #---------------------------------------------------------------------------------------
+    # ---------------------------------------------------------------------------------------
     if cupy_enabled:
         # find all cuda kernel files installed with the parallelproj libs
         cuda_kernel_files = sorted(
@@ -446,7 +446,8 @@ def joseph3d_fwd(xstart: Array,
     xp = array_api_compat.get_namespace(img)
 
     if is_cuda_array(img):
-        # projection of GPU array (cupy to torch GPU array) using the cupy raw kernel
+        # projection of GPU array (cupy to torch GPU array) using the cupy raw
+        # kernel
         img_fwd = cp.zeros(xstart.shape[:-1], dtype=cp.float32)
 
         _joseph3d_fwd_cuda_kernel(
@@ -470,7 +471,8 @@ def joseph3d_fwd(xstart: Array,
             d_img = lib_parallelproj_cuda.copy_float_array_to_all_devices(
                 np.asarray(img, dtype=np.float32).ravel(), num_voxel)
 
-            # split call to GPU lib into chunks (useful for systems with limited memory)
+            # split call to GPU lib into chunks (useful for systems with
+            # limited memory)
             ic = calc_chunks(nLORs, num_chunks)
 
             for i in range(num_chunks):
@@ -556,7 +558,8 @@ def joseph3d_back(xstart: Array,
             d_back_img = lib_parallelproj_cuda.copy_float_array_to_all_devices(
                 back_img.ravel(), num_voxel)
 
-            # split call to GPU lib into chunks (useful for systems with limited memory)
+            # split call to GPU lib into chunks (useful for systems with
+            # limited memory)
             ic = calc_chunks(nLORs, num_chunks)
 
             for i in range(num_chunks):
@@ -684,7 +687,8 @@ def joseph3d_fwd_tof_sino(xstart: Array,
             d_img = lib_parallelproj_cuda.copy_float_array_to_all_devices(
                 np.asarray(img, dtype=np.float32).ravel(), num_voxel)
 
-            # split call to GPU lib into chunks (useful for systems with limited memory)
+            # split call to GPU lib into chunks (useful for systems with
+            # limited memory)
             ic = calc_chunks(nLORs, num_chunks)
 
             for i in range(num_chunks):
@@ -830,7 +834,8 @@ def joseph3d_back_tof_sino(xstart: Array,
             d_back_img = lib_parallelproj_cuda.copy_float_array_to_all_devices(
                 back_img.ravel(), num_voxel)
 
-            # split call to GPU lib into chunks (useful for systems with limited memory)
+            # split call to GPU lib into chunks (useful for systems with
+            # limited memory)
             ic = calc_chunks(nLORs, num_chunks)
 
             for i in range(num_chunks):
@@ -988,7 +993,8 @@ def joseph3d_fwd_tof_lm(xstart: Array,
             d_img = lib_parallelproj_cuda.copy_float_array_to_all_devices(
                 np.asarray(img, dtype=np.float32).ravel(), num_voxel)
 
-            # split call to GPU lib into chunks (useful for systems with limited memory)
+            # split call to GPU lib into chunks (useful for systems with
+            # limited memory)
             ic = calc_chunks(nLORs, num_chunks)
 
             for i in range(num_chunks):
@@ -1138,7 +1144,8 @@ def joseph3d_back_tof_lm(xstart: Array,
             d_back_img = lib_parallelproj_cuda.copy_float_array_to_all_devices(
                 back_img.ravel(), num_voxel)
 
-            # split call to GPU lib into chunks (useful for systems with limited memory)
+            # split call to GPU lib into chunks (useful for systems with
+            # limited memory)
             ic = calc_chunks(nLORs, num_chunks)
 
             for i in range(num_chunks):

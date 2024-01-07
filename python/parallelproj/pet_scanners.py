@@ -9,6 +9,7 @@ import matplotlib.pyplot as plt
 from types import ModuleType
 from array_api_compat import to_device, size
 
+
 class PETScannerModule(abc.ABC):
     """abstract base class for PET scanner module"""
 
@@ -338,7 +339,7 @@ class ModularizedPETScannerGeometry:
             int(sum(self._num_lor_endpoints_per_module[:i]))
             for i in range(size(self._num_lor_endpoints_per_module))
         ],
-                                                               device=self.dev)
+            device=self.dev)
 
         self._all_lor_endpoints = self.xp.zeros((self._num_lor_endpoints, 3),
                                                 device=self.dev,

@@ -674,7 +674,7 @@ class RegularPolygonPETProjector(LinearOperator):
         # (1,1,1) means that FOV cube is represented by a single voxel
         sh = (1, 1, 1)
 
-        x, y, z = np.indices((sh[0]+1, sh[1]+1, sh[2]+1)).astype(float)
+        x, y, z = np.indices((sh[0] + 1, sh[1] + 1, sh[2] + 1)).astype(float)
 
         x /= sh[0]
         y /= sh[1]
@@ -777,9 +777,9 @@ class ListmodePETProjector(LinearOperator):
 
     @tof.setter
     def tof(self, value: bool) -> None:
-        if (value == True) and (self.tof_parameters is None):
+        if (value) and (self.tof_parameters is None):
             raise ValueError('must set tof_parameters first')
-        if (value == True) and (self.event_tofbins is None):
+        if (value) and (self.event_tofbins is None):
             raise ValueError('must set event_tofbins first')
 
         self._tof = value
