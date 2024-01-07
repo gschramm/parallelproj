@@ -12,6 +12,7 @@ correction for attenuation.
 # choose your preferred array API uncommenting the corresponding line
 
 import array_api_compat.numpy as xp
+
 # import array_api_compat.cupy as xp
 # import array_api_compat.torch as xp
 
@@ -22,15 +23,15 @@ import array_api_compat.numpy as np
 import matplotlib.pyplot as plt
 
 # choose a device (CPU or CUDA GPU)
-if 'numpy' in xp.__name__:
+if "numpy" in xp.__name__:
     # using numpy, device must be cpu
-    dev = 'cpu'
-elif 'cupy' in xp.__name__:
+    dev = "cpu"
+elif "cupy" in xp.__name__:
     # using cupy, only cuda devices are possible
     dev = xp.cuda.Device(0)
-elif 'torch' in xp.__name__:
+elif "torch" in xp.__name__:
     # using torch valid choices are 'cpu' or 'cuda'
-    dev = 'cuda'
+    dev = "cuda"
 
 # %%
 # setup a small regular polygon PET scanner with 5 rings (polygons)
@@ -39,12 +40,13 @@ num_rings = 5
 scanner = parallelproj.RegularPolygonPETScannerGeometry(
     xp,
     dev,
-    radius=65.,
+    radius=65.0,
     num_sides=12,
     num_lor_endpoints_per_side=15,
     lor_spacing=2.3,
     ring_positions=xp.linspace(-10, 10, num_rings),
-    symmetry_axis=1)
+    symmetry_axis=1,
+)
 
 # %%
 # setup the LOR descriptor that defines the sinogram
@@ -53,7 +55,8 @@ lor_desc = parallelproj.RegularPolygonPETLORDescriptor(
     scanner,
     radial_trim=10,
     max_ring_difference=2,
-    sinogram_order=parallelproj.SinogramSpatialAxisOrder.RVP)
+    sinogram_order=parallelproj.SinogramSpatialAxisOrder.RVP,
+)
 
 # %%
 # Defining a non-TOF projector
@@ -65,16 +68,18 @@ lor_desc = parallelproj.RegularPolygonPETLORDescriptor(
 
 # define a first projector using an image with 40x8x40 voxels of size 2x2x2 mm
 # where the image center is at world coordinate (0, 0, 0)
-proj = parallelproj.RegularPolygonPETProjector(lor_desc,
-                                               img_shape=(40, 8, 40),
-                                               voxel_size=(2., 2., 2.))
+proj = parallelproj.RegularPolygonPETProjector(
+    lor_desc, img_shape=(40, 8, 40), voxel_size=(2.0, 2.0, 2.0)
+)
 
 # define a second projector using an image with 20x8x30 voxels of size 3x2x2 mm
 # that is off-center
-proj2 = parallelproj.RegularPolygonPETProjector(lor_desc,
-                                                img_shape=(20, 8, 30),
-                                                voxel_size=(3., 2., 2.),
-                                                img_origin=(-19, -7, -19))
+proj2 = parallelproj.RegularPolygonPETProjector(
+    lor_desc,
+    img_shape=(20, 8, 30),
+    voxel_size=(3.0, 2.0, 2.0),
+    img_origin=(-19, -7, -19),
+)
 
 # %%
 # Visualize the scanner and image geometry
@@ -84,8 +89,8 @@ proj2 = parallelproj.RegularPolygonPETProjector(lor_desc,
 # to visualize the scanner and image geometry
 
 fig = plt.figure(figsize=(16, 8))
-ax1 = fig.add_subplot(121, projection='3d')
-ax2 = fig.add_subplot(122, projection='3d')
+ax1 = fig.add_subplot(121, projection="3d")
+ax2 = fig.add_subplot(122, projection="3d")
 proj.show_geometry(ax1)
 proj2.show_geometry(ax2, color=(0, 0, 1))
 fig.tight_layout()
@@ -101,9 +106,9 @@ fig.show()
 
 # setup a simple test image containing a few "hot rods"
 x = xp.zeros(proj.in_shape, device=dev, dtype=xp.float32)
-x[proj.in_shape[0] // 2, :, proj.in_shape[2] // 2] = 1.
-x[4, :, proj.in_shape[2] // 2] = 1.
-x[proj.in_shape[0] // 2, :, 4] = 1.
+x[proj.in_shape[0] // 2, :, proj.in_shape[2] // 2] = 1.0
+x[4, :, proj.in_shape[2] // 2] = 1.0
+x[proj.in_shape[0] // 2, :, 4] = 1.0
 
 x_fwd = proj(x)
 
@@ -113,9 +118,13 @@ vmax = float(xp.max(x_fwd))
 for i in range(20):
     axx = ax.ravel()[i]
     if i < proj.lor_descriptor.num_planes:
-        axx.imshow(np.asarray(to_device(
-            x_fwd[:, :, i].T, 'cpu')), cmap='Greys', vmin=0, vmax=vmax)
-        axx.set_title(f'sino plane {i}', fontsize='medium')
+        axx.imshow(
+            np.asarray(to_device(x_fwd[:, :, i].T, "cpu")),
+            cmap="Greys",
+            vmin=0,
+            vmax=vmax,
+        )
+        axx.set_title(f"sino plane {i}", fontsize="medium")
     else:
         axx.set_axis_off()
 fig.tight_layout()
@@ -126,9 +135,10 @@ fig2, ax2 = plt.subplots(3, 3, figsize=(8, 8))
 vmax = float(xp.max(x))
 for i in range(8):
     axx = ax2.ravel()[i]
-    axx.imshow(np.asarray(
-        to_device(x[:, i, :].T, 'cpu')), cmap='Greys', vmin=0, vmax=vmax)
-    axx.set_title(f'img plane {i}', fontsize='medium')
+    axx.imshow(
+        np.asarray(to_device(x[:, i, :].T, "cpu")), cmap="Greys", vmin=0, vmax=vmax
+    )
+    axx.set_title(f"img plane {i}", fontsize="medium")
 ax2.ravel()[-1].set_axis_off()
 fig2.tight_layout()
 fig2.show()
@@ -157,7 +167,8 @@ x_fwd_back = proj.adjoint(x_fwd)
 
 # setup a simple image-based resolution model with an Gaussian FWHM of 4.5mm
 res_model = parallelproj.GaussianFilterOperator(
-    proj.in_shape, sigma=4.5 / (2.35 * proj.voxel_size))
+    proj.in_shape, sigma=4.5 / (2.35 * proj.voxel_size)
+)
 
 proj_with_res_model = parallelproj.CompositeLinearOperator((proj, res_model))
 
@@ -171,9 +182,13 @@ vmax = float(xp.max(x_fwd2))
 for i in range(20):
     axx = ax.ravel()[i]
     if i < proj.lor_descriptor.num_planes:
-        axx.imshow(np.asarray(to_device(
-            x_fwd2[:, :, i].T, 'cpu')), cmap='Greys', vmin=0, vmax=vmax)
-        axx.set_title(f'sino plane {i}', fontsize='medium')
+        axx.imshow(
+            np.asarray(to_device(x_fwd2[:, :, i].T, "cpu")),
+            cmap="Greys",
+            vmin=0,
+            vmax=vmax,
+        )
+        axx.set_title(f"sino plane {i}", fontsize="medium")
     else:
         axx.set_axis_off()
 fig.tight_layout()
@@ -204,7 +219,8 @@ att_op = parallelproj.ElementwiseMultiplicationOperator(att_sino)
 
 # setup a forward projector containing the attenuation and resolution
 proj_with_att_and_res_model = parallelproj.CompositeLinearOperator(
-    (att_op, proj, res_model))
+    (att_op, proj, res_model)
+)
 
 # forward project with resolution and attenuation model
 x_fwd3 = proj_with_att_and_res_model(x)
@@ -219,9 +235,13 @@ vmax = float(xp.max(x_fwd3))
 for i in range(20):
     axx = ax.ravel()[i]
     if i < proj.lor_descriptor.num_planes:
-        axx.imshow(np.asarray(to_device(
-            x_fwd3[:, :, i].T, 'cpu')), cmap='Greys', vmin=0, vmax=vmax)
-        axx.set_title(f'sino plane {i}', fontsize='medium')
+        axx.imshow(
+            np.asarray(to_device(x_fwd3[:, :, i].T, "cpu")),
+            cmap="Greys",
+            vmin=0,
+            vmax=vmax,
+        )
+        axx.set_title(f"sino plane {i}", fontsize="medium")
     else:
         axx.set_axis_off()
 fig.tight_layout()
@@ -232,9 +252,13 @@ fig2, ax2 = plt.subplots(3, 3, figsize=(8, 8))
 vmax = float(xp.max(x_fwd3_back))
 for i in range(8):
     axx = ax2.ravel()[i]
-    axx.imshow(np.asarray(to_device(
-        x_fwd3_back[:, i, :].T, 'cpu')), cmap='Greys', vmin=0, vmax=vmax)
-    axx.set_title(f'img plane {i}', fontsize='medium')
+    axx.imshow(
+        np.asarray(to_device(x_fwd3_back[:, i, :].T, "cpu")),
+        cmap="Greys",
+        vmin=0,
+        vmax=vmax,
+    )
+    axx.set_title(f"img plane {i}", fontsize="medium")
 ax2.ravel()[-1].set_axis_off()
 fig2.tight_layout()
 fig2.show()

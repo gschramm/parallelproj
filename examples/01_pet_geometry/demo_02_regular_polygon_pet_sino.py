@@ -13,6 +13,7 @@ This example shows how this can be using the :class:`.RegularPolygonPETLORDescri
 # choose your preferred array API uncommenting the corresponding line
 
 import array_api_compat.numpy as xp
+
 # import array_api_compat.cupy as xp
 # import array_api_compat.torch as xp
 
@@ -22,15 +23,15 @@ from array_api_compat import to_device, device
 import matplotlib.pyplot as plt
 
 # choose a device (CPU or CUDA GPU)
-if 'numpy' in xp.__name__:
+if "numpy" in xp.__name__:
     # using numpy, device must be cpu
-    dev = 'cpu'
-elif 'cupy' in xp.__name__:
+    dev = "cpu"
+elif "cupy" in xp.__name__:
     # using cupy, only cuda devices are possible
     dev = xp.cuda.Device(0)
-elif 'torch' in xp.__name__:
+elif "torch" in xp.__name__:
     # using torch valid choices are 'cpu' or 'cuda'
-    dev = 'cuda'
+    dev = "cuda"
 
 
 # %%
@@ -40,15 +41,13 @@ num_rings = 5
 scanner = parallelproj.RegularPolygonPETScannerGeometry(
     xp,
     dev,
-    radius=65.,
+    radius=65.0,
     num_sides=12,
     num_lor_endpoints_per_side=4,
-    lor_spacing=8.,
-    ring_positions=xp.linspace(
-        -8,
-        8,
-        num_rings),
-    symmetry_axis=1)
+    lor_spacing=8.0,
+    ring_positions=xp.linspace(-8, 8, num_rings),
+    symmetry_axis=1,
+)
 
 # %%
 # Defining a sinogram using an LOR descriptor
@@ -67,12 +66,17 @@ lor_desc1 = parallelproj.RegularPolygonPETLORDescriptor(
     scanner,
     radial_trim=10,
     max_ring_difference=2,
-    sinogram_order=parallelproj.SinogramSpatialAxisOrder.RVP)
+    sinogram_order=parallelproj.SinogramSpatialAxisOrder.RVP,
+)
 
-print(f'sinogram order: {lor_desc1.sinogram_order.name}')
-print(f'sinogram shape: {lor_desc1.spatial_sinogram_shape}')
-print(f'num rad: {lor_desc1.num_rad}  num views: {lor_desc1.num_views}  num planes: {lor_desc1.num_planes}')
-print(f'radial axis num: {lor_desc1.radial_axis_num}  view axis num: {lor_desc1.view_axis_num}  plane axis num: {lor_desc1.plane_axis_num}')
+print(f"sinogram order: {lor_desc1.sinogram_order.name}")
+print(f"sinogram shape: {lor_desc1.spatial_sinogram_shape}")
+print(
+    f"num rad: {lor_desc1.num_rad}  num views: {lor_desc1.num_views}  num planes: {lor_desc1.num_planes}"
+)
+print(
+    f"radial axis num: {lor_desc1.radial_axis_num}  view axis num: {lor_desc1.view_axis_num}  plane axis num: {lor_desc1.plane_axis_num}"
+)
 
 # %%
 # Define a 2nd LOR descriptor with sinogram order "PRV"
@@ -81,12 +85,17 @@ lor_desc2 = parallelproj.RegularPolygonPETLORDescriptor(
     scanner,
     radial_trim=10,
     max_ring_difference=2,
-    sinogram_order=parallelproj.SinogramSpatialAxisOrder.PRV)
+    sinogram_order=parallelproj.SinogramSpatialAxisOrder.PRV,
+)
 
-print(f'sinogram order: {lor_desc2.sinogram_order.name}')
-print(f'sinogram shape: {lor_desc2.spatial_sinogram_shape}')
-print(f'num rad: {lor_desc2.num_rad}  num views: {lor_desc2.num_views}  num planes: {lor_desc2.num_planes}')
-print(f'radial axis num: {lor_desc2.radial_axis_num}  view axis num: {lor_desc2.view_axis_num}  plane axis num: {lor_desc2.plane_axis_num}')
+print(f"sinogram order: {lor_desc2.sinogram_order.name}")
+print(f"sinogram shape: {lor_desc2.spatial_sinogram_shape}")
+print(
+    f"num rad: {lor_desc2.num_rad}  num views: {lor_desc2.num_views}  num planes: {lor_desc2.num_planes}"
+)
+print(
+    f"radial axis num: {lor_desc2.radial_axis_num}  view axis num: {lor_desc2.view_axis_num}  plane axis num: {lor_desc2.plane_axis_num}"
+)
 
 # %%
 # Obtaining world coordinates of LOR start and endpoints
@@ -127,7 +136,8 @@ for i in range(lor_desc1.num_planes):
     st_pl = lor_desc1.start_plane_index[i]
     end_pl = lor_desc1.end_plane_index[i]
     print(
-        f'plane num: {i:02} - start ring {st_pl} - end ring {end_pl} - ring diff. {(end_pl-st_pl):>2}')
+        f"plane num: {i:02} - start ring {st_pl} - end ring {end_pl} - ring diff. {(end_pl-st_pl):>2}"
+    )
 
 # %%
 # Visualize the defined LOR endpoints
@@ -137,17 +147,23 @@ for i in range(lor_desc1.num_planes):
 # to visualize the defined LOR endpoints
 
 fig = plt.figure(figsize=(16, 8))
-ax1 = fig.add_subplot(121, projection='3d')
-ax2 = fig.add_subplot(122, projection='3d')
+ax1 = fig.add_subplot(121, projection="3d")
+ax2 = fig.add_subplot(122, projection="3d")
 scanner.show_lor_endpoints(ax1)
-lor_desc1.show_views(ax1,
-                     views=xp.asarray([0], device=dev),
-                     planes=xp.asarray([num_rings // 2], device=dev),
-                     lw=0.5, color='k')
+lor_desc1.show_views(
+    ax1,
+    views=xp.asarray([0], device=dev),
+    planes=xp.asarray([num_rings // 2], device=dev),
+    lw=0.5,
+    color="k",
+)
 scanner.show_lor_endpoints(ax2)
-lor_desc1.show_views(ax2,
-                     views=xp.asarray([lor_desc1.num_views // 2], device=dev),
-                     planes=xp.asarray([lor_desc1.num_planes - 1], device=dev),
-                     lw=0.5, color='k')
+lor_desc1.show_views(
+    ax2,
+    views=xp.asarray([lor_desc1.num_views // 2], device=dev),
+    planes=xp.asarray([lor_desc1.num_planes - 1], device=dev),
+    lw=0.5,
+    color="k",
+)
 fig.tight_layout()
 fig.show()

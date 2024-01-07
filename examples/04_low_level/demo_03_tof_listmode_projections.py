@@ -9,6 +9,7 @@ A minimal example that shows how to use the joseph3d TOF forward and back projec
 # choose your preferred array API uncommenting the corresponding line
 
 import array_api_compat.numpy as xp
+
 # import array_api_compat.cupy as xp
 # import array_api_compat.torch as xp
 
@@ -16,15 +17,15 @@ import parallelproj
 from array_api_compat import to_device, device
 
 # choose a device (CPU or CUDA GPU)
-if 'numpy' in xp.__name__:
+if "numpy" in xp.__name__:
     # using numpy, device must be cpu
-    dev = 'cpu'
-elif 'cupy' in xp.__name__:
+    dev = "cpu"
+elif "cupy" in xp.__name__:
     # using cupy, only cuda devices are possible
     dev = xp.cuda.Device(0)
-elif 'torch' in xp.__name__:
+elif "torch" in xp.__name__:
     # using torch valid choices are 'cpu' or 'cuda'
-    dev = 'cuda'
+    dev = "cuda"
 
 # %%
 # setup a simple test image
@@ -35,11 +36,11 @@ n0, n1, n2 = (7, 7, 7)
 img_dim = (n0, n1, n2)
 
 # define the voxel sizes (in physical units)
-voxel_size = to_device(xp.asarray([2., 2., 2.], dtype=xp.float32), dev)
+voxel_size = to_device(xp.asarray([2.0, 2.0, 2.0], dtype=xp.float32), dev)
 # define the origin of the image (location of voxel (0,0,0) in physical units)
 img_origin = (
-    (-to_device(xp.asarray(img_dim, dtype=xp.float32), dev) / 2 + 0.5) *
-    voxel_size)
+    -to_device(xp.asarray(img_dim, dtype=xp.float32), dev) / 2 + 0.5
+) * voxel_size
 
 # create a simple test image
 img = to_device(xp.zeros((n0, n1, n2), dtype=xp.float32), dev)
@@ -64,8 +65,10 @@ vstart = to_device(
             [n0 // 2, -1, n2 // 2],  #
             [n0 // 2, n1 // 2, -1],  #
         ],
-        dtype=xp.float32),
-    dev)
+        dtype=xp.float32,
+    ),
+    dev,
+)
 
 vend = to_device(
     xp.asarray(
@@ -73,8 +76,10 @@ vend = to_device(
             [n0 // 2, n1, n2 // 2],
             [n0 // 2, n1 // 2, n2],  #
         ],
-        dtype=xp.float32),
-    dev)
+        dtype=xp.float32,
+    ),
+    dev,
+)
 
 # convert the LOR coordinates to world coordinates (physical units)
 xstart = vstart * voxel_size + img_origin
@@ -92,10 +97,10 @@ tofbin_width = 1.5
 num_tof_bins = 17
 
 # number of sigmas after which TOF kernel is truncated
-nsigmas = 3.
+nsigmas = 3.0
 
 # FWHM of the Gaussian TOF kernel in physical units
-fwhm_tof = 6.
+fwhm_tof = 6.0
 
 # sigma of the Gaussian TOF kernel in physical units
 # if this is an array of length 1, the same sigma is used
@@ -115,14 +120,23 @@ tof_bin[-1] = 1
 # call the forward projector
 # --------------------------
 
-img_fwd = parallelproj.joseph3d_fwd_tof_lm(xstart, xend, img, img_origin,
-                                           voxel_size, tofbin_width, sigma_tof,
-                                           tofcenter_offset, nsigmas, tof_bin)
+img_fwd = parallelproj.joseph3d_fwd_tof_lm(
+    xstart,
+    xend,
+    img,
+    img_origin,
+    voxel_size,
+    tofbin_width,
+    sigma_tof,
+    tofcenter_offset,
+    nsigmas,
+    tof_bin,
+)
 
 print(img_fwd)
 print(type(img_fwd))
 print(device(img_fwd))
-print('')
+print("")
 
 # %%
 # call the adjoint of the forward projector
@@ -131,10 +145,19 @@ print('')
 # setup a list of ones to be back projected
 lst = to_device(xp.ones(img_fwd.shape, dtype=xp.float32), dev)
 
-back_img = parallelproj.joseph3d_back_tof_lm(xstart, xend, img_dim, img_origin,
-                                             voxel_size, lst, tofbin_width,
-                                             sigma_tof, tofcenter_offset,
-                                             nsigmas, tof_bin)
+back_img = parallelproj.joseph3d_back_tof_lm(
+    xstart,
+    xend,
+    img_dim,
+    img_origin,
+    voxel_size,
+    lst,
+    tofbin_width,
+    sigma_tof,
+    tofcenter_offset,
+    nsigmas,
+    tof_bin,
+)
 
 print(back_img[:, :, 3])
 print(type(back_img))

@@ -12,6 +12,7 @@ correction for attenuation.
 # choose your preferred array API uncommenting the corresponding line
 
 import array_api_compat.numpy as xp
+
 # import array_api_compat.cupy as xp
 # import array_api_compat.torch as xp
 
@@ -22,15 +23,15 @@ import array_api_compat.numpy as np
 import matplotlib.pyplot as plt
 
 # choose a device (CPU or CUDA GPU)
-if 'numpy' in xp.__name__:
+if "numpy" in xp.__name__:
     # using numpy, device must be cpu
-    dev = 'cpu'
-elif 'cupy' in xp.__name__:
+    dev = "cpu"
+elif "cupy" in xp.__name__:
     # using cupy, only cuda devices are possible
     dev = xp.cuda.Device(0)
-elif 'torch' in xp.__name__:
+elif "torch" in xp.__name__:
     # using torch valid choices are 'cpu' or 'cuda'
-    dev = 'cuda'
+    dev = "cuda"
 
 # %%
 # setup a small regular polygon PET scanner with 5 rings (polygons)
@@ -39,12 +40,13 @@ num_rings = 3
 scanner = parallelproj.RegularPolygonPETScannerGeometry(
     xp,
     dev,
-    radius=65.,
+    radius=65.0,
     num_sides=12,
     num_lor_endpoints_per_side=15,
     lor_spacing=2.3,
     ring_positions=xp.linspace(-4, 4, num_rings),
-    symmetry_axis=1)
+    symmetry_axis=1,
+)
 
 # %%
 # setup the LOR descriptor that defines the sinogram
@@ -53,7 +55,8 @@ lor_desc = parallelproj.RegularPolygonPETLORDescriptor(
     scanner,
     radial_trim=10,
     max_ring_difference=1,
-    sinogram_order=parallelproj.SinogramSpatialAxisOrder.RVP)
+    sinogram_order=parallelproj.SinogramSpatialAxisOrder.RVP,
+)
 
 # %%
 # Defining a non-TOF projector
@@ -65,9 +68,9 @@ lor_desc = parallelproj.RegularPolygonPETLORDescriptor(
 
 # define a first projector using an image with 40x8x40 voxels of size 2x2x2 mm
 # where the image center is at world coordinate (0, 0, 0)
-proj = parallelproj.RegularPolygonPETProjector(lor_desc,
-                                               img_shape=(40, 7, 40),
-                                               voxel_size=(2., 2., 2.))
+proj = parallelproj.RegularPolygonPETProjector(
+    lor_desc, img_shape=(40, 7, 40), voxel_size=(2.0, 2.0, 2.0)
+)
 
 
 # %%
@@ -78,7 +81,7 @@ proj = parallelproj.RegularPolygonPETProjector(lor_desc,
 # to visualize the scanner and image geometry
 
 fig = plt.figure(figsize=(8, 8))
-ax1 = fig.add_subplot(111, projection='3d')
+ax1 = fig.add_subplot(111, projection="3d")
 proj.show_geometry(ax1)
 fig.tight_layout()
 fig.show()
@@ -89,7 +92,8 @@ fig.show()
 
 # setup a simple image-based resolution model with an Gaussian FWHM of 4.5mm
 res_model = parallelproj.GaussianFilterOperator(
-    proj.in_shape, sigma=4.5 / (2.35 * proj.voxel_size))
+    proj.in_shape, sigma=4.5 / (2.35 * proj.voxel_size)
+)
 
 # %%
 # Adding an image-based resolution model
@@ -120,15 +124,17 @@ proj.tof_parameters = parallelproj.TOFParameters(num_tofbins=9)
 # we have to use the :class:`.TOFNonTOFElementwiseMultiplicationOperator` add attenuation
 # in the forward model.
 
-print(f'atten. sino shape {att_sino.shape}')
-print(f'proj output shape {proj.out_shape}')
+print(f"atten. sino shape {att_sino.shape}")
+print(f"proj output shape {proj.out_shape}")
 
 att_op = parallelproj.TOFNonTOFElementwiseMultiplicationOperator(
-    proj.out_shape, att_sino)
+    proj.out_shape, att_sino
+)
 
 # setup a forward projector containing the attenuation and resolution
 proj_with_att_and_res_model = parallelproj.CompositeLinearOperator(
-    (att_op, proj, res_model))
+    (att_op, proj, res_model)
+)
 
 
 # %%
@@ -137,9 +143,9 @@ proj_with_att_and_res_model = parallelproj.CompositeLinearOperator(
 
 # setup a simple test image containing a few "hot rods"
 x = xp.zeros(proj.in_shape, device=dev, dtype=xp.float32)
-x[proj.in_shape[0] // 2, :, proj.in_shape[2] // 2] = 1.
-x[4, 3:, proj.in_shape[2] // 2] = 1.
-x[proj.in_shape[0] // 2, :-3, 4] = 1.
+x[proj.in_shape[0] // 2, :, proj.in_shape[2] // 2] = 1.0
+x[4, 3:, proj.in_shape[2] // 2] = 1.0
+x[proj.in_shape[0] // 2, :-3, 4] = 1.0
 
 
 # %%
@@ -153,17 +159,20 @@ x_fwd_back = proj_with_att_and_res_model.adjoint(x_fwd)
 # visualize the forward and the back projection
 # ---------------------------------------------
 
-fig, ax = plt.subplots(7, 9, figsize=(1.4 * 9, 1.2 * 7),
-                       sharex=True, sharey=True)
+fig, ax = plt.subplots(7, 9, figsize=(1.4 * 9, 1.2 * 7), sharex=True, sharey=True)
 vmax = float(xp.max(x_fwd))
 for i in range(7):
     for j in range(9):
-        ax[i, j].imshow(np.asarray(to_device(x_fwd[:, :, i, j].T,
-                        'cpu')), cmap='Greys', vmin=0, vmax=vmax)
+        ax[i, j].imshow(
+            np.asarray(to_device(x_fwd[:, :, i, j].T, "cpu")),
+            cmap="Greys",
+            vmin=0,
+            vmax=vmax,
+        )
         if i == 0:
-            ax[i, j].set_title(f'tof bin {j}', fontsize='medium')
+            ax[i, j].set_title(f"tof bin {j}", fontsize="medium")
         if j == 0:
-            ax[i, j].set_ylabel(f'sino pl. {i}', fontsize='medium')
+            ax[i, j].set_ylabel(f"sino pl. {i}", fontsize="medium")
         # ax[i,j].set_axis_off()
 fig.tight_layout()
 fig.show()
@@ -174,9 +183,13 @@ fig2, ax2 = plt.subplots(3, 3, figsize=(8, 8))
 vmax = float(xp.max(x_fwd_back))
 for i, axx in enumerate(ax2.ravel()):
     if i < x_fwd_back.shape[1]:
-        axx.imshow(np.asarray(to_device(
-            x_fwd_back[:, i, :].T, 'cpu')), cmap='Greys', vmin=0, vmax=vmax)
-        axx.set_title(f'img plane {i}', fontsize='medium')
+        axx.imshow(
+            np.asarray(to_device(x_fwd_back[:, i, :].T, "cpu")),
+            cmap="Greys",
+            vmin=0,
+            vmax=vmax,
+        )
+        axx.set_title(f"img plane {i}", fontsize="medium")
     else:
         axx.set_axis_off()
 fig2.tight_layout()
