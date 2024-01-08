@@ -75,6 +75,8 @@ op_A = parallelproj.MatrixOperator(mat)
 # setup an arbitrary contamination vector that has shape op_A.out_shape
 contamination = xp.asarray([0.3, 0.2, 0.1, 0.4], dtype=xp.float64, device=dev)
 
+print(op_A.A)
+
 # %%
 # Setup of ground truth and data simulation
 # -----------------------------------------
@@ -100,10 +102,10 @@ y = xp.asarray(
 # Analytic calculation of the optimal point (as reference)
 # --------------------------------------------------------
 #
-# Since our linear forward operator ::math:`A` is invertible
-# (in practice this is usually not the case**),
+# Since our linear forward operator :math:`A` is invertible
+# (*which is usually not the case in practice*),
 # we can calculate the optimal point :math:`x^* = A^{-1} (y - s)`
-# and the corresponding cost :math:`f(x^*)`.
+# and the corresponding optimal value of :math:`f(x^*)`.
 
 # calculate the reference solution by inverting A
 mat_inv = xp.linalg.inv(mat)
@@ -117,6 +119,9 @@ cost_ref = float(xp.sum(exp_ref - y * xp.log(exp_ref)))
 # Split forward model into subsets :math:`A^k`
 # --------------------------------------------
 #
+# We split the matrix operator into two disjoint subsets
+# using slicing along the first dimension of the matrix.
+#
 # .. note::
 #     The OSEM implementation below works with all linear operators that
 #     subclass :class:`.LinearOperatorSequence`
@@ -125,9 +130,12 @@ cost_ref = float(xp.sum(exp_ref - y * xp.log(exp_ref)))
 subset_slices = (slice(0, 2), slice(2, None))
 
 # setup two subsets operators each containing 1 and 3 rows of the matrix A
-subset_op_A = parallelproj.LinearOperatorSequence(
+op_seq = parallelproj.LinearOperatorSequence(
     [parallelproj.MatrixOperator(mat[sl, :]) for sl in subset_slices]
 )
+
+for op in op_seq:
+    print(op.A)
 
 # %%
 # OSEM iterations to minimize :math:`f(x)`
@@ -151,14 +159,14 @@ subset_op_A = parallelproj.LinearOperatorSequence(
 #    \frac{\|x - x^*\|}{\|x^*\|}.
 
 # number MLEM iterations
-num_iter = 1000 // len(subset_op_A)
+num_iter = 1000 // len(op_seq)
 
 # initialize x
 x = xp.ones(op_A.in_shape, dtype=xp.float64, device=dev)
 
 # calculate A_k^H 1 for all subsets k
 subset_adjoint_ones = [
-    x.adjoint(xp.ones(x.out_shape, dtype=xp.float64, device=dev)) for x in subset_op_A
+    x.adjoint(xp.ones(x.out_shape, dtype=xp.float64, device=dev)) for x in op_seq
 ]
 
 # allocate arrays for the relative cost and the relative distance to the
@@ -169,7 +177,7 @@ rel_dist = xp.zeros(num_iter, dtype=xp.float64, device=dev)
 for i in range(num_iter):
     for k, sl in enumerate(subset_slices):
         # evaluate the forward model
-        subset_exp = subset_op_A[k](x) + contamination[sl]
+        subset_exp = op_seq[k](x) + contamination[sl]
         # calculate the relative cost and distance to the optimal point
         # to do this, we need the full expectation
         exp = op_A(x) + contamination
@@ -177,7 +185,7 @@ for i in range(num_iter):
         rel_dist[i] = xp.linalg.vector_norm(x - x_ref) / xp.linalg.vector_norm(x_ref)
         # OSEM update
         ratio = y[sl] / subset_exp
-        x *= subset_op_A[k].adjoint(ratio) / subset_adjoint_ones[k]
+        x *= op_seq[k].adjoint(ratio) / subset_adjoint_ones[k]
 
 
 # %%

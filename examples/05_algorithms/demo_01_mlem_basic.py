@@ -92,10 +92,10 @@ y = xp.asarray(
 # Analytic calculation of the optimal point (as reference)
 # --------------------------------------------------------
 #
-# Since our linear forward operator ::math:`A` is invertible
-# (in practice this is usually not the case**),
+# Since our linear forward operator :math:`A` is invertible
+# (*which is usually not the case in practice*),
 # we can calculate the optimal point :math:`x^* = A^{-1} (y - s)`
-# and the corresponding cost :math:`f(x^*)`.
+# and the corresponding optimal value of :math:`f(x^*)`.
 
 # calculate the reference solution by inverting A
 mat_inv = xp.linalg.inv(mat)
