@@ -7,6 +7,7 @@ import numpy as np
 import array_api_compat
 from array_api_compat import device
 from numpy.array_api._array_object import Array
+from collections.abc import Sequence
 
 import parallelproj
 
@@ -292,6 +293,10 @@ class CompositeLinearOperator(LinearOperator):
             x = op.adjoint(x)
         return x
 
+    def __getitem__(self, i: int) -> LinearOperator:
+        """get the i-th operator :math:`A_i`"""
+        return self._operators[i]
+
 
 class ElementwiseMultiplicationOperator(LinearOperator):
     """Element-wise multiplication operator (multiplication with a diagonal matrix)"""
@@ -519,13 +524,13 @@ class VstackOperator(LinearOperator):
 class SubsetOperator:
     """Operator split into subsets"""
 
-    def __init__(self, operators: tuple[LinearOperator, ...]) -> None:
+    def __init__(self, operators: Sequence[LinearOperator]) -> None:
         """init method
 
         Parameters
         ----------
-        operators : tuple[LinearOperator, ...]
-            tuple of linear operators
+        operators : Sequence[LinearOperator, ...]
+            Sequence of linear operators
         """
         self._operators = operators
         self._in_shape = self._operators[0].in_shape
@@ -543,7 +548,7 @@ class SubsetOperator:
         return self._out_shapes
 
     @property
-    def operators(self) -> tuple[LinearOperator, ...]:
+    def operators(self) -> Sequence[LinearOperator]:
         """all subset operators"""
         return self._operators
 
@@ -552,8 +557,12 @@ class SubsetOperator:
         """number of subsets"""
         return self._num_subsets
 
+    def __getitem__(self, i: int) -> LinearOperator:
+        """get the i-th subset operator :math:`A_i(x)`"""
+        return self._operators[i]
+
     def apply(self, x: Array) -> list[Array]:
-        """:math:`A_i(x) for all subsets :math:`i`"""
+        """:math:`A_i(x)` for all subsets :math:`i`"""
 
         y = [op(x) for op in self._operators]
 

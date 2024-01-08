@@ -47,16 +47,24 @@ elif "torch" in xp.__name__:
 # We setup a minimal linear forward operator :math:`A` respresented by a 4x4 matrix
 # and an arbritrary contamination vector :math:`s` of length 4.
 #
-# **Note**: The MLEM implementation below works with all linear operators that
-# subclass :class:`.LinearOperator` (e.g. the high-level projectors).
+# .. note::
+#     The OSEM implementation below works with all linear operators that
+#     subclass :class:`.LinearOperator` (e.g. the high-level projectors).
 
 # setup an arbitrary 4x4 matrix
 mat = xp.asarray(
-    [[2.5, 1.2, 0, 0], [0, 3.1, 0.7, 0], [0, 0, 4.1, 2.5], [0.2, 0, 0, 0.9]],
+    [
+        [2.5, 1.2, 0.3, 0.1],
+        [0.4, 3.1, 0.7, 0.2],
+        [0.1, 0.3, 4.1, 2.5],
+        [0.2, 0.5, 0.2, 0.9],
+    ],
     dtype=xp.float64,
     device=dev,
 )
+
 op_A = parallelproj.MatrixOperator(mat)
+# setup an arbitrary contamination vector that has shape op_A.out_shape
 contamination = xp.asarray([0.3, 0.2, 0.1, 0.4], dtype=xp.float64, device=dev)
 
 # %%
