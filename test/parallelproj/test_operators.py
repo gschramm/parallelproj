@@ -201,7 +201,7 @@ def test_operator_sequence(xp: ModuleType, dev: str):
     A2 = parallelproj.MatrixOperator(xp.asarray(np.random.randn(5, 3), device=dev))
     A3 = parallelproj.MatrixOperator(xp.asarray(np.random.randn(2, 3), device=dev))
 
-    A = parallelproj.OperatorSequence([A1, A2, A3])
+    A = parallelproj.LinearOperatorSequence([A1, A2, A3])
 
     assert len(A) == 3
 

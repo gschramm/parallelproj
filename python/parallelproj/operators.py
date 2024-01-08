@@ -521,7 +521,7 @@ class VstackOperator(LinearOperator):
         return x
 
 
-class OperatorSequence:
+class LinearOperatorSequence:
     """Operator split into subsets"""
 
     def __init__(self, operators: Sequence[LinearOperator]) -> None:

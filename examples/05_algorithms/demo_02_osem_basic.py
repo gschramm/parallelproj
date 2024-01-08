@@ -119,13 +119,13 @@ cost_ref = float(xp.sum(exp_ref - y * xp.log(exp_ref)))
 #
 # .. note::
 #     The OSEM implementation below works with all linear operators that
-#     subclass :class:`.OperatorSequence`
+#     subclass :class:`.LinearOperatorSequence`
 
 # define two subsets (they don't need to have equal size)
 subset_slices = (slice(0, 2), slice(2, None))
 
 # setup two subsets operators each containing 1 and 3 rows of the matrix A
-subset_op_A = parallelproj.OperatorSequence(
+subset_op_A = parallelproj.LinearOperatorSequence(
     [parallelproj.MatrixOperator(mat[sl, :]) for sl in subset_slices]
 )
 
