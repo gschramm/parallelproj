@@ -16,9 +16,7 @@ using the linear forward model
 # parallelproj supports the numpy, cupy and pytorch array API and different devices
 # choose your preferred array API uncommenting the corresponding line
 
-import numpy.array_api as xp
-
-# import array_api_compat.numpy as xp
+import array_api_compat.numpy as xp
 
 # import array_api_compat.cupy as xp
 # import array_api_compat.torch as xp
@@ -42,56 +40,106 @@ elif "torch" in xp.__name__:
 
 
 # %%
+# Setup of the forward model :math:`\bar{y}(x) = A x + s`
+# --------------------------------------------------------
+#
+# We setup a minimal linear forward operator :math:`A` respresented by a 4x4 matrix
+# and an arbritrary contamination vector :math:`s` of length 4.
+#
+# **Note**: The MLEM implementation below works with all linear operators that
+# subclass :class:`.LinearOperator` (e.g. the high-level projectors).
 
-A = xp.asarray(
+mat = xp.asarray(
     [[2.5, 1.2, 0, 0], [0, 3.1, 0.7, 0], [0, 0, 4.1, 2.5], [0.2, 0, 0, 0.9]],
     dtype=xp.float64,
     device=dev,
 )
+op_A = parallelproj.MatrixOperator(mat)
+contamination = xp.asarray([0.3, 0.2, 0.1, 0.4], dtype=xp.float64, device=dev)
 
-op = parallelproj.MatrixOperator(A)
+# %%
+# Setup of ground truth and data simulation
+# -----------------------------------------
+#
+# We setup an arbitrary ground truth :math:`x_{true}` and simulate
+# noise-free and noisy data :math:`y` by adding Poisson noise.
 
+# ground truth
 x_true = xp.asarray([5.5, 10.7, 8.2, 7.9], dtype=xp.float64, device=dev)
 
-noise_free_data = op(x_true)
+# simulated noise-free data
+noise_free_data = op_A(x_true) + contamination
 
+# add Poisson noise
 np.random.seed(1)
-noisy_data = xp.asarray(
+y = xp.asarray(
     np.random.poisson(np.asarray(to_device(noise_free_data, "cpu"))),
     device=dev,
     dtype=xp.float64,
 )
 
-# noisy_data = xp.floor(noise_free_data)
-
-contamination = xp.asarray([0.3, 0.2, 0.1, 0.4], dtype=xp.float64, device=dev)
-
 # %%
+# Analytic calculation of the optimal point (as reference)
+# --------------------------------------------------------
+#
+# Since our linear forward operator ::math:`A` is invertible
+# (in practice this is usually not the case**),
+# we can calculate the optimal point :math:`x^* = A^{-1} (y - s)`
+# and the corresponding cost :math:`f(x^*)`.
 
 # calculate the reference solution by inverting A
-A_inv = xp.linalg.inv(A)
-x_ref = A_inv @ (noisy_data - contamination)
+mat_inv = xp.linalg.inv(mat)
+x_ref = mat_inv @ (y - contamination)
 
-exp_ref = op(x_ref) + contamination
-cost_ref = float(xp.sum(exp_ref - noisy_data * xp.log(exp_ref)))
+# also calculate the cost of the reference solution
+exp_ref = op_A(x_ref) + contamination
+cost_ref = float(xp.sum(exp_ref - y * xp.log(exp_ref)))
+
 # %%
+# MLEM iterations to minimize :math:`f(x)`
+# ----------------------------------------
+#
+# We apply multiple MLEM updates
+#
+# .. math::
+#     x^+ = \frac{x}{A^H 1} A^H \frac{y}{A x + s}
+#
+# to calculate the minimizer of :math:`f(x)` iteratively.
+#
+# To monitor the convergence we calculate the relative cost
+#
+# .. math::
+#    \frac{f(x) - f(x^*)}{|f(x^*)|}
+#
+# and the distance to the optimal point
+#
+# .. math::
+#    \frac{\|x - x^*\|}{\|x^*\|}.
+
+# number MLEM iterations
 num_iter = 500
 
-x = xp.ones(op.in_shape, dtype=xp.float64, device=dev)
-ones_back = op.adjoint(xp.ones(op.out_shape, dtype=xp.float64, device=dev))
+# initialize x
+x = xp.ones(op_A.in_shape, dtype=xp.float64, device=dev)
+# calculate A^H 1
+ones_back = op_A.adjoint(xp.ones(op_A.out_shape, dtype=xp.float64, device=dev))
 
+# allocate arrays for the relative cost and the relative distance to the
+# optimal point
 rel_cost = xp.zeros(num_iter, dtype=xp.float64, device=dev)
 rel_dist = xp.zeros(num_iter, dtype=xp.float64, device=dev)
 
 for i in range(num_iter):
-    exp = op(x) + contamination
-    rel_cost[i] = (xp.sum(exp - noisy_data * xp.log(exp)) - cost_ref) / abs(cost_ref)
+    exp = op_A(x) + contamination
+    rel_cost[i] = (xp.sum(exp - y * xp.log(exp)) - cost_ref) / abs(cost_ref)
     rel_dist[i] = xp.linalg.vector_norm(x - x_ref) / xp.linalg.vector_norm(x_ref)
-    ratio = noisy_data / exp
-    x *= op.adjoint(ratio) / ones_back
+    ratio = y / exp
+    x *= op_A.adjoint(ratio) / ones_back
 
 
 # %%
+# Plot the relative cost and the relative distance to the optimal point
+# ---------------------------------------------------------------------
 
 fig, ax = plt.subplots(1, 2, figsize=(8, 4), sharex=True)
 ax[0].semilogx(np.asarray(to_device(rel_cost, "cpu")))

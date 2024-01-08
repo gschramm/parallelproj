@@ -52,8 +52,8 @@ intersphinx_disabled_domains = ["std"]
 
 sphinx_gallery_conf = {
     "examples_dirs": ["../../examples"],
-    # "gallery_dirs": "auto_examples",  # path to where to save gallery generated output
     "filename_pattern": "/demo_",
+    "example_extensions": {".py"},
     "run_stale_examples": True,
     "ignore_pattern": r"__init__\.py",
     "reference_url": {
@@ -71,11 +71,7 @@ sphinx_gallery_conf = {
     "nested_sections": False,
     "within_subsection_order": FileNameSortKey,
     "line_numbers": True,
-    "recommender": {"enable": True},
-    "first_notebook_cell": (
-        "# This cell is added by sphinx-gallery\n"
-        "# It can be customized to whatever you like\n"
-    ),
+    "recommender": {"enable": True, "n_examples": 3},
 }
 
 # -- Options for HTML output -------------------------------------------------
