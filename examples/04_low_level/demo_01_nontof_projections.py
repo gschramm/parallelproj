@@ -4,11 +4,13 @@ low-level non-TOF projection example
 
 The example below shows how to do a simple non-TOF forward projection along a set of
 known lines of response with known start and end points.
+
+.. tip::
+    parallelproj is python array API compatible meaning it supports different 
+    array backends (e.g. numpy, cupy, torch, ...) and devices (CPU or GPU).
+    Choose your preferred array API ``xp`` and device ``dev`` below.
 """
 # %%
-# parallelproj supports the numpy, cupy and pytorch array API and different devices
-# choose your preferred array API uncommenting the corresponding line
-
 import array_api_compat.numpy as xp
 
 # import array_api_compat.cupy as xp

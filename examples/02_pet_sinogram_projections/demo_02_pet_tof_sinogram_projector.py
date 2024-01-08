@@ -5,6 +5,11 @@ PET TOF sinogram projector
 In this example we will show how to setup and use TOF PET sinogram projector
 consisting of the geometrical forward projection, resolution model and
 correction for attenuation.
+
+.. tip::
+    parallelproj is python array API compatible meaning it supports different 
+    array backends (e.g. numpy, cupy, torch, ...) and devices (CPU or GPU).
+    Choose your preferred array API ``xp`` and device ``dev`` below.
 """
 
 # %%
@@ -16,7 +21,6 @@ import array_api_compat.numpy as xp
 # import array_api_compat.cupy as xp
 # import array_api_compat.torch as xp
 
-# %%
 import parallelproj
 from array_api_compat import to_device
 import array_api_compat.numpy as np

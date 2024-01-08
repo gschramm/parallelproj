@@ -5,12 +5,14 @@ PET TOF listmode projector
 In this example we will show how to setup and use a non-TOF 
 PET listmode projector including geometrical forward projection, 
 resolution model and correction for attenuation.
+
+.. tip::
+    parallelproj is python array API compatible meaning it supports different 
+    array backends (e.g. numpy, cupy, torch, ...) and devices (CPU or GPU).
+    Choose your preferred array API ``xp`` and device ``dev`` below.
 """
 
 # %%
-# parallelproj supports the numpy, cupy and pytorch array API and different devices
-# choose your preferred array API uncommenting the corresponding line
-
 import array_api_compat.numpy as xp
 
 # import array_api_compat.cupy as xp

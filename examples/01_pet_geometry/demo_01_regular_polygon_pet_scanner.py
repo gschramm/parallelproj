@@ -4,18 +4,19 @@ Regular polygon PET scanner geometry
 
 This example shows how to create and visualize PET scanner where the LOR
 endpoints can be modeled as a stack of regular polygons.
+
+.. tip::
+    parallelproj is python array API compatible meaning it supports different 
+    array backends (e.g. numpy, cupy, torch, ...) and devices (CPU or GPU).
+    Choose your preferred array API ``xp`` and device ``dev`` below.
 """
 
 # %%
-# parallelproj supports the numpy, cupy and pytorch array API and different devices
-# choose your preferred array API uncommenting the corresponding line
-
 import array_api_compat.numpy as xp
 
 # import array_api_compat.cupy as xp
 # import array_api_compat.torch as xp
 
-# %%
 import parallelproj
 from array_api_compat import to_device, device
 import matplotlib.pyplot as plt

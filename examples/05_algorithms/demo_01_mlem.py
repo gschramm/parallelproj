@@ -11,17 +11,18 @@ using the linear forward model
 
 .. math::
     \\bar{y}(x) = A x + s
+
+.. tip::
+    parallelproj is python array API compatible meaning it supports different 
+    array backends (e.g. numpy, cupy, torch, ...) and devices (CPU or GPU).
+    Choose your preferred array API ``xp`` and device ``dev`` below.
 """
 # %%
-# parallelproj supports the numpy, cupy and pytorch array API and different devices
-# choose your preferred array API uncommenting the corresponding line
-
 import array_api_compat.numpy as xp
 
 # import array_api_compat.cupy as xp
 # import array_api_compat.torch as xp
 
-# %%
 import parallelproj
 from array_api_compat import to_device
 import array_api_compat.numpy as np
@@ -49,6 +50,7 @@ elif "torch" in xp.__name__:
 # **Note**: The MLEM implementation below works with all linear operators that
 # subclass :class:`.LinearOperator` (e.g. the high-level projectors).
 
+# setup an arbitrary 4x4 matrix
 mat = xp.asarray(
     [[2.5, 1.2, 0, 0], [0, 3.1, 0.7, 0], [0, 0, 4.1, 2.5], [0.2, 0, 0, 0.9]],
     dtype=xp.float64,
@@ -122,7 +124,7 @@ num_iter = 500
 # initialize x
 x = xp.ones(op_A.in_shape, dtype=xp.float64, device=dev)
 # calculate A^H 1
-ones_back = op_A.adjoint(xp.ones(op_A.out_shape, dtype=xp.float64, device=dev))
+adjoint_ones = op_A.adjoint(xp.ones(op_A.out_shape, dtype=xp.float64, device=dev))
 
 # allocate arrays for the relative cost and the relative distance to the
 # optimal point
@@ -130,16 +132,19 @@ rel_cost = xp.zeros(num_iter, dtype=xp.float64, device=dev)
 rel_dist = xp.zeros(num_iter, dtype=xp.float64, device=dev)
 
 for i in range(num_iter):
+    # evaluate the forward model
     exp = op_A(x) + contamination
+    # calculate the relative cost and distance to the optimal point
     rel_cost[i] = (xp.sum(exp - y * xp.log(exp)) - cost_ref) / abs(cost_ref)
     rel_dist[i] = xp.linalg.vector_norm(x - x_ref) / xp.linalg.vector_norm(x_ref)
+    # MLEM update
     ratio = y / exp
-    x *= op_A.adjoint(ratio) / ones_back
+    x *= op_A.adjoint(ratio) / adjoint_ones
 
 
 # %%
-# Plot the relative cost and the relative distance to the optimal point
-# ---------------------------------------------------------------------
+# Convergences plots
+# ------------------
 
 fig, ax = plt.subplots(1, 2, figsize=(8, 4), sharex=True)
 ax[0].semilogx(np.asarray(to_device(rel_cost, "cpu")))
