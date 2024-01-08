@@ -28,6 +28,7 @@ import parallelproj
 from array_api_compat import to_device
 import array_api_compat.numpy as np
 import matplotlib.pyplot as plt
+import matplotlib.animation as animation
 
 # choose a device (CPU or CUDA GPU)
 if "numpy" in xp.__name__:
@@ -86,15 +87,13 @@ x_true = xp.ones(proj.in_shape, device=dev, dtype=xp.float32)
 c0 = proj.in_shape[0] // 2
 c1 = proj.in_shape[1] // 2
 x_true[(c0 - 2) : (c0 + 2), (c1 - 2) : (c1 + 2), :] = 10.0
-x_true[4, c1, :] = 10.0
-x_true[c0, 4, :] = 10.0
+x_true[4, c1, 2:] = 10.0
+x_true[c0, 4, :-2] = 10.0
 
 x_true[:2, :, :] = 0
 x_true[-2:, :, :] = 0
 x_true[:, :2, :] = 0
 x_true[:, -2:, :] = 0
-x_true[:, :, :2] = 0
-x_true[:, :, -2:] = 0
 
 # setup an attenuation image
 x_att = 0.01 * xp.astype(x_true > 0, xp.float32)
@@ -172,3 +171,29 @@ for i in range(num_iter):
     # MLEM update
     ratio = y / exp
     x *= op_A.adjoint(ratio) / adjoint_ones
+
+# %%
+# Visualize the results
+# ---------------------
+
+
+def _update_img(i):
+    img0.set_data(x_true_np[:, :, i])
+    img1.set_data(x_np[:, :, i])
+    ax[0].set_title(f"true image - plane {i:02}")
+    ax[1].set_title(f"MLEM iteration {num_iter} - plane {i:02}")
+    return (img0, img1)
+
+
+x_true_np = np.asarray(to_device(x_true, "cpu"))
+x_np = np.asarray(to_device(x, "cpu"))
+
+fig, ax = plt.subplots(1, 2, figsize=(10, 5))
+vmax = x_np.max()
+img0 = ax[0].imshow(x_true_np[:, :, 0], cmap="Greys", vmin=0, vmax=vmax)
+img1 = ax[1].imshow(x_np[:, :, 0], cmap="Greys", vmin=0, vmax=vmax)
+ax[0].set_title(f"true image - plane {0:02}")
+ax[1].set_title(f"MLEM iteration {num_iter} - plane {0:02}")
+fig.tight_layout()
+ani = animation.FuncAnimation(fig, _update_img, x_np.shape[2], interval=200, blit=False)
+fig.show()

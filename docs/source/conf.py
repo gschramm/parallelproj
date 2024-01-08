@@ -72,6 +72,7 @@ sphinx_gallery_conf = {
     "within_subsection_order": FileNameSortKey,
     "line_numbers": True,
     "recommender": {"enable": True, "n_examples": 3},
+    "matplotlib_animations": True,
 }
 
 # -- Options for HTML output -------------------------------------------------
