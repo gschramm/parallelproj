@@ -503,7 +503,12 @@ class ModularizedPETScannerGeometry:
 
 
 class RegularPolygonPETScannerGeometry(ModularizedPETScannerGeometry):
-    """description of a PET scanner geometry consisting stacked regular polygons"""
+    """description of a PET scanner geometry consisting stacked regular polygons
+
+    Examples
+    --------
+    :ref:`sphx_glr_auto_examples_01_pet_geometry_demo_01_regular_polygon_pet_scanner.py`
+    """
 
     def __init__(
         self,

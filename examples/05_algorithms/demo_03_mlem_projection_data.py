@@ -1,6 +1,6 @@
 """
-MLEM with projection
-====================
+MLEM with projection data
+=========================
 
 This example demonstrates the use of the MLEM algorithm to minimize the negative Poisson log-likelihood function.
 
@@ -86,9 +86,9 @@ proj = parallelproj.RegularPolygonPETProjector(
 x_true = xp.ones(proj.in_shape, device=dev, dtype=xp.float32)
 c0 = proj.in_shape[0] // 2
 c1 = proj.in_shape[1] // 2
-x_true[(c0 - 2) : (c0 + 2), (c1 - 2) : (c1 + 2), :] = 10.0
-x_true[4, c1, 2:] = 10.0
-x_true[c0, 4, :-2] = 10.0
+x_true[(c0 - 2) : (c0 + 2), (c1 - 2) : (c1 + 2), :] = 5.0
+x_true[4, c1, 2:] = 5.0
+x_true[c0, 4, :-2] = 5.0
 
 x_true[:2, :, :] = 0
 x_true[-2:, :, :] = 0
@@ -155,9 +155,13 @@ y = xp.asarray(
 #
 # .. math::
 #    \frac{\|x - x^*\|}{\|x^*\|}.
+#
+# .. note::
+#     To reduce the execution time of this example, we use a small number
+#     of MLEM iterations.
 
 # number MLEM iterations
-num_iter = 50
+num_iter = 20
 
 # initialize x
 x = xp.ones(op_A.in_shape, dtype=xp.float32, device=dev)

@@ -18,7 +18,12 @@ from .pet_scanners import (
 
 
 class SinogramSpatialAxisOrder(enum.Enum):
-    """order of spatial axis in a sinogram R (radial), V (view), P (plane)"""
+    """order of spatial axis in a sinogram R (radial), V (view), P (plane)
+
+    Examples
+    --------
+    :ref:`sphx_glr_auto_examples_01_pet_geometry_demo_02_regular_polygon_pet_sino.py`
+    """
 
     RVP = enum.auto()
     """[radial,view,plane]"""
@@ -72,7 +77,12 @@ class RegularPolygonPETLORDescriptor(PETLORDescriptor):
     """Coincidence descriptor for a regular polygon PET scanner where
     we have coincidences within and between "rings (polygons of modules)"
     The geometrical LORs can be sorted into a sinogram having a
-    "plane", "view" and "radial" axis."""
+    "plane", "view" and "radial" axis.
+
+    Examples
+    --------
+    :ref:`sphx_glr_auto_examples_01_pet_geometry_demo_02_regular_polygon_pet_sino.py`
+    """
 
     def __init__(
         self,

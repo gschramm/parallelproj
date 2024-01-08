@@ -467,6 +467,15 @@ class ParallelViewProjector3D(LinearOperator):
 
 
 class RegularPolygonPETProjector(LinearOperator):
+    """geometric non-TOF and TOF sinogram projector for regular polygon PET scanners
+
+    Examples
+    --------
+    :ref:`sphx_glr_auto_examples_02_pet_sinogram_projections_demo_01_pet_non_tof_sinogram_projector.py`
+    :ref:`sphx_glr_auto_examples_02_pet_sinogram_projections_demo_02_pet_tof_sinogram_projector.py`
+    :ref:`sphx_glr_auto_examples_05_algorithms_demo_03_mlem_projection_data.py`
+    """
+
     def __init__(
         self,
         lor_descriptor: RegularPolygonPETLORDescriptor,
@@ -476,8 +485,7 @@ class RegularPolygonPETProjector(LinearOperator):
         views: None | Array = None,
         cache_lor_endpoints: bool = True,
     ) -> None:
-        """Regular polygon PET projector
-
+        """
         Parameters
         ----------
         lor_descriptor : RegularPolygonPETLORDescriptor
@@ -781,6 +789,15 @@ class RegularPolygonPETProjector(LinearOperator):
 
 
 class ListmodePETProjector(LinearOperator):
+    """non-TOF and TOF listmode projector for regular polygon PET scanners
+
+    Examples
+    --------
+    :ref:`sphx_glr_auto_examples_03_pet_listmode_projections_demo_01_pet_non_tof_listmode_projector.py`
+
+    :ref:`sphx_glr_auto_examples_03_pet_listmode_projections_demo_02_pet_tof_listmode_projector.py`
+    """
+
     def __init__(
         self,
         event_start_coordinates: Array,
@@ -789,8 +806,7 @@ class ListmodePETProjector(LinearOperator):
         voxel_size: tuple[float, float, float],
         img_origin: None | Array = None,
     ) -> None:
-        """Listmode PET projector
-
+        """
         Parameters
         ----------
         event_start_coordinates : Array

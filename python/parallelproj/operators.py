@@ -203,7 +203,13 @@ class LinearOperator(abc.ABC):
 
 
 class MatrixOperator(LinearOperator):
-    """Linear Operator defined by dense matrix multiplication"""
+    """Linear Operator defined by dense matrix multiplication
+
+    Examples
+    --------
+
+    :ref:`sphx_glr_auto_examples_05_algorithms_demo_01_mlem_basic.py`
+    """
 
     def __init__(self, A: Array) -> None:
         """init method
@@ -253,8 +259,19 @@ class MatrixOperator(LinearOperator):
 class CompositeLinearOperator(LinearOperator):
     """Composite Linear Operator defined by a sequence of Linear Operators
 
-    Given a Sequence of operators :math:`(A_0, ..., A_{n-1})` the composite operator is defined as
-    :math:`A(x) = A_0( A_1( ... ( A_{n-1}(x) ) ) )`
+    Given a Sequence of operators
+
+    .. math::
+            A^0, A^1, \ldots, A^{n-1}
+
+    the composite linear operator is defined as
+
+    .. math::
+        A(x) = A^0( A^1( ... ( A^{n-1}(x) ) ) )
+
+    Examples
+    --------
+    :ref:`sphx_glr_auto_examples_02_pet_sinogram_projections_demo_01_pet_non_tof_sinogram_projector.py`
     """
 
     def __init__(self, operators: Sequence[LinearOperator]):
@@ -299,7 +316,12 @@ class CompositeLinearOperator(LinearOperator):
 
 
 class ElementwiseMultiplicationOperator(LinearOperator):
-    """Element-wise multiplication operator (multiplication with a diagonal matrix)"""
+    """Element-wise multiplication operator (multiplication with a diagonal matrix)
+
+    Examples
+    --------
+    :ref:`sphx_glr_auto_examples_02_pet_sinogram_projections_demo_01_pet_non_tof_sinogram_projector.py`
+    """
 
     def __init__(self, values: Array):
         """init method
@@ -347,7 +369,12 @@ class ElementwiseMultiplicationOperator(LinearOperator):
 
 
 class TOFNonTOFElementwiseMultiplicationOperator(LinearOperator):
-    """Element-wise multiplication operator between a non-TOF and TOF sinogram"""
+    """Element-wise multiplication operator between a non-TOF and TOF sinogram
+
+    Examples
+    --------
+    :ref:`sphx_glr_auto_examples_02_pet_sinogram_projections_demo_02_pet_tof_sinogram_projector.py`
+    """
 
     def __init__(self, in_shape: tuple[int, ...], values: Array):
         """init method
@@ -407,7 +434,12 @@ class TOFNonTOFElementwiseMultiplicationOperator(LinearOperator):
 
 
 class GaussianFilterOperator(LinearOperator):
-    """Gaussian filter operator"""
+    """Gaussian filter operator
+
+    Examples
+    --------
+    :ref:`sphx_glr_auto_examples_02_pet_sinogram_projections_demo_01_pet_non_tof_sinogram_projector.py`
+    """
 
     def __init__(self, in_shape: tuple[int, ...], sigma: float | Array, **kwargs):
         """init method
@@ -521,8 +553,19 @@ class VstackOperator(LinearOperator):
         return x
 
 
-class LinearOperatorSequence:
-    """Operator split into subsets"""
+class LinearOperatorSequence(Sequence[LinearOperator]):
+    """Sequence of linear operators
+
+    .. math::
+       A^0, A^1 \ldots, A^{n-1}
+
+    that can be evaluated independently.
+
+    Examples
+    --------
+
+    :ref:`sphx_glr_auto_examples_05_algorithms_demo_02_osem_basic.py`
+    """
 
     def __init__(self, operators: Sequence[LinearOperator]) -> None:
         """init method
@@ -557,11 +600,11 @@ class LinearOperatorSequence:
         return self._len
 
     def __getitem__(self, i: int) -> LinearOperator:
-        """get the i-th subset operator :math:`A_i`"""
+        """get the i-th linear operator :math:`A^i`"""
         return self._operators[i]
 
     def apply(self, x: Array) -> list[Array]:
-        """:math:`A_i(x)` for all subsets :math:`i`"""
+        """:math:`(A^0(x), A^1(x), \ldots, A^{n-1}(x))`"""
 
         y = [op(x) for op in self]
 
@@ -571,12 +614,12 @@ class LinearOperatorSequence:
         return self.apply(x)
 
     def adjoint(self, y: list[Array]) -> Array:
-        """:math:`A_i^H y_i` for all subsets :math:`i`"""
+        """:math:`\sum_i (A^i)^H y^i` for all :math:`i`"""
 
         return sum([op.adjoint(y[i]) for (i, op) in enumerate(self)])
 
     def norms(self, xp: ModuleType, dev: str) -> list[float]:
-        """:math:`\\text{norm}(A_i)` for all subsets :math:`i`"""
+        """:math:`\\text{norm}(A^i)` for all :math:`i`"""
         return [op.norm(xp, dev) for op in self]
 
 
