@@ -159,6 +159,7 @@ def test_composite(xp: ModuleType, dev: str):
 
     assert op.adjointness_test(xp, dev)
     assert allclose(v * (A @ x), op(x))
+    assert [x.out_shape for x in op] == [op1.out_shape, op2.out_shape]
 
 
 def test_vstack(xp: ModuleType, dev: str):
@@ -218,6 +219,7 @@ def test_subsets(xp: ModuleType, dev: str):
 
     assert A.in_shape == A3.in_shape
     assert A.out_shapes == (A1.out_shape, A2.out_shape, A3.out_shape)
+    assert A.out_shapes == tuple([x.out_shape for x in A])
     assert A.operators == (A1, A2, A3)
 
 

@@ -558,7 +558,7 @@ class SubsetOperator:
         return self._num_subsets
 
     def __getitem__(self, i: int) -> LinearOperator:
-        """get the i-th subset operator :math:`A_i(x)`"""
+        """get the i-th subset operator :math:`A_i`"""
         return self._operators[i]
 
     def apply(self, x: Array) -> list[Array]:
