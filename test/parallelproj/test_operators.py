@@ -193,7 +193,7 @@ def test_vstack(xp: ModuleType, dev: str):
     )
 
 
-def test_subsets(xp: ModuleType, dev: str):
+def test_operator_sequence(xp: ModuleType, dev: str):
     np.random.seed(0)
     in_shape = (3,)
 
@@ -201,26 +201,31 @@ def test_subsets(xp: ModuleType, dev: str):
     A2 = parallelproj.MatrixOperator(xp.asarray(np.random.randn(5, 3), device=dev))
     A3 = parallelproj.MatrixOperator(xp.asarray(np.random.randn(2, 3), device=dev))
 
-    A = parallelproj.SubsetOperator((A1, A2, A3))
+    A = parallelproj.OperatorSequence([A1, A2, A3])
+
+    assert len(A) == 3
 
     # test call to norms
     ns = A.norms(xp, dev)
+    assert np.isclose(ns[0], A1.norm(xp, dev))
+    assert np.isclose(ns[1], A2.norm(xp, dev))
+    assert np.isclose(ns[2], A3.norm(xp, dev))
 
     x = xp.asarray(np.random.rand(*in_shape), device=dev)
     x_fwd = A(x)
 
-    for i in range(A.num_subsets):
-        assert allclose(x_fwd[i], A.apply_subset(x, i))
+    assert allclose(x_fwd[0], A1(x))
+    assert allclose(x_fwd[1], A2(x))
+    assert allclose(x_fwd[2], A3(x))
 
     y = A.adjoint(x_fwd)
-    tmp = sum([A.adjoint_subset(x_fwd[i], i) for i in range(A.num_subsets)])
+    tmp = sum([Ak.adjoint(x_fwd[k]) for k, Ak in enumerate(A)])
 
     assert allclose(y, tmp)
 
     assert A.in_shape == A3.in_shape
-    assert A.out_shapes == (A1.out_shape, A2.out_shape, A3.out_shape)
-    assert A.out_shapes == tuple([x.out_shape for x in A])
-    assert A.operators == (A1, A2, A3)
+    assert A.out_shapes == [A1.out_shape, A2.out_shape, A3.out_shape]
+    assert A.operators == [A1, A2, A3]
 
 
 def test_finite_difference(xp: ModuleType, dev: str):

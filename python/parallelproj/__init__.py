@@ -16,7 +16,7 @@ from .operators import (
     GaussianFilterOperator,
     CompositeLinearOperator,
     VstackOperator,
-    SubsetOperator,
+    OperatorSequence,
 )
 from .operators import FiniteForwardDifference
 
@@ -56,7 +56,7 @@ __all__ = [
     "GaussianFilterOperator",
     "CompositeLinearOperator",
     "VstackOperator",
-    "SubsetOperator",
+    "OperatorSequence",
     "FiniteForwardDifference",
     "ParallelViewProjector2D",
     "ParallelViewProjector3D",

@@ -253,17 +253,17 @@ class MatrixOperator(LinearOperator):
 class CompositeLinearOperator(LinearOperator):
     """Composite Linear Operator defined by a sequence of Linear Operators
 
-    Given a tuple of operators :math:`(A_0, ..., A_{n-1})` the composite operator is defined as
+    Given a Sequence of operators :math:`(A_0, ..., A_{n-1})` the composite operator is defined as
     :math:`A(x) = A_0( A_1( ... ( A_{n-1}(x) ) ) )`
     """
 
-    def __init__(self, operators: tuple[LinearOperator, ...]):
+    def __init__(self, operators: Sequence[LinearOperator]):
         """init method
 
         Parameters
         ----------
-        operators : tuple[LinearOperator, ...]
-            tuple of linear operators
+        operators : Sequence[LinearOperator, ...]
+            Sequence of linear operators
         """
         super().__init__()
         self._operators = operators
@@ -277,19 +277,19 @@ class CompositeLinearOperator(LinearOperator):
         return self._operators[0].out_shape
 
     @property
-    def operators(self) -> tuple[LinearOperator, ...]:
+    def operators(self) -> Sequence[LinearOperator]:
         """tuple of linear operators"""
         return self._operators
 
     def _apply(self, x: Array) -> Array:
         y = x
-        for op in self._operators[::-1]:
+        for op in self[::-1]:
             y = op(y)
         return y
 
     def _adjoint(self, y: Array) -> Array:
         x = y
-        for op in self._operators:
+        for op in self:
             x = op.adjoint(x)
         return x
 
@@ -521,7 +521,7 @@ class VstackOperator(LinearOperator):
         return x
 
 
-class SubsetOperator:
+class OperatorSequence:
     """Operator split into subsets"""
 
     def __init__(self, operators: Sequence[LinearOperator]) -> None:
@@ -534,8 +534,8 @@ class SubsetOperator:
         """
         self._operators = operators
         self._in_shape = self._operators[0].in_shape
-        self._out_shapes = tuple([x.out_shape for x in operators])
-        self._num_subsets = len(operators)
+        self._out_shapes = [x.out_shape for x in operators]
+        self._len = len(operators)
 
     @property
     def in_shape(self) -> tuple[int, ...]:
@@ -543,7 +543,7 @@ class SubsetOperator:
         return self._in_shape
 
     @property
-    def out_shapes(self) -> tuple[tuple[int, ...]]:
+    def out_shapes(self) -> list[tuple[int, ...]]:
         """shapes of the output array of all subset operators"""
         return self._out_shapes
 
@@ -552,10 +552,9 @@ class SubsetOperator:
         """all subset operators"""
         return self._operators
 
-    @property
-    def num_subsets(self) -> int:
-        """number of subsets"""
-        return self._num_subsets
+    def __len__(self) -> int:
+        """length of operator sequence"""
+        return self._len
 
     def __getitem__(self, i: int) -> LinearOperator:
         """get the i-th subset operator :math:`A_i`"""
@@ -564,7 +563,7 @@ class SubsetOperator:
     def apply(self, x: Array) -> list[Array]:
         """:math:`A_i(x)` for all subsets :math:`i`"""
 
-        y = [op(x) for op in self._operators]
+        y = [op(x) for op in self]
 
         return y
 
@@ -574,24 +573,11 @@ class SubsetOperator:
     def adjoint(self, y: list[Array]) -> Array:
         """:math:`A_i^H y_i` for all subsets :math:`i`"""
 
-        x = []
-
-        for i, op in enumerate(self._operators):
-            x.append(op.adjoint(y[i]))
-
-        return sum(x)
-
-    def apply_subset(self, x: Array, i: int) -> Array:
-        """:math:`A_i x` for a given subset :math:`i`"""
-        return self._operators[i](x)
-
-    def adjoint_subset(self, x: Array, i: int) -> Array:
-        """:math:`A_i^H x` for a given subset :math:`i`"""
-        return self._operators[i].adjoint(x)
+        return sum([op.adjoint(y[i]) for (i, op) in enumerate(self)])
 
     def norms(self, xp: ModuleType, dev: str) -> list[float]:
         """:math:`\\text{norm}(A_i)` for all subsets :math:`i`"""
-        return [op.norm(xp, dev) for op in self._operators]
+        return [op.norm(xp, dev) for op in self]
 
 
 class FiniteForwardDifference(LinearOperator):
