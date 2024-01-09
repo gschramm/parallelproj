@@ -262,7 +262,7 @@ class CompositeLinearOperator(LinearOperator):
     Given a Sequence of operators
 
     .. math::
-            A^0, A^1, \ldots, A^{n-1}
+            A^0, A^1, \\ldots, A^{n-1}
 
     the composite linear operator is defined as
 
@@ -557,7 +557,7 @@ class LinearOperatorSequence(Sequence[LinearOperator]):
     """Sequence of linear operators
 
     .. math::
-       A^0, A^1 \ldots, A^{n-1}
+       A^0, A^1 \\ldots, A^{n-1}
 
     that can be evaluated independently.
 
@@ -604,7 +604,7 @@ class LinearOperatorSequence(Sequence[LinearOperator]):
         return self._operators[i]
 
     def apply(self, x: Array) -> list[Array]:
-        """:math:`(A^0(x), A^1(x), \ldots, A^{n-1}(x))`"""
+        """:math:`(A^0(x), A^1(x), \\ldots, A^{n-1}(x))`"""
 
         y = [op(x) for op in self]
 
@@ -614,7 +614,7 @@ class LinearOperatorSequence(Sequence[LinearOperator]):
         return self.apply(x)
 
     def adjoint(self, y: list[Array]) -> Array:
-        """:math:`\sum_i (A^i)^H y^i` for all :math:`i`"""
+        """:math:`\\sum_i (A^i)^H y^i` for all :math:`i`"""
 
         return sum([op.adjoint(y[i]) for (i, op) in enumerate(self)])
 

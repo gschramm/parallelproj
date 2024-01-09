@@ -62,8 +62,7 @@ sphinx_gallery_conf = {
     },
     # directory where function/class granular galleries are stored
     "backreferences_dir": "gen_modules/backreferences",
-    # Modules for which function/class level galleries are created. In
-    # this case sphinx_gallery and numpy in a tuple of strings.
+    # Modules for which function/class level galleries are created.
     "doc_module": ("parallelproj"),
     # objects to exclude from implicit backreferences. The default option
     # is an empty set, i.e. exclude nothing.
@@ -116,11 +115,12 @@ autodoc_default_options = {
     "undoc-members": True,
     "inherited-members": True,
     "private-members": False,
-    "special-members": "__call__",
+    "special-members": "__call__, __getitem__, __setitem__",
     "show-inheritance": True,
 }
 
 autoclass_content = "both"
+autodoc_typehints = "both"
 
 # -- coverage builder options -------------------------------------------------
 # Configuration of sphinx.ext.coverage
