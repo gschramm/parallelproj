@@ -22,7 +22,7 @@ class SinogramSpatialAxisOrder(enum.Enum):
 
     Examples
     --------
-    :ref:`sphx_glr_auto_examples_01_pet_geometry_demo_02_regular_polygon_pet_sino.py`
+    .. minigallery:: parallelproj.SinogramSpatialAxisOrder
     """
 
     RVP = enum.auto()
@@ -81,7 +81,7 @@ class RegularPolygonPETLORDescriptor(PETLORDescriptor):
 
     Examples
     --------
-    :ref:`sphx_glr_auto_examples_01_pet_geometry_demo_02_regular_polygon_pet_sino.py`
+    .. minigallery:: parallelproj.RegularPolygonPETLORDescriptor
     """
 
     def __init__(

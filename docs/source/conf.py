@@ -70,7 +70,7 @@ sphinx_gallery_conf = {
     "nested_sections": False,
     "within_subsection_order": FileNameSortKey,
     "line_numbers": True,
-    "recommender": {"enable": True, "n_examples": 3},
+    "recommender": {"enable": True, "n_examples": 4},
     "matplotlib_animations": True,
 }
 

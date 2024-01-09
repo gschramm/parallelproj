@@ -471,9 +471,7 @@ class RegularPolygonPETProjector(LinearOperator):
 
     Examples
     --------
-    :ref:`sphx_glr_auto_examples_02_pet_sinogram_projections_demo_01_pet_non_tof_sinogram_projector.py`
-    :ref:`sphx_glr_auto_examples_02_pet_sinogram_projections_demo_02_pet_tof_sinogram_projector.py`
-    :ref:`sphx_glr_auto_examples_05_algorithms_demo_03_mlem_projection_data.py`
+    .. minigallery:: parallelproj.RegularPolygonPETProjector
     """
 
     def __init__(
@@ -793,9 +791,7 @@ class ListmodePETProjector(LinearOperator):
 
     Examples
     --------
-    :ref:`sphx_glr_auto_examples_03_pet_listmode_projections_demo_01_pet_non_tof_listmode_projector.py`
-
-    :ref:`sphx_glr_auto_examples_03_pet_listmode_projections_demo_02_pet_tof_listmode_projector.py`
+    .. minigallery:: parallelproj.ListmodePETProjector
     """
 
     def __init__(

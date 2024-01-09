@@ -208,7 +208,7 @@ class MatrixOperator(LinearOperator):
     Examples
     --------
 
-    :ref:`sphx_glr_auto_examples_05_algorithms_demo_01_mlem_basic.py`
+    .. minigallery:: parallelproj.MatrixOperator
     """
 
     def __init__(self, A: Array) -> None:
@@ -271,7 +271,7 @@ class CompositeLinearOperator(LinearOperator):
 
     Examples
     --------
-    :ref:`sphx_glr_auto_examples_02_pet_sinogram_projections_demo_01_pet_non_tof_sinogram_projector.py`
+    .. minigallery:: parallelproj.CompositeLinearOperator
     """
 
     def __init__(self, operators: Sequence[LinearOperator]):
@@ -320,7 +320,7 @@ class ElementwiseMultiplicationOperator(LinearOperator):
 
     Examples
     --------
-    :ref:`sphx_glr_auto_examples_02_pet_sinogram_projections_demo_01_pet_non_tof_sinogram_projector.py`
+    .. minigallery:: parallelproj.ElementwiseMultiplicationOperator
     """
 
     def __init__(self, values: Array):
@@ -373,7 +373,7 @@ class TOFNonTOFElementwiseMultiplicationOperator(LinearOperator):
 
     Examples
     --------
-    :ref:`sphx_glr_auto_examples_02_pet_sinogram_projections_demo_02_pet_tof_sinogram_projector.py`
+    .. minigallery:: parallelproj.TOFNonTOFElementwiseMultiplicationOperator
     """
 
     def __init__(self, in_shape: tuple[int, ...], values: Array):
@@ -438,7 +438,7 @@ class GaussianFilterOperator(LinearOperator):
 
     Examples
     --------
-    :ref:`sphx_glr_auto_examples_02_pet_sinogram_projections_demo_01_pet_non_tof_sinogram_projector.py`
+    .. minigallery:: parallelproj.GaussianFilterOperator
     """
 
     def __init__(self, in_shape: tuple[int, ...], sigma: float | Array, **kwargs):
@@ -564,7 +564,7 @@ class LinearOperatorSequence(Sequence[LinearOperator]):
     Examples
     --------
 
-    :ref:`sphx_glr_auto_examples_05_algorithms_demo_02_osem_basic.py`
+    .. minigallery:: parallelproj.LinearOperatorSequence
     """
 
     def __init__(self, operators: Sequence[LinearOperator]) -> None:

@@ -507,7 +507,7 @@ class RegularPolygonPETScannerGeometry(ModularizedPETScannerGeometry):
 
     Examples
     --------
-    :ref:`sphx_glr_auto_examples_01_pet_geometry_demo_01_regular_polygon_pet_scanner.py`
+    .. minigallery:: parallelproj.RegularPolygonPETScannerGeometry
     """
 
     def __init__(
