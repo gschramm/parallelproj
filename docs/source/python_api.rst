@@ -1,29 +1,29 @@
-Low-level projector functions
------------------------------
+Low-level projector interface ``parallelproj.backend``
+------------------------------------------------------
 
 .. automodule:: parallelproj.backend
 
-PET scanner geometries
-----------------------
+PET scanner geometries ``parallelproj.pet_scanners``
+----------------------------------------------------
 
 .. automodule:: parallelproj.pet_scanners
 
-PET LOR / sinogram descriptors
-------------------------------
+PET LOR / sinogram descriptors ``parallelproj.pet_lors``
+--------------------------------------------------------
 
 .. automodule:: parallelproj.pet_lors
 
-PET TOF parameters
-------------------
+PET TOF parameters ``parallelproj.tof``
+---------------------------------------
 
 .. automodule:: parallelproj.tof
 
-PET projectors
---------------
+PET projectors ``parallelproj.projectors``
+------------------------------------------
 
 .. automodule:: parallelproj.projectors
 
-Linear operators
-----------------
+Linear operators ``parallelproj.operators``
+-------------------------------------------
 
 .. automodule:: parallelproj.operators

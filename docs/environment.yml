@@ -8,6 +8,4 @@ dependencies:
   - sphinx-gallery
   - sphinx-design
   - sphinx-copybutton
-  - jupytext
-  - ipykernel
   - libparallelproj

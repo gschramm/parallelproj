@@ -30,19 +30,20 @@ array libraries (e.g. numpy, cupy, pytorch) and devices (CPU and CUDA GPUs).
 
 .. toctree::
     :caption: Getting started
+    :maxdepth: 1
 
     installation
     auto_examples/index
 
 .. toctree::
-    :hidden:
     :caption: Python API
+    :maxdepth: 1
 
     python_api
 
 .. toctree::
-    :hidden:
     :caption: C/CUDA lib API
+    :maxdepth: 1
 
     libparallelproj_c
     libparallelproj_cuda
