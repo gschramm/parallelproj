@@ -1,5 +1,5 @@
 """
-MLEM with projection data
+OSEM with projection data
 =========================
 
 This example demonstrates the use of the MLEM algorithm to minimize the negative Poisson log-likelihood function.
@@ -136,13 +136,52 @@ y = xp.asarray(
 )
 
 # %%
-# MLEM iterations to minimize :math:`f(x)`
+# Split forward model into subsets :math:`A^k`
+# --------------------------------------------
+
+num_subsets = 9
+
+subset_nums = []
+for i in range(num_subsets // 2):
+    subset_nums += [x for x in range(i, num_subsets, 4)]
+
+subset_slices = []
+subset_views = []
+view_axis_num = proj.lor_descriptor.view_axis_num
+all_views = proj.views
+
+for i in subset_nums:
+    sl = len(proj.out_shape) * [slice(None)]
+    sl[view_axis_num] = slice(i, None, num_subsets)
+    sl = tuple(sl)
+    subset_slices.append(sl)
+    subset_views.append(all_views[sl[view_axis_num]])
+
+op_seq = parallelproj.LinearOperatorSequence(
+    [
+        parallelproj.CompositeLinearOperator(
+            [
+                parallelproj.ElementwiseMultiplicationOperator(
+                    att_sino[subset_slices[i]]
+                ),
+                parallelproj.RegularPolygonPETProjector(
+                    lor_desc, img_shape=img_shape, voxel_size=voxel_size, views=sv
+                ),
+                res_model,
+            ]
+        )
+        for i, sv in enumerate(subset_views)
+    ]
+)
+
+# %%
+# OSEM iterations to minimize :math:`f(x)`
 # ----------------------------------------
 #
-# We apply multiple MLEM updates
+# We apply multiple OSEM updates
 #
 # .. math::
-#     x^+ = \frac{x}{A^H 1} A^H \frac{y}{A x + s}
+#     x^+ = \frac{x}{(A^k)^H 1} (A^k)^H \frac{y^k}{A^k x + s^k}
 #
 # to calculate the minimizer of :math:`f(x)` iteratively.
 #
@@ -155,27 +194,26 @@ y = xp.asarray(
 #
 # .. math::
 #    \frac{\|x - x^*\|}{\|x^*\|}.
-#
-# .. note::
-#     To reduce the execution time of this example, we use a small number
-#     of MLEM iterations.
 
 # number MLEM iterations
-num_iter = 45
+num_iter = 45 // len(op_seq)
 
 # initialize x
-x = xp.ones(op_A.in_shape, dtype=xp.float32, device=dev)
-# calculate A^H 1
-adjoint_ones = op_A.adjoint(xp.ones(op_A.out_shape, dtype=xp.float32, device=dev))
+x = xp.ones(op_A.in_shape, dtype=xp.float64, device=dev)
+
+# calculate A_k^H 1 for all subsets k
+subset_adjoint_ones = [
+    x.adjoint(xp.ones(x.out_shape, dtype=xp.float64, device=dev)) for x in op_seq
+]
 
 for i in range(num_iter):
-    print(f"MLEM iteration {(i + 1):03} / {num_iter:03}", end="\r")
-    # evaluate the forward model
-    exp = op_A(x) + contamination
-    # MLEM update
-    ratio = y / exp
-    x *= op_A.adjoint(ratio) / adjoint_ones
-
+    for k, sl in enumerate(subset_slices):
+        print(f"OSEM iteration {(k+1):03} / {(i + 1):03} / {num_iter:03}", end="\r")
+        # evaluate the forward model
+        subset_exp = op_seq[k](x) + contamination[sl]
+        # OSEM update
+        ratio = y[sl] / subset_exp
+        x *= op_seq[k].adjoint(ratio) / subset_adjoint_ones[k]
 
 # %%
 # calculate the negative Poisson log-likelihood function of the reconstruction
@@ -185,7 +223,8 @@ for i in range(num_iter):
 exp = op_A(x) + contamination
 # calculate the relative cost and distance to the optimal point
 cost = float(xp.sum(exp - y * xp.log(exp)))
-print(f"\nMLEM cost {cost:.6E} after {num_iter:03} iterations")
+print(f"\nOSEM cost {cost:.6E} after {num_iter:03} iterations")
+
 
 # %%
 # Visualize the results
@@ -196,7 +235,7 @@ def _update_img(i):
     img0.set_data(x_true_np[:, :, i])
     img1.set_data(x_np[:, :, i])
     ax[0].set_title(f"true image - plane {i:02}")
-    ax[1].set_title(f"MLEM iteration {num_iter} - plane {i:02}")
+    ax[1].set_title(f"OSEM iteration {num_iter} - {num_subsets} subsets - plane {i:02}")
     return (img0, img1)
 
 
@@ -208,7 +247,7 @@ vmax = x_np.max()
 img0 = ax[0].imshow(x_true_np[:, :, 0], cmap="Greys", vmin=0, vmax=vmax)
 img1 = ax[1].imshow(x_np[:, :, 0], cmap="Greys", vmin=0, vmax=vmax)
 ax[0].set_title(f"true image - plane {0:02}")
-ax[1].set_title(f"MLEM iteration {num_iter} - plane {0:02}")
+ax[1].set_title(f"OSEM iteration {num_iter} - {num_subsets} subsets - plane {0:02}")
 fig.tight_layout()
 ani = animation.FuncAnimation(fig, _update_img, x_np.shape[2], interval=200, blit=False)
 fig.show()
