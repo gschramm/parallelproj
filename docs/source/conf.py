@@ -81,6 +81,8 @@ html_theme = "sphinx_rtd_theme"
 html_logo = "parllelproj-logo2.svg"
 
 html_theme_options = {
+    "analytics_id": "G-WFK38K0TGS",
+    "analytics_anonymize_ip": True,
     "logo_only": True,
     "display_version": True,
     "prev_next_buttons_location": "bottom",
