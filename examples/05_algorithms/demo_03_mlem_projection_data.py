@@ -18,6 +18,9 @@ using the linear forward model
     Choose your preferred array API ``xp`` and device ``dev`` below.
 """
 # %%
+from __future__ import annotations
+from numpy.array_api._array_object import Array
+
 # import array_api_compat.numpy as xp
 import numpy.array_api as xp
 
@@ -160,6 +163,39 @@ y = xp.asarray(
 #     To reduce the execution time of this example, we use a small number
 #     of MLEM iterations.
 
+
+def em_update(
+    x_cur: Array,
+    data: Array,
+    op: parallelproj.LinearOperator,
+    s: Array,
+    adjoint_ones: Array,
+) -> Array:
+    """EM update
+
+    Parameters
+    ----------
+    x_cur : Array
+        current solution
+    data : Array
+        data
+    op : parallelproj.LinearOperator
+        linear forward operator
+    s : Array
+        contamination
+    adjoint_ones : Array
+        adjoint of ones
+
+    Returns
+    -------
+    Array
+        _description_
+    """
+    ybar = op(x_cur) + s
+    return x * op.adjoint(data / ybar) / adjoint_ones
+
+
+# %%
 # number MLEM iterations
 num_iter = 45
 
@@ -170,11 +206,7 @@ adjoint_ones = op_A.adjoint(xp.ones(op_A.out_shape, dtype=xp.float32, device=dev
 
 for i in range(num_iter):
     print(f"MLEM iteration {(i + 1):03} / {num_iter:03}", end="\r")
-    # evaluate the forward model
-    exp = op_A(x) + contamination
-    # MLEM update
-    ratio = y / exp
-    x *= op_A.adjoint(ratio) / adjoint_ones
+    x = em_update(x, y, op_A, contamination, adjoint_ones)
 
 
 # %%

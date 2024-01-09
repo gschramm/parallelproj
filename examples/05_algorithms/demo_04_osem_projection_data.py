@@ -18,6 +18,9 @@ using the linear forward model
     Choose your preferred array API ``xp`` and device ``dev`` below.
 """
 # %%
+from __future__ import annotations
+from numpy.array_api._array_object import Array
+
 # import array_api_compat.numpy as xp
 import numpy.array_api as xp
 
@@ -195,6 +198,39 @@ op_seq = parallelproj.LinearOperatorSequence(
 # .. math::
 #    \frac{\|x - x^*\|}{\|x^*\|}.
 
+
+def em_update(
+    x_cur: Array,
+    data: Array,
+    op: parallelproj.LinearOperator,
+    s: Array,
+    adjoint_ones: Array,
+) -> Array:
+    """EM update
+
+    Parameters
+    ----------
+    x_cur : Array
+        current solution
+    data : Array
+        data
+    op : parallelproj.LinearOperator
+        linear forward operator
+    s : Array
+        contamination
+    adjoint_ones : Array
+        adjoint of ones
+
+    Returns
+    -------
+    Array
+        _description_
+    """
+    ybar = op(x_cur) + s
+    return x * op.adjoint(data / ybar) / adjoint_ones
+
+
+# %%
 # number MLEM iterations
 num_iter = 45 // len(op_seq)
 
@@ -209,11 +245,7 @@ subset_adjoint_ones = [
 for i in range(num_iter):
     for k, sl in enumerate(subset_slices):
         print(f"OSEM iteration {(k+1):03} / {(i + 1):03} / {num_iter:03}", end="\r")
-        # evaluate the forward model
-        subset_exp = op_seq[k](x) + contamination[sl]
-        # OSEM update
-        ratio = y[sl] / subset_exp
-        x *= op_seq[k].adjoint(ratio) / subset_adjoint_ones[k]
+        x = em_update(x, y[sl], op_seq[k], contamination[sl], subset_adjoint_ones[k])
 
 # %%
 # calculate the negative Poisson log-likelihood function of the reconstruction
