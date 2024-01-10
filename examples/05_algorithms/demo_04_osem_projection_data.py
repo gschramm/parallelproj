@@ -21,8 +21,7 @@ using the linear forward model
 from __future__ import annotations
 from numpy.array_api._array_object import Array
 
-# import array_api_compat.numpy as xp
-import numpy.array_api as xp
+import array_api_compat.numpy as xp
 
 # import array_api_compat.cupy as xp
 # import array_api_compat.torch as xp
@@ -42,7 +41,10 @@ elif "cupy" in xp.__name__:
     dev = xp.cuda.Device(0)
 elif "torch" in xp.__name__:
     # using torch valid choices are 'cpu' or 'cuda'
-    dev = "cuda"
+    if parallelproj.cuda_present:
+        dev = "cuda"
+    else:
+        dev = "cpu"
 
 
 # %%
@@ -108,7 +110,7 @@ res_model = parallelproj.GaussianFilterOperator(
     proj.in_shape, sigma=4.5 / (2.35 * proj.voxel_size)
 )
 
-op_A = parallelproj.CompositeLinearOperator((att_op, proj, res_model))
+pet_lin_op = parallelproj.CompositeLinearOperator((att_op, proj, res_model))
 
 # %%
 # Simulation of projection data
@@ -118,7 +120,7 @@ op_A = parallelproj.CompositeLinearOperator((att_op, proj, res_model))
 # noise-free and noisy data :math:`y` by adding Poisson noise.
 
 # simulated noise-free data
-noise_free_data = op_A(x_true)
+noise_free_data = pet_lin_op(x_true)
 
 # generate a contant contamination sinogram
 contamination = xp.full(
@@ -160,7 +162,7 @@ for i in subset_nums:
     subset_slices.append(sl)
     subset_views.append(all_views[sl[view_axis_num]])
 
-op_seq = parallelproj.LinearOperatorSequence(
+pet_subset_linop_seq = parallelproj.LinearOperatorSequence(
     [
         parallelproj.CompositeLinearOperator(
             [
@@ -232,27 +234,30 @@ def em_update(
 
 # %%
 # number MLEM iterations
-num_iter = 45 // len(op_seq)
+num_iter = 45 // len(pet_subset_linop_seq)
 
 # initialize x
-x = xp.ones(op_A.in_shape, dtype=xp.float64, device=dev)
+x = xp.ones(pet_lin_op.in_shape, dtype=xp.float64, device=dev)
 
 # calculate A_k^H 1 for all subsets k
 subset_adjoint_ones = [
-    x.adjoint(xp.ones(x.out_shape, dtype=xp.float64, device=dev)) for x in op_seq
+    x.adjoint(xp.ones(x.out_shape, dtype=xp.float64, device=dev))
+    for x in pet_subset_linop_seq
 ]
 
 for i in range(num_iter):
     for k, sl in enumerate(subset_slices):
         print(f"OSEM iteration {(k+1):03} / {(i + 1):03} / {num_iter:03}", end="\r")
-        x = em_update(x, y[sl], op_seq[k], contamination[sl], subset_adjoint_ones[k])
+        x = em_update(
+            x, y[sl], pet_subset_linop_seq[k], contamination[sl], subset_adjoint_ones[k]
+        )
 
 # %%
 # calculate the negative Poisson log-likelihood function of the reconstruction
 # ----------------------------------------------------------------------------
 
 # calculate the negative Poisson log-likelihood function of the reconstruction
-exp = op_A(x) + contamination
+exp = pet_lin_op(x) + contamination
 # calculate the relative cost and distance to the optimal point
 cost = float(xp.sum(exp - y * xp.log(exp)))
 print(f"\nOSEM cost {cost:.6E} after {num_iter:03} iterations")
