@@ -1,6 +1,6 @@
 """
-OSEM with projection data
-=========================
+TOF OSEM with projection data
+=============================
 
 This example demonstrates the use of the MLEM algorithm to minimize the negative Poisson log-likelihood function.
 
@@ -31,6 +31,7 @@ from array_api_compat import to_device
 import array_api_compat.numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.animation as animation
+from copy import copy
 
 # choose a device (CPU or CUDA GPU)
 if "numpy" in xp.__name__:
@@ -100,16 +101,38 @@ x_true[-2:, :, :] = 0
 x_true[:, :2, :] = 0
 x_true[:, -2:, :] = 0
 
+# %%
+# setup an attenuation image and calculate the attenuation sinogram
+# -----------------------------------------------------------------
+
 # setup an attenuation image
 x_att = 0.01 * xp.astype(x_true > 0, xp.float32)
 # calculate the attenuation sinogram
 att_sino = xp.exp(-proj(x_att))
-att_op = parallelproj.ElementwiseMultiplicationOperator(att_sino)
+
+# %%
+# setup the complete PET forward model
+# ------------------------------------
+
+# enable TOF - comment if you want to run non-TOF
+proj.tof_parameters = parallelproj.TOFParameters(
+    num_tofbins=13, tofbin_width=12.0, sigma_tof=12.0
+)
+
+# setup the attenuation multiplication operator which is different
+# for TOF and non-TOF since the attenuation sinogram is always non-TOF
+if proj.tof:
+    att_op = parallelproj.TOFNonTOFElementwiseMultiplicationOperator(
+        proj.out_shape, att_sino
+    )
+else:
+    att_op = parallelproj.ElementwiseMultiplicationOperator(att_sino)
 
 res_model = parallelproj.GaussianFilterOperator(
     proj.in_shape, sigma=4.5 / (2.35 * proj.voxel_size)
 )
 
+# compose all 3 operators into a single linear operator
 pet_lin_op = parallelproj.CompositeLinearOperator((att_op, proj, res_model))
 
 # %%
@@ -155,27 +178,46 @@ subset_views, subset_slices = proj.lor_descriptor.get_distributed_views_and_slic
     num_subsets, len(proj.out_shape)
 )
 
+_, subset_slices_non_tof = proj.lor_descriptor.get_distributed_views_and_slices(
+    num_subsets, 3
+)
+
+# clear the cached LOR endpoints since we will create many copies of the projector
+proj.clear_cached_lor_endpoints()
+pet_subset_linop_seq = []
+
+# we setup a sequence of subset forward operators each constisting of
+# (1) image-based resolution model
+# (2) subset projector
+# (3) multiplication with the corresponding subset of the attenuation sinogram
 for i in range(num_subsets):
     print(f"subset {i:02} containing views {subset_views[i]}")
 
-# %%
+    # make a copy of the full projector and reset the views to project
+    subset_proj = copy(proj)
+    subset_proj.views = subset_views[i]
 
-pet_subset_linop_seq = parallelproj.LinearOperatorSequence(
-    [
+    if subset_proj.tof:
+        subset_att_op = parallelproj.TOFNonTOFElementwiseMultiplicationOperator(
+            subset_proj.out_shape, att_sino[subset_slices_non_tof[i]]
+        )
+    else:
+        subset_att_op = parallelproj.ElementwiseMultiplicationOperator(
+            att_sino[subset_slices_non_tof[i]]
+        )
+
+    # add the resolution model and multiplication with a subset of the attenuation sinogram
+    pet_subset_linop_seq.append(
         parallelproj.CompositeLinearOperator(
             [
-                parallelproj.ElementwiseMultiplicationOperator(
-                    att_sino[subset_slices[i]]
-                ),
-                parallelproj.RegularPolygonPETProjector(
-                    lor_desc, img_shape=img_shape, voxel_size=voxel_size, views=sv
-                ),
+                subset_att_op,
+                subset_proj,
                 res_model,
             ]
         )
-        for i, sv in enumerate(subset_views)
-    ]
-)
+    )
+
+pet_subset_linop_seq = parallelproj.LinearOperatorSequence(pet_subset_linop_seq)
 
 # %%
 # OSEM iterations to minimize :math:`f(x)`
@@ -224,7 +266,6 @@ def em_update(
     Returns
     -------
     Array
-        _description_
     """
     ybar = op(x_cur) + s
     return x * op.adjoint(data / ybar) / adjoint_ones
@@ -244,6 +285,7 @@ subset_adjoint_ones = [
     for x in pet_subset_linop_seq
 ]
 
+# OSEM iterations
 for i in range(num_iter):
     for k, sl in enumerate(subset_slices):
         print(f"OSEM iteration {(k+1):03} / {(i + 1):03} / {num_iter:03}", end="\r")
@@ -259,7 +301,9 @@ for i in range(num_iter):
 exp = pet_lin_op(x) + contamination
 # calculate the relative cost and distance to the optimal point
 cost = float(xp.sum(exp - y * xp.log(exp)))
-print(f"\nOSEM cost {cost:.6E} after {num_iter:03} iterations")
+print(
+    f"\nOSEM cost {cost:.6E} after {num_iter:03} iterations with {num_subsets} subsets"
+)
 
 
 # %%

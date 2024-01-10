@@ -371,6 +371,22 @@ class RegularPolygonPETLORDescriptor(PETLORDescriptor):
     def get_distributed_views_and_slices(
         self, num_subsets: int, num_dim: int
     ) -> tuple[list[Array], list[tuple[slice, ...]]]:
+        """distribute sinogram views numbers into subsets
+
+        Parameters
+        ----------
+        num_subsets : int
+            number of subsets
+        num_dim : int
+            number of dimensions of the sinogram
+            to setup the subset slices
+            (e.g. 3 for non-TOF, 4 for TOF)
+
+        Returns
+        -------
+        tuple[list[Array], list[tuple[slice, ...]]]
+            subset views numbers and subset slices
+        """
         subset_nums = []
 
         for i in range(num_subsets // 2):
