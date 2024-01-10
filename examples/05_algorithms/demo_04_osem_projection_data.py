@@ -230,7 +230,7 @@ pet_subset_linop_seq = parallelproj.LinearOperatorSequence(pet_subset_linop_seq)
 # The EM update that can be used in MLEM or OSEM is given by
 #
 # .. math::
-#     x^+ = \frac{x}{(A^k)^H 1} (A^k)^H \frac{y^k}{A^k x + s^k}
+#     x^+ = \frac{x}{A^H 1} A^H \frac{y}{A x + s}
 #
 # to calculate the minimizer of :math:`f(x)` iteratively.
 #
@@ -287,6 +287,10 @@ def em_update(
 # Note that the OSEM iterations are almost the same as the MLEM iterations.
 # The only difference is that in every subset update, we pass an operator
 # that projects a subset, a subset of the data and a subset of the contamination.
+#
+# .. math::
+#     x^+ = \frac{x}{(A^k)^H 1} (A^k)^H \frac{y^k}{A^k x + s^k}
+#
 # The "sensitivity" images are also calculated separately for each subset.
 
 # number of OSEM iterations
