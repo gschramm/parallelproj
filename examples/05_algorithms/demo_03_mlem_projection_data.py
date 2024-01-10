@@ -198,8 +198,9 @@ def em_update(
 
 
 # %%
-# number MLEM iterations
-num_iter = 45
+
+# number of MLEM iterations
+num_iter = 50
 
 # initialize x
 x = xp.ones(pet_lin_op.in_shape, dtype=xp.float32, device=dev)

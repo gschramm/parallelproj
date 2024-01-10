@@ -367,3 +367,24 @@ class RegularPolygonPETLORDescriptor(PETLORDescriptor):
         ls = ls.reshape((-1, 2, 3))
         lc = Line3DCollection(ls, linewidths=lw, **kwargs)
         ax.add_collection(lc)
+
+    def get_distributed_views_and_slices(
+        self, num_subsets: int, num_dim: int
+    ) -> tuple[list[Array], list[tuple[slice, ...]]]:
+        subset_nums = []
+
+        for i in range(num_subsets // 2):
+            subset_nums += [x for x in range(i, num_subsets, num_subsets // 2)]
+
+        subset_slices = []
+        subset_views = []
+        all_views = self.xp.arange(self.num_views, device=self.dev)
+
+        for i in subset_nums:
+            sl = num_dim * [slice(None)]
+            sl[self.view_axis_num] = slice(i, None, num_subsets)
+            sl = tuple(sl)
+            subset_slices.append(sl)
+            subset_views.append(all_views[sl[self.view_axis_num]])
+
+        return subset_views, subset_slices

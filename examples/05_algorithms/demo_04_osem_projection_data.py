@@ -143,24 +143,22 @@ y = xp.asarray(
 # %%
 # Split forward model into subsets :math:`A^k`
 # --------------------------------------------
+#
+# Calculate the view numbers and slices for each subset.
+# We will use the subset views to setup a sequence of projectors projecting only
+# a subset of views. The slices can be used to extract the corresponding subsets
+# from full data or corrections sinograms.
 
-num_subsets = 9
+num_subsets = 10
 
-subset_nums = []
-for i in range(num_subsets // 2):
-    subset_nums += [x for x in range(i, num_subsets, 4)]
+subset_views, subset_slices = proj.lor_descriptor.get_distributed_views_and_slices(
+    num_subsets, len(proj.out_shape)
+)
 
-subset_slices = []
-subset_views = []
-view_axis_num = proj.lor_descriptor.view_axis_num
-all_views = proj.views
+for i in range(num_subsets):
+    print(f"subset {i:02} containing views {subset_views[i]}")
 
-for i in subset_nums:
-    sl = len(proj.out_shape) * [slice(None)]
-    sl[view_axis_num] = slice(i, None, num_subsets)
-    sl = tuple(sl)
-    subset_slices.append(sl)
-    subset_views.append(all_views[sl[view_axis_num]])
+# %%
 
 pet_subset_linop_seq = parallelproj.LinearOperatorSequence(
     [
@@ -233,8 +231,9 @@ def em_update(
 
 
 # %%
-# number MLEM iterations
-num_iter = 45 // len(pet_subset_linop_seq)
+
+# number of OSEM iterations
+num_iter = 50 // len(pet_subset_linop_seq)
 
 # initialize x
 x = xp.ones(pet_lin_op.in_shape, dtype=xp.float64, device=dev)
