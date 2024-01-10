@@ -1,6 +1,6 @@
 """
-MLEM with projection data
-=========================
+TOF-MLEM with projection data
+=============================
 
 This example demonstrates the use of the MLEM algorithm to minimize the negative Poisson log-likelihood function.
 
@@ -100,17 +100,45 @@ x_true[-2:, :, :] = 0
 x_true[:, :2, :] = 0
 x_true[:, -2:, :] = 0
 
+# %%
+# setup an attenuation image and calculate the attenuation sinogram
+# -----------------------------------------------------------------
+
 # setup an attenuation image
 x_att = 0.01 * xp.astype(x_true > 0, xp.float32)
 # calculate the attenuation sinogram
 att_sino = xp.exp(-proj(x_att))
-att_op = parallelproj.ElementwiseMultiplicationOperator(att_sino)
+
+
+# %%
+# setup the complete PET forward model
+# ------------------------------------
+#
+# We combine an image-based resolution model,
+# a non-TOF or TOF PET projector and an attenuation model
+# into a single linear operator.
+
+# enable TOF - comment if you want to run non-TOF
+proj.tof_parameters = parallelproj.TOFParameters(
+    num_tofbins=13, tofbin_width=12.0, sigma_tof=12.0
+)
+
+# setup the attenuation multiplication operator which is different
+# for TOF and non-TOF since the attenuation sinogram is always non-TOF
+if proj.tof:
+    att_op = parallelproj.TOFNonTOFElementwiseMultiplicationOperator(
+        proj.out_shape, att_sino
+    )
+else:
+    att_op = parallelproj.ElementwiseMultiplicationOperator(att_sino)
 
 res_model = parallelproj.GaussianFilterOperator(
     proj.in_shape, sigma=4.5 / (2.35 * proj.voxel_size)
 )
 
+# compose all 3 operators into a single linear operator
 pet_lin_op = parallelproj.CompositeLinearOperator((att_op, proj, res_model))
+
 
 # %%
 # Simulation of projection data
@@ -141,13 +169,13 @@ y = xp.asarray(
 )
 
 # %%
-# MLEM iterations to minimize :math:`f(x)`
-# ----------------------------------------
+# EM update to minimize :math:`f(x)`
+# ----------------------------------
 #
-# We apply multiple MLEM updates
+# The EM update that can be used in MLEM or OSEM is given by
 #
 # .. math::
-#     x^+ = \frac{x}{A^H 1} A^H \frac{y}{A x + s}
+#     x^+ = \frac{x}{(A^k)^H 1} (A^k)^H \frac{y^k}{A^k x + s^k}
 #
 # to calculate the minimizer of :math:`f(x)` iteratively.
 #
@@ -161,9 +189,10 @@ y = xp.asarray(
 # .. math::
 #    \frac{\|x - x^*\|}{\|x^*\|}.
 #
-# .. note::
-#     To reduce the execution time of this example, we use a small number
-#     of MLEM iterations.
+#
+# We setup a function that calculates a single MLEM/OSEM
+# update given the current solution, a linear forward operator,
+# data, contamination and the adjoint of ones.
 
 
 def em_update(
@@ -198,6 +227,8 @@ def em_update(
 
 
 # %%
+# Run the MLEM iterations
+# -----------------------
 
 # number of MLEM iterations
 num_iter = 50

@@ -113,6 +113,10 @@ att_sino = xp.exp(-proj(x_att))
 # %%
 # setup the complete PET forward model
 # ------------------------------------
+#
+# We combine an image-based resolution model,
+# a non-TOF or TOF PET projector and an attenuation model
+# into a single linear operator.
 
 # enable TOF - comment if you want to run non-TOF
 proj.tof_parameters = parallelproj.TOFParameters(
@@ -220,10 +224,10 @@ for i in range(num_subsets):
 pet_subset_linop_seq = parallelproj.LinearOperatorSequence(pet_subset_linop_seq)
 
 # %%
-# OSEM iterations to minimize :math:`f(x)`
-# ----------------------------------------
+# EM update to minimize :math:`f(x)`
+# ----------------------------------
 #
-# We apply multiple OSEM updates
+# The EM update that can be used in MLEM or OSEM is given by
 #
 # .. math::
 #     x^+ = \frac{x}{(A^k)^H 1} (A^k)^H \frac{y^k}{A^k x + s^k}
@@ -239,6 +243,11 @@ pet_subset_linop_seq = parallelproj.LinearOperatorSequence(pet_subset_linop_seq)
 #
 # .. math::
 #    \frac{\|x - x^*\|}{\|x^*\|}.
+#
+#
+# We setup a function that calculates a single MLEM/OSEM
+# update given the current solution, a linear forward operator,
+# data, contamination and the adjoint of ones.
 
 
 def em_update(
@@ -272,6 +281,13 @@ def em_update(
 
 
 # %%
+# Run the OSEM iterations
+# -----------------------
+#
+# Note that the OSEM iterations are almost the same as the MLEM iterations.
+# The only difference is that in every subset update, we pass an operator
+# that projects a subset, a subset of the data and a subset of the contamination.
+# The "sensitivity" images are also calculated separately for each subset.
 
 # number of OSEM iterations
 num_iter = 50 // len(pet_subset_linop_seq)
