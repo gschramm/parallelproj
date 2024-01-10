@@ -9,6 +9,8 @@ from types import ModuleType
 
 from config import pytestmark
 
+from copy import copy
+
 
 def test_polygon_projector(xp: ModuleType, dev: str) -> None:
     num_rings = 3
@@ -162,6 +164,9 @@ def test_minimal_reg_polygon_projector(xp, dev) -> None:
 
             x_fwd = proj(x)
 
+            assert proj.xstart is not None
+            assert proj.xend is not None
+
             # check "corner to corner" projection which should be vox size *
             # vox value * sqrt(3)
             assert np.isclose(
@@ -283,3 +288,38 @@ def test_minimal_reg_polygon_projector(xp, dev) -> None:
                 np.asarray(to_device(x_fwd2b, "cpu")),
                 np.asarray(to_device(x_fwd2, "cpu")),
             )
+
+            # check whether the caching works if we first call the adjoint
+            proj4 = parallelproj.RegularPolygonPETProjector(
+                lor_desc, img_shape=img_shape, voxel_size=3 * (vox_size,)
+            )
+
+            y = xp.ones(proj4.out_shape, dtype=xp.float32, device=dev)
+            tmp = proj4.adjoint(y)
+
+            assert proj4.xstart is not None
+            assert proj4.xend is not None
+
+            assert bool(xp.all(proj.xstart == proj4.xstart))
+            assert bool(xp.all(proj.xend == proj4.xend))
+
+            proj4.clear_cached_lor_endpoints()
+            assert proj4.xstart is None
+            assert proj4.xend is None
+
+            proj5 = copy(proj)
+            subset_views = xp.asarray([0, 1], device=dev)
+            proj5.views = xp.asarray(subset_views, device=dev)
+
+            assert proj.xstart is not None
+            assert proj.xend is not None
+
+            assert proj5.xstart is None
+            assert proj5.xend is None
+
+            x_fwd5 = proj5(x)
+
+            assert proj5.xstart is not None
+            assert proj5.xend is not None
+
+            assert bool(xp.all(proj5.views == subset_views))

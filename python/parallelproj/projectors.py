@@ -542,13 +542,6 @@ class RegularPolygonPETProjector(LinearOperator):
         self._xstart = None
         self._xend = None
 
-        if self._cache_lor_endpoints:
-            self._xstart, self._xend = lor_descriptor.get_lor_coordinates(
-                views=self._views
-            )
-            if is_cuda_array(self._xstart):
-                empty_cuda_cache(self.xp)
-
     @property
     def in_shape(self) -> tuple[int, int, int]:
         return self._img_shape
@@ -611,6 +604,13 @@ class RegularPolygonPETProjector(LinearOperator):
         """view numbers to be projected"""
         return self._views
 
+    @views.setter
+    def views(self, value: Array) -> None:
+        self._views = value
+        # we need to reset the LOR start and end points in case
+        # they were cached
+        self.clear_cached_lor_endpoints()
+
     @property
     def xstart(self) -> Array | None:
         """cached coordinates of LOR start points"""
@@ -626,27 +626,48 @@ class RegularPolygonPETProjector(LinearOperator):
         """voxel size"""
         return self._voxel_size
 
+    def clear_cached_lor_endpoints(self) -> None:
+        """clear cached LOR endpoints"""
+        was_cuda_start = False
+        was_cuda_end = False
+        if self._xstart is not None:
+            was_cuda_start = is_cuda_array(self._xstart)
+        if self._xend is not None:
+            was_cuda_end = is_cuda_array(self._xend)
+
+        self._xstart = None
+        self._xend = None
+
+        if was_cuda_start or was_cuda_end:
+            empty_cuda_cache(self.xp)
+
     def _apply(self, x):
         """nonTOF forward projection of input image x including image based resolution model"""
 
         dev = array_api_compat.device(x)
 
-        # cache LOR endpoints if not cached
-        if not self._cache_lor_endpoints:
-            self._xstart, self._xend = self._lor_descriptor.get_lor_coordinates(
-                views=self._views
-            )
-            if is_cuda_array(self._xstart):
+        # calculate LOR endpoints if not done yet
+        if (self.xstart is None) or (self.xend is None):
+            xstart, xend = self._lor_descriptor.get_lor_coordinates(views=self._views)
+            if is_cuda_array(xstart):
                 empty_cuda_cache(self.xp)
+        else:
+            xstart = self.xstart
+            xend = self.xend
+
+        # cache LOR endpoints if requested
+        if self._cache_lor_endpoints and ((self.xstart is None) or (self.xend is None)):
+            self._xstart = xstart
+            self._xend = xend
 
         if not self.tof:
             x_fwd = parallelproj.joseph3d_fwd(
-                self._xstart, self._xend, x, self._img_origin, self._voxel_size
+                xstart, xend, x, self._img_origin, self._voxel_size
             )
         else:
             x_fwd = parallelproj.joseph3d_fwd_tof_sino(
-                self._xstart,
-                self._xend,
+                xstart,
+                xend,
                 x,
                 self._img_origin,
                 self._voxel_size,
@@ -663,34 +684,30 @@ class RegularPolygonPETProjector(LinearOperator):
                 self.tof_parameters.num_tofbins,
             )
 
-        # set LOR endpoints to None and clear cuda cache if needed
-        if not self._cache_lor_endpoints:
-            if is_cuda_array(self._xstart):
-                self._xstart = None
-                self._xend = None
-                empty_cuda_cache(self.xp)
-            else:
-                self._xstart = None
-                self._xend = None
-
         return x_fwd
 
     def _adjoint(self, y):
         """nonTOF back projection of sinogram y"""
         dev = array_api_compat.device(y)
 
-        # cache LOR endpoints if not cached
-        if not self._cache_lor_endpoints:
-            self._xstart, self._xend = self._lor_descriptor.get_lor_coordinates(
-                views=self._views
-            )
-            if is_cuda_array(self._xstart):
+        # calculate LOR endpoints if not done yet
+        if (self.xstart is None) or (self.xend is None):
+            xstart, xend = self._lor_descriptor.get_lor_coordinates(views=self._views)
+            if is_cuda_array(xstart):
                 empty_cuda_cache(self.xp)
+        else:
+            xstart = self.xstart
+            xend = self.xend
+
+        # cache LOR endpoints if requested
+        if self._cache_lor_endpoints and ((self.xstart is None) or (self.xend is None)):
+            self._xstart = xstart
+            self._xend = xend
 
         if not self.tof:
             y_back = parallelproj.joseph3d_back(
-                self._xstart,
-                self._xend,
+                xstart,
+                xend,
                 self._img_shape,
                 self._img_origin,
                 self._voxel_size,
@@ -698,8 +715,8 @@ class RegularPolygonPETProjector(LinearOperator):
             )
         else:
             y_back = parallelproj.joseph3d_back_tof_sino(
-                self._xstart,
-                self._xend,
+                xstart,
+                xend,
                 self._img_shape,
                 self._img_origin,
                 self._voxel_size,
@@ -716,16 +733,6 @@ class RegularPolygonPETProjector(LinearOperator):
                 self.tof_parameters.num_sigmas,
                 self.tof_parameters.num_tofbins,
             )
-
-        # set LOR endpoints to None and clear cuda cache if needed
-        if not self._cache_lor_endpoints:
-            if is_cuda_array(self._xstart):
-                self._xstart = None
-                self._xend = None
-                empty_cuda_cache(self.xp)
-            else:
-                self._xstart = None
-                self._xend = None
 
         return y_back
 
