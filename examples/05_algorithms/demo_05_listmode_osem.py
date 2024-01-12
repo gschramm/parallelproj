@@ -100,11 +100,6 @@ x_true[-2:, :, :] = 0
 x_true[:, :2, :] = 0
 x_true[:, -2:, :] = 0
 
-# reduce the image intensity to get less counts and
-# faster execution time
-
-x_true /= 5.0
-
 
 # %%
 # setup an attenuation image and calculate the attenuation sinogram
@@ -261,7 +256,7 @@ def lm_em_update(
 # %%
 
 # number of MLEM iterations
-num_iter = 50
+num_iter = 10
 
 # initialize x
 x = xp.ones(pet_lin_op.in_shape, dtype=xp.float32, device=dev)
