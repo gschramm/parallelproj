@@ -277,7 +277,7 @@ def em_update(
     Array
     """
     ybar = op(x_cur) + s
-    return x * op.adjoint(data / ybar) / adjoint_ones
+    return x_cur * op.adjoint(data / ybar) / adjoint_ones
 
 
 # %%

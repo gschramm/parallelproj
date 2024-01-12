@@ -1,8 +1,8 @@
 """
-TOF listmode OSEM with projection data
+TOF listmode MLEM with projection data
 ======================================
 
-This example demonstrates the use of the MLEM algorithm to minimize the negative Poisson log-likelihood function.
+This example demonstrates the use of the listmode MLEM algorithm to minimize the negative Poisson log-likelihood function.
 
 .. math::
     f(x) = \sum_{i=1}^m \\bar{y}_i - \\bar{y}_i (x) \log(y_i)
@@ -57,9 +57,6 @@ elif "torch" in xp.__name__:
 # We setup a linear forward operator :math:`A` consisting of an
 # image-based resolution model, a non-TOF PET projector and an attenuation model
 #
-# .. note::
-#     The OSEM implementation below works with all linear operators that
-#     subclass :class:`.LinearOperator` (e.g. the high-level projectors).
 
 num_rings = 5
 scanner = parallelproj.RegularPolygonPETScannerGeometry(
@@ -170,48 +167,139 @@ y = xp.asarray(
 )
 
 # %%
+# Conversion of the emission sinogram to listmode
+# -----------------------------------------------
+#
+# Using :meth:`.RegularPolygonPETProjector.convert_sinogram_to_listmode` we can convert an
+# integer non-TOF or TOF sinogram to an event list for listmode processing.
+#
+# **Note:** The create event list is sorted and should be shuffled running LM-MLEM.
 
-sino = y
+event_start_coords, event_end_coords, event_tofbins = proj.convert_sinogram_to_listmode(
+    y
+)
 
-if sino.ndim == 4:
-    tof = True
-    num_tofbins = sino.shape[-1]
-else:
-    tof = False
-    num_tofbins = 1
+# %%
+# Setup of the LM projector and LM forward model
+# ----------------------------------------------
 
-a = []
+lm_proj = parallelproj.ListmodePETProjector(
+    event_start_coords,
+    event_end_coords,
+    proj.in_shape,
+    proj.voxel_size,
+    proj.img_origin,
+)
 
-for view in range(lor_desc.num_views):
-    xstart, xend = lor_desc.get_lor_coordinates(views=xp.asarray([view], device=dev))
-    xstart = xp.reshape(xstart, (-1, 3))
-    xend = xp.reshape(xend, (-1, 3))
+# recalculate the attenuation factor for all LM events
+# this needs to be a non-TOF projection
+att_list = xp.exp(-lm_proj(x_att))
+lm_att_op = parallelproj.ElementwiseMultiplicationOperator(att_list)
 
-    sino_view = xp.take(
-        sino, xp.asarray([view], device=dev), axis=lor_desc.view_axis_num
-    )
-    sino_view = xp.squeeze(sino_view, axis=lor_desc.view_axis_num)
+# enable TOF in the LM projector
+lm_proj.tof_parameters = proj.tof_parameters
+if proj.tof:
+    lm_proj.event_tofbins = event_tofbins
+    lm_proj.tof = proj.tof
 
-    for it in range(sino.shape[-1]):
-        if tof:
-            ss = sino_view[..., it]
-        else:
-            ss = sino_view
+# create the contamination list
+contamination_list = xp.full(
+    event_start_coords.shape[0],
+    float(xp.reshape(contamination, contamination.size)[0]),
+    device=dev,
+    dtype=xp.float32,
+)
 
-        ss = xp.reshape(ss, (ss.size,))
+lm_pet_lin_op = parallelproj.CompositeLinearOperator((lm_att_op, lm_proj, res_model))
 
-        event_sino_inds = xp.asarray(
-            np.repeat(np.arange(ss.shape[0]), to_device(ss, "cpu")), device=dev
-        )
+# %%
+# LM MLEM reconstruction
+# ----------------------
+#
+# The EM update that can be used in LM-MLEM is given by
+#
+# .. math::
+#     x^+ = \frac{x}{(A^k)^H 1} (A_{LM}^k)^H \frac{1}{A_{LM}^k x + s_{LM}^k}
+#
+# to calculate the minimizer of :math:`f(x)` iteratively.
 
-        event_start_coords = xp.take(xstart, event_sino_inds, axis=0)
-        event_end_coords = xp.take(xend, event_sino_inds, axis=0)
 
-        if tof:
-            event_tofbin = xp.full(
-                ss.shape, it - num_tofbins // 2, device=dev, dtype=xp.int16
-            )
-        else:
-            event_tofbin = None
+def lm_em_update(
+    x_cur: Array,
+    op: parallelproj.LinearOperator,
+    s: Array,
+    adjoint_ones: Array,
+) -> Array:
+    """LM EM update
 
-        a.append(event_start_coords)
+    Parameters
+    ----------
+    x_cur : Array
+        current solution
+    op : parallelproj.LinearOperator
+        listmode linear forward operator
+    s : Array
+        contamination list
+    adjoint_ones : Array
+        adjoint of ones of the non-LM (the complete) operator
+
+    Returns
+    -------
+    Array
+        _description_
+    """
+    ybar = op(x_cur) + s
+    return x_cur * op.adjoint(1 / ybar) / adjoint_ones
+
+
+# %%
+
+# number of MLEM iterations
+num_iter = 50
+
+# initialize x
+x = xp.ones(pet_lin_op.in_shape, dtype=xp.float32, device=dev)
+# calculate A^H 1
+adjoint_ones = pet_lin_op.adjoint(
+    xp.ones(pet_lin_op.out_shape, dtype=xp.float32, device=dev)
+)
+
+for i in range(num_iter):
+    print(f"MLEM iteration {(i + 1):03} / {num_iter:03}", end="\r")
+    x = lm_em_update(x, lm_pet_lin_op, contamination_list, adjoint_ones)
+
+# %%
+# calculate the negative Poisson log-likelihood function of the reconstruction
+# ----------------------------------------------------------------------------
+
+# calculate the negative Poisson log-likelihood function of the reconstruction
+exp = pet_lin_op(x) + contamination
+# calculate the relative cost and distance to the optimal point
+cost = float(xp.sum(exp - xp.astype(y, xp.float32) * xp.log(exp)))
+print(f"\nMLEM cost {cost:.6E} after {num_iter:03} iterations")
+
+# %%
+# Visualize the results
+# ---------------------
+
+
+def _update_img(i):
+    img0.set_data(x_true_np[:, :, i])
+    img1.set_data(x_np[:, :, i])
+    ax[0].set_title(f"true image - plane {i:02}")
+    ax[1].set_title(f"LM MLEM iteration {num_iter} - plane {i:02}")
+    return (img0, img1)
+
+
+x_true_np = np.asarray(to_device(x_true, "cpu"))
+x_np = np.asarray(to_device(x, "cpu"))
+
+fig, ax = plt.subplots(1, 2, figsize=(10, 5))
+vmax = x_np.max()
+img0 = ax[0].imshow(x_true_np[:, :, 0], cmap="Greys", vmin=0, vmax=vmax)
+img1 = ax[1].imshow(x_np[:, :, 0], cmap="Greys", vmin=0, vmax=vmax)
+ax[0].set_title(f"true image - plane {0:02}")
+ax[1].set_title(f"LM MLEM iteration {num_iter} - plane {0:02}")
+fig.tight_layout()
+ani = animation.FuncAnimation(fig, _update_img, x_np.shape[2], interval=200, blit=False)
+fig.show()

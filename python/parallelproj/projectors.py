@@ -7,7 +7,7 @@ import array_api_compat
 import matplotlib.pyplot as plt
 from matplotlib.patches import Rectangle
 from types import ModuleType
-from array_api_compat import device, get_namespace
+from array_api_compat import device, to_device, get_namespace
 import parallelproj
 
 from .operators import LinearOperator
@@ -791,6 +791,98 @@ class RegularPolygonPETProjector(LinearOperator):
         )
 
         self.lor_descriptor.scanner.show_lor_endpoints(ax)
+
+    def convert_sinogram_to_listmode(
+        self, sinogram: Array
+    ) -> tuple[Array, Array, Array | None]:
+        """convert a non-TOF or TOF emission sinogram to listmode events
+
+        Parameters
+        ----------
+        sinogram : Array
+            an integer (TOF or non-TOF) emission sinogram
+
+        Returns
+        -------
+        tuple[Array, Array, Array | None]
+            event_start_coordinates, event_end_coordinates, event_tofbin
+            in case of non-TOF, event_tofbin is None
+        """
+
+        num_events = int(self.xp.sum(sinogram))
+
+        event_start_coords = self.xp.empty(
+            (num_events, 3), device=self._dev, dtype=self.xp.float32
+        )
+        event_end_coords = self.xp.empty(
+            (num_events, 3), device=self._dev, dtype=self.xp.float32
+        )
+
+        if self.tof:
+            num_tofbins = self.tof_parameters.num_tofbins
+            event_tofbins = self.xp.empty(
+                (num_events,), device=self._dev, dtype=self.xp.int16
+            )
+        else:
+            num_tofbins = 1
+            event_tofbins = None
+
+        event_offset = 0
+
+        # we convert view by view and tofbin by tofbin to save memory
+        for view in range(self.lor_descriptor.num_views):
+            xstart, xend = self.lor_descriptor.get_lor_coordinates(
+                views=self.xp.asarray([view], device=self._dev)
+            )
+            xstart = self.xp.reshape(xstart, (-1, 3))
+            xend = self.xp.reshape(xend, (-1, 3))
+
+            sino_view = self.xp.take(
+                sinogram,
+                self.xp.asarray([view], device=self._dev),
+                axis=self.lor_descriptor.view_axis_num,
+            )
+            sino_view = self.xp.squeeze(
+                sino_view, axis=self.lor_descriptor.view_axis_num
+            )
+
+            for it in range(num_tofbins):
+                if self.tof:
+                    ss = sino_view[..., it]
+                else:
+                    ss = sino_view
+
+                ss = self.xp.reshape(ss, (ss.size,))
+
+                # currently there is no "repeat" function in array-api, so
+                # we convert back and forth to numpy cpu array
+                event_sino_inds = self.xp.asarray(
+                    np.repeat(np.arange(ss.shape[0]), to_device(ss, "cpu")),
+                    device=self._dev,
+                )
+
+                num_events_ss = int(self.xp.sum(ss))
+
+                event_start_coords[
+                    event_offset : (event_offset + num_events_ss), :
+                ] = self.xp.take(xstart, event_sino_inds, axis=0)
+                event_end_coords[
+                    event_offset : (event_offset + num_events_ss), :
+                ] = self.xp.take(xend, event_sino_inds, axis=0)
+
+                if self.tof:
+                    event_tofbins[
+                        event_offset : (event_offset + num_events_ss)
+                    ] = self.xp.full(
+                        num_events_ss,
+                        it - num_tofbins // 2,
+                        device=self._dev,
+                        dtype=self.xp.int16,
+                    )
+
+                event_offset += num_events_ss
+
+        return event_start_coords, event_end_coords, event_tofbins
 
 
 class ListmodePETProjector(LinearOperator):

@@ -27,3 +27,4 @@ html-noplot:
 clean:
 	rm -rf $(BUILDDIR)/*
 	rm -rf source/auto_examples/*
+	rm -rf source/gen_modules/*
