@@ -100,6 +100,12 @@ x_true[-2:, :, :] = 0
 x_true[:, :2, :] = 0
 x_true[:, -2:, :] = 0
 
+# reduce the image intensity to get less counts and
+# faster execution time
+
+x_true /= 5.0
+
+
 # %%
 # setup an attenuation image and calculate the attenuation sinogram
 # -----------------------------------------------------------------
