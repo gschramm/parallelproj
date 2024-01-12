@@ -78,7 +78,7 @@ sphinx_gallery_conf = {
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
 
 html_theme = "sphinx_rtd_theme"
-html_logo = "parllelproj-logo2.svg"
+html_logo = "parllelproj-logo.svg"
 
 html_theme_options = {
     "analytics_id": "G-WFK38K0TGS",
