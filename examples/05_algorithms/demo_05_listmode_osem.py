@@ -29,7 +29,7 @@ import numpy.array_api as xp
 # import array_api_compat.torch as xp
 
 import parallelproj
-from array_api_compat import to_device
+from array_api_compat import to_device, size
 import array_api_compat.numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.animation as animation
@@ -163,7 +163,7 @@ np.random.seed(1)
 y = xp.asarray(
     np.random.poisson(np.asarray(to_device(noise_free_data, "cpu"))),
     device=dev,
-    dtype=xp.uint16,
+    dtype=xp.int16,
 )
 
 # %%
@@ -205,7 +205,7 @@ if proj.tof:
 # create the contamination list
 contamination_list = xp.full(
     event_start_coords.shape[0],
-    float(xp.reshape(contamination, contamination.size)[0]),
+    float(xp.reshape(contamination, (size(contamination),))[0]),
     device=dev,
     dtype=xp.float32,
 )

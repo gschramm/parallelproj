@@ -174,7 +174,9 @@ for i in range(7):
             vmax=vmax,
         )
         if i == 0:
-            ax[i, j].set_title(f"tof bin {j}", fontsize="medium")
+            ax[i, j].set_title(
+                f"tof bin {j - proj.tof_parameters.num_tofbins//2}", fontsize="medium"
+            )
         if j == 0:
             ax[i, j].set_ylabel(f"sino pl. {i}", fontsize="medium")
         # ax[i,j].set_axis_off()
