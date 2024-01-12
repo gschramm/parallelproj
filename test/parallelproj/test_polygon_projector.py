@@ -86,6 +86,10 @@ def test_polygon_projector(xp: ModuleType, dev: str) -> None:
     assert xp.all(event_end_coords[3, :] == xend[0, 1, 1, :])
 
     # TOF projections
+    with pytest.raises(ValueError):
+        # number of TOF bins must be odd
+        tof_params = parallelproj.TOFParameters(num_tofbins=6)
+
     tof_params = parallelproj.TOFParameters(num_tofbins=7, tofbin_width=30.6)
     proj.tof_parameters = tof_params
     assert proj.out_shape == (
