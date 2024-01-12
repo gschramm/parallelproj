@@ -220,7 +220,7 @@ lm_pet_lin_op = parallelproj.CompositeLinearOperator((lm_att_op, lm_proj, res_mo
 # The EM update that can be used in LM-MLEM is given by
 #
 # .. math::
-#     x^+ = \frac{x}{(A^k)^H 1} (A_{LM}^k)^H \frac{1}{A_{LM}^k x + s_{LM}^k}
+#     x^+ = \frac{x}{A^H 1} (A_{LM}^H \frac{1}{A_{LM} x + s_{LM}^k}
 #
 # to calculate the minimizer of :math:`f(x)` iteratively.
 
