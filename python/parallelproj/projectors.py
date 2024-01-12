@@ -7,7 +7,7 @@ import array_api_compat
 import matplotlib.pyplot as plt
 from matplotlib.patches import Rectangle
 from types import ModuleType
-from array_api_compat import device, to_device, get_namespace
+from array_api_compat import device, to_device, get_namespace, size
 import parallelproj
 
 from .operators import LinearOperator
@@ -852,7 +852,7 @@ class RegularPolygonPETProjector(LinearOperator):
                 else:
                     ss = sino_view
 
-                ss = self.xp.reshape(ss, (ss.size,))
+                ss = self.xp.reshape(ss, (size(ss),))
 
                 # currently there is no "repeat" function in array-api, so
                 # we convert back and forth to numpy cpu array

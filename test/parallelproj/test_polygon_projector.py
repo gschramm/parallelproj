@@ -55,6 +55,36 @@ def test_polygon_projector(xp: ModuleType, dev: str) -> None:
     y = xp.ones(x_fwd.shape, dtype=xp.float32, device=dev)
     y_back = proj.adjoint(y)
 
+    # test conversion to LM
+    # LM converter run over views and TOF bins which determines the output order
+    # of the events
+    test_sino = xp.zeros(proj.out_shape, dtype=xp.int16, device=dev)
+    test_sino[0, 0, 1] = 1
+    test_sino[1, 0, 0] = 2
+    test_sino[0, 1, 1] = 1
+
+    (
+        event_start_coords,
+        event_end_coords,
+        event_tofbins,
+    ) = proj.convert_sinogram_to_listmode(test_sino)
+
+    assert event_start_coords.shape == (4, 3)
+    assert event_end_coords.shape == (4, 3)
+    assert event_tofbins is None
+
+    xstart, xend = lor_desc.get_lor_coordinates()
+
+    assert xp.all(event_start_coords[0, :] == xstart[0, 0, 1, :])
+    assert xp.all(event_start_coords[1, :] == xstart[1, 0, 0, :])
+    assert xp.all(event_start_coords[2, :] == xstart[1, 0, 0, :])
+    assert xp.all(event_start_coords[3, :] == xstart[0, 1, 1, :])
+
+    assert xp.all(event_end_coords[0, :] == xend[0, 0, 1, :])
+    assert xp.all(event_end_coords[1, :] == xend[1, 0, 0, :])
+    assert xp.all(event_end_coords[2, :] == xend[1, 0, 0, :])
+    assert xp.all(event_end_coords[3, :] == xend[0, 1, 1, :])
+
     # TOF projections
     tof_params = parallelproj.TOFParameters(num_tofbins=7, tofbin_width=30.6)
     proj.tof_parameters = tof_params
@@ -68,6 +98,61 @@ def test_polygon_projector(xp: ModuleType, dev: str) -> None:
     x_fwd_tof = proj(x)
     y_tof = xp.ones(x_fwd_tof.shape, dtype=xp.float32, device=dev)
     y_back_tof = proj.adjoint(y_tof)
+
+    # test conversion to LM
+    # LM converter run over views and TOF bins which determines the output order
+    # of the events
+    test_sino = xp.zeros(proj.out_shape, dtype=xp.int16, device=dev)
+    test_sino[0, 0, 1, 0] = 1
+    test_sino[1, 0, 0, 0] = 1
+    test_sino[1, 0, 0, 1] = 1
+    test_sino[0, 1, 1, 0] = 1
+    test_sino[0, 1, 1, -1] = 2
+
+    (
+        event_start_coords,
+        event_end_coords,
+        event_tofbins,
+    ) = proj.convert_sinogram_to_listmode(test_sino)
+
+    assert event_start_coords.shape == (6, 3)
+    assert event_end_coords.shape == (6, 3)
+    assert event_tofbins.shape == (6,)
+
+    xstart, xend = lor_desc.get_lor_coordinates()
+
+    assert xp.all(event_start_coords[0, :] == xstart[0, 0, 1, :])
+    assert xp.all(event_start_coords[1, :] == xstart[1, 0, 0, :])
+    assert xp.all(event_start_coords[2, :] == xstart[1, 0, 0, :])
+    assert xp.all(event_start_coords[3, :] == xstart[0, 1, 1, :])
+    assert xp.all(event_start_coords[4, :] == xstart[0, 1, 1, :])
+    assert xp.all(event_start_coords[5, :] == xstart[0, 1, 1, :])
+
+    assert xp.all(event_end_coords[0, :] == xend[0, 0, 1, :])
+    assert xp.all(event_end_coords[1, :] == xend[1, 0, 0, :])
+    assert xp.all(event_end_coords[2, :] == xend[1, 0, 0, :])
+    assert xp.all(event_end_coords[3, :] == xend[0, 1, 1, :])
+    assert xp.all(event_end_coords[4, :] == xend[0, 1, 1, :])
+    assert xp.all(event_end_coords[5, :] == xend[0, 1, 1, :])
+
+    assert xp.all(
+        event_tofbins
+        == (
+            xp.asarray(
+                [
+                    0,
+                    0,
+                    1,
+                    0,
+                    proj.tof_parameters.num_tofbins - 1,
+                    proj.tof_parameters.num_tofbins - 1,
+                ],
+                device=dev,
+                dtype=xp.int16,
+            )
+            - proj.tof_parameters.num_tofbins // 2
+        )
+    )
 
     # setup a projector with non default image origin and views
     views = xp.asarray([0, 1], device=dev)
