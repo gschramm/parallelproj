@@ -73,13 +73,14 @@ sphinx_gallery_conf = {
     "line_numbers": True,
     "recommender": {"enable": True, "n_examples": 4},
     "matplotlib_animations": True,
+    "default_thumb_file": "source/parallelproj-thumbnail.png",
 }
 
 # -- Options for HTML output -------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
 
 html_theme = "sphinx_rtd_theme"
-html_logo = "parllelproj-logo.svg"
+html_logo = "parallelproj-logo.svg"
 
 html_theme_options = {
     "analytics_id": "G-WFK38K0TGS",

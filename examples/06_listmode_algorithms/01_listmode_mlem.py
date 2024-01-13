@@ -7,10 +7,15 @@ This example demonstrates the use of the listmode MLEM algorithm to minimize the
 .. math::
     f(x) = \sum_{i=1}^m \\bar{y}_i - \\bar{y}_i (x) \log(y_i)
 
-using the linear forward model
+subject to
 
 .. math::
-    \\bar{y}(x) = A x + s
+    x \geq 0
+
+using the listmode linear forward model
+
+.. math::
+    \\bar{y}_{LM}(x) = A_{LM} x + s
 
 .. tip::
     parallelproj is python array API compatible meaning it supports different 
@@ -21,9 +26,7 @@ using the linear forward model
 from __future__ import annotations
 from numpy.array_api._array_object import Array
 
-import numpy.array_api as xp
-
-# import array_api_compat.numpy as xp
+import array_api_compat.numpy as xp
 
 # import array_api_compat.cupy as xp
 # import array_api_compat.torch as xp
@@ -51,8 +54,12 @@ elif "torch" in xp.__name__:
 
 
 # %%
-# Setup of the forward model :math:`\bar{y}(x) = A x + s`
-# --------------------------------------------------------
+# Simulation of PET data in sinogram space
+# ----------------------------------------
+
+# %%
+# Setup of the sinogram forward model
+# ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 #
 # We setup a linear forward operator :math:`A` consisting of an
 # image-based resolution model, a non-TOF PET projector and an attenuation model
@@ -70,7 +77,6 @@ scanner = parallelproj.RegularPolygonPETScannerGeometry(
     symmetry_axis=2,
 )
 
-# %%
 # setup the LOR descriptor that defines the sinogram
 
 img_shape = (40, 40, 8)
@@ -102,8 +108,8 @@ x_true[:, -2:, :] = 0
 
 
 # %%
-# setup an attenuation image and calculate the attenuation sinogram
-# -----------------------------------------------------------------
+# Setup an attenuation image and calculate the attenuation sinogram
+# ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 # setup an attenuation image
 x_att = 0.01 * xp.astype(x_true > 0, xp.float32)
@@ -111,8 +117,8 @@ x_att = 0.01 * xp.astype(x_true > 0, xp.float32)
 att_sino = xp.exp(-proj(x_att))
 
 # %%
-# setup the complete PET forward model
-# ------------------------------------
+# Setup the complete PET forward model
+# ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 #
 # We combine an image-based resolution model,
 # a non-TOF or TOF PET projector and an attenuation model
@@ -141,7 +147,7 @@ pet_lin_op = parallelproj.CompositeLinearOperator((att_op, proj, res_model))
 
 # %%
 # Simulation of projection data
-# -----------------------------
+# ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 #
 # We setup an arbitrary ground truth :math:`x_{true}` and simulate
 # noise-free and noisy data :math:`y` by adding Poisson noise.
@@ -169,7 +175,7 @@ y = xp.asarray(
 
 # %%
 # Conversion of the emission sinogram to listmode
-# -----------------------------------------------
+# ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 #
 # Using :meth:`.RegularPolygonPETProjector.convert_sinogram_to_listmode` we can convert an
 # integer non-TOF or TOF sinogram to an event list for listmode processing.
@@ -247,13 +253,14 @@ def lm_em_update(
     Returns
     -------
     Array
-        _description_
     """
     ybar = op(x_cur) + s
     return x_cur * op.adjoint(1 / ybar) / adjoint_ones
 
 
 # %%
+# Run LM MLEM iterations
+# ----------------------
 
 # number of MLEM iterations
 num_iter = 10
@@ -270,7 +277,7 @@ for i in range(num_iter):
     x = lm_em_update(x, lm_pet_lin_op, contamination_list, adjoint_ones)
 
 # %%
-# calculate the negative Poisson log-likelihood function of the reconstruction
+# Calculate the negative Poisson log-likelihood function of the reconstruction
 # ----------------------------------------------------------------------------
 
 # calculate the negative Poisson log-likelihood function of the reconstruction

@@ -8,6 +8,11 @@ to minimize the negative Poisson log-likelihood function.
 .. math::
     f(x) = \sum_{i=1}^m \\bar{y}_i - \\bar{y}_i (x) \log(y_i)
 
+subject to
+
+.. math::
+    x \geq 0
+
 using the linear forward model
 
 .. math::
