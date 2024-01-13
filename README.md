@@ -17,7 +17,6 @@ Please refer to the official documentation [here](https://parallelproj.readthedo
 </br>
 </br>
 </br>
----
 </br>
 </br>
 </br>
