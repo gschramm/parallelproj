@@ -73,7 +73,7 @@ sphinx_gallery_conf = {
     "line_numbers": True,
     "recommender": {"enable": True, "n_examples": 4},
     "matplotlib_animations": True,
-    "default_thumb_file": "source/parallelproj-thumbnail.png",
+    "default_thumb_file": "parallelproj-thumbnail.png",
 }
 
 # -- Options for HTML output -------------------------------------------------
