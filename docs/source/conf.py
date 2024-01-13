@@ -46,13 +46,14 @@ exclude_patterns = []
 intersphinx_mapping = {
     "python": ("https://docs.python.org/3/", None),
     "sphinx": ("https://www.sphinx-doc.org/en/master/", None),
+    "torch": ("https://pytorch.org/docs/stable/", None),
 }
 intersphinx_disabled_domains = ["std"]
 
 
 sphinx_gallery_conf = {
     "examples_dirs": ["../../examples"],
-    "filename_pattern": "/demo_",
+    "filename_pattern": r"/\d{2}_run_",
     "example_extensions": {".py"},
     "run_stale_examples": True,
     "ignore_pattern": r"__init__\.py",

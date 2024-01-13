@@ -28,3 +28,4 @@ clean:
 	rm -rf $(BUILDDIR)/*
 	rm -rf source/auto_examples/*
 	rm -rf source/gen_modules/*
+	rm -rf source/sg_execution_times.rst
