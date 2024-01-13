@@ -1,5 +1,5 @@
 <p align="center">
-<img src="./docs/source/parallelproj-logo-white-bg.svg" width="300">
+<img src="./docs/source/parallelproj-logo-white-bg.svg" width="350">
 </p>
 
 **OpenMP and CUDA libraries + python interface for 3D Joseph non-TOF and TOF forward and back projectors.**
@@ -14,9 +14,13 @@ This project provides OpenMP and CUDA implementations and a python interface of 
 
 Please refer to the official documentation [here](https://parallelproj.readthedocs.io/en/stable/).
 
+</br>
+</br>
+</br>
 ---
----
----
+</br>
+</br>
+</br>
 
 ## Building the OpenMP and CUDA libraries from source (developers only)
 
