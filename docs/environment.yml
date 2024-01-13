@@ -1,7 +1,6 @@
 name: readthedocs
 channels:
   - conda-forge
-  - defaults
 dependencies:
   - sphinx>=7.0
   - sphinx_rtd_theme
@@ -9,3 +8,4 @@ dependencies:
   - sphinx-design
   - sphinx-copybutton
   - libparallelproj
+  - pytorch
