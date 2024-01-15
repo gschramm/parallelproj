@@ -17,6 +17,8 @@ using the listmode linear forward model
 .. math::
     \\bar{y}_{LM}(x) = A_{LM} x + s
 
+and data stored in listmode format (event by event).
+
 .. tip::
     parallelproj is python array API compatible meaning it supports different 
     array backends (e.g. numpy, cupy, torch, ...) and devices (CPU or GPU).
@@ -56,10 +58,14 @@ elif "torch" in xp.__name__:
 # %%
 # Simulation of PET data in sinogram space
 # ----------------------------------------
+#
+# In this example, we use simulated listmode data for which we first
+# need to setup a sinogram forward model to create a noise-free and noisy
+# emission sinogram that can be converted to listmode data.
 
 # %%
-# Setup of the sinogram forward model
-# ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+# Sinogram forward model setup
+# ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 #
 # We setup a linear forward operator :math:`A` consisting of an
 # image-based resolution model, a non-TOF PET projector and an attenuation model
@@ -108,8 +114,8 @@ x_true[:, -2:, :] = 0
 
 
 # %%
-# Setup an attenuation image and calculate the attenuation sinogram
-# ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+# Attenuation image and sinogram setup
+# ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 # setup an attenuation image
 x_att = 0.01 * xp.astype(x_true > 0, xp.float32)
@@ -117,8 +123,8 @@ x_att = 0.01 * xp.astype(x_true > 0, xp.float32)
 att_sino = xp.exp(-proj(x_att))
 
 # %%
-# Setup the complete PET forward model
-# ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+# Complete PET forward model setup
+# ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 #
 # We combine an image-based resolution model,
 # a non-TOF or TOF PET projector and an attenuation model
@@ -146,8 +152,8 @@ res_model = parallelproj.GaussianFilterOperator(
 pet_lin_op = parallelproj.CompositeLinearOperator((att_op, proj, res_model))
 
 # %%
-# Simulation of projection data
-# ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+# Simulation of sinogram projection data
+# ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 #
 # We setup an arbitrary ground truth :math:`x_{true}` and simulate
 # noise-free and noisy data :math:`y` by adding Poisson noise.
@@ -226,7 +232,7 @@ lm_pet_lin_op = parallelproj.CompositeLinearOperator((lm_att_op, lm_proj, res_mo
 # The EM update that can be used in LM-MLEM is given by
 #
 # .. math::
-#     x^+ = \frac{x}{A^H 1} (A_{LM}^H \frac{1}{A_{LM} x + s_{LM}^k}
+#     x^+ = \frac{x}{A^H 1} A_{LM}^H \frac{1}{A_{LM} x + s_{LM}^k}
 #
 # to calculate the minimizer of :math:`f(x)` iteratively.
 
