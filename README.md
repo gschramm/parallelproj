@@ -8,20 +8,17 @@ This project provides OpenMP and CUDA implementations and a python interface of 
 
 </br>
 </br>
-</br>
 
 **If you are using parallelproj, we recommend to read and cite our publication** 
   - G. Schramm, K. Thielemans: "**PARALLELPROJ - An open-source framework for fast calculation of projections in tomography**", Front. Nucl. Med., Volume 3 - 2023, doi: 10.3389/fnume.2023.1324562, [link to paper](https://www.frontiersin.org/articles/10.3389/fnume.2023.1324562/abstract), [link to arxiv version](https://arxiv.org/abs/2212.12519)
 
 </br>
 </br>
-</br>
 
 ## Installation, Documentation & Examples
 
-Please refer to the official documentation [here](https://parallelproj.readthedocs.io/en/stable/).
+**Please refer to the official documentation [here](https://parallelproj.readthedocs.io/en/stable/).**
 
-</br>
 </br>
 </br>
 
