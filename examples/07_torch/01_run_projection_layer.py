@@ -290,8 +290,11 @@ print(f" backpropagted gradient {x.grad}")
 
 
 # %%
-# Check whether the gradient propagation
-# --------------------------------------
+# Check whether the gradients are calculated correctly
+# ----------------------------------------------------
+#
+# We use pytorch's gradcheck function to check whether the implementation
+# of the backward pass, needed to calculate the gradients, is correct.
 #
 # This test can be slow which is why we only execute it on the gpu.
 # Note that parallelproj's projectors use single precision precision
