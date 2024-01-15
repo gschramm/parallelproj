@@ -1,3 +1,8 @@
+## 1.7.0 (January 15, 2024)
+- update of documentation
+- addition of more examples
+- addition of high-level classes for RegularPolygonPETScanner and LOR descriptors
+
 ## 1.6.2 (December 01, 2023)
 - BUGFIX: correct use of conj() of scalar value to be array api comp.
 - BUGFIX: divided by float() to be array api comp.
