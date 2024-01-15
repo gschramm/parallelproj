@@ -204,7 +204,7 @@ class RegularPolygonPETLORDescriptor(PETLORDescriptor):
         return (
             self.__class__.__name__
             + " with spatial sinogram shape ("
-            + ",".join(
+            + ", ".join(
                 [
                     f"{self.spatial_sinogram_shape[i]}{self.sinogram_order.name[i]}"
                     for i in range(3)

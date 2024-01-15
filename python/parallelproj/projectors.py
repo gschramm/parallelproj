@@ -641,6 +641,27 @@ class RegularPolygonPETProjector(LinearOperator):
         if was_cuda_start or was_cuda_end:
             empty_cuda_cache(self.xp)
 
+    def __str__(self) -> str:
+        """string representation"""
+
+        st = (
+            self.__class__.__name__
+            + " with sinogram shape ("
+            + ", ".join(
+                [
+                    f"{self.lor_descriptor.spatial_sinogram_shape[i]} {self.lor_descriptor.sinogram_order.name[i]}"
+                    for i in range(3)
+                ]
+            )
+        )
+
+        if self.tof:
+            st += f", {self.tof_parameters.num_tofbins} TOF bins"
+
+        st += ")"
+
+        return st
+
     def _apply(self, x):
         """nonTOF forward projection of input image x including image based resolution model"""
 
