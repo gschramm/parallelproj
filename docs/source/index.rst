@@ -29,7 +29,7 @@ array libraries (e.g. numpy, cupy, pytorch) and devices (CPU and CUDA GPUs).
   * G. Schramm, K. Thielemans: "**PARALLELPROJ - An open-source framework for fast calculation of projections in tomography**", Front. Nucl. Med., Volume 3 - 2023, doi: 10.3389/fnume.2023.1324562, `link to paper <https://www.frontiersin.org/articles/10.3389/fnume.2023.1324562/abstract>`_, `link to arxiv version <https://arxiv.org/abs/2212.12519>`_
 
 .. hint::
-  **For bug reports or feature requests, please open a github issue** `here <https://github.com/gschramm/parallelproj/issues>`_
+  **For bug reports or feature requests, please open a github issue** `here <https://github.com/gschramm/parallelproj/issues>`_.
 
 .. toctree::
     :caption: Getting started
