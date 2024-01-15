@@ -2,7 +2,7 @@
 Regular polygon PET scanner geometry
 ====================================
 
-This example shows how to create and visualize PET scanner where the LOR
+This example shows how to create and visualize PET scanners where the LOR
 endpoints can be modeled as a stack of regular polygons.
 
 .. tip::
@@ -18,7 +18,6 @@ import array_api_compat.numpy as xp
 # import array_api_compat.torch as xp
 
 import parallelproj
-from array_api_compat import to_device, device
 import matplotlib.pyplot as plt
 
 # choose a device (CPU or CUDA GPU)
@@ -36,7 +35,6 @@ elif "torch" in xp.__name__:
 # %%
 # Define four different PET scanners with different geometries
 # ------------------------------------------------------------
-#
 # :class:`.RegularPolygonPETScannerGeometry` can be used to create the
 # geometry of PET scanners where the LOR endpoints can be modeled as a stack of
 # regular polygons.
@@ -92,8 +90,7 @@ scanner4 = parallelproj.RegularPolygonPETScannerGeometry(
 # %%
 # Obtaining world coordinates of LOR endpoints
 # --------------------------------------------
-#
-# :meth:`.RegularPolygonPETScannerGeometry.get_lor_endpoint` can be used
+# :meth:`.RegularPolygonPETScannerGeometry.get_lor_endpoints` can be used
 # to obtain the world coordinates of the LOR endpoints
 
 # get the word coordinates of the 4th LOR endpoint in the 1st "ring" (polygon)

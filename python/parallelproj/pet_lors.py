@@ -198,6 +198,21 @@ class RegularPolygonPETLORDescriptor(PETLORDescriptor):
         shape[self.radial_axis_num] = self.num_rad
         return tuple(shape)
 
+    def __str__(self) -> str:
+        """string representation"""
+
+        return (
+            self.__class__.__name__
+            + " with spatial sinogram shape ("
+            + ",".join(
+                [
+                    f"{self.spatial_sinogram_shape[i]}{self.sinogram_order.name[i]}"
+                    for i in range(3)
+                ]
+            )
+            + ")"
+        )
+
     def _setup_plane_indices(self) -> None:
         """setup the start / end plane indices (similar to a Michelogram)"""
         self._start_plane_index = self.xp.arange(

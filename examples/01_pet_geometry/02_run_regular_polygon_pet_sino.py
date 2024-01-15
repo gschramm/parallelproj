@@ -2,10 +2,10 @@
 LOR descriptors and sinogram definition
 =======================================
 
-In a scanner with cylindrical symmetry, all possible lines of response (LORs)
+In a scanner with "cylindrical symmetry", all possible lines of response (LORs)
 between two LOR endpoints can be sorted into a sinogram containing a radial,
 view and plane dimension.
-This example shows how this can be using the :class:`.RegularPolygonPETLORDescriptor`
+This example shows how this can be done using the :class:`.RegularPolygonPETLORDescriptor`
 
 .. tip::
     parallelproj is python array API compatible meaning it supports different 
@@ -20,7 +20,6 @@ import array_api_compat.numpy as xp
 # import array_api_compat.torch as xp
 
 import parallelproj
-from array_api_compat import to_device, device
 import matplotlib.pyplot as plt
 
 # choose a device (CPU or CUDA GPU)
@@ -70,6 +69,7 @@ lor_desc1 = parallelproj.RegularPolygonPETLORDescriptor(
     sinogram_order=parallelproj.SinogramSpatialAxisOrder.RVP,
 )
 
+print(lor_desc1)
 print(f"sinogram order: {lor_desc1.sinogram_order.name}")
 print(f"sinogram shape: {lor_desc1.spatial_sinogram_shape}")
 print(
@@ -89,6 +89,7 @@ lor_desc2 = parallelproj.RegularPolygonPETLORDescriptor(
     sinogram_order=parallelproj.SinogramSpatialAxisOrder.PRV,
 )
 
+print(lor_desc2)
 print(f"sinogram order: {lor_desc2.sinogram_order.name}")
 print(f"sinogram shape: {lor_desc2.spatial_sinogram_shape}")
 print(
@@ -145,7 +146,8 @@ for i in range(lor_desc1.num_planes):
 # -----------------------------------
 #
 # :meth:`.RegularPolygonPETScannerGeometry.show_lor_endpoints` can be used
-# to visualize the defined LOR endpoints
+# to visualize the defined LOR endpoints. Note that a zig-zag sampling pattern
+# is used to define a view.
 
 fig = plt.figure(figsize=(16, 8))
 ax1 = fig.add_subplot(121, projection="3d")
