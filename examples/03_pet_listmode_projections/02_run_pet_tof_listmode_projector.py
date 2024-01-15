@@ -2,9 +2,10 @@
 PET TOF listmode projector
 ==========================
 
-In this example we will show how to setup and use a non-TOF 
-PET listmode projector including geometrical forward projection, 
-resolution model and correction for attenuation.
+In this example we will show how to setup and use a TOF 
+PET listmode projector including geometrical forward projection
+in listmode, image-based resolution model and a listmode 
+attenuation model.
 
 .. tip::
     parallelproj is python array API compatible meaning it supports different 
@@ -36,7 +37,7 @@ elif "torch" in xp.__name__:
     dev = "cuda"
 
 # %%
-# setup a small regular polygon PET scanner with 5 rings (polygons)
+# Setup a small regular polygon PET scanner with 5 rings (polygons)
 # -----------------------------------------------------------------
 
 num_rings = 4
@@ -52,7 +53,7 @@ scanner = parallelproj.RegularPolygonPETScannerGeometry(
 )
 
 # %%
-# generate 4 arbitrary listmode events
+# Generate 4 arbitrary listmode events
 # ------------------------------------
 
 start_ring = xp.asarray([2, 1, 0, 3], device=dev)
@@ -74,7 +75,7 @@ tof_params = parallelproj.TOFParameters(
 event_tof_bins = xp.asarray([0, 1, 0, -1], device=dev)
 
 # %%
-# show the scanner geometry and the events
+# Show the scanner geometry and the events
 # ----------------------------------------
 
 fig = plt.figure(figsize=(8, 8))
@@ -91,7 +92,7 @@ fig.show()
 
 
 # %%
-# setup a TOF listmode projector and a test image
+# Setup a TOF listmode projector and a test image
 # -----------------------------------------------
 
 img_shape = (40, 9, 40)
@@ -110,8 +111,9 @@ lm_proj.tof = True
 
 x = xp.ones(img_shape, dtype=xp.float32, device=dev)
 
-# %% peform listmode forward and back projections
-# -----------------------------------------------
+# %%
+# Perform listmode forward and back projections
+# ---------------------------------------------
 
 x_fwd = lm_proj(x)
 print(x_fwd)
@@ -121,7 +123,7 @@ ones_list = xp.ones(lm_proj.num_events, dtype=xp.float32, device=dev)
 y_back = lm_proj.adjoint(ones_list)
 
 # %%
-# show the backprojected list of ones (events)
+# Show the backprojected list of ones (events)
 # --------------------------------------------
 
 fig2, ax2 = plt.subplots(3, 3, figsize=(8, 8))
@@ -141,8 +143,9 @@ for i in range(ax2.size):
 fig2.tight_layout()
 fig2.show()
 
-# %% combine the listmode projector with a resolution and attenuation model
-# -------------------------------------------------------------------------
+# %%
+# Combine the listmode projector with a resolution and attenuation model
+# ----------------------------------------------------------------------
 
 # setup a simple image-based resolution model with an Gaussian FWHM of 4.5mm
 res_model = parallelproj.GaussianFilterOperator(
@@ -164,7 +167,7 @@ print(x_fwd2)
 y_back2 = lm_proj_with_res_model_and_att.adjoint(ones_list)
 
 # %%
-# show the backprojected list of ones (events)
+# Show the backprojected list of ones (events)
 # --------------------------------------------
 
 fig3, ax3 = plt.subplots(3, 3, figsize=(8, 8))
