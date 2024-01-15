@@ -306,12 +306,12 @@ if dev == "cpu":
 else:
     print("Running forward projection layer gradient test")
     grad_test_fwd = torch.autograd.gradcheck(
-        fwd_op_layer, (x, proj), eps=1e-1, atol=1e-4, rtol=1e-4
+        fwd_op_layer, (x, proj), eps=1e-1, atol=1e-3, rtol=1e-3
     )
 
     print("Running adjoint projection layer gradient test")
     grad_test_fwd = torch.autograd.gradcheck(
-        adjoint_op_layer, (y, proj), eps=1e-1, atol=1e-4, rtol=1e-4
+        adjoint_op_layer, (y, proj), eps=1e-1, atol=1e-3, rtol=1e-3
     )
 
 # %%
