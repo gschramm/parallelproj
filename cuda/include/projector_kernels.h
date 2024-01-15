@@ -268,7 +268,9 @@ extern "C" __global__ void joseph3d_fwd_tof_sino_cuda_kernel(float *xstart,
  *                          midpoint of each LOR in spatial units (units of xstart and xend). 
  *                          A positive value means a shift towards the end point of the LOR.
  *  @param n_sigmas         number of sigmas to consider for calculation of TOF kernel
- *  @param tof_bin          array containing the TOF bin of each event
+ *  @param tof_bin          signed integer array with the tofbin of the events
+ *                          the center of TOF bin 0 is assumed to be at the center of the LOR
+ *                          (shifted by the tofcenter_offset)
  *  @param lor_dependent_sigma_tof unsigned char 0 or 1
  *                                 1 means that the TOF sigmas are LOR dependent
  *                                 any other value means that the first value in the sigma_tof
@@ -320,7 +322,9 @@ extern "C" __global__ void joseph3d_back_tof_lm_cuda_kernel(float *xstart,
  *                          midpoint of each LOR in spatial units (units of xstart and xend). 
  *                          A positive value means a shift towards the end point of the LOR.
  *  @param n_sigmas         number of sigmas to consider for calculation of TOF kernel
- *  @param tof_bin          array containing the TOF bin of each event
+ *  @param tof_bin          signed integer array with the tofbin of the events
+ *                          the center of TOF bin 0 is assumed to be at the center of the LOR
+ *                          (shifted by the tofcenter_offset)
  *  @param lor_dependent_sigma_tof unsigned char 0 or 1
  *                                 1 means that the TOF sigmas are LOR dependent
  *                                 any other value means that the first value in the sigma_tof

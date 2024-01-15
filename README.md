@@ -1,18 +1,28 @@
-# parallelproj
+<p align="center">
+<img src="./docs/source/parallelproj-logo-white-bg.svg" width="350">
+</p>
 
-OpenMP and CUDA libraries + python interface for 3D Joseph non-TOF and TOF forward and back projectors.
+**OpenMP and CUDA libraries + python interface for 3D Joseph non-TOF and TOF forward and back projectors.**
 
 This project provides OpenMP and CUDA implementations and a python interface of 3D Joseph non-TOF and TOF forward and back projectors that can be e.g. used for image reconstruction. The input to the projectors are a list of start and end points for line of responses (LORs) such that they are very flexible and suitable for sinogram and listmode processing.
 
-A few benchmarking tests of the projectors can be found in [this](https://arxiv.org/abs/2212.12519) preprint on arxiv.
+</br>
+</br>
+
+**If you are using parallelproj, we recommend to read and cite our publication** 
+  - G. Schramm, K. Thielemans: "**PARALLELPROJ - An open-source framework for fast calculation of projections in tomography**", Front. Nucl. Med., Volume 3 - 2023, doi: 10.3389/fnume.2023.1324562, [link to paper](https://www.frontiersin.org/articles/10.3389/fnume.2023.1324562/abstract), [link to arxiv version](https://arxiv.org/abs/2212.12519)
+
+</br>
+</br>
 
 ## Installation, Documentation & Examples
 
-Please refer to the official documentation [here](https://parallelproj.readthedocs.io/en/stable/).
+**Please refer to the official documentation [here](https://parallelproj.readthedocs.io/en/stable/).**
 
----
+</br>
+</br>
 
-## Building the libraries from source (developers only)
+## Building the OpenMP and CUDA libraries from source (developers only)
 
 ### Dependencies
 

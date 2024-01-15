@@ -70,6 +70,9 @@ instance/
 
 # Sphinx documentation
 docs/_build/
+docs/source/auto_examples
+docs/source/gen_modules
+docs/source/sg_execution_times.rst
 
 # PyBuilder
 target/
@@ -134,3 +137,4 @@ wip/*
 *.qdrep
 .vscode/*
 compiled_libs/*
+.DS_Store

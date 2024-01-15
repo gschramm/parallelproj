@@ -3,43 +3,50 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Welcome to parallelproj's documentation!
-========================================
+parallelproj: a Python array API compatible library for fast tomographic projections
+====================================================================================
 
-**parallelproj** is a Python interface library for the
-libparallelproj projector libraries written in C/OpenMP
-and cuda.
+**parallelproj** provides simple and fast
+forward and back projectors for tomographic reconstruction
+(non-TOF and TOF, sinogram ans listmode) in Python that are `python array API <https://data-apis.org/array-api/latest/>`_ 
+compatible meaning that they can be used with a variety of python
+array libraries (e.g. numpy, cupy, pytorch) and devices (CPU and CUDA GPUs).
 
-.. note::
-    The aim of **parallelproj** is to provide simple and fast
-    forward and back projectors for tomographic reconstruction
-    (non-TOF and TOF) in Python that are compatible with different
-    array libraries (e.g. numpy, cupy, pytorch) and devices
-    (CPU and CUDA GPUs).
+**github repository** `<https://github.com/gschramm/parallelproj>`_
+
+.. note:: 
+  **Features of parallelproj**
+
+  * **C/OpenMP** and **CUDA** implementations of **3D Joseph matched forward and back projectors**
+  * **non-TOF** and **TOF** versions of the projectors
+  * dedicated **sinogram** and **listmode** versions of the projectors
+  * **Python array API compatible Python interface** (e.g. directly compatible with numpy, cupy, **pytorch**) 
+  * available on `conda-forge <https://github.com/conda-forge/parallelproj-feedstock>`_
+
+.. hint::
+  *If you are using parallelproj, we highly recommend to read and cite our publication*
+  
+  * G. Schramm, K. Thielemans: "**PARALLELPROJ - An open-source framework for fast calculation of projections in tomography**", Front. Nucl. Med., Volume 3 - 2023, doi: 10.3389/fnume.2023.1324562, `link to paper <https://www.frontiersin.org/articles/10.3389/fnume.2023.1324562/abstract>`_, `link to arxiv version <https://arxiv.org/abs/2212.12519>`_
+
+.. hint::
+  **For bug reports or feature requests, please open a github issue** `here <https://github.com/gschramm/parallelproj/issues>`_.
 
 .. toctree::
-    :hidden:
-    :caption: Getting Started
-    
+    :caption: Getting started
+    :maxdepth: 1
+
     installation
-
-.. nbgallery::
-    :caption: Low-level examples
-    :name: example-gallery
-
-    notebooks/nontof_projections.pct.py
-    notebooks/tof_sinogram_projections.pct.py
-    notebooks/tof_listmode_projections.pct.py
+    auto_examples/index
 
 .. toctree::
-    :hidden:
     :caption: Python API
+    :maxdepth: 1
 
     python_api
 
 .. toctree::
-    :hidden:
     :caption: C/CUDA lib API
+    :maxdepth: 1
 
     libparallelproj_c
     libparallelproj_cuda
