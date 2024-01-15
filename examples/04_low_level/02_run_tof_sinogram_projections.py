@@ -1,8 +1,8 @@
 """
-low-level TOF sinogram projection example
+Low-level TOF sinogram projection example
 =========================================
 
-minimal example that shows how to use the joseph3d TOF forward and back projector in sinogram mode
+A minimal example that shows how to use the joseph3d TOF forward and back projector in sinogram mode.
 
 .. tip::
     parallelproj is python array API compatible meaning it supports different 
@@ -31,7 +31,7 @@ elif "torch" in xp.__name__:
     dev = "cuda"
 
 # %%
-# setup a simple test image
+# Setup a simple test image
 # -------------------------
 
 # setup the image dimensions
@@ -50,7 +50,7 @@ img = to_device(xp.zeros((n0, n1, n2), dtype=xp.float32), dev)
 img[n0 // 2, n1 // 2, n2 // 2] = 1
 
 # %%
-# setup the LOR start and end points
+# Setup the LOR start and end points
 # ----------------------------------
 
 # Every line of response (LOR) along which we want to project is
@@ -89,7 +89,7 @@ xstart = vstart * voxel_size + img_origin
 xend = vend * voxel_size + img_origin
 
 # %%
-# setup the TOF related parameters
+# Setup the TOF related parameters
 # --------------------------------
 
 # the width of the TOF bins in spatial physical units
@@ -116,7 +116,7 @@ sigma_tof = to_device(xp.asarray([fwhm_tof / 2.35], dtype=xp.float32), dev)
 tofcenter_offset = to_device(xp.asarray([0], dtype=xp.float32), dev)
 
 # %%
-# call the forward projector
+# Call the forward projector
 # --------------------------
 
 img_fwd = parallelproj.joseph3d_fwd_tof_sino(
@@ -138,7 +138,7 @@ print(device(img_fwd))
 print("")
 
 # %%
-# call the adjoint of the forward projector
+# Call the adjoint of the forward projector
 # -----------------------------------------
 
 # setup a "TOF sinogram"

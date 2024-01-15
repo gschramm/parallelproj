@@ -1,5 +1,5 @@
 """
-low-level non-TOF projection example
+Low-level non-TOF projection example
 ====================================
 
 The example below shows how to do a simple non-TOF forward projection along a set of
@@ -31,7 +31,7 @@ elif "torch" in xp.__name__:
     dev = "cuda"
 
 # %%
-# setup a simple test image
+# Setup a simple test image
 # -------------------------
 
 # setup the image dimensions
@@ -51,7 +51,7 @@ img = to_device(
 )
 
 # %%
-# setup the LOR start and end points
+# Setup the LOR start and end points
 # ----------------------------------
 #
 # Every line of response (LOR) along which we want to project is
@@ -106,7 +106,7 @@ xstart = vstart * voxel_size + img_origin
 xend = vend * voxel_size + img_origin
 
 # %%
-# call the forward projector
+# Call the forward projector
 # --------------------------
 
 # allocate memory for the forward projection array
@@ -119,7 +119,7 @@ print(device(img_fwd))
 print("")
 
 # %%
-# call the adjoint of the forward projector
+# Call the adjoint of the forward projector
 # -----------------------------------------
 
 # setup a "sinogram" full of ones
