@@ -2,9 +2,9 @@
 PET non-TOF sinogram projector
 ==============================
 
-In this example we will show how to setup and use PET sinogram projector
-consisting of the geometrical forward projection, resolution model and
-correction for attenuation.
+In this example we will show how to setup and use a PET sinogram projector
+consisting of a geometrical forward projector (Joseph's method), 
+a resolution model and a correction for attenuation.
 
 .. tip::
     parallelproj is python array API compatible meaning it supports different 
@@ -64,8 +64,8 @@ lor_desc = parallelproj.RegularPolygonPETLORDescriptor(
 # ----------------------------
 #
 # :class:`.RegularPolygonPETProjector` can be used to define a non-TOF projector
-# that combines the scanner, LOR and image geometry. The letter is defined by
-# the image shape and the voxel size.
+# that combines the scanner, LOR and image geometry. The latter is defined by
+# the image shape, the voxel size, and the image origin.
 
 # define a first projector using an image with 40x8x40 voxels of size 2x2x2 mm
 # where the image center is at world coordinate (0, 0, 0)

@@ -2,9 +2,9 @@
 PET TOF sinogram projector
 ==========================
 
-In this example we will show how to setup and use TOF PET sinogram projector
-consisting of the geometrical forward projection, resolution model and
-correction for attenuation.
+In this example we will show how to setup and use a TOF PET sinogram projector
+consisting of a geometrical TOF forward projector (Joseph's method), 
+a resolution model and a correction for attenuation.
 
 .. tip::
     parallelproj is python array API compatible meaning it supports different 
@@ -67,8 +67,8 @@ lor_desc = parallelproj.RegularPolygonPETLORDescriptor(
 # ----------------------------
 #
 # :class:`.RegularPolygonPETProjector` can be used to define a non-TOF projector
-# that combines the scanner, LOR and image geometry. The letter is defined by
-# the image shape and the voxel size.
+# that combines the scanner, LOR and image geometry. The latter is defined by
+# the image shape, the voxel size, and the image origin.
 
 # define a first projector using an image with 40x8x40 voxels of size 2x2x2 mm
 # where the image center is at world coordinate (0, 0, 0)
@@ -100,8 +100,8 @@ res_model = parallelproj.GaussianFilterOperator(
 )
 
 # %%
-# Adding an image-based resolution model
-# --------------------------------------
+# Calculation of the non-TOF attenuation sinogram
+# -----------------------------------------------
 
 # setup an attenuation image containing the attenuation coeff. of water
 # (in 1/mm)
@@ -125,8 +125,8 @@ proj.tof_parameters = parallelproj.TOFParameters(num_tofbins=9)
 #
 # Since the attenuation sinogram is a non-TOF sinogram with shape = (161, 90, 7) and
 # the output of the projector is a TOF sinogram with shape = (161, 90, 7, num_tofbins),
-# we have to use the :class:`.TOFNonTOFElementwiseMultiplicationOperator` add attenuation
-# in the forward model.
+# we have to use the :class:`.TOFNonTOFElementwiseMultiplicationOperator` to add the
+# attenuation model to the forward model.
 
 print(f"atten. sino shape {att_sino.shape}")
 print(f"proj output shape {proj.out_shape}")
