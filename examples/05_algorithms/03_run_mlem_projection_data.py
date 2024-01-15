@@ -60,7 +60,7 @@ elif "torch" in xp.__name__:
 # image-based resolution model, a non-TOF PET projector and an attenuation model
 #
 # .. note::
-#     The OSEM implementation below works with all linear operators that
+#     The MLEM implementation below works with all linear operators that
 #     subclass :class:`.LinearOperator` (e.g. the high-level projectors).
 
 num_rings = 5
@@ -106,8 +106,8 @@ x_true[:, :2, :] = 0
 x_true[:, -2:, :] = 0
 
 # %%
-# setup an attenuation image and calculate the attenuation sinogram
-# -----------------------------------------------------------------
+# Attenuation image and sinogram setup
+# ------------------------------------
 
 # setup an attenuation image
 x_att = 0.01 * xp.astype(x_true > 0, xp.float32)
@@ -116,8 +116,8 @@ att_sino = xp.exp(-proj(x_att))
 
 
 # %%
-# setup the complete PET forward model
-# ------------------------------------
+# Complete PET forward model setup
+# --------------------------------
 #
 # We combine an image-based resolution model,
 # a non-TOF or TOF PET projector and an attenuation model
@@ -251,8 +251,8 @@ for i in range(num_iter):
 
 
 # %%
-# calculate the negative Poisson log-likelihood function of the reconstruction
-# ----------------------------------------------------------------------------
+# Calculation of the negative Poisson log-likelihood function of the reconstruction
+# ---------------------------------------------------------------------------------
 
 # calculate the negative Poisson log-likelihood function of the reconstruction
 exp = pet_lin_op(x) + contamination

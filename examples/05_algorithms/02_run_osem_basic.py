@@ -121,8 +121,8 @@ exp_ref = op_A(x_ref) + contamination
 cost_ref = float(xp.sum(exp_ref - y * xp.log(exp_ref)))
 
 # %%
-# Split forward model into subsets :math:`A^k`
-# --------------------------------------------
+# Splitting of the forward model into subsets :math:`A^k`
+# -------------------------------------------------------
 #
 # We split the matrix operator into two disjoint subsets
 # using slicing along the first dimension of the matrix.
@@ -197,7 +197,9 @@ for i in range(num_iter):
 # Convergences plots
 # ------------------
 #
-# Note that basic OSEM does not converge to the optimal point (but can come close).
+# ..note::
+#       The basic OSEM does not converge to the optimal point
+#       (but can come close using a few number of fast updates).
 
 fig, ax = plt.subplots(1, 2, figsize=(8, 4), sharex=True)
 ax[0].semilogx(np.asarray(to_device(rel_cost, "cpu")))

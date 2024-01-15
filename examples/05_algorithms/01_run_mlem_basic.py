@@ -97,7 +97,7 @@ y = xp.asarray(
 # Analytic calculation of the optimal point (as reference)
 # --------------------------------------------------------
 #
-# Since our linear forward operator :math:`A` is invertible
+# Since our linear forward operator :math:`A` is small and invertible
 # (*which is usually not the case in practice*),
 # we can calculate the optimal point :math:`x^* = A^{-1} (y - s)`
 # and the corresponding optimal value of :math:`f(x^*)`.
