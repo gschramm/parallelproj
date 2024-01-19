@@ -63,6 +63,7 @@ def test_tof_sino_fwd(
         tofcenter_offset,
         nsigmas,
         num_tof_bins,
+        num_chunks=3,
     )
 
     # check if sum of the projection is correct (should be equal to the voxel
@@ -196,6 +197,7 @@ def test_adjointness(
         tofcenter_offset,
         nsigmas,
         num_tof_bins,
+        num_chunks=3,
     )
 
     # backward project
@@ -212,6 +214,7 @@ def test_adjointness(
         tofcenter_offset,
         nsigmas,
         num_tof_bins,
+        num_chunks=5,
     )
 
     ip_a = float(xp.sum((back_img * img)))

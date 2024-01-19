@@ -64,7 +64,7 @@ def test_fwd(
     xstart = vstart * voxel_size + img_origin
     xend = vend * voxel_size + img_origin
 
-    img_fwd = parallelproj.joseph3d_fwd(xstart, xend, img, img_origin, voxel_size)
+    img_fwd = parallelproj.joseph3d_fwd(xstart, xend, img, img_origin, voxel_size, num_chunks=3)
 
     # setup the expected values for the projection
     expected_projections = xp.zeros_like(img_fwd, device=dev)
@@ -153,12 +153,12 @@ def test_adjointness(
     xend[:, 2] = R * costheta
 
     # forward project
-    img_fwd = parallelproj.joseph3d_fwd(xstart, xend, img, img_origin, voxel_size)
+    img_fwd = parallelproj.joseph3d_fwd(xstart, xend, img, img_origin, voxel_size, num_chunks=3)
 
     # backward project
     sino = xp.asarray(np.random.rand(*img_fwd.shape), dtype=xp.float32, device=dev)
     back_img = parallelproj.joseph3d_back(
-        xstart, xend, img.shape, img_origin, voxel_size, sino
+        xstart, xend, img.shape, img_origin, voxel_size, sino, num_chunks=5
     )
 
     ip_a = float(xp.sum((back_img * img)))
