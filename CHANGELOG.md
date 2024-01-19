@@ -1,3 +1,6 @@
+## 1.7.1 (January 19, 2024)
+- BUGFIX: correct bug in the "chunking" of TOF sinogram projections in the python interface
+
 ## 1.7.0 (January 15, 2024)
 - update of documentation
 - addition of more examples
