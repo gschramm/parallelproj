@@ -62,7 +62,8 @@ jobs:
 
     - name: Test with pytest - python ${{ matrix.python-version }}
       run: |
-        set PARALLELPROJ_C_LIB=D:/a/parallelproj/parallelproj/libparallelproj_install/bin/parallelproj_c.dll 
+        set PARALLELPROJ_C_LIB="D:\a\parallelproj\parallelproj\libparallelproj_install\bin\parallelproj_c.dll"
+        echo %PARALLELPROJ_C_LIB%
         pytest --cov-report term-missing --cov=python/parallelproj --cov-fail-under=100 -v test/        
 
 # PARALLELPROJ_C_LIB=${{github.workspace}}/libparallelproj_install/lib/libparallelproj_c.so pytest --cov-report term-missing --cov=python/parallelproj --cov-fail-under=100 -v test/        
