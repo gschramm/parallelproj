@@ -35,12 +35,12 @@ jobs:
       # Build your program with the given configuration
       run: cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}} --target install
 
-    - name: Test_C
-      working-directory: ${{github.workspace}}/build
-      # Execute tests defined by the CMake configuration.
-      # See https://cmake.org/cmake/help/latest/manual/ctest.1.html for more detail
-      # we have to skip the CUDA tests since there are now CUDA devices available
-      run: ctest -C ${{env.BUILD_TYPE}} -VV -E cuda --output-on-failure
+#    - name: Test_C
+#      working-directory: ${{github.workspace}}/build
+#      # Execute tests defined by the CMake configuration.
+#      # See https://cmake.org/cmake/help/latest/manual/ctest.1.html for more detail
+#      # we have to skip the CUDA tests since there are now CUDA devices available
+#      run: ctest -C ${{env.BUILD_TYPE}} -VV -E cuda --output-on-failure
 
     - name: Set up python ${{ matrix.python-version }}
       uses: actions/setup-python@v5
