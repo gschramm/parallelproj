@@ -54,6 +54,7 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         python -m pip install flake8 pytest pytest-cov
+        python -m pip install torch --index-url https://download.pytorch.org/whl/cpu
         pip install .
         
     - name: Lint with flake8 - python ${{ matrix.python-version }}
@@ -67,7 +68,7 @@ jobs:
       run: |
         pytest --cov-report term-missing --cov=python/parallelproj --cov-fail-under=100 -v test/        
       env: 
-        PARALLELPROJ_C_LIB: ${{github.workspace}}/bin/libparallelproj_c.so
+        PARALLELPROJ_C_LIB: ${{github.workspace}}/lib/libparallelproj_c.so
 
     - if: runner.os == 'Windows'
       name: Test with pytest - python ${{ matrix.python-version }}
@@ -75,8 +76,3 @@ jobs:
         pytest --cov-report term-missing --cov=python/parallelproj --cov-fail-under=100 -v test/        
       env: 
         PARALLELPROJ_C_LIB: ${{github.workspace}}\bin\parallelproj_c.dll
-
-#python -m pip install torch --index-url https://download.pytorch.org/whl/cpu
-# PARALLELPROJ_C_LIB=${{github.workspace}}/libparallelproj_install/lib/libparallelproj_c.so pytest --cov-report term-missing --cov=python/parallelproj --cov-fail-under=100 -v test/        
-#export PYTHONPATH=${PYTHONPATH}:${PWD}/python
-#python -c "from pathlib import Path; print(list(Path('.').rglob('*parallelproj_c.*')))"
