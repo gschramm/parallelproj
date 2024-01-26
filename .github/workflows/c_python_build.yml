@@ -20,8 +20,14 @@ jobs:
 
     strategy:
       matrix:
-        os: [ubuntu-latest]
         python-version: [ '3.9', '3.10', '3.11'] # no torch for python 3.12 so far
+        include:
+        - os: ubuntu-latest
+          compiler: gcc
+          compiler_version: 12
+        - os: macOS-latest
+          compiler: gcc
+          compiler_version: 12
 
     steps:
     - uses: actions/checkout@v3
