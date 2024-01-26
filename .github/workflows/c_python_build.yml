@@ -68,11 +68,11 @@ jobs:
       run: |
         pytest --cov-report term-missing --cov=python/parallelproj --cov-fail-under=100 -v test/        
       env: 
-        PARALLELPROJ_C_LIB: ${{github.workspace}}/lib/libparallelproj_c.so
+        PARALLELPROJ_C_LIB: ${{github.workspace}}/libparallelproj_install/lib/libparallelproj_c.so
 
     - if: matrix.os == 'windows-latest'
       name: Test with pytest - python ${{ matrix.python-version }}
       run: |
         pytest --cov-report term-missing --cov=python/parallelproj --cov-fail-under=100 -v test/        
       env: 
-        PARALLELPROJ_C_LIB: ${{github.workspace}}\bin\parallelproj_c.dll
+        PARALLELPROJ_C_LIB: ${{github.workspace}}\libparallelproj_install\bin\parallelproj_c.dll
