@@ -1,3 +1,7 @@
+## 1.7.2 (January 26, 2024)
+- require python>=3.9
+- replace `distuils.spawn` by `shutil.which`
+
 ## 1.7.1 (January 19, 2024)
 - BUGFIX: correct bug in the "chunking" of TOF sinogram projections in the python interface
 

@@ -2,8 +2,8 @@
 from __future__ import annotations
 
 import os
+import shutil
 import importlib
-import distutils
 import math
 
 import ctypes
@@ -22,7 +22,7 @@ import array_api_compat
 from types import ModuleType
 
 # check if cuda is present
-cuda_present = distutils.spawn.find_executable("nvidia-smi") is not None
+cuda_present = shutil.which("nvidia-smi") is not None
 
 # check if cupy is available
 cupy_enabled = importlib.util.find_spec("cupy") is not None
@@ -768,7 +768,7 @@ def joseph3d_fwd_tof_sino(
                     d_img,
                     np.asarray(img_origin, dtype=np.float32),
                     np.asarray(voxsize, dtype=np.float32),
-                    img_fwd.ravel()[ntofbins*ic[i] : ntofbins*(ic[i + 1])],
+                    img_fwd.ravel()[ntofbins * ic[i] : ntofbins * (ic[i + 1])],
                     ic[i + 1] - ic[i],
                     np.asarray(img.shape, dtype=np.int32),
                     np.float32(tofbin_width),
@@ -935,7 +935,9 @@ def joseph3d_back_tof_sino(
                     d_back_img,
                     np.asarray(img_origin, dtype=np.float32),
                     np.asarray(voxsize, dtype=np.float32),
-                    np.asarray(img_fwd, dtype=np.float32).ravel()[ntofbins*ic[i] : ntofbins*ic[i + 1]],
+                    np.asarray(img_fwd, dtype=np.float32).ravel()[
+                        ntofbins * ic[i] : ntofbins * ic[i + 1]
+                    ],
                     ic[i + 1] - ic[i],
                     np.asarray(back_img.shape, dtype=np.int32),
                     np.float32(tofbin_width),

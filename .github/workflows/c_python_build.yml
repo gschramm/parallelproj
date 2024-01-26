@@ -1,5 +1,5 @@
 # Workflow to build the parallelproj C/CUDA libs (incl. installation of CUDA)
-name: Build C/python ubuntu-latest
+name: Build C/python
 
 on:
   push:
@@ -16,7 +16,12 @@ jobs:
     # The CMake configure and build commands are platform agnostic and should work equally well on Windows or Mac.
     # You can convert this to a matrix build if you need cross-platform coverage.
     # See: https://docs.github.com/en/free-pro-team@latest/actions/learn-github-actions/managing-complex-workflows#using-a-build-matrix
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      matrix:
+        os: [ubuntu-latest]
+        python-version: [ '3.9', '3.10', '3.11'] # no torch for python 3.12 so far
 
     steps:
     - uses: actions/checkout@v3
@@ -37,19 +42,19 @@ jobs:
       # we have to skip the CUDA tests since there are now CUDA devices available
       run: ctest -C ${{env.BUILD_TYPE}} -VV -E cuda
 
-    - name: Set up Python 3.11
-      uses: actions/setup-python@v3
+    - name: Set up python ${{ matrix.python-version }}
+      uses: actions/setup-python@v5
       with:
-        python-version: 3.11
+        python-version: ${{ matrix.python-version }}
         
-    - name: Install Python dependencies
+    - name: Install python ${{ matrix.python-version }} dependencies
       run: |
         python -m pip install --upgrade pip
         python -m pip install flake8 pytest pytest-cov
         python -m pip install torch --index-url https://download.pytorch.org/whl/cpu
         pip install .
         
-    - name: Lint with flake8
+    - name: Lint with flake8 - python ${{ matrix.python-version }}
       run: |
         # stop the build if there are Python syntax errors or undefined names
         # E203 seems not pep8 compatible, so we ignore it
@@ -59,8 +64,9 @@ jobs:
       run: |
         find /usr/local/lib -name "libparallelproj_c.so"
            
-    - name: Test with pytest
+    - name: Test with pytest - python ${{ matrix.python-version }}
       run: |
         export PARALLELPROJ_C_LIB=/usr/local/lib/libparallelproj_c.so
         export PYTHONPATH=${PYTHONPATH}:${PWD}/python
         pytest --cov-report term-missing --cov=python/parallelproj --cov-fail-under=100 -v test/        
+        
