@@ -60,13 +60,11 @@ jobs:
         # E203 seems not pep8 compatible, so we ignore it
         flake8 --count --show-source --statistics --max-line-length 127 --extend-ignore=E203 python/parallelproj
 
-    - name: find installed libparallelproj_c
-      run: |
-        python -c "from pathlib import Path; print(list((Path('${{github.workspace}}') / 'libparallelproj_install').rglob('*parallelproj_c.*')))"
-           
     - name: Test with pytest - python ${{ matrix.python-version }}
       run: |
-        PARALLELPROJ_C_LIB=${{github.workspace}}/libparallelproj_install/lib/libparallelproj_c.so pytest --cov-report term-missing --cov=python/parallelproj --cov-fail-under=100 -v test/        
-        
+        set PARALLELPROJ_C_LIB=D:/a/parallelproj/parallelproj/libparallelproj_install/bin/parallelproj_c.dll 
+        pytest --cov-report term-missing --cov=python/parallelproj --cov-fail-under=100 -v test/        
+
+# PARALLELPROJ_C_LIB=${{github.workspace}}/libparallelproj_install/lib/libparallelproj_c.so pytest --cov-report term-missing --cov=python/parallelproj --cov-fail-under=100 -v test/        
 #export PYTHONPATH=${PYTHONPATH}:${PWD}/python
 #python -c "from pathlib import Path; print(list(Path('.').rglob('*parallelproj_c.*')))"
