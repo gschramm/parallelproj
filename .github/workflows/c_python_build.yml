@@ -29,7 +29,7 @@ jobs:
     - name: Configure CMake
       # Configure CMake in a 'build' subdirectory. `CMAKE_BUILD_TYPE` is only required if you are using a single-configuration generator such as make.
       # See https://cmake.org/cmake/help/latest/variable/CMAKE_BUILD_TYPE.html?highlight=cmake_build_type
-      run: cmake -B ${{github.workspace}}/build -DCMAKE_INSTALL_PREFIX=${{github.workspace}}/lib -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
+      run: cmake -B ${{github.workspace}}/build -DCMAKE_INSTALL_PREFIX=${{github.workspace}}/libparallelproj_install -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
 
     - name: Build C/CUDA libs with CMake
       # Build your program with the given configuration
@@ -62,11 +62,11 @@ jobs:
 
     - name: find installed libparallelproj_c
       run: |
-        find ${{github.workspace}} -name "libparallelproj_c.so"
+        find ${{github.workspace}}/libparallelproj_install -name "libparallelproj_c.so"
            
     - name: Test with pytest - python ${{ matrix.python-version }}
       run: |
-        export PARALLELPROJ_C_LIB=${{github.workspace}}/lib/libparallelproj_c.so
+        export PARALLELPROJ_C_LIB=${{github.workspace}}/libparallelproj_install/lib/libparallelproj_c.so
         pytest --cov-report term-missing --cov=python/parallelproj --cov-fail-under=100 -v test/        
         
 #export PYTHONPATH=${PYTHONPATH}:${PWD}/python
