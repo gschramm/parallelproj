@@ -20,7 +20,7 @@ jobs:
 
     strategy:
       matrix:
-        os: [ubuntu-latest, windows-latest] # not building on mac-os because there is no OpenMP
+        os: [ubuntu-latest] # not building on mac-os because there is no OpenMP
         python-version: [ '3.9', '3.10', '3.11'] # no torch for python 3.12 so far
 
     steps:
@@ -62,13 +62,12 @@ jobs:
 
     - name: find installed libparallelproj_c
       run: |
-        python -c "from pathlib import Path; print(list((Path('${{github.workspace}}') / libparallelproj_install).rglob('*parallelproj_c.*')))"
+        python -c "from pathlib import Path; print(list((Path('${{github.workspace}}') / 'libparallelproj_install').rglob('*parallelproj_c.*')))"
         find ${{github.workspace}}/libparallelproj_install -name "libparallelproj_c.so"
            
     - name: Test with pytest - python ${{ matrix.python-version }}
       run: |
-        export PARALLELPROJ_C_LIB=${{github.workspace}}/libparallelproj_install/lib/libparallelproj_c.so
-        pytest --cov-report term-missing --cov=python/parallelproj --cov-fail-under=100 -v test/        
+        PARALLELPROJ_C_LIB=${{github.workspace}}/libparallelproj_install/lib/libparallelproj_c.so pytest --cov-report term-missing --cov=python/parallelproj --cov-fail-under=100 -v test/        
         
 #export PYTHONPATH=${PYTHONPATH}:${PWD}/python
 #python -c "from pathlib import Path; print(list(Path('.').rglob('*parallelproj_c.*')))"
