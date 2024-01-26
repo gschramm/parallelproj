@@ -20,8 +20,11 @@ jobs:
 
     strategy:
       matrix:
-        os: [windows-latest] # not building on mac-os because there is no OpenMP
+        os: [ubuntu-latest, windows-latest] # not building on mac-os because there is no OpenMP
         python-version: [ '3.9', '3.10', '3.11'] # no torch for python 3.12 so far
+        exclude:
+          - os: windows-latest
+            python-version: '3.11'
 
     steps:
     - uses: actions/checkout@v3
@@ -59,11 +62,19 @@ jobs:
         # E203 seems not pep8 compatible, so we ignore it
         flake8 --count --show-source --statistics --max-line-length 127 --extend-ignore=E203 python/parallelproj
 
-    - name: Test with pytest - python ${{ matrix.python-version }}
+    - if: runner.os == 'Linux'
+      name: Test with pytest - python ${{ matrix.python-version }}
       run: |
         pytest --cov-report term-missing --cov=python/parallelproj --cov-fail-under=100 -v test/        
       env: 
-        PARALLELPROJ_C_LIB: ${{github.workspace}}/bin/parallelproj_c.dll
+        PARALLELPROJ_C_LIB: ${{github.workspace}}/bin/libparallelproj_c.so
+
+    - if: runner.os == 'Windows'
+      name: Test with pytest - python ${{ matrix.python-version }}
+      run: |
+        pytest --cov-report term-missing --cov=python/parallelproj --cov-fail-under=100 -v test/        
+      env: 
+        PARALLELPROJ_C_LIB: ${{github.workspace}}\bin\parallelproj_c.dll
 
 #python -m pip install torch --index-url https://download.pytorch.org/whl/cpu
 # PARALLELPROJ_C_LIB=${{github.workspace}}/libparallelproj_install/lib/libparallelproj_c.so pytest --cov-report term-missing --cov=python/parallelproj --cov-fail-under=100 -v test/        
