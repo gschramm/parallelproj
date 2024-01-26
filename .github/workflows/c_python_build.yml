@@ -62,7 +62,7 @@ jobs:
 
     - name: find installed libparallelproj_c
       run: |
-        python -c "from pathlib import Path; print(list((Path(${{github.workspace}}) / libparallelproj_install).rglob('*parallelproj_c*')))"
+        python -c "from pathlib import Path; print(list((Path('${{github.workspace}}') / libparallelproj_install).rglob('*parallelproj_c.*')))"
         find ${{github.workspace}}/libparallelproj_install -name "libparallelproj_c.so"
            
     - name: Test with pytest - python ${{ matrix.python-version }}
