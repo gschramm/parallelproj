@@ -69,3 +69,26 @@ __all__ = [
     "SinogramSpatialAxisOrder",
     "RegularPolygonPETLORDescriptor",
 ]
+
+print(
+    """
+          -  -  -  -  -  -  -  -   -  -  -  -
+          P  A  R  A  L  L  E  L | P  R  O  J
+          -  -  -  -  -  -  -  -   -  -  -  -
+
+    =================================================
+
+         Please consider citing our publication
+      ---------------------------------------------
+      Georg Schramm and Kris Thielemans:
+      "PARALLELPROJ—an open-source framework for
+       fast calculation of projections in
+       tomography"
+      Front. Nucl. Med., 08 January 2024
+      Sec. PET and SPECT, Vol 3
+      https://doi.org/10.3389/fnume.2023.1324562
+
+    =================================================
+
+    """
+)

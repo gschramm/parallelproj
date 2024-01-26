@@ -1,3 +1,7 @@
+## 1.7.3 (January 26, 2024)
+- print banner
+- test also on Windows
+
 ## 1.7.2 (January 26, 2024)
 - require python>=3.9
 - replace `distuils.spawn` by `shutil.which`

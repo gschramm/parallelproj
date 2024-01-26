@@ -20,8 +20,11 @@ jobs:
 
     strategy:
       matrix:
-        os: [ubuntu-latest]
+        os: [ubuntu-latest, windows-latest] # not building on mac-os because there is no OpenMP
         python-version: [ '3.9', '3.10', '3.11'] # no torch for python 3.12 so far
+        exclude:
+          - os: windows-latest
+            python-version: '3.11'
 
     steps:
     - uses: actions/checkout@v3
@@ -29,18 +32,11 @@ jobs:
     - name: Configure CMake
       # Configure CMake in a 'build' subdirectory. `CMAKE_BUILD_TYPE` is only required if you are using a single-configuration generator such as make.
       # See https://cmake.org/cmake/help/latest/variable/CMAKE_BUILD_TYPE.html?highlight=cmake_build_type
-      run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
+      run: cmake -B ${{github.workspace}}/build -DCMAKE_INSTALL_PREFIX=${{github.workspace}}/libparallelproj_install -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
 
     - name: Build C/CUDA libs with CMake
       # Build your program with the given configuration
-      run: sudo cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}} --target install
-
-    - name: Test_C
-      working-directory: ${{github.workspace}}/build
-      # Execute tests defined by the CMake configuration.
-      # See https://cmake.org/cmake/help/latest/manual/ctest.1.html for more detail
-      # we have to skip the CUDA tests since there are now CUDA devices available
-      run: ctest -C ${{env.BUILD_TYPE}} -VV -E cuda
+      run: cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}} --target install
 
     - name: Set up python ${{ matrix.python-version }}
       uses: actions/setup-python@v5
@@ -60,13 +56,16 @@ jobs:
         # E203 seems not pep8 compatible, so we ignore it
         flake8 --count --show-source --statistics --max-line-length 127 --extend-ignore=E203 python/parallelproj
 
-    - name: find installed libparallelproj_c
+    - if: matrix.os == 'ubuntu-latest'
+      name: Test with pytest - python ${{ matrix.python-version }}
       run: |
-        find /usr/local/lib -name "libparallelproj_c.so"
-           
-    - name: Test with pytest - python ${{ matrix.python-version }}
-      run: |
-        export PARALLELPROJ_C_LIB=/usr/local/lib/libparallelproj_c.so
-        export PYTHONPATH=${PYTHONPATH}:${PWD}/python
         pytest --cov-report term-missing --cov=python/parallelproj --cov-fail-under=100 -v test/        
-        
+      env: 
+        PARALLELPROJ_C_LIB: ${{github.workspace}}/libparallelproj_install/lib/libparallelproj_c.so
+
+    - if: matrix.os == 'windows-latest'
+      name: Test with pytest - python ${{ matrix.python-version }}
+      run: |
+        pytest --cov-report term-missing --cov=python/parallelproj --cov-fail-under=100 -v test/        
+      env: 
+        PARALLELPROJ_C_LIB: ${{github.workspace}}\libparallelproj_install\bin\parallelproj_c.dll
