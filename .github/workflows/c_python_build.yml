@@ -1,5 +1,5 @@
 # Workflow to build the parallelproj C/CUDA libs (incl. installation of CUDA)
-name: Build C/python ubuntu-latest
+name: Build C/python
 
 on:
   push:
@@ -16,10 +16,11 @@ jobs:
     # The CMake configure and build commands are platform agnostic and should work equally well on Windows or Mac.
     # You can convert this to a matrix build if you need cross-platform coverage.
     # See: https://docs.github.com/en/free-pro-team@latest/actions/learn-github-actions/managing-complex-workflows#using-a-build-matrix
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
 
     strategy:
       matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
         python-version: [ '3.9', '3.10', '3.11'] # no torch for python 3.12 so far
 
     steps:
@@ -59,12 +60,14 @@ jobs:
         # E203 seems not pep8 compatible, so we ignore it
         flake8 --count --show-source --statistics --max-line-length 127 --extend-ignore=E203 python/parallelproj
 
-    - name: find installed libparallelproj_c
-      run: |
-        find /usr/local/lib -name "libparallelproj_c.so"
+    #- name: find installed libparallelproj_c
+    #  run: |
+    #    find /usr/local/lib -name "libparallelproj_c.so"
            
     - name: Test with pytest - python ${{ matrix.python-version }}
       run: |
-        export PARALLELPROJ_C_LIB=/usr/local/lib/libparallelproj_c.so
         export PYTHONPATH=${PYTHONPATH}:${PWD}/python
         pytest --cov-report term-missing --cov=python/parallelproj --cov-fail-under=100 -v test/        
+        
+    #export PARALLELPROJ_C_LIB=/usr/local/lib/libparallelproj_c.so
+
