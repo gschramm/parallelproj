@@ -22,11 +22,8 @@ jobs:
       matrix:
         os: [ubuntu-latest, windows-latest] # not building on mac-os because there is no OpenMP
         python-version: [ '3.9', '3.10', '3.11'] # no torch for python 3.12 so far
-        exclude:
-          - os: windows-latest
-            python-version: '3.9'
-          - os: windows-latest
-            python-version: '3.11'
+        env:
+          MPLBACKEND: Agg  # https://github.com/orgs/community/discussions/26434
 
     steps:
     - uses: actions/checkout@v3
