@@ -1,0 +1,7 @@
+name: parallelproj-binder
+channels:
+  - conda-forge
+dependencies:
+  - libparallelproj
+  - pytorch
+  - sphinx-gallery
