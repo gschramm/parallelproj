@@ -10,6 +10,9 @@ a resolution model and a correction for attenuation.
     parallelproj is python array API compatible meaning it supports different 
     array backends (e.g. numpy, cupy, torch, ...) and devices (CPU or GPU).
     Choose your preferred array API ``xp`` and device ``dev`` below.
+
+.. image:: https://mybinder.org/badge_logo.svg
+ :target: https://mybinder.org/v2/gh/gschramm/parallelproj/master?labpath=examples
 """
 
 # %%

@@ -31,12 +31,18 @@ array libraries (e.g. numpy, cupy, pytorch) and devices (CPU and CUDA GPUs).
 .. hint::
   **For bug reports or feature requests, please open a github issue** `here <https://github.com/gschramm/parallelproj/issues>`_.
 
+
 .. toctree::
     :caption: Getting started
     :maxdepth: 1
 
     installation
     auto_examples/index
+
+All examples can be run interactively without installation on `mybinder.org`:
+
+.. image:: https://mybinder.org/badge_logo.svg
+  :target: https://mybinder.org/v2/gh/gschramm/parallelproj/master?labpath=examples
 
 .. toctree::
     :caption: Python API

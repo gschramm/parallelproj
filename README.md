@@ -1,3 +1,5 @@
+[![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/gschramm/parallelproj/master?labpath=examples)
+
 <p align="center">
 <img src="./docs/source/parallelproj-logo-white-bg.svg" width="350">
 </p>
