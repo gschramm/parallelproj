@@ -1,2 +1,4 @@
-# install sphinx gallery to be able to convert rst to md
-mamba install sphinx-gallery
+# convert all sphinx-gallery scripts to jupyer notebooks
+find . -name "??_*.py" -exec sphx_glr_python_to_jupyter.py {} \;
+# remove the python scripts
+find . -name "??_*.py" -exec rm {} \;
