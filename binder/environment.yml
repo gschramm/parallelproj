@@ -7,3 +7,4 @@ dependencies:
   - parallelproj>=1.7.3
   - pytorch
   - jupytext
+  - sphinx-gallery
