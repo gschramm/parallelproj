@@ -2,5 +2,6 @@ name: parallelproj-binder
 channels:
   - conda-forge
 dependencies:
-  - parallelproj
+  - parallelproj>=1.7.3
   - pytorch
+  - jupytext
