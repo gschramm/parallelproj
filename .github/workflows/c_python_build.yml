@@ -17,13 +17,13 @@ jobs:
     # You can convert this to a matrix build if you need cross-platform coverage.
     # See: https://docs.github.com/en/free-pro-team@latest/actions/learn-github-actions/managing-complex-workflows#using-a-build-matrix
     runs-on: ${{ matrix.os }}
+    env:
+      MPLBACKEND: Agg  # https://github.com/orgs/community/discussions/26434
 
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest] # not building on mac-os because there is no OpenMP
         python-version: [ '3.9', '3.10', '3.11'] # no torch for python 3.12 so far
-        env:
-          MPLBACKEND: Agg  # https://github.com/orgs/community/discussions/26434
 
     steps:
     - uses: actions/checkout@v3
