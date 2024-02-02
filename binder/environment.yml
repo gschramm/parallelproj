@@ -2,6 +2,6 @@ name: parallelproj-binder
 channels:
   - conda-forge
 dependencies:
-  - parallelproj>=1.7.3
+  - libparallelproj
   - pytorch
   - sphinx-gallery

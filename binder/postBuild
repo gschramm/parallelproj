@@ -2,3 +2,6 @@
 find examples -name "??_*.py" -exec sphx_glr_python_to_jupyter.py {} \;
 # remove the python scripts
 find examples -name "??_*.py" -exec rm {} \;
+
+# set PYTHONPATH
+export PYTHONPATH=${PWD}/python
