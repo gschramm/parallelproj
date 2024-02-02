@@ -5,5 +5,3 @@ dependencies:
   - parallelproj>=1.7.3
   - pytorch
   - jupytext
-  - sphinx>=7.0
-  - sphinx-gallery
