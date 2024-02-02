@@ -11,6 +11,9 @@ endpoints can be modeled as a stack of regular polygons.
     Choose your preferred array API ``xp`` and device ``dev`` below.
 """
 
+###############################################################################
+###############################################################################
+
 # %%
 import array_api_compat.numpy as xp
 

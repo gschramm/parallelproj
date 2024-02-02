@@ -1,0 +1,6 @@
+name: parallelproj-binder
+channels:
+  - conda-forge
+dependencies:
+  - parallelproj
+  - pytorch
