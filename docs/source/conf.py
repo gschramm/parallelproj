@@ -56,7 +56,7 @@ sphinx_gallery_conf = {
     "filename_pattern": r"/\d{2}_run_",
     "example_extensions": {".py"},
     "run_stale_examples": True,
-    "ignore_pattern": r"__init__\.py",
+    "ignore_pattern": r"utils\.py",
     "reference_url": {
         # The module you locally document uses None
         "sphinx_gallery": None
