@@ -1,2 +1,2 @@
-Iterative algorithm examples
-----------------------------
+(Iterative) algorithm examples
+------------------------------
