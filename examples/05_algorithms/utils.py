@@ -79,7 +79,8 @@ class RadonObject(abc.ABC):
             self._s0**2 * self.xp.cos(phi) ** 2 + self._s1**2 * self.xp.sin(phi) ** 2
         )
         phi_prime = self.xp.atan2(
-            self._s0 * self.xp.sin(phi), self._s1 * self.xp.cos(phi)
+            self._s0 * self.xp.cos(phi),
+            self._s1 * self.xp.sin(phi),
         )
 
         fac = (
