@@ -17,6 +17,7 @@ class RadonObject(abc.ABC):
         self._s0: float = 1.0
         self._s1: float = 1.0
         self._amplitude: float = 1.0
+        self._rotation: float = 0.0
 
     @abc.abstractmethod
     def _centered_radon_transform(self, r: Array, phi: Array) -> Array:
@@ -74,21 +75,33 @@ class RadonObject(abc.ABC):
     def amplitude(self, value: float) -> None:
         self._amplitude = value
 
+    @property
+    def rotation(self) -> float:
+        return self._rotation
+
+    @rotation.setter
+    def rotation(self, value: float) -> None:
+        self._rotation = value
+
     def radon_transform(self, s, phi) -> float:
+
+        phi_rotated = (phi + self.rotation) % (2 * self.xp.pi)
+
         s_prime = s / self.xp.sqrt(
-            self._s0**2 * self.xp.cos(phi) ** 2 + self._s1**2 * self.xp.sin(phi) ** 2
+            self._s0**2 * self.xp.cos(phi_rotated) ** 2
+            + self._s1**2 * self.xp.sin(phi_rotated) ** 2
         )
         phi_prime = self.xp.atan2(
-            self._s0 * self.xp.cos(phi),
-            self._s1 * self.xp.sin(phi),
+            self._s0 * self.xp.cos(phi_rotated),
+            self._s1 * self.xp.sin(phi_rotated),
         )
 
         fac = (
             self._s0
             * self._s1
             / self.xp.sqrt(
-                self._s0**2 * self.xp.cos(phi) ** 2
-                + self._s1**2 * self.xp.sin(phi) ** 2
+                self._s0**2 * self.xp.cos(phi_rotated) ** 2
+                + self._s1**2 * self.xp.sin(phi_rotated) ** 2
             )
         )
 
@@ -104,9 +117,13 @@ class RadonObject(abc.ABC):
         )
 
     def values(self, x0: Array, x1: Array) -> Array:
-        return self._amplitude * self._centered_values(
-            x0 / self._s0 - self._x0_offset, x1 / self._s1 - self._x1_offset
-        )
+        x0_p = x0 * self.xp.cos(self._rotation) - x1 * self.xp.sin(self._rotation)
+        x1_p = x0 * self.xp.sin(self._rotation) + x1 * self.xp.cos(self._rotation)
+
+        x0_pp = x0_p / self._s0 - self._x0_offset
+        x1_pp = x1_p / self._s1 - self._x1_offset
+
+        return self._amplitude * self._centered_values(x0_pp, x1_pp)
 
 
 class RadonObjectSequence(Sequence[RadonObject]):
