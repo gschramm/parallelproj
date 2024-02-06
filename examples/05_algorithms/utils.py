@@ -97,8 +97,8 @@ class RadonObject(abc.ABC):
             * fac
             * self._centered_radon_transform(
                 s_prime
-                - self._x0_offset * self.xp.cos(phi_prime)
-                - self._x1_offset * self.xp.sin(phi_prime),
+                - self._x0_offset * self.xp.sin(phi_prime)
+                - self._x1_offset * self.xp.cos(phi_prime),
                 phi_prime,
             )
         )
