@@ -1,11 +1,12 @@
 """
-DePierro's algorithm to optimize the Poisson logL with quadratic intensity prior
-================================================================================
+PDHG to optimize the Poisson logL with total variation
+======================================================
 
-This example demonstrates the use of DePierro's algorithm to minimize the negative Poisson log-likelihood function with a quadratic intensity prior.
+This example demonstrates the use of the primal dual hybrid gradient (PDHG) algorithm to minimize the negative 
+Poisson log-likelihood function with total variation regularization.
 
 .. math::
-    f(x) = \sum_{i=1}^m \\bar{y}_i - \\bar{y}_i (x) \log(y_i) + \\frac{\\beta}{2} \\|x - z \\|^2
+    f(x) = \sum_{i=1}^m \\bar{y}_i - \\bar{y}_i (x) \log(y_i) + \\beta \\|\\nabla x \\|_{1,2}
 
 subject to
 
@@ -63,19 +64,21 @@ elif "torch" in xp.__name__:
 # setup an arbitrary 4x4 matrix
 mat = xp.asarray(
     [
-        [2.5, 1.2, 0.3, 0.1],
-        [0.4, 3.1, 0.7, 0.2],
-        [0.1, 0.3, 4.1, 2.5],
-        [0.2, 0.5, 0.2, 0.9],
-        [0.3, 0.1, 0.7, 0.2],
+        [1.0, 1.2, 6.3, 0.1],
+        [0.1, 0.2, 0.1, 0.1],
+        [1.1, 0.3, 4.1, 0.1],
+        [1.2, 3.5, 7.2, 0.1],
+        [1.3, 8.1, 4.7, 0.1],
     ],
     dtype=xp.float64,
     device=dev,
 )
 
 op_A = parallelproj.MatrixOperator(mat)
+# normalize the forward operator
+op_A.scale = 1 / op_A.norm(xp, dev)
 # setup an arbitrary contamination vector that has shape op_A.out_shape
-contamination = xp.asarray([0.3, 0.2, 0.1, 0.4, 0.1], dtype=xp.float64, device=dev)
+contamination = xp.asarray([1.3, 0.2, 0.1, 0.4, 0.1], dtype=xp.float64, device=dev)
 
 # %%
 # Setup of ground truth and data simulation
@@ -85,14 +88,14 @@ contamination = xp.asarray([0.3, 0.2, 0.1, 0.4, 0.1], dtype=xp.float64, device=d
 # noise-free and noisy data :math:`y` by adding Poisson noise.
 
 # ground truth
-x_true = xp.asarray([5.5, 10.7, 8.2, 7.9], dtype=xp.float64, device=dev)
+x_true = 3 * xp.asarray([5.5, 10.7, 8.2, 7.9], dtype=xp.float64, device=dev)
 
 # simulated noise-free data
 noise_free_data = op_A(x_true) + contamination
 
 # add Poisson noise
 np.random.seed(1)
-y = xp.asarray(
+d = xp.asarray(
     np.random.poisson(np.asarray(to_device(noise_free_data, "cpu"))),
     device=dev,
     dtype=xp.float64,
@@ -100,9 +103,9 @@ y = xp.asarray(
 
 
 # %%
-x_prior = xp.full(op_A.in_shape, xp.min(x_true), dtype=xp.float64, device=dev)
-beta = 0.3
-num_iter = 50
+beta = 1e-2
+# setup of gradient operator
+op_G = parallelproj.FiniteForwardDifference(op_A.in_shape)
 
 # initialize x
 x = xp.ones(op_A.in_shape, dtype=xp.float64, device=dev)
@@ -114,53 +117,93 @@ def cost_function(x):
     if (xp.min(exp) < 0) or (xp.min(x) < 0):
         res = xp.finfo(xp.float64).max
     else:
-        res = (xp.sum(exp - y * xp.log(exp))) + 0.5 * beta * xp.sum((x - x_prior) ** 2)
+        res = float(
+            xp.sum(exp - d * xp.log(exp))
+            + beta * xp.sum(xp.linalg.vector_norm(op_G(x), axis=0))
+        )
     return res
 
 
+#
+
 # %%
-# DePierro update to minimize :math:`f(x)`
-# ----------------------------------------
+# PDHG update to minimize :math:`f(x)`
+# ------------------------------------
 #
-# We apply multiple DePierro updates
-#
-# .. math::
-#     b = A^H 1 - \beta z
-# .. math::
-#     t = x A^H \frac{y}{A x + s}
-# .. math::
-#     x^+ = \frac{2 t}{\sqrt{b^2 + 4 \beta t} + b}
-#
+# We apply multiple pre-conditioned PDHG updates
 # to calculate the minimizer of :math:`f(x)` iteratively.
 #
-# See :cite:p:`DePierro1995` for more details.
+# See :cite:p:`Ehrhardt2019` :cite:p:`Schramm2022` for more details.
 
-cost = xp.zeros(num_iter, dtype=xp.float64, device=dev)
 
-# "b" - modified sensitivity image
-mod_adjoint_ones = (
-    op_A.adjoint(xp.ones(op_A.out_shape, dtype=xp.float64, device=dev)) - beta * x_prior
+num_iter = 1000
+gamma = 1e-2  # should be roughly 1 / max(x_true) for fast convergence
+rho = 0.9999
+
+# initialize primal and dual variables
+x = op_A.adjoint(d)
+y = 1 - d / (op_A(x) + contamination)
+w = beta * xp.sign(op_G(x))
+
+z = op_A.adjoint(y) + op_G.adjoint(w)
+zbar = 1.0 * z
+
+# calculate PHDG step sizes
+S_A = gamma * rho / op_A(xp.ones(op_A.in_shape, dtype=xp.float64, device=dev))
+T_A = (
+    (1 / gamma)
+    * rho
+    * 0.5
+    / op_A.adjoint(xp.ones(op_A.out_shape, dtype=xp.float64, device=dev))
 )
 
+op_G_norm = op_G.norm(xp, dev, num_iter=100)
+S_G = gamma * rho / op_G_norm
+T_G = (1 / gamma) * rho * 0.5 / op_G_norm
+
+T = xp.clip(T_A, None, T_G)
+
+# run PHDG iterations
+cost = xp.zeros(num_iter, dtype=xp.float64, device=dev)
+
 for i in range(num_iter):
-    # evaluate the forward model
-    exp = op_A(x) + contamination
-    ratio = y / exp
-    t = x * op_A.adjoint(ratio)
-    x = 2 * t / (xp.sqrt(mod_adjoint_ones**2 + 4 * beta * t) + mod_adjoint_ones)
+    x = xp.clip(x - T * zbar, 0, None)
     cost[i] = cost_function(x)
 
-print(f"Solution after {num_iter} DePierro iterations:")
-print(x)
-print(f"cost: {cost[-1]:.6e}")
+    if i % 2 == 0:
+        y_plus = y + S_A * (op_A(x) + contamination)
+        # prox of convex conjugate of negative Poisson logL
+        y_plus = 0.5 * (y_plus + 1 - xp.sqrt((y_plus - 1) ** 2 + 4 * S_A * d))
+        delta_z = op_A.adjoint(y_plus - y)
+        y = 1.0 * y_plus
+    else:
+        w_plus = (w + S_G * op_G(x)) / beta
+        # prox of convex conjugate of TV
+        w_plus /= xp.clip(xp.linalg.vector_norm(w_plus, axis=0), 1, None)
+        w_plus *= beta
+
+        delta_z = op_G.adjoint(w_plus - w)
+        w = 1.0 * w_plus
+
+    z = z + delta_z
+    zbar = z + 2 * delta_z
+
 
 # %%
+# calculate reference solution using Powell optimizer
 if xp.__name__.endswith("numpy"):
     from scipy.optimize import fmin_powell
 
     x_ref = fmin_powell(cost_function, x, xtol=1e-6, ftol=1e-6)
     rel_dist = float(xp.sum((x - x_ref) ** 2)) / float(xp.sum(x_ref**2))
 
+
+# %%
+print(f"\nSolution after {num_iter} PDHG iterations:")
+print(x)
+print(f"cost: {cost[-1]:.6e}")
+
+if xp.__name__.endswith("numpy"):
     print(f"\nReference solution using Powell optimizer:")
     print(x_ref)
     print(f"rel. distance to DePierro solution: {rel_dist:.2e}")
