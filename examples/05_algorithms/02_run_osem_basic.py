@@ -150,7 +150,7 @@ for op in op_seq:
 # OSEM iterations to minimize :math:`f(x)`
 # ----------------------------------------
 #
-# We apply multiple OSEM updates
+# We apply multiple OSEM updates :cite:p:`Hudson1994`
 #
 # .. math::
 #     x^+ = \frac{x}{(A^k)^H 1} (A^k)^H \frac{y^k}{A^k x + s^k}

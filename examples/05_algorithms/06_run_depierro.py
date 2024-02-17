@@ -1,11 +1,11 @@
 """
-Basic MLEM
-==========
+DePierro's algorithms to optimize the Poisson logL with quadratic intensity prior
+=================================================================================
 
-This example demonstrates the use of the MLEM algorithm to minimize the negative Poisson log-likelihood function.
+This example demonstrates the use of DePierro's algorithms to minimize the negative Poisson log-likelihood function with a quadratic intensity prior.
 
 .. math::
-    f(x) = \sum_{i=1}^m \\bar{y}_i - \\bar{y}_i (x) \log(y_i)
+    f(x) = \sum_{i=1}^m \\bar{y}_i - \\bar{y}_i (x) \log(y_i) + \\frac{\\beta}{2} \\|x - z \\|^2
 
 subject to
 
@@ -67,6 +67,7 @@ mat = xp.asarray(
         [0.4, 3.1, 0.7, 0.2],
         [0.1, 0.3, 4.1, 2.5],
         [0.2, 0.5, 0.2, 0.9],
+        [0.3, 0.1, 0.7, 0.2],
     ],
     dtype=xp.float64,
     device=dev,
@@ -74,7 +75,7 @@ mat = xp.asarray(
 
 op_A = parallelproj.MatrixOperator(mat)
 # setup an arbitrary contamination vector that has shape op_A.out_shape
-contamination = xp.asarray([0.3, 0.2, 0.1, 0.4], dtype=xp.float64, device=dev)
+contamination = xp.asarray([0.3, 0.2, 0.1, 0.4, 0.1], dtype=xp.float64, device=dev)
 
 # %%
 # Setup of ground truth and data simulation
@@ -97,81 +98,70 @@ y = xp.asarray(
     dtype=xp.float64,
 )
 
-# %%
-# Analytic calculation of the optimal point (as reference)
-# --------------------------------------------------------
-#
-# Since our linear forward operator :math:`A` is small and invertible
-# (*which is usually not the case in practice*),
-# we can calculate the optimal point :math:`x^* = A^{-1} (y - s)`
-# and the corresponding optimal value of :math:`f(x^*)`.
-
-# calculate the reference solution by inverting A
-mat_inv = xp.linalg.inv(mat)
-x_ref = mat_inv @ (y - contamination)
-
-# also calculate the cost of the reference solution
-exp_ref = op_A(x_ref) + contamination
-cost_ref = float(xp.sum(exp_ref - y * xp.log(exp_ref)))
 
 # %%
-# MLEM iterations to minimize :math:`f(x)`
-# ----------------------------------------
-#
-# We apply multiple MLEM updates :cite:p:`Dempster1977` :cite:p:`Shepp1982` :cite:p:`Lange1984`
-#
-# .. math::
-#     x^+ = \frac{x}{A^H 1} A^H \frac{y}{A x + s}
-#
-# to calculate the minimizer of :math:`f(x)` iteratively.
-#
-# To monitor the convergence we calculate the relative cost
-#
-# .. math::
-#    \frac{f(x) - f(x^*)}{|f(x^*)|}
-#
-# and the distance to the optimal point
-#
-# .. math::
-#    \frac{\|x - x^*\|}{\|x^*\|}.
-
-# number MLEM iterations
-num_iter = 500
+x_prior = xp.full(op_A.in_shape, xp.min(x_true), dtype=xp.float64, device=dev)
+beta = 0.3
+num_iter = 50
 
 # initialize x
 x = xp.ones(op_A.in_shape, dtype=xp.float64, device=dev)
-# calculate A^H 1
-adjoint_ones = op_A.adjoint(xp.ones(op_A.out_shape, dtype=xp.float64, device=dev))
 
-# allocate arrays for the relative cost and the relative distance to the
-# optimal point
-rel_cost = xp.zeros(num_iter, dtype=xp.float64, device=dev)
-rel_dist = xp.zeros(num_iter, dtype=xp.float64, device=dev)
+
+# %%
+def cost_function(x):
+    exp = op_A(x) + contamination
+    if (xp.min(exp) < 0) or (xp.min(x) < 0):
+        res = xp.finfo(xp.float64).max
+    else:
+        res = (xp.sum(exp - y * xp.log(exp))) + 0.5 * beta * xp.sum((x - x_prior) ** 2)
+    return res
+
+
+# %%
+# DePierro update to minimize :math:`f(x)`
+# ----------------------------------------
+#
+# We apply multiple DePierro updates
+#
+# .. math::
+#     b = A^H 1 - \beta z
+# .. math::
+#     t = x A^H \frac{y}{A x + s}
+# .. math::
+#     x^+ = \frac{2 t}{\sqrt{b^2 + 4 \beta t} + b}
+#
+# to calculate the minimizer of :math:`f(x)` iteratively.
+#
+# See :cite:p:`DePierro1995` for more details.
+
+cost = xp.zeros(num_iter, dtype=xp.float64, device=dev)
+
+# "b" - modified sensitivity image
+mod_adjoint_ones = (
+    op_A.adjoint(xp.ones(op_A.out_shape, dtype=xp.float64, device=dev)) - beta * x_prior
+)
 
 for i in range(num_iter):
     # evaluate the forward model
     exp = op_A(x) + contamination
-    # calculate the relative cost and distance to the optimal point
-    rel_cost[i] = (xp.sum(exp - y * xp.log(exp)) - cost_ref) / abs(cost_ref)
-    rel_dist[i] = xp.linalg.vector_norm(x - x_ref) / xp.linalg.vector_norm(x_ref)
-    # MLEM update
     ratio = y / exp
-    x *= op_A.adjoint(ratio) / adjoint_ones
+    t = x * op_A.adjoint(ratio)
+    x = 2 * t / (xp.sqrt(mod_adjoint_ones**2 + 4 * beta * t) + mod_adjoint_ones)
+    cost[i] = cost_function(x)
 
+print(f"Solution after {num_iter} DePierro iterations:")
+print(x)
+print(f"cost: {cost[-1]:.6e}")
 
 # %%
-# Convergences plots
-# ------------------
+if xp.__name__.endswith("numpy"):
+    from scipy.optimize import fmin_powell
 
-fig, ax = plt.subplots(1, 2, figsize=(8, 4), sharex=True)
-ax[0].semilogx(np.asarray(to_device(rel_cost, "cpu")))
-ax[1].loglog(np.asarray(to_device(rel_dist, "cpu")))
-ax[0].set_ylim(-rel_cost[2], rel_cost[2])
-ax[0].set_ylabel(r"( f($x$) - f($x^*$) )   /   | f($x^*$) |")
-ax[1].set_ylabel(r"rel. distance to optimum $\|x - x^*\| / \|x^*\|$")
-ax[0].set_xlabel("iteration")
-ax[1].set_xlabel("iteration")
-ax[0].grid(ls=":")
-ax[1].grid(ls=":")
-fig.tight_layout()
-fig.show()
+    x_ref = fmin_powell(cost_function, x, xtol=1e-6, ftol=1e-6)
+    rel_dist = float(xp.sum((x - x_ref) ** 2)) / float(xp.sum(x_ref**2))
+
+    print(f"\nReference solution using Powell optimizer:")
+    print(x_ref)
+    print(f"rel. distance to DePierro solution: {rel_dist:.2e}")
+    print(f"cost: {cost_function(x_ref):.6e}")
