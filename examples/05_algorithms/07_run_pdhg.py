@@ -136,7 +136,7 @@ def cost_function(x):
 # See :cite:p:`Ehrhardt2019` :cite:p:`Schramm2022` for more details.
 
 
-num_iter = 1000
+num_iter = 300
 gamma = 1e-2  # should be roughly 1 / max(x_true) for fast convergence
 rho = 0.9999
 
@@ -146,20 +146,18 @@ y = 1 - d / (op_A(x) + contamination)
 w = beta * xp.sign(op_G(x))
 
 z = op_A.adjoint(y) + op_G.adjoint(w)
-zbar = 1.0 * z
 
 # calculate PHDG step sizes
 S_A = gamma * rho / op_A(xp.ones(op_A.in_shape, dtype=xp.float64, device=dev))
 T_A = (
     (1 / gamma)
     * rho
-    * 0.5
     / op_A.adjoint(xp.ones(op_A.out_shape, dtype=xp.float64, device=dev))
 )
 
 op_G_norm = op_G.norm(xp, dev, num_iter=100)
 S_G = gamma * rho / op_G_norm
-T_G = (1 / gamma) * rho * 0.5 / op_G_norm
+T_G = (1 / gamma) * rho / op_G_norm
 
 T = xp.clip(T_A, None, T_G)
 
@@ -167,26 +165,23 @@ T = xp.clip(T_A, None, T_G)
 cost = xp.zeros(num_iter, dtype=xp.float64, device=dev)
 
 for i in range(num_iter):
-    x = xp.clip(x - T * zbar, 0, None)
+    x = xp.clip(x - T * z, 0, None)
     cost[i] = cost_function(x)
 
-    if i % 2 == 0:
-        y_plus = y + S_A * (op_A(x) + contamination)
-        # prox of convex conjugate of negative Poisson logL
-        y_plus = 0.5 * (y_plus + 1 - xp.sqrt((y_plus - 1) ** 2 + 4 * S_A * d))
-        delta_z = op_A.adjoint(y_plus - y)
-        y = 1.0 * y_plus
-    else:
-        w_plus = (w + S_G * op_G(x)) / beta
-        # prox of convex conjugate of TV
-        w_plus /= xp.clip(xp.linalg.vector_norm(w_plus, axis=0), 1, None)
-        w_plus *= beta
+    y_plus = y + S_A * (op_A(x) + contamination)
+    # prox of convex conjugate of negative Poisson logL
+    y_plus = 0.5 * (y_plus + 1 - xp.sqrt((y_plus - 1) ** 2 + 4 * S_A * d))
 
-        delta_z = op_G.adjoint(w_plus - w)
-        w = 1.0 * w_plus
+    w_plus = (w + S_G * op_G(x)) / beta
+    # prox of convex conjugate of TV
+    w_plus /= xp.clip(xp.linalg.vector_norm(w_plus, axis=0), 1, None)
+    w_plus *= beta
+
+    delta_z = op_A.adjoint(y_plus - y) + op_G.adjoint(w_plus - w)
+    y = 1.0 * y_plus
+    w = 1.0 * w_plus
 
     z = z + delta_z
-    zbar = z + 2 * delta_z
 
 
 # %%
