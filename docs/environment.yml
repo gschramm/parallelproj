@@ -7,5 +7,7 @@ dependencies:
   - sphinx-gallery
   - sphinx-design
   - sphinx-copybutton
+  - sphinxcontrib-bibtex
   - libparallelproj
   - pytorch
+  - scipy

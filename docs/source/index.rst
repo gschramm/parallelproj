@@ -17,14 +17,14 @@ array libraries (e.g. numpy, cupy, pytorch) and devices (CPU and CUDA GPUs).
 .. note:: 
   **Features of parallelproj**
 
-  * **C/OpenMP** and **CUDA** implementations of **3D Joseph matched forward and back projectors**
+  * **C/OpenMP** and **CUDA** implementations of **3D Joseph matched forward and back projectors** :cite:p:`Joseph1982`
   * **non-TOF** and **TOF** versions of the projectors
   * dedicated **sinogram** and **listmode** versions of the projectors
   * **Python array API compatible Python interface** (e.g. directly compatible with numpy, cupy, **pytorch**) 
   * available on `conda-forge <https://github.com/conda-forge/parallelproj-feedstock>`_
 
 .. hint::
-  *If you are using parallelproj, we highly recommend to read and cite our publication*
+  *If you are using parallelproj, we highly recommend to read and cite our publication* :cite:`Schramm2023`
   
   * G. Schramm, K. Thielemans: "**PARALLELPROJ - An open-source framework for fast calculation of projections in tomography**", Front. Nucl. Med., Volume 3 - 2023, doi: 10.3389/fnume.2023.1324562, `link to paper <https://www.frontiersin.org/articles/10.3389/fnume.2023.1324562/abstract>`_, `link to arxiv version <https://arxiv.org/abs/2212.12519>`_
 
@@ -58,8 +58,5 @@ All examples can be run interactively without installation on `mybinder.org`:
     libparallelproj_cuda
     cuda_kernels
 
-
-Indices and tables
-==================
-* :ref:`genindex`
-* :ref:`modindex`
+.. rubric:: References
+.. bibliography::

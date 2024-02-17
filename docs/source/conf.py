@@ -38,8 +38,10 @@ extensions = [
     "sphinx_gallery.gen_gallery",
     "sphinx_design",
     "sphinx_copybutton",
+    "sphinxcontrib.bibtex",
 ]
 
+bibtex_bibfiles = ["refs.bib"]
 templates_path = ["_templates"]
 exclude_patterns = []
 

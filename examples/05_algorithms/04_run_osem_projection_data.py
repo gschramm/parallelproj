@@ -236,7 +236,7 @@ pet_subset_linop_seq = parallelproj.LinearOperatorSequence(pet_subset_linop_seq)
 # EM update to minimize :math:`f(x)`
 # ----------------------------------
 #
-# The EM update that can be used in MLEM or OSEM is given by
+# The EM update that can be used in MLEM or OSEM is given by cite:p:`Dempster1977` :cite:p:`Shepp1982` :cite:p:`Lange1984` :cite:p:`Hudson1994`
 #
 # .. math::
 #     x^+ = \frac{x}{A^H 1} A^H \frac{y}{A x + s}
