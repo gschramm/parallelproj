@@ -2,7 +2,8 @@
 DePierro's algorithm to optimize the Poisson logL with quadratic intensity prior
 ================================================================================
 
-This example demonstrates the use of DePierro's algorithm to minimize the negative Poisson log-likelihood function with a quadratic intensity prior.
+This example demonstrates the use of DePierro's algorithm to minimize the negative 
+Poisson log-likelihood function combined with a quadratic intensity prior:
 
 .. math::
     f(x) = \sum_{i=1}^m \\bar{y}_i - \\bar{y}_i (x) \log(y_i) + \\frac{\\beta}{2} \\|x - z \\|^2

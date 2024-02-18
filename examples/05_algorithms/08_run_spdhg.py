@@ -2,7 +2,7 @@
 PDHG to optimize the Poisson logL with total variation
 ======================================================
 
-This example demonstrates the use of the primal dual hybrid gradient (PDHG) algorithm to minimize the negative 
+This example demonstrates the use of the stochastic primal dual hybrid gradient (SPDHG) algorithm to minimize the negative 
 Poisson log-likelihood function combined with a total variation regularizer:
 
 .. math::
@@ -75,10 +75,26 @@ mat = xp.asarray(
 )
 
 op_A = parallelproj.MatrixOperator(mat)
+scale = 1 / op_A.norm(xp, dev)
+op_A.scale = scale
+
+# setup the forward operator split into three subsets
+op_A1 = parallelproj.MatrixOperator(mat[0:2, :])
+op_A1.scale = scale
+op_A2 = parallelproj.MatrixOperator(mat[2:4, :])
+op_A2.scale = scale
+op_A3 = parallelproj.MatrixOperator(mat[4:5, :])
+op_A3.scale = scale
+
+subset_op_A = parallelproj.LinearOperatorSequence([op_A1, op_A2, op_A3])
+
 # normalize the forward operator
-op_A.scale = 1 / op_A.norm(xp, dev)
 # setup an arbitrary contamination vector that has shape op_A.out_shape
-contamination = xp.asarray([1.3, 0.2, 0.1, 0.4, 0.1], dtype=xp.float64, device=dev)
+subset_contamination = [
+    xp.asarray([1.3, 0.2], dtype=xp.float64, device=dev),
+    xp.asarray([0.1, 0.4], dtype=xp.float64, device=dev),
+    xp.asarray([0.1], dtype=xp.float64, device=dev),
+]
 
 # %%
 # Setup of ground truth and data simulation
@@ -91,15 +107,20 @@ contamination = xp.asarray([1.3, 0.2, 0.1, 0.4, 0.1], dtype=xp.float64, device=d
 x_true = 3 * xp.asarray([5.5, 10.7, 8.2, 7.9], dtype=xp.float64, device=dev)
 
 # simulated noise-free data
-noise_free_data = op_A(x_true) + contamination
+noise_free_data = [
+    op(x_true) + subset_contamination[i] for i, op in enumerate(subset_op_A)
+]
 
 # add Poisson noise
 np.random.seed(1)
-d = xp.asarray(
-    np.random.poisson(np.asarray(to_device(noise_free_data, "cpu"))),
-    device=dev,
-    dtype=xp.float64,
-)
+subset_d = [
+    xp.asarray(
+        np.random.poisson(np.asarray(to_device(data, "cpu"))),
+        device=dev,
+        dtype=xp.float64,
+    )
+    for data in noise_free_data
+]
 
 # %%
 beta = 1e-2
@@ -109,77 +130,113 @@ op_G = parallelproj.FiniteForwardDifference(op_A.in_shape)
 
 # %%
 def cost_function(x):
-    exp = op_A(x) + contamination
-    if (xp.min(exp) < 0) or (xp.min(x) < 0):
-        res = xp.finfo(xp.float64).max
-    else:
-        res = float(
-            xp.sum(exp - d * xp.log(exp))
-            + beta * xp.sum(xp.linalg.vector_norm(op_G(x), axis=0))
-        )
+    if xp.min(x) < 0:
+        return xp.finfo(xp.float64).max
+
+    res = 0
+
+    for i, op in enumerate(subset_op_A):
+        subset_exp = op(x) + subset_contamination[i]
+        if xp.min(subset_exp) < 0:
+            return xp.finfo(xp.float64).max
+        else:
+            res += float(xp.sum(subset_exp - subset_d[i] * xp.log(subset_exp)))
+
+    res += beta * float(xp.sum(xp.linalg.vector_norm(op_G(x), axis=0)))
+
     return res
 
 
 # %%
-# PDHG update to minimize :math:`f(x)`
-# ------------------------------------
+# SPDHG updates to minimize :math:`f(x)`
+# --------------------------------------
 #
-# We apply multiple pre-conditioned PDHG updates
+# We apply multiple pre-conditioned SPDHG updates
 # to calculate the minimizer of :math:`f(x)` iteratively.
 #
 # See :cite:p:`Ehrhardt2019` :cite:p:`Schramm2022` for more details.
+
 
 num_iter = 500
 gamma = 1e-2  # should be roughly 1 / max(x_true) for fast convergence
 rho = 0.9999
 
 # initialize primal and dual variables
-x = op_A.adjoint(d)
-y = 1 - d / (op_A(x) + contamination)
+x = subset_op_A.adjoint(subset_d)
+subset_y = [
+    1 - subset_d[i] / (op(x) + subset_contamination[i])
+    for i, op in enumerate(subset_op_A)
+]
 w = beta * xp.sign(op_G(x))
 
-z = op_A.adjoint(y) + op_G.adjoint(w)
+z = subset_op_A.adjoint(subset_y) + op_G.adjoint(w)
+zbar = 1.0 * z
+
 
 # calculate PHDG step sizes
-S_A = gamma * rho / op_A(xp.ones(op_A.in_shape, dtype=xp.float64, device=dev))
-T_A = (
-    (1 / gamma)
-    * rho
-    / op_A.adjoint(xp.ones(op_A.out_shape, dtype=xp.float64, device=dev))
-)
+subset_S_A = [
+    gamma * rho / op(xp.ones(op.in_shape, dtype=xp.float64, device=dev))
+    for op in subset_op_A
+]
+subset_T_A = [
+    (
+        (1 / gamma)
+        * rho
+        / op.adjoint(xp.ones(op.out_shape, dtype=xp.float64, device=dev))
+    )
+    for op in subset_op_A
+]
+
+# calculate the element wise min over all subsets
+T_A = xp.min(xp.asarray(subset_T_A), axis=0)
 
 op_G_norm = op_G.norm(xp, dev, num_iter=100)
 S_G = gamma * rho / op_G_norm
 T_G = (1 / gamma) * rho / op_G_norm
 
-T = xp.where(T_A < T_G, T_A, xp.full(op_A.in_shape, T_G))
+T = xp.where(T_A < T_G, T_A, xp.full(4, T_G))
 
-# run PHDG iterations
+# run SPHDG iterations
 cost = xp.zeros(num_iter, dtype=xp.float64, device=dev)
 
 for i in range(num_iter):
-    x -= T * z
+    x -= T * zbar
     x = xp.where(x < 0, xp.zeros_like(x), x)
 
     cost[i] = cost_function(x)
 
-    y_plus = y + S_A * (op_A(x) + contamination)
-    # prox of convex conjugate of negative Poisson logL
-    y_plus = 0.5 * (y_plus + 1 - xp.sqrt((y_plus - 1) ** 2 + 4 * S_A * d))
+    # select a random subset
+    # in 50% of the cases we select a subset of the forward operator
+    # in the other 50% select the gradient operator
+    i_ss = np.random.randint(0, 2 * len(subset_op_A))
 
-    w_plus = (w + S_G * op_G(x)) / beta
-    # prox of convex conjugate of TV
-    denom = xp.linalg.vector_norm(w_plus, axis=0)
-    w_plus /= xp.where(denom < 1, xp.ones_like(denom), denom)
-    w_plus *= beta
+    if i_ss < len(subset_op_A):
+        y_plus = subset_y[i_ss] + subset_S_A[i_ss] * (
+            subset_op_A[i_ss](x) + subset_contamination[i_ss]
+        )
+        # prox of convex conjugate of negative Poisson logL
+        y_plus = 0.5 * (
+            y_plus
+            + 1
+            - xp.sqrt((y_plus - 1) ** 2 + 4 * subset_S_A[i_ss] * subset_d[i_ss])
+        )
 
-    delta_z = op_A.adjoint(y_plus - y) + op_G.adjoint(w_plus - w)
-    y = 1.0 * y_plus
-    w = 1.0 * w_plus
+        delta_z = subset_op_A[i_ss].adjoint(y_plus - subset_y[i_ss])
+        subset_y[i_ss] = y_plus
+        p = 0.5 / len(subset_op_A)
+    else:
+        w_plus = (w + S_G * op_G(x)) / beta
+        # prox of convex conjugate of TV
+        denom = xp.linalg.vector_norm(w_plus, axis=0)
+        w_plus /= xp.where(denom < 1, xp.ones_like(denom), denom)
+        w_plus *= beta
+
+        delta_z = op_G.adjoint(w_plus - w)
+        w = 1.0 * w_plus
+        p = 0.5
 
     z = z + delta_z
-
-
+    zbar = z + delta_z / p
 # %%
 # calculate reference solution using Powell optimizer
 if xp.__name__.endswith("numpy"):
