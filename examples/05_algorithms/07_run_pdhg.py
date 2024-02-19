@@ -6,7 +6,7 @@ This example demonstrates the use of the primal dual hybrid gradient (PDHG) algo
 Poisson log-likelihood function combined with a total variation regularizer:
 
 .. math::
-    f(x) = \sum_{i=1}^m \\bar{y}_i - \\bar{y}_i (x) \log(y_i) + \\beta \\|\\nabla x \\|_{1,2}
+    f(x) = \\underbrace{\sum_{i=1}^m \\bar{y}_i - \\bar{y}_i (x) \log(y_i)}_{D(x)} + \\beta \\underbrace{\\|\\nabla x \\|_{1,2}}_{R(x)}
 
 subject to
 
@@ -126,6 +126,30 @@ def cost_function(x):
 #
 # We apply multiple pre-conditioned PDHG updates
 # to calculate the minimizer of :math:`f(x)` iteratively.
+#
+# .. math::
+#   \DeclareMathOperator{\proj}{proj}
+#   \DeclareMathOperator{\prox}{prox}
+#   \DeclareMathOperator*{\argmin}{argmin}
+# 	x = \proj_{\geq 0} (x - T z)
+#
+# .. math::
+# 	y^+ = \prox_{D^*}^{S_A} ( y + S_A  ( A x + s))
+#
+# .. math::
+#   w^+ = \beta \prox_{R^*}^{S_G/\beta} ((w + S_G  \nabla x)/\beta)
+#
+# .. math::
+#   \Delta z = A^T (y^+ - y) + \nabla^T (w^+ - w)
+#
+# .. math::
+#    z = z + \Delta z
+#
+# .. math::
+#    y = y^+
+#
+# .. math::
+#    w = w^+
 #
 # See :cite:p:`Ehrhardt2019` :cite:p:`Schramm2022` for more details.
 

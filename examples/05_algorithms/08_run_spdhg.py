@@ -1,6 +1,6 @@
 """
-PDHG to optimize the Poisson logL with total variation
-======================================================
+SPDHG to optimize the Poisson logL with total variation
+=======================================================
 
 This example demonstrates the use of the stochastic primal dual hybrid gradient (SPDHG) algorithm to minimize the negative 
 Poisson log-likelihood function combined with a total variation regularizer:
