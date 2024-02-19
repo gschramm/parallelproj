@@ -131,7 +131,7 @@ def cost_function(x):
 #   \DeclareMathOperator{\proj}{proj}
 #   \DeclareMathOperator{\prox}{prox}
 #   \DeclareMathOperator*{\argmin}{argmin}
-# 	x = \proj_{\geq 0} (x - T z)
+# 	x = \proj_{\geq 0} (x - T (z + \Delta z))
 #
 # .. math::
 # 	y^+ = \prox_{D^*}^{S_A} ( y + S_A  ( A x + s))
@@ -181,8 +181,10 @@ T = xp.where(T_A < T_G, T_A, xp.full(op_A.in_shape, T_G))
 # run PHDG iterations
 cost = xp.zeros(num_iter, dtype=xp.float64, device=dev)
 
+delta_z = 0.0
+
 for i in range(num_iter):
-    x -= T * z
+    x -= T * (z + delta_z)
     x = xp.where(x < 0, xp.zeros_like(x), x)
 
     cost[i] = cost_function(x)
