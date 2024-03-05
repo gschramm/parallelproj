@@ -131,26 +131,17 @@ def cost_function(x):
 #   \DeclareMathOperator{\proj}{proj}
 #   \DeclareMathOperator{\prox}{prox}
 #   \DeclareMathOperator*{\argmin}{argmin}
-# 	x = \proj_{\geq 0} (x - T \bar{z})
 #
 # .. math::
-# 	y^+ = \prox_{D^*}^{S_A} ( y + S_A  ( A x + s))
 #
-# .. math::
-#   w^+ = \beta \prox_{R^*}^{S_G/\beta} ((w + S_G  \nabla x)/\beta)
-#
-# .. math::
-#   \Delta z = A^T (y^+ - y) + \nabla^T (w^+ - w)
-#
-# .. math::
-#    z = z + \Delta z
-#    \bar{z} = z + \Delta z
-#
-# .. math::
-#    y = y^+
-#
-# .. math::
-#    w = w^+
+# 	x &= \proj_{\geq 0} (x - T \bar{z}) \\\\
+# 	y^+ &= \prox_{D^*}^{S_A} ( y + S_A  ( A x + s)) \\\\
+#   w^+& = \beta \prox_{R^*}^{S_G/\beta} ((w + S_G  \nabla x)/\beta) \\\\
+#   \Delta z &= A^T (y^+ - y) + \nabla^T (w^+ - w) \\\\
+#   z &= z + \Delta z \\\\
+#   \bar{z} &= z + \Delta z \\\\
+#   y &= y^+ \\\\
+#   w &= w^+
 #
 # See :cite:p:`Ehrhardt2019` :cite:p:`Schramm2022` for more details.
 

@@ -154,6 +154,22 @@ def cost_function(x):
 # We apply multiple pre-conditioned SPDHG updates
 # to calculate the minimizer of :math:`f(x)` iteratively.
 #
+# .. math::
+#   \DeclareMathOperator{\proj}{proj}
+#   \DeclareMathOperator{\prox}{prox}
+#   \DeclareMathOperator*{\argmin}{argmin}
+#
+# .. math::
+#
+# 	x &= \proj_{\geq 0} (x - T \bar{z}) \\\\
+# 	y_i^+ &= \prox_{D^*}^{S_{A_i}} ( y_i + S_{A_i}  ( A_i x + s)) \\\\
+#   w^+& = \beta \prox_{R^*}^{S_G/\beta} ((w + S_G  \nabla x)/\beta) \\\\
+#   \Delta z &= A_i^T (y_i^+ - y_i) + \nabla^T (w^+ - w) \\\\
+#   z &= z + \Delta z \\\\
+#   \bar{z} &= z + \frac{1}{p_i}\Delta z \\\\
+#   y &= y^+ \\\\
+#   w &= w^+
+#
 # See :cite:p:`Ehrhardt2019` :cite:p:`Schramm2022` for more details.
 
 
