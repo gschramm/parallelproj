@@ -131,7 +131,7 @@ def cost_function(x):
 #   \DeclareMathOperator{\proj}{proj}
 #   \DeclareMathOperator{\prox}{prox}
 #   \DeclareMathOperator*{\argmin}{argmin}
-# 	x = \proj_{\geq 0} (x - T (z + \Delta z))
+# 	x = \proj_{\geq 0} (x - T \bar{z})
 #
 # .. math::
 # 	y^+ = \prox_{D^*}^{S_A} ( y + S_A  ( A x + s))
@@ -144,6 +144,7 @@ def cost_function(x):
 #
 # .. math::
 #    z = z + \Delta z
+#    \bar{z} = z + \Delta z
 #
 # .. math::
 #    y = y^+
@@ -163,6 +164,7 @@ y = 1 - d / (op_A(x) + contamination)
 w = beta * xp.sign(op_G(x))
 
 z = op_A.adjoint(y) + op_G.adjoint(w)
+zbar = 1.0 * z
 
 # calculate PHDG step sizes
 S_A = gamma * rho / op_A(xp.ones(op_A.in_shape, dtype=xp.float64, device=dev))
@@ -181,10 +183,8 @@ T = xp.where(T_A < T_G, T_A, xp.full(op_A.in_shape, T_G))
 # run PHDG iterations
 cost = xp.zeros(num_iter, dtype=xp.float64, device=dev)
 
-delta_z = 0.0
-
 for i in range(num_iter):
-    x -= T * (z + delta_z)
+    x -= T * zbar
     x = xp.where(x < 0, xp.zeros_like(x), x)
 
     cost[i] = cost_function(x)
@@ -204,6 +204,7 @@ for i in range(num_iter):
     w = 1.0 * w_plus
 
     z = z + delta_z
+    zbar = z + delta_z
 
 
 # %%
