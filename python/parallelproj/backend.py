@@ -14,8 +14,8 @@ from ctypes.util import find_library
 from pathlib import Path
 from warnings import warn
 
+import numpy as np
 import array_api_compat
-import array_api_compat.numpy as np
 import numpy.ctypeslib as npct
 from numpy.array_api._array_object import Array
 
