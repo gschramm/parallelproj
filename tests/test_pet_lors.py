@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 
 from types import ModuleType
 
-from config import pytestmark
+from .config import pytestmark
 
 
 def test_pet_lors(xp: ModuleType, dev: str) -> None:

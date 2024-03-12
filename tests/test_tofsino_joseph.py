@@ -3,7 +3,7 @@ import array_api_compat.numpy as np
 
 from types import ModuleType
 
-from config import pytestmark
+from .config import pytestmark
 
 
 def isclose(x: float, y: float, atol: float = 1e-8, rtol: float = 1e-5) -> bool:

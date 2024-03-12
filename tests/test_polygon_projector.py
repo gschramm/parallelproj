@@ -7,7 +7,7 @@ import pytest
 import matplotlib.pyplot as plt
 from types import ModuleType
 
-from config import pytestmark
+from .config import pytestmark
 
 from copy import copy
 

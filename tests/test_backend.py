@@ -7,7 +7,7 @@ from types import ModuleType
 
 # import the global pytestmark variable containing the xp/dev matrix we
 # want to test
-from config import pytestmark
+from .config import pytestmark
 
 
 def test_calc_chunks(xp: ModuleType, dev: str) -> None:

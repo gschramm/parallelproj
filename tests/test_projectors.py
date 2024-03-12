@@ -4,7 +4,7 @@ import pytest
 import parallelproj
 import array_api_compat
 
-from config import pytestmark
+from .config import pytestmark
 
 
 def allclose(x, y, atol: float = 1e-8, rtol: float = 1e-5) -> bool:
