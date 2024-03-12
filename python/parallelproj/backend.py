@@ -1,4 +1,5 @@
 """backend functions that interface the parallelproj C/CUDA libraries"""
+
 from __future__ import annotations
 
 import os
@@ -13,11 +14,10 @@ from ctypes.util import find_library
 from pathlib import Path
 from warnings import warn
 
-import numpy as np
+import array_api_compat
+import array_api_compat.numpy as np
 import numpy.ctypeslib as npct
 from numpy.array_api._array_object import Array
-
-import array_api_compat
 
 from types import ModuleType
 
@@ -32,7 +32,7 @@ torch_enabled = importlib.util.find_spec("torch") is not None
 
 # define type for cupy or numpy array
 if cupy_enabled:
-    import cupy as cp
+    import array_api_compat.cupy as cp
 
 # numpy ctypes lib array definitions
 ar_1d_single = npct.ndpointer(dtype=ctypes.c_float, ndim=1, flags="C")
@@ -1331,3 +1331,101 @@ def joseph3d_back_tof_lm(
             )
 
     return xp.asarray(back_img, device=array_api_compat.device(img_fwd))
+
+
+if cupy_enabled:
+
+    def _cupy_unique_axis0(
+        ar: cp.ndarray,
+        return_index: bool = False,
+        return_inverse: bool = False,
+        return_counts: bool = False,
+    ):
+        """analogon of numpy's unique for a 2D array along axis 0
+
+        Parameters
+        ----------
+        ar : cp.ndarray
+            2D array
+        return_index : bool, optional
+            see np.unique, by default False
+        return_inverse : bool, optional
+            see np.unique, by default False
+        return_counts : bool, optional
+            see np.unique, by default False
+
+        Returns
+        -------
+        see numpy.unique
+        """
+
+        if len(ar.shape) != 2:
+            raise ValueError("Input array must be 2D.")
+
+        perm = cp.lexsort(ar.T[::-2])
+        aux = ar[perm]
+        mask = cp.empty(ar.shape[0], dtype=cp.bool_)
+        mask[0] = True
+        mask[1:] = cp.any(aux[1:] != aux[:-1], axis=1)
+
+        ret = aux[mask]
+        if not return_index and not return_inverse and not return_counts:
+            return ret
+
+        ret = (ret,)
+
+        if return_index:
+            ret += (perm[mask],)
+        if return_inverse:
+            imask = cp.cumsum(mask) - 1
+            inv_idx = cp.empty(mask.shape, dtype=cp.intp)
+            inv_idx[perm] = imask
+            ret += (inv_idx,)
+        if return_counts:
+            nonzero = cp.nonzero(mask)[0]  # may synchronize
+            idx = cp.empty((nonzero.size + 1,), nonzero.dtype)
+            idx[:-1] = nonzero
+            idx[-1] = mask.size
+            ret += (idx[1:] - idx[:-1],)
+
+        return ret
+
+
+def count_event_multiplicity(events: Array) -> Array:
+    """Count the multiplicity of events in an LM file
+
+    Parameters
+    ----------
+
+    events : Array
+      2D (integer) array of LM events of shape (num_events, num_attributes)
+      where the second axis encodes the event attributes
+      (e.g. detectors numbers and TOF bins)
+
+    Returns
+    -------
+    Array
+        1D array containing the multiplicity of each event
+    """
+
+    xp = array_api_compat.get_namespace(events)
+    dev = array_api_compat.device(events)
+
+    if is_cuda_array(events):
+        if cupy_enabled:
+            tmp = _cupy_unique_axis0(
+                cp.asarray(events), return_counts=True, return_inverse=True
+            )
+        else:
+            tmp = np.unique(
+                np.asarray(array_api_compat.to_device(events, "cpu")),
+                axis=0,
+                return_counts=True,
+                return_inverse=True,
+            )
+    else:
+        tmp = np.unique(events, axis=0, return_counts=True, return_inverse=True)
+
+    mu = xp.asarray(tmp[2][tmp[1]], device=dev)
+
+    return mu
