@@ -1,23 +1,10 @@
-# version is auto-derived from git tags / archives
-# see https://pypi.org/project/setuptools-scm/
-[build-system]
-requires = ["setuptools>=45", "setuptools_scm[toml]>=7.0"]
-# needed to detect version number from git tags / archives
-[tool.setuptools_scm]
-
 [project]
 name = "parallelproj"
+version = "1.8.0"
+description = "Python wrappers for parallelproj projectors."
 authors = [
     {name = "Georg Schramm", email = "georg.schramm@kuleuven.be"},
 ]
-description = "Python wrappers for parallelproj projectors."
-readme = "README.md"
-requires-python = ">=3.9"
-classifiers = [
-    "License :: OSI Approved :: MIT License",
-    "Programming Language :: Python",
-]
-license = {file = "LICENSE"}
 dependencies = [
     "numpy~=1.22",
     "scipy~=1.0",
@@ -25,15 +12,20 @@ dependencies = [
     "array-api-strict~=1.0",
     "matplotlib",
 ]
-dynamic = ["version"]
+requires-python = ">=3.9"
+readme = "README.md"
+license = {text = "MIT"}
+classifiers = [
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python",
+]
 
-# hint where the python sources can be found
-[tool.setuptools.packages.find]
-where = ["python"]
-include = ["parallelproj*"]
+[build-system]
+requires = ["pdm-backend"]
+build-backend = "pdm.backend"
 
-[tool.setuptools.package-data]
-"parallelproj" = ["py.typed"]
+[tool.pdm]
+distribution = true
 
 [tool.coverage.report]
 exclude_lines = [
@@ -60,6 +52,3 @@ exclude_lines = [
     "empty_cuda_cache",
     "__str__"
 ]
-
-[tool.pytest.ini_options]
-pythonpath = "./python"
