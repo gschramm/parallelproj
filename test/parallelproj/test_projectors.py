@@ -61,7 +61,7 @@ def test_parallelviewprojector(xp, dev, verbose=True):
 
     assert allclose(x_fwd, exp_result)
 
-    fig = proj2d.show_views(image=xp.ones(image_shape, dtype=xp.float32, device=dev))
+    # fig = proj2d.show_views(image=xp.ones(image_shape, dtype=xp.float32, device=dev))
 
     # setup a simple 3D projector with 2 rings
 
