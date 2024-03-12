@@ -178,7 +178,7 @@ noise_free_data += contamination
 # add Poisson noise
 np.random.seed(1)
 y = xp.asarray(
-    np.random.poisson(np.asarray(to_device(noise_free_data, "cpu"))),
+    np.random.poisson(parallelproj.to_numpy_array(noise_free_data)),
     device=dev,
     dtype=xp.int16,
 )
@@ -338,8 +338,8 @@ def _update_img(i):
     return (img0, img1)
 
 
-x_true_np = np.asarray(to_device(x_true, "cpu"))
-x_np = np.asarray(to_device(x, "cpu"))
+x_true_np = parallelproj.to_numpy_array(x_true)
+x_np = parallelproj.to_numpy_array(x)
 
 fig, ax = plt.subplots(1, 2, figsize=(10, 5))
 vmax = x_np.max()
