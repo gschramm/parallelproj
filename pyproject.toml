@@ -21,7 +21,8 @@ license = {file = "LICENSE"}
 dependencies = [
     "numpy~=1.22",
     "scipy~=1.0",
-    "array-api-compat",
+    "array-api-compat~=0.13",
+    "array-api-strict~=1.0",
     "matplotlib",
 ]
 dynamic = ["version"]

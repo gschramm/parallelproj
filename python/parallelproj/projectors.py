@@ -196,18 +196,18 @@ class ParallelViewProjector2D(LinearOperator):
         img_extent = [tmp1, -tmp1, tmp2, -tmp2]
 
         for i, ip in enumerate(views_to_show):
-            # ax[i].plot(
-            #    np.array(array_api_compat.to_device(self._xstart[:, ip, 1], "cpu")),
-            #    np.array(array_api_compat.to_device(self._xstart[:, ip, 2], "cpu")),
-            #    ".",
-            #    ms=0.5,
-            # )
-            # ax[i].plot(
-            #    np.array(array_api_compat.to_device(self._xend[:, ip, 1], "cpu")),
-            #    np.array(array_api_compat.to_device(self._xend[:, ip, 2], "cpu")),
-            #    ".",
-            #    ms=0.5,
-            # )
+            ax[i].plot(
+                to_numpy_array(self._xstart[:, ip, 1]),
+                to_numpy_array(self._xstart[:, ip, 2]),
+                ".",
+                ms=0.5,
+            )
+            ax[i].plot(
+                to_numpy_array(self._xend[:, ip, 1]),
+                to_numpy_array(self._xend[:, ip, 2]),
+                ".",
+                ms=0.5,
+            )
 
             for k in np.linspace(0, self._num_rad - 1, 7).astype(int):
                 ax[i].plot(
@@ -241,7 +241,7 @@ class ParallelViewProjector2D(LinearOperator):
                 )
 
                 ax[i].imshow(
-                    np.array(array_api_compat.to_device(image, "cpu")).T,
+                    to_numpy_array(image).T,
                     origin="lower",
                     extent=img_extent,
                     **kwargs,

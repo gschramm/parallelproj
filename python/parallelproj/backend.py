@@ -1418,7 +1418,7 @@ def count_event_multiplicity(events: Array) -> Array:
             )
         else:
             tmp = np.unique(
-                np.asarray(array_api_compat.to_device(events, "cpu")),
+                to_numpy_array(events),
                 axis=0,
                 return_counts=True,
                 return_inverse=True,
