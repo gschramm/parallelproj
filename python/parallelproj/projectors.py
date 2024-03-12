@@ -240,7 +240,7 @@ class ParallelViewProjector2D(LinearOperator):
                 )
 
                 ax[i].imshow(
-                    array_api_compat.to_device(image, "cpu").T,
+                    np.asarray(array_api_compat.to_device(image, "cpu")).T,
                     origin="lower",
                     extent=img_extent,
                     **kwargs,
