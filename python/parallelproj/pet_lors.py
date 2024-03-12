@@ -1,4 +1,5 @@
 """description of PET LORs (and sinograms bins) consisting of two detector endpoints"""
+
 from __future__ import annotations
 
 import abc
@@ -15,6 +16,8 @@ from .pet_scanners import (
     ModularizedPETScannerGeometry,
     RegularPolygonPETScannerGeometry,
 )
+
+from .backend import to_numpy_array
 
 
 class SinogramSpatialAxisOrder(enum.Enum):
@@ -375,8 +378,8 @@ class RegularPolygonPETLORDescriptor(PETLORDescriptor):
             self.xp.take(xe, planes, axis=self.plane_axis_num), (-1, 3)
         )
 
-        p1s = np.asarray(to_device(xs, "cpu"))
-        p2s = np.asarray(to_device(xe, "cpu"))
+        p1s = to_numpy_array(xs)
+        p2s = to_numpy_array(xe)
 
         ls = np.hstack([p1s, p2s]).copy()
         ls = ls.reshape((-1, 2, 3))

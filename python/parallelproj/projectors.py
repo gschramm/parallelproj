@@ -14,7 +14,7 @@ import parallelproj
 from .operators import LinearOperator
 from .pet_lors import RegularPolygonPETLORDescriptor
 from .tof import TOFParameters
-from .backend import is_cuda_array, empty_cuda_cache
+from .backend import is_cuda_array, empty_cuda_cache, to_numpy_array
 
 
 class ParallelViewProjector2D(LinearOperator):
@@ -196,18 +196,18 @@ class ParallelViewProjector2D(LinearOperator):
         img_extent = [tmp1, -tmp1, tmp2, -tmp2]
 
         for i, ip in enumerate(views_to_show):
-            ax[i].plot(
-                np.array(array_api_compat.to_device(self._xstart[:, ip, 1], "cpu")),
-                np.array(array_api_compat.to_device(self._xstart[:, ip, 2], "cpu")),
-                ".",
-                ms=0.5,
-            )
-            ax[i].plot(
-                np.array(array_api_compat.to_device(self._xend[:, ip, 1], "cpu")),
-                np.array(array_api_compat.to_device(self._xend[:, ip, 2], "cpu")),
-                ".",
-                ms=0.5,
-            )
+            # ax[i].plot(
+            #    np.array(array_api_compat.to_device(self._xstart[:, ip, 1], "cpu")),
+            #    np.array(array_api_compat.to_device(self._xstart[:, ip, 2], "cpu")),
+            #    ".",
+            #    ms=0.5,
+            # )
+            # ax[i].plot(
+            #    np.array(array_api_compat.to_device(self._xend[:, ip, 1], "cpu")),
+            #    np.array(array_api_compat.to_device(self._xend[:, ip, 2], "cpu")),
+            #    ".",
+            #    ms=0.5,
+            # )
 
             for k in np.linspace(0, self._num_rad - 1, 7).astype(int):
                 ax[i].plot(
@@ -879,7 +879,7 @@ class RegularPolygonPETProjector(LinearOperator):
                 # currently there is no "repeat" function in array-api, so
                 # we convert back and forth to numpy cpu array
                 event_sino_inds = self.xp.asarray(
-                    np.repeat(np.arange(ss.shape[0]), to_device(ss, "cpu")),
+                    np.repeat(np.arange(ss.shape[0]), to_numpy_array(ss)),
                     device=self._dev,
                 )
 

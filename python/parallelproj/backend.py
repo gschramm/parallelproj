@@ -1429,3 +1429,21 @@ def count_event_multiplicity(events: Array) -> Array:
     mu = xp.asarray(tmp[2][tmp[1]], device=dev)
 
     return mu
+
+
+def to_numpy_array(x: Array) -> np.ndarray:
+    """convert an array to a numpy array
+
+    Parameters
+    ----------
+    x : Array
+        input array (numpy, cupy, torch tensor)
+
+    Returns
+    -------
+    np.ndarray
+    """
+    if is_cuda_array(x):
+        return np.array(array_api_compat.to_device(x, "cpu"))
+    else:
+        return np.array(x)

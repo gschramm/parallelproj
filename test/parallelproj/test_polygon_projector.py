@@ -374,8 +374,8 @@ def test_minimal_reg_polygon_projector(xp, dev) -> None:
             # check whether the projections with and without caching the LOR
             # endpoints are the same
             assert np.allclose(
-                np.asarray(to_device(x_fwd2b, "cpu")),
-                np.asarray(to_device(x_fwd2, "cpu")),
+                parallelproj.to_numpy_array(x_fwd2b),
+                parallelproj.to_numpy_array(x_fwd2),
             )
 
             # check whether the caching works if we first call the adjoint

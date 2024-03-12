@@ -1,4 +1,5 @@
 """description of PET scanner geometries (detector coordinates)"""
+
 from __future__ import annotations
 
 import abc
@@ -8,6 +9,8 @@ import matplotlib.pyplot as plt
 
 from types import ModuleType
 from array_api_compat import to_device, size
+
+from .backend import to_numpy_array
 
 
 class PETScannerModule(abc.ABC):
@@ -160,7 +163,7 @@ class PETScannerModule(abc.ABC):
             all_lor_endpoints = self.get_raw_lor_endpoints()
 
         # convert to numpy array
-        all_lor_endpoints = np.asarray(to_device(all_lor_endpoints, "cpu"))
+        all_lor_endpoints = to_numpy_array(all_lor_endpoints)
 
         ax.scatter(
             all_lor_endpoints[:, 0],
@@ -308,9 +311,11 @@ class RegularPolygonPETScannerModule(PETScannerModule):
 
         side = inds // self.num_lor_endpoints_per_side
         tmp = inds - side * self.num_lor_endpoints_per_side
-        tmp = self.xp.astype(tmp, float) - (self.num_lor_endpoints_per_side / 2 - 0.5)
+        tmp = self.xp.astype(tmp, self.xp.float32) - (
+            self.num_lor_endpoints_per_side / 2 - 0.5
+        )
 
-        phi = 2 * self.xp.pi * self.xp.astype(side, float) / self.num_sides
+        phi = 2 * self.xp.pi * self.xp.astype(side, self.xp.float32) / self.num_sides
 
         lor_endpoints = self.xp.zeros((self.num_lor_endpoints, 3), device=self.dev)
         lor_endpoints[:, self.ax0] = (
@@ -489,9 +494,7 @@ class ModularizedPETScannerGeometry:
         """
         for i, module in enumerate(self.modules):
             if show_linear_index:
-                offset = np.asarray(
-                    to_device(self.all_lor_endpoints_index_offset[i], "cpu")
-                )
+                offset = to_numpy_array(self.all_lor_endpoints_index_offset[i])
                 prefix = ""
             else:
                 offset = 0
