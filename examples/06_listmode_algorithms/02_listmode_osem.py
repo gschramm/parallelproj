@@ -30,7 +30,7 @@ and data stored in listmode format (event by event).
 
 # %%
 from __future__ import annotations
-from numpy.array_api._array_object import Array
+from array_api_strict._array_object import Array
 
 import array_api_compat.numpy as xp
 

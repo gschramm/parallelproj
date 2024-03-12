@@ -17,7 +17,7 @@ from warnings import warn
 import numpy as np
 import array_api_compat
 import numpy.ctypeslib as npct
-from numpy.array_api._array_object import Array
+from array_api_strict._array_object import Array
 
 from types import ModuleType
 

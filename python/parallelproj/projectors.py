@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import array_api_compat.numpy as np
-from numpy.array_api._array_object import Array
+from array_api_strict._array_object import Array
 import array_api_compat
 import matplotlib.pyplot as plt
 from matplotlib.patches import Rectangle

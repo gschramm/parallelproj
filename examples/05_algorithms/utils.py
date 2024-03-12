@@ -1,6 +1,6 @@
 from collections.abc import Sequence
 import abc
-from numpy.array_api._array_object import Array
+from array_api_strict._array_object import Array
 
 from types import ModuleType
 
