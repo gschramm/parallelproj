@@ -1,4 +1,5 @@
 """high-level geometrical forward and back projectors"""
+
 from __future__ import annotations
 
 import array_api_compat.numpy as np
@@ -196,14 +197,14 @@ class ParallelViewProjector2D(LinearOperator):
 
         for i, ip in enumerate(views_to_show):
             ax[i].plot(
-                np.asarray(array_api_compat.to_device(self._xstart[:, ip, 1], "cpu")),
-                np.asarray(array_api_compat.to_device(self._xstart[:, ip, 2], "cpu")),
+                np.array(array_api_compat.to_device(self._xstart[:, ip, 1], "cpu")),
+                np.array(array_api_compat.to_device(self._xstart[:, ip, 2], "cpu")),
                 ".",
                 ms=0.5,
             )
             ax[i].plot(
-                np.asarray(array_api_compat.to_device(self._xend[:, ip, 1], "cpu")),
-                np.asarray(array_api_compat.to_device(self._xend[:, ip, 2], "cpu")),
+                np.array(array_api_compat.to_device(self._xend[:, ip, 1], "cpu")),
+                np.array(array_api_compat.to_device(self._xend[:, ip, 2], "cpu")),
                 ".",
                 ms=0.5,
             )
@@ -240,7 +241,7 @@ class ParallelViewProjector2D(LinearOperator):
                 )
 
                 ax[i].imshow(
-                    np.asarray(array_api_compat.to_device(image, "cpu")).T,
+                    np.array(array_api_compat.to_device(image, "cpu")).T,
                     origin="lower",
                     extent=img_extent,
                     **kwargs,
@@ -884,21 +885,21 @@ class RegularPolygonPETProjector(LinearOperator):
 
                 num_events_ss = int(self.xp.sum(ss))
 
-                event_start_coords[
-                    event_offset : (event_offset + num_events_ss), :
-                ] = self.xp.take(xstart, event_sino_inds, axis=0)
-                event_end_coords[
-                    event_offset : (event_offset + num_events_ss), :
-                ] = self.xp.take(xend, event_sino_inds, axis=0)
+                event_start_coords[event_offset : (event_offset + num_events_ss), :] = (
+                    self.xp.take(xstart, event_sino_inds, axis=0)
+                )
+                event_end_coords[event_offset : (event_offset + num_events_ss), :] = (
+                    self.xp.take(xend, event_sino_inds, axis=0)
+                )
 
                 if self.tof:
-                    event_tofbins[
-                        event_offset : (event_offset + num_events_ss)
-                    ] = self.xp.full(
-                        num_events_ss,
-                        it - num_tofbins // 2,
-                        device=self._dev,
-                        dtype=self.xp.int16,
+                    event_tofbins[event_offset : (event_offset + num_events_ss)] = (
+                        self.xp.full(
+                            num_events_ss,
+                            it - num_tofbins // 2,
+                            device=self._dev,
+                            dtype=self.xp.int16,
+                        )
                     )
 
                 event_offset += num_events_ss
