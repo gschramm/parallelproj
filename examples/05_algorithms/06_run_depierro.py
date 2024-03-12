@@ -94,7 +94,7 @@ noise_free_data = op_A(x_true) + contamination
 # add Poisson noise
 np.random.seed(1)
 y = xp.asarray(
-    np.random.poisson(np.asarray(to_device(noise_free_data, "cpu"))),
+    np.random.poisson(parallelproj.to_numpy_array(noise_free_data)),
     device=dev,
     dtype=xp.float64,
 )
@@ -171,7 +171,7 @@ if xp.__name__.endswith("numpy"):
 fig, ax = plt.subplots(1, 1, tight_layout=True)
 if xp.__name__.endswith("numpy"):
     ax.axhline(cost_function(x_ref), color="k", linestyle="--")
-ax.plot(np.asarray(to_device(cost, "cpu")))
+ax.plot(parallelproj.to_numpy_array(cost))
 ax.set_xlabel("iteration")
 ax.set_ylabel("cost function")
 ax.grid(ls=":")

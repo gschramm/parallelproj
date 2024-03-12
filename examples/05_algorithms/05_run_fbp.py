@@ -114,7 +114,7 @@ radon_object = RadonObjectSequence([disk0, disk1, disk2, disk3, disk4])
 
 fig, ax = plt.subplots(tight_layout=True)
 ax.imshow(
-    np.asarray(to_device(radon_object.values(X0hr, X1hr).T, "cpu")),
+    parallelproj.to_numpy_array(radon_object.values(X0hr, X1hr).T),
     cmap="Greys",
     origin="lower",
 )
@@ -144,7 +144,7 @@ if sino_res > 0:
     for i in range(num_phi):
         emis_sino[:, i] = xp.asarray(
             gaussian_filter(
-                np.asarray(to_device(emis_sino[:, i], "cpu")),
+                parallelproj.to_numpy_array(emis_sino[:, i]),
                 sino_res,
             ),
             device=dev,
@@ -159,7 +159,7 @@ contam *= count_fac
 
 if add_noise:
     emis_sino = xp.asarray(
-        np.random.poisson(np.asarray(to_device(emis_sino, "cpu"))).astype(np.float32),
+        np.random.poisson(parallelproj.to_numpy_array(emis_sino)).astype(np.float32),
         device=dev,
     )
 
@@ -171,21 +171,21 @@ ext_sino = [float(xp.min(r)), float(xp.max(r)), float(xp.min(phi)), float(xp.max
 
 fig, ax = plt.subplots(1, 3, figsize=(12, 4), tight_layout=True)
 ax[0].imshow(
-    np.asarray(to_device(rt_transform.T, "cpu")),
+    parallelproj.to_numpy_array(rt_transform.T),
     cmap="Greys",
     aspect=20,
     extent=ext_sino,
     origin="lower",
 )
 ax[1].imshow(
-    np.asarray(to_device(emis_sino.T, "cpu")),
+    parallelproj.to_numpy_array(emis_sino.T),
     cmap="Greys",
     aspect=20,
     extent=ext_sino,
     origin="lower",
 )
 ax[2].imshow(
-    np.asarray(to_device(pre_corrected_sino.T, "cpu")),
+    parallelproj.to_numpy_array(pre_corrected_sino.T),
     cmap="Greys",
     aspect=20,
     extent=ext_sino,
@@ -229,7 +229,7 @@ filtered_pre_corrected_sino = 1.0 * pre_corrected_sino
 for i in range(num_phi):
     filtered_pre_corrected_sino[:, i] = xp.asarray(
         np.convolve(
-            np.asarray(to_device(filtered_pre_corrected_sino[:, i], "cpu")),
+            parallelproj.to_numpy_array(filtered_pre_corrected_sino[:, i]),
             f,
             mode="same",
         ),
@@ -238,14 +238,14 @@ for i in range(num_phi):
 
 fig, ax = plt.subplots(1, 2, figsize=(8, 4), tight_layout=True)
 ax[0].imshow(
-    np.asarray(to_device(pre_corrected_sino.T, "cpu")),
+    parallelproj.to_numpy_array(pre_corrected_sino.T),
     cmap="Greys",
     aspect=20,
     extent=ext_sino,
     origin="lower",
 )
 ax[1].imshow(
-    np.asarray(to_device(filtered_pre_corrected_sino.T, "cpu")),
+    parallelproj.to_numpy_array(filtered_pre_corrected_sino.T),
     cmap="Greys",
     aspect=20,
     extent=ext_sino,
@@ -277,7 +277,7 @@ filtered_back_proj = proj.adjoint(filtered_pre_corrected_sino)
 
 fig, ax = plt.subplots(tight_layout=True)
 ax.imshow(
-    np.asarray(to_device(filtered_back_proj, "cpu")).T, cmap="Greys", origin="lower"
+    parallelproj.to_numpy_array(filtered_back_proj).T, cmap="Greys", origin="lower"
 )
 ax.set_xlabel(r"$x_0$")
 ax.set_ylabel(r"$x_1$")
@@ -308,26 +308,26 @@ ext_img = [float(xp.min(r)), float(xp.max(r)), float(xp.min(r)), float(xp.max(r)
 
 fig, ax = plt.subplots(1, 4, figsize=(16, 4), tight_layout=True)
 ax[0].imshow(
-    np.asarray(to_device(radon_object.values(X0hr, X1hr).T, "cpu")),
+    parallelproj.to_numpy_array(radon_object.values(X0hr, X1hr).T),
     cmap="Greys",
     extent=ext_img,
     origin="lower",
 )
 ax[1].imshow(
-    np.asarray(to_device(emis_sino.T, "cpu")),
+    parallelproj.to_numpy_array(emis_sino.T),
     cmap="Greys",
     aspect=20,
     extent=ext_sino,
     origin="lower",
 )
 ax[2].imshow(
-    np.asarray(to_device(filtered_back_proj.T, "cpu")),
+    parallelproj.to_numpy_array(filtered_back_proj.T),
     cmap="Greys",
     extent=ext_img,
     origin="lower",
 )
 ax[3].imshow(
-    np.asarray(to_device(x_mlem.T, "cpu")),
+    parallelproj.to_numpy_array(x_mlem.T),
     cmap="Greys",
     extent=ext_img,
     origin="lower",

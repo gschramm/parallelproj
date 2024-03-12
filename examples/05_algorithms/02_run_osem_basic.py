@@ -102,7 +102,7 @@ noise_free_data = op_A(x_true) + contamination
 # add Poisson noise
 np.random.seed(1)
 y = xp.asarray(
-    np.random.poisson(np.asarray(to_device(noise_free_data, "cpu"))),
+    np.random.poisson(parallelproj.to_numpy_array(noise_free_data)),
     device=dev,
     dtype=xp.float64,
 )
@@ -206,8 +206,8 @@ for i in range(num_iter):
 #       (but can come close using a few number of fast updates).
 
 fig, ax = plt.subplots(1, 2, figsize=(8, 4), sharex=True)
-ax[0].semilogx(np.asarray(to_device(rel_cost, "cpu")))
-ax[1].loglog(np.asarray(to_device(rel_dist, "cpu")))
+ax[0].semilogx(parallelproj.to_numpy_array(rel_cost))
+ax[1].loglog(parallelproj.to_numpy_array(rel_dist))
 ax[0].set_ylim(-rel_cost[2], rel_cost[2])
 ax[0].set_ylabel(r"( f($x$) - f($x^*$) )   /   | f($x^*$) |")
 ax[1].set_ylabel(r"rel. distance to optimum $\|x - x^*\| / \|x^*\|$")

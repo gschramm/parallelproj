@@ -115,7 +115,7 @@ noise_free_data = [
 np.random.seed(1)
 subset_d = [
     xp.asarray(
-        np.random.poisson(np.asarray(to_device(data, "cpu"))),
+        np.random.poisson(parallelproj.to_numpy_array(data)),
         device=dev,
         dtype=xp.float64,
     )
@@ -280,7 +280,7 @@ if xp.__name__.endswith("numpy"):
 fig, ax = plt.subplots(1, 1, tight_layout=True)
 if xp.__name__.endswith("numpy"):
     ax.axhline(cost_function(x_ref), color="k", linestyle="--")
-ax.plot(np.asarray(to_device(cost, "cpu")))
+ax.plot(parallelproj.to_numpy_array(cost))
 ax.set_xlabel("iteration")
 ax.set_ylabel("cost function")
 ax.grid(ls=":")
