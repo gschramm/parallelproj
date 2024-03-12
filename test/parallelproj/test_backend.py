@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import parallelproj
+import array_api_compat
+import array_api_compat.numpy as np
 from types import ModuleType
 
 # import the global pytestmark variable containing the xp/dev matrix we
@@ -33,3 +35,11 @@ def test_event_multiplicity(xp: ModuleType, dev: str) -> None:
     mu = parallelproj.count_event_multiplicity(events)
 
     assert xp.all(mu == xp.asarray([2, 1, 4, 4, 4, 2, 4], device=dev))
+
+
+def test_to_numpy_array(xp: ModuleType, dev: str) -> None:
+    arr = xp.asarray([1, 2, 3, 4, 5], device=dev)
+    np_arr = np.array([1, 2, 3, 4, 5])
+
+    assert array_api_compat.is_numpy_array(parallelproj.to_numpy_array(arr))
+    assert np.all(parallelproj.to_numpy_array(arr) == np_arr)
