@@ -171,7 +171,7 @@ vmax = float(xp.max(x_fwd))
 for i in range(7):
     for j in range(9):
         ax[i, j].imshow(
-            np.asarray(to_device(x_fwd[:, :, i, j].T, "cpu")),
+            parallelproj.to_numpy_array(x_fwd[:, :, i, j].T),
             cmap="Greys",
             vmin=0,
             vmax=vmax,
@@ -193,7 +193,7 @@ vmax = float(xp.max(x_fwd_back))
 for i, axx in enumerate(ax2.ravel()):
     if i < x_fwd_back.shape[1]:
         axx.imshow(
-            np.asarray(to_device(x_fwd_back[:, i, :].T, "cpu")),
+            parallelproj.to_numpy_array(x_fwd_back[:, i, :].T),
             cmap="Greys",
             vmin=0,
             vmax=vmax,

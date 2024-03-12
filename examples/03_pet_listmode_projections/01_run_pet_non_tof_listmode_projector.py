@@ -121,7 +121,7 @@ for i in range(ax2.size):
     if i < y_back.shape[1]:
         axx = ax2.ravel()[i]
         axx.imshow(
-            np.asarray(to_device(y_back[:, i, :].T, "cpu")),
+            parallelproj.to_numpy_array(y_back[:, i, :].T),
             cmap="Greys",
             vmin=0,
             vmax=vmax,
@@ -165,7 +165,7 @@ for i in range(ax3.size):
     if i < y_back.shape[1]:
         axx = ax3.ravel()[i]
         axx.imshow(
-            np.asarray(to_device(y_back2[:, i, :].T, "cpu")),
+            parallelproj.to_numpy_array(y_back2[:, i, :].T),
             cmap="Greys",
             vmin=0,
             vmax=vmax,
