@@ -8,7 +8,7 @@ import array_api_compat
 import matplotlib.pyplot as plt
 from matplotlib.patches import Rectangle
 from types import ModuleType
-from array_api_compat import device, to_device, get_namespace, size
+from array_api_compat import device, get_namespace, size
 import parallelproj
 
 from .operators import LinearOperator

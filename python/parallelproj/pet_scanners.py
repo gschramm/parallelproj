@@ -3,12 +3,11 @@
 from __future__ import annotations
 
 import abc
-import array_api_compat.numpy as np
 from array_api_strict._array_object import Array
 import matplotlib.pyplot as plt
 
 from types import ModuleType
-from array_api_compat import to_device, size
+from array_api_compat import size
 
 from .backend import to_numpy_array
 
