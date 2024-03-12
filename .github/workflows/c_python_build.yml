@@ -23,10 +23,10 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest] # not building on mac-os because there is no OpenMP
-        python-version: [ '3.9', '3.10', '3.11'] # no torch for python 3.12 so far
+        python-version: ['3.11'] # no torch for python 3.12 so far
 
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
 
     - name: Configure CMake
       # Configure CMake in a 'build' subdirectory. `CMAKE_BUILD_TYPE` is only required if you are using a single-configuration generator such as make.
@@ -37,34 +37,29 @@ jobs:
       # Build your program with the given configuration
       run: cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}} --target install
 
-    - name: Set up python ${{ matrix.python-version }}
-      uses: actions/setup-python@v5
+    - name: Set up PDM
+      uses: pdm-project/setup-pdm@v4
       with:
         python-version: ${{ matrix.python-version }}
-        
-    - name: Install python ${{ matrix.python-version }} dependencies
+
+    - name: Show package version
       run: |
-        python -m pip install --upgrade pip
-        python -m pip install flake8 pytest pytest-cov
-        python -m pip install torch --index-url https://download.pytorch.org/whl/cpu
-        pip install .
-        
-    - name: Lint with flake8 - python ${{ matrix.python-version }}
+        pdm show --version
+    - name: Install dependencies and package
       run: |
-        # stop the build if there are Python syntax errors or undefined names
-        # E203 seems not pep8 compatible, so we ignore it
-        flake8 --count --show-source --statistics --max-line-length 127 --extend-ignore=E203 python/parallelproj
+        pdm update -d -G test
+        pdm list
 
     - if: matrix.os == 'ubuntu-latest'
-      name: Test with pytest - python ${{ matrix.python-version }}
+      name: Run Tests
       run: |
-        pytest --cov-report term-missing --cov=python/parallelproj --cov-fail-under=100 -v test/        
+        pdm run tox
       env: 
         PARALLELPROJ_C_LIB: ${{github.workspace}}/libparallelproj_install/lib/libparallelproj_c.so
 
     - if: matrix.os == 'windows-latest'
-      name: Test with pytest - python ${{ matrix.python-version }}
+      name: Run Tests
       run: |
-        pytest --cov-report term-missing --cov=python/parallelproj --cov-fail-under=100 -v test/        
+        pdm run tox
       env: 
         PARALLELPROJ_C_LIB: ${{github.workspace}}\libparallelproj_install\bin\parallelproj_c.dll
