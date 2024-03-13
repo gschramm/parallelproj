@@ -5,7 +5,9 @@ import array_api_compat.numpy as np
 import parallelproj
 
 # generate list of array_api modules / device combinations to test
-xp_dev_list = [(np, "cpu")]
+
+xp_dev_list = []
+xp_dev_list.append((np, "cpu"))
 xp_dev_list.append((nparr, None))
 
 if parallelproj.cupy_enabled:

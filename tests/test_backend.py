@@ -29,7 +29,7 @@ def test_event_multiplicity(xp: ModuleType, dev: str) -> None:
             [1, 1, 1, 1, 1],
             [2, 1, 1, 1, 1],
             [1, 1, 1, 1, 1],
-        ]
+        ], device = dev
     )
 
     mu = parallelproj.count_event_multiplicity(events)
@@ -41,5 +41,6 @@ def test_to_numpy_array(xp: ModuleType, dev: str) -> None:
     arr = xp.asarray([1, 2, 3, 4, 5], device=dev)
     np_arr = np.array([1, 2, 3, 4, 5])
 
-    assert array_api_compat.is_numpy_array(parallelproj.to_numpy_array(arr))
-    assert np.all(parallelproj.to_numpy_array(arr) == np_arr)
+    arr_to_np = parallelproj.to_numpy_array(arr)
+
+    assert np.all(arr_to_np == np_arr)

@@ -1383,7 +1383,7 @@ if cupy_enabled:
             ret += (inv_idx,)
         if return_counts:
             nonzero = cp.nonzero(mask)[0]  # may synchronize
-            idx = cp.empty((nonzero.size + 1,), nonzero.dtype)
+            idx = cp.empty((nonzero.size + 1,), dtype = nonzero.dtype)
             idx[:-1] = nonzero
             idx[-1] = mask.size
             ret += (idx[1:] - idx[:-1],)
@@ -1444,6 +1444,6 @@ def to_numpy_array(x: Array) -> np.ndarray:
     np.ndarray
     """
     if is_cuda_array(x):
-        return np.array(array_api_compat.to_device(x, "cpu"))
+        return np.asarray(array_api_compat.to_device(x, "cpu"))
     else:
-        return np.array(x)
+        return np.asarray(x)
