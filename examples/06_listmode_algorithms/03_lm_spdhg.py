@@ -32,9 +32,12 @@ and data stored in listmode format (event by event).
 from __future__ import annotations
 from array_api_strict._array_object import Array
 
-import array_api_compat.numpy as xp
+# Running this example using GPU arrays is highly recommended
+# due to "long" execution times with CPU arrays
 
-# import array_api_compat.cupy as xp
+#import array_api_compat.numpy as xp
+
+import array_api_compat.cupy as xp
 # import array_api_compat.torch as xp
 
 import parallelproj
