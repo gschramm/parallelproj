@@ -35,9 +35,10 @@ from array_api_strict._array_object import Array
 # Running this example using GPU arrays is highly recommended
 # due to "long" execution times with CPU arrays
 
-#import array_api_compat.numpy as xp
+# import array_api_compat.numpy as xp
 
 import array_api_compat.cupy as xp
+
 # import array_api_compat.torch as xp
 
 import parallelproj
@@ -353,8 +354,8 @@ def lm_em_update(
 
 
 # %%
-# Run a quick LM OSEM to init. SPDHG
-# ----------------------------------
+# Run a quick LM OSEM to initialize LM-SPDHG
+# ------------------------------------------
 
 # initialize x
 x_lmosem = xp.ones(pet_lin_op.in_shape, dtype=xp.float32, device=dev)
@@ -376,20 +377,43 @@ for i in range(1):
 # %%
 # Listmode SPDHG
 # --------------
+#
+# .. admonition:: Listmode SPDHG algorithm to minimize negative Poisson log-likelihood
+#
+#   | **Input** event list :math:`N`, contamination list :math:`s_N`
+#   | **Calculate** event counts :math:`\mu_e` for each :math:`e` in :math:`N`
+#   | **Initialize** :math:`x,(S_i)_i,T,(p_i)_i`
+#   | **Initialize list** :math:`y_{N} = 1 - (\mu_N /(A^{LM}_{N} x + s_{N}))`
+#   | **Preprocessing** :math:`\overline{z} = z = {A^T} 1 - {A^{LM}}^T (y_N-1)/\mu_N`
+#   | **Split lists** :math:`N`, :math:`s_N` and :math:`y_N` into :math:`n` sublists :math:`N_i`, :math:`y_{N_i}` and :math:`s_{N_i}`
+#   | **Repeat**, until stopping criterion fulfilled
+#   |     **Update** :math:`x \gets \text{proj}_{\geq 0} \left( x - T \overline{z} \right)`
+#   |     **Select** :math:`i \in \{ 1,\ldots,n+1\}` randomly according to :math:`(p_i)_i`
+#   |     **Update** :math:`y_{N_i}^+ \gets \text{prox}_{D^*}^{S_i} \left( y_{N_i} + S_i \left(A^{LM}_{N_i} x + s^{LM}_{N_i} \right) \right)`
+#   |     **Update** :math:`\delta z \gets {A^{LM}_{N_i}}^T \left(\frac{y_{N_i}^+ - y_{N_i}}{\mu_{N_i}}\right)`
+#   |     **Update** :math:`y_{N_i} \gets y_{N_i}^+`
+#   |     **Update** :math:`z \gets z + \delta z`
+#   |     **Update** :math:`\bar{z} \gets z + (\delta z/p_i)`
+#   | **Return** :math:`x`
+#
+# .. admonition:: Proximal operator of the convex dual of the negative Poisson log-likelihood
+#
+#  :math:`(\text{prox}_{D_i^*}^{S_i}(y))_i = \text{prox}_{D_i^*}^{S_i}(y_i) = \frac{1}{2} \left(y_i + 1 - \sqrt{ (y_i-1)^2 + 4 S_i d_i} \right)`
+#
 
-# calculate event multiplicity (mu) for each event in the list
+# %%
+# Calculate event multiplicity :math:`\mu` for each event in the list
+# ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 events = xp.concat(
     [event_start_coords, event_end_coords, xp.expand_dims(event_tofbins, -1)], axis=1
 )
-
-# get event count
 mu = parallelproj.count_event_multiplicity(events)
 
 # %%
-# initialize variables
+# Initialize variables
 # ^^^^^^^^^^^^^^^^^^^^
 
-# intialize image x with solution from quick LM OSEM
+# Intialize image x with solution from quick LM OSEM
 x = 1.0 * x_lmosem
 
 # setup dual variable for data subsets
@@ -403,7 +427,7 @@ for k, sl in enumerate(subset_slices_lm):
 zbar = 1.0 * z
 
 # %%
-# caluclate the step sizes
+# Calculate the step sizes
 # ^^^^^^^^^^^^^^^^^^^^^^^^
 
 gamma = 10.0 / xp.max(x_true)
@@ -424,6 +448,7 @@ T = (rho * p_p / gamma) / (adjoint_ones / num_subsets)
 
 # %%
 # LM SPDHG iterations
+# ^^^^^^^^^^^^^^^^^^^
 
 for it in range(num_iter_lmspdhg):
     subset_sequence = np.random.permutation(num_subsets)
@@ -448,7 +473,8 @@ for it in range(num_iter_lmspdhg):
         )
 
 # %%
-# calculate the cost functions
+# Calculate the final cost
+# ^^^^^^^^^^^^^^^^^^^^^^^^
 
 exp = pet_lin_op(x) + contamination
 cost = float(xp.sum(exp - y * xp.log(exp)))
@@ -462,7 +488,8 @@ print(f"\nMLEM cost {cost_mlem:.8E} after {num_iter_mlem:03} iterations")
 
 
 # %%
-# show the results
+# Show the results
+# ^^^^^^^^^^^^^^^^
 
 x_true_np = np.asarray(to_device(x_true, "cpu"))
 x_np = np.asarray(to_device(x, "cpu"))
