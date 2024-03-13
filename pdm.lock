@@ -5,17 +5,17 @@
 groups = ["default", "test"]
 strategy = ["cross_platform", "inherit_metadata"]
 lock_version = "4.4.1"
-content_hash = "sha256:8356ba3bb91538bbec9fff35c1f1df6e6f8f258162e5190abf44242c53240bd3"
+content_hash = "sha256:fc0edb2006c8b56fe652d69753ab2f2c5fb5e83636c550db5e18188623af4d5d"
 
 [[package]]
 name = "array-api-compat"
-version = "1.5"
+version = "1.4.1"
 requires_python = ">=3.8"
 summary = "A wrapper around NumPy and other array libraries to make them compatible with the Array API standard"
 groups = ["default"]
 files = [
-    {file = "array_api_compat-1.5-py3-none-any.whl", hash = "sha256:0c241453f8728d78cf948f81d644a1b5f8c96ecf1b1b621211041ef858b62374"},
-    {file = "array_api_compat-1.5.tar.gz", hash = "sha256:c3ee5c9980f5288a19dafce950e5301bd7b0752e96e25989ff78471a968348a5"},
+    {file = "array_api_compat-1.4.1-py3-none-any.whl", hash = "sha256:dd212f0ed925763e1c3e98d822b80cb57c35ace6692a452430bb2d533e938069"},
+    {file = "array_api_compat-1.4.1.tar.gz", hash = "sha256:053103b7c0ba73626bff7380abf27a29dc80de144394137bc7455b7eba23d8c0"},
 ]
 
 [[package]]
