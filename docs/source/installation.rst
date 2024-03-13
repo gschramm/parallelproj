@@ -32,7 +32,7 @@ To install parallelproj (and the required compiled libraries) from conda-forge, 
 
    parallelproj can not only project numpy CPU arrays, but also **cupy GPU arrays** (no memory transfer between host and GPU needed). To enable the latter, you have to install the cupy package as well.
 
-To install cupy (optional and only if you have a CUDA GPU) from conda-forge, run
+To install parallelproj and cupy (optional and only if you have a CUDA GPU) from conda-forge, run
 
 .. tab-set::
 
@@ -40,19 +40,19 @@ To install cupy (optional and only if you have a CUDA GPU) from conda-forge, run
 
         .. code-block:: console
         
-           $ mamba install cupy
+           $ mamba install parallelproj cupy
 
     .. tab-item:: conda
 
         .. code-block:: console
         
-           $ conda install -c conda-forge cupy
+           $ conda install -c conda-forge parallelproj cupy
 
 .. tip::
 
    parallelproj can also project **pytorch CPU and GPU tensors** 
 
-To install pytorch from conda-forge, run
+To install parallelproj and pytorch (optional) from conda-forge, run
 
 .. tab-set::
 
@@ -60,13 +60,13 @@ To install pytorch from conda-forge, run
 
         .. code-block:: console
         
-           $ mamba install pytorch
+           $ mamba install parallelproj pytorch
 
     .. tab-item:: conda
 
         .. code-block:: console
         
-           $ conda install -c conda-forge pytorch
+           $ conda install -c conda-forge parallelproj pytorch
 
 
 .. note::
@@ -85,4 +85,3 @@ To install pytorch from conda-forge, run
         .. code-block:: console
         
            $ conda install -c conda-forge libparallelproj
-
