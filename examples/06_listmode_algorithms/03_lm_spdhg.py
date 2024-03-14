@@ -5,7 +5,7 @@ TOF listmode SPDHG with projection data
 This example demonstrates the use of the listmode SPDHG algorithm to minimize the negative Poisson log-likelihood function.
 
 .. math::
-    f(x) = \sum_{i=1}^m \\bar{y}_i - \\bar{y}_i (x) \log(y_i)
+    f(x) = \sum_{i=1}^m \\bar{d}_i - \\bar{d}_i (x) \log(d_i)
 
 subject to
 
@@ -15,7 +15,7 @@ subject to
 using the listmode linear forward model
 
 .. math::
-    \\bar{y}_{LM}(x) = A_{LM} x + s
+    \\bar{d}^{LM}(x) = A^{LM} x + s
 
 and data stored in listmode format (event by event).
 
@@ -23,6 +23,10 @@ and data stored in listmode format (event by event).
     parallelproj is python array API compatible meaning it supports different 
     array backends (e.g. numpy, cupy, torch, ...) and devices (CPU or GPU).
     Choose your preferred array API ``xp`` and device ``dev`` below.
+
+.. warning::
+    Running this example using GPU arrays (using cupy as array backend) 
+    is highly recommended due to "long" execution times with CPU arrays
 
 .. image:: https://mybinder.org/badge_logo.svg
  :target: https://mybinder.org/v2/gh/gschramm/parallelproj/master?labpath=examples
@@ -32,13 +36,9 @@ and data stored in listmode format (event by event).
 from __future__ import annotations
 from array_api_strict._array_object import Array
 
-# Running this example using GPU arrays is highly recommended
-# due to "long" execution times with CPU arrays
-
-# import array_api_compat.numpy as xp
-
 import array_api_compat.cupy as xp
 
+# import array_api_compat.numpy as xp
 # import array_api_compat.torch as xp
 
 import parallelproj
@@ -60,8 +60,14 @@ elif "torch" in xp.__name__:
     else:
         dev = "cpu"
 
-num_subsets = 100
+# %%
+# **Define the number of iterations and subsets**
+
+# number of (sinogram) MLEM iterations used for reference reconstruction
 num_iter_mlem = 2000
+# number of subsets to use in LM-SPDHG
+num_subsets = 100
+# number of LM-SPDHG iterations
 num_iter_lmspdhg = 25
 
 # %%
@@ -185,7 +191,7 @@ noise_free_data += contamination
 
 # add Poisson noise
 np.random.seed(1)
-y = xp.asarray(
+d = xp.asarray(
     np.random.poisson(np.asarray(to_device(noise_free_data, "cpu"))),
     device=dev,
     dtype=xp.int16,
@@ -198,14 +204,18 @@ y = xp.asarray(
 # Using :meth:`.RegularPolygonPETProjector.convert_sinogram_to_listmode` we can convert an
 # integer non-TOF or TOF sinogram to an event list for listmode processing.
 #
-# **Note:** The create event list is sorted and should be shuffled running LM-MLEM.
+# .. warning::
+#     **Note:** The created event list is "ordered" and should be shuffled depending on the
+#     strategy to define subsets in LM-OSEM.
 
 event_start_coords, event_end_coords, event_tofbins = proj.convert_sinogram_to_listmode(
-    y
+    d
 )
 
 # %%
-# shuffle the events
+# Shuffle the simulated "ordered" LM events
+# ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
 random_inds = np.random.permutation(event_start_coords.shape[0])
 event_start_coords = event_start_coords[random_inds, :]
 event_end_coords = event_end_coords[random_inds, :]
@@ -215,6 +225,8 @@ event_tofbins = event_tofbins[random_inds]
 # Setup of the LM subset projectors and LM subset forward models
 # --------------------------------------------------------------
 
+# slices that define which elements of the event list belong to each subset
+# here every "num_subset-th element" is used
 subset_slices_lm = [slice(i, None, num_subsets) for i in range(num_subsets)]
 
 lm_pet_subset_linop_seq = []
@@ -288,19 +300,15 @@ def em_update(
     Returns
     -------
     Array
-        _description_
     """
-    ybar = op(x_cur) + s
-    return x_cur * op.adjoint(data / ybar) / adjoint_ones
+    dbar = op(x_cur) + s
+    return x_cur * op.adjoint(data / dbar) / adjoint_ones
 
 
 # %%
-# Run the MLEM iterations
-# -----------------------
-
 
 # initialize x
-x = xp.ones(pet_lin_op.in_shape, dtype=xp.float32, device=dev)
+x_mlem = xp.ones(pet_lin_op.in_shape, dtype=xp.float32, device=dev)
 # calculate A^H 1
 adjoint_ones = pet_lin_op.adjoint(
     xp.ones(pet_lin_op.out_shape, dtype=xp.float32, device=dev)
@@ -308,20 +316,11 @@ adjoint_ones = pet_lin_op.adjoint(
 
 for i in range(num_iter_mlem):
     print(f"MLEM iteration {(i + 1):03} / {num_iter_mlem:03}", end="\r")
-    x = em_update(x, y, pet_lin_op, contamination, adjoint_ones)
-
-x_mlem = 1.0 * x
+    x_mlem = em_update(x_mlem, d, pet_lin_op, contamination, adjoint_ones)
 
 # %%
-# LM OSEM reconstruction
-# ----------------------
-#
-# The EM update that can be used in LM-OSEM is given by
-#
-# .. math::
-#     x^+ = \frac{x}{(A^k)^H 1} (A_{LM}^k)^H \frac{1}{A_{LM}^k x + s_{LM}^k}
-#
-# to calculate the minimizer of :math:`f(x)` iteratively.
+# LM OSEM reconstruction for initialization
+# -----------------------------------------
 
 
 def lm_em_update(
@@ -347,15 +346,12 @@ def lm_em_update(
     Returns
     -------
     Array
-        _description_
     """
-    ybar = op(x_cur) + s
-    return x_cur * op.adjoint(1 / ybar) / adjoint_ones
+    dbar = op(x_cur) + s
+    return x_cur * op.adjoint(1 / dbar) / adjoint_ones
 
 
 # %%
-# Run a quick LM OSEM to initialize LM-SPDHG
-# ------------------------------------------
 
 # initialize x
 x_lmosem = xp.ones(pet_lin_op.in_shape, dtype=xp.float32, device=dev)
@@ -384,7 +380,7 @@ for i in range(1):
 #   | **Calculate** event counts :math:`\mu_e` for each :math:`e` in :math:`N`
 #   | **Initialize** :math:`x,(S_i)_i,T,(p_i)_i`
 #   | **Initialize list** :math:`y_{N} = 1 - (\mu_N /(A^{LM}_{N} x + s_{N}))`
-#   | **Preprocessing** :math:`\overline{z} = z = {A^T} 1 - {A^{LM}}^T (y_N-1)/\mu_N`
+#   | **Preprocessing** :math:`\overline{z} = z = {A^T} 1 - {A^{LM}_N}^T (y_N-1)/\mu_N`
 #   | **Split lists** :math:`N`, :math:`s_N` and :math:`y_N` into :math:`n` sublists :math:`N_i`, :math:`y_{N_i}` and :math:`s_{N_i}`
 #   | **Repeat**, until stopping criterion fulfilled
 #   |     **Update** :math:`x \gets \text{proj}_{\geq 0} \left( x - T \overline{z} \right)`
@@ -399,6 +395,14 @@ for i in range(1):
 # .. admonition:: Proximal operator of the convex dual of the negative Poisson log-likelihood
 #
 #  :math:`(\text{prox}_{D_i^*}^{S_i}(y))_i = \text{prox}_{D_i^*}^{S_i}(y_i) = \frac{1}{2} \left(y_i + 1 - \sqrt{ (y_i-1)^2 + 4 S_i d_i} \right)`
+#
+# .. admonition:: Step sizes
+#
+#  :math:`S_i = \gamma \, \text{diag}(\frac{\rho}{A^{LM}_{N_i} 1})`
+#
+#  :math:`T_i = \gamma^{-1} \text{diag}(\frac{\rho p_i}{A^T 1/n})`
+#
+#  :math:`T = \min_{i=1,\ldots,n+1} T_i` pointwise
 #
 
 # %%
@@ -444,6 +448,7 @@ for lm_op in lm_pet_subset_linop_seq:
     tmp = xp.where(tmp == 0, xp.min(tmp[tmp > 0]), tmp)
     S.append(gamma * rho / tmp)
 
+# if there is no regularization the T_i for all LM data subsets are the same
 T = (rho * p_p / gamma) / (adjoint_ones / num_subsets)
 
 # %%
@@ -473,8 +478,8 @@ for it in range(num_iter_lmspdhg):
         )
 
 # %%
-# Calculate the final cost
-# ^^^^^^^^^^^^^^^^^^^^^^^^
+# Calculate the final cost of LM-SPDHG and compare against MLEM
+# ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 exp = pet_lin_op(x) + contamination
 cost = float(xp.sum(exp - y * xp.log(exp)))
@@ -491,9 +496,9 @@ print(f"\nMLEM cost {cost_mlem:.8E} after {num_iter_mlem:03} iterations")
 # Show the results
 # ^^^^^^^^^^^^^^^^
 
-x_true_np = np.asarray(to_device(x_true, "cpu"))
-x_np = np.asarray(to_device(x, "cpu"))
-x_mlem_np = np.asarray(to_device(x_mlem, "cpu"))
+x_true_np = parallelproj.to_numpy_array(x_true)
+x_np = parallelproj.to_numpy_array(x)
+x_mlem_np = parallelproj.to_numpy_array(x_mlem)
 
 pl = x_np.shape[2] // 2
 
