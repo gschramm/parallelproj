@@ -68,7 +68,7 @@ num_iter_mlem = 2000
 # number of subsets to use in LM-SPDHG
 num_subsets = 100
 # number of LM-SPDHG iterations
-num_iter_lmspdhg = 100
+num_iter_lmspdhg = 25
 
 # %%
 # Simulation of PET data in sinogram space
