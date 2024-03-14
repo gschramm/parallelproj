@@ -68,7 +68,7 @@ num_iter_mlem = 2000
 # number of subsets to use in LM-SPDHG
 num_subsets = 100
 # number of LM-SPDHG iterations
-num_iter_lmspdhg = 25
+num_iter_lmspdhg = 100
 
 # %%
 # Simulation of PET data in sinogram space
@@ -482,12 +482,12 @@ for it in range(num_iter_lmspdhg):
 # ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 exp = pet_lin_op(x) + contamination
-cost = float(xp.sum(exp - y * xp.log(exp)))
+cost = float(xp.sum(exp - d * xp.log(exp)))
 print("")
 print(f"\nLM SPDHG cost {cost:.8E} after {num_iter_lmspdhg:03} iterations")
 
 exp_mlem = pet_lin_op(x_mlem) + contamination
-cost_mlem = float(xp.sum(exp_mlem - y * xp.log(exp_mlem)))
+cost_mlem = float(xp.sum(exp_mlem - d * xp.log(exp_mlem)))
 print("")
 print(f"\nMLEM cost {cost_mlem:.8E} after {num_iter_mlem:03} iterations")
 
