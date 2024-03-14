@@ -5,7 +5,7 @@ TOF OSEM with projection data
 This example demonstrates the use of the MLEM algorithm to minimize the negative Poisson log-likelihood function.
 
 .. math::
-    f(x) = \sum_{i=1}^m \\bar{y}_i - \\bar{y}_i (x) \log(y_i)
+    f(x) = \sum_{i=1}^m \\bar{y}_i (x) - y_i \log(\\bar{y}_i (x))
 
 subject to
 

@@ -5,7 +5,7 @@ TOF listmode SPDHG with projection data
 This example demonstrates the use of the listmode SPDHG algorithm to minimize the negative Poisson log-likelihood function.
 
 .. math::
-    f(x) = \sum_{i=1}^m \\bar{d}_i - \\bar{d}_i (x) \log(d_i)
+    f(x) = \sum_{i=1}^m \\bar{d}_i (x) - d_i \log(\\bar{d}_i (x))
 
 subject to
 
@@ -68,7 +68,7 @@ num_iter_mlem = 2000
 # number of subsets to use in LM-SPDHG
 num_subsets = 100
 # number of LM-SPDHG iterations
-num_iter_lmspdhg = 25
+num_iter_lmspdhg = 30
 
 # %%
 # Simulation of PET data in sinogram space
@@ -386,10 +386,10 @@ for i in range(1):
 #   |     **Update** :math:`x \gets \text{proj}_{\geq 0} \left( x - T \overline{z} \right)`
 #   |     **Select** :math:`i \in \{ 1,\ldots,n+1\}` randomly according to :math:`(p_i)_i`
 #   |     **Update** :math:`y_{N_i}^+ \gets \text{prox}_{D^*}^{S_i} \left( y_{N_i} + S_i \left(A^{LM}_{N_i} x + s^{LM}_{N_i} \right) \right)`
-#   |     **Update** :math:`\delta z \gets {A^{LM}_{N_i}}^T \left(\frac{y_{N_i}^+ - y_{N_i}}{\mu_{N_i}}\right)`
+#   |     **Update** :math:`\Delta z \gets {A^{LM}_{N_i}}^T \left(\frac{y_{N_i}^+ - y_{N_i}}{\mu_{N_i}}\right)`
 #   |     **Update** :math:`y_{N_i} \gets y_{N_i}^+`
-#   |     **Update** :math:`z \gets z + \delta z`
-#   |     **Update** :math:`\bar{z} \gets z + (\delta z/p_i)`
+#   |     **Update** :math:`z \gets z + \Delta z`
+#   |     **Update** :math:`\bar{z} \gets z + (\Delta z/p_i)`
 #   | **Return** :math:`x`
 #
 # .. admonition:: Proximal operator of the convex dual of the negative Poisson log-likelihood

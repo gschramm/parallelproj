@@ -6,7 +6,7 @@ This example demonstrates the use of DePierro's algorithm to minimize the negati
 Poisson log-likelihood function combined with a quadratic intensity prior:
 
 .. math::
-    f(x) = \sum_{i=1}^m \\bar{y}_i - \\bar{y}_i (x) \log(y_i) + \\frac{\\beta}{2} \\|x - z \\|^2
+    f(x) = \sum_{i=1}^m \\bar{y}_i - y_i \log(\\bar{y}_i (x)) + \\frac{\\beta}{2} \\|x - z \\|^2
 
 subject to
 

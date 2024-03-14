@@ -5,7 +5,7 @@ TOF listmode MLEM with projection data
 This example demonstrates the use of the listmode MLEM algorithm to minimize the negative Poisson log-likelihood function.
 
 .. math::
-    f(x) = \sum_{i=1}^m \\bar{y}_i - \\bar{y}_i (x) \log(y_i)
+    f(x) = \sum_{i=1}^m \\bar{y}_i (x) - \\bar{y}_i (x) \log(y_i)
 
 subject to
 
@@ -236,7 +236,7 @@ lm_pet_lin_op = parallelproj.CompositeLinearOperator((lm_att_op, lm_proj, res_mo
 # The EM update that can be used in LM-MLEM is given by
 #
 # .. math::
-#     x^+ = \frac{x}{A^H 1} A_{LM}^H \frac{1}{A_{LM} x + s_{LM}^k}
+#     x^+ = \frac{x}{A^H 1} A_{LM}^H \frac{1}{A_{LM} x + s_{LM}}
 #
 # to calculate the minimizer of :math:`f(x)` iteratively.
 
