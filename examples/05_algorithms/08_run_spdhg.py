@@ -1,12 +1,12 @@
 """
-SPDHG to optimize the Poisson logL with total variation
-=======================================================
+SPDHG to optimize the Poisson logL and total variation
+======================================================
 
 This example demonstrates the use of the stochastic primal dual hybrid gradient (SPDHG) algorithm to minimize the negative 
 Poisson log-likelihood function combined with a total variation regularizer:
 
 .. math::
-    f(x) = \sum_{i=1}^m \\bar{y}_i - \\bar{y}_i (x) \log(y_i) + \\beta \\|\\nabla x \\|_{1,2}
+    f(x) = \sum_{i=1}^m \\bar{d}_i (x) - d_i \log(\\bar{d}_i (x)) + \\beta \\|\\nabla x \\|_{1,2}
 
 subject to
 
@@ -16,7 +16,7 @@ subject to
 using the linear forward model
 
 .. math::
-    \\bar{y}(x) = A x + s
+    \\bar{d}(x) = A x + s
 
 .. tip::
     parallelproj is python array API compatible meaning it supports different 
@@ -151,30 +151,44 @@ def cost_function(x):
 # SPDHG updates to minimize :math:`f(x)`
 # --------------------------------------
 #
-# We apply multiple pre-conditioned SPDHG updates
-# to calculate the minimizer of :math:`f(x)` iteratively.
 #
-# .. math::
-#   \DeclareMathOperator{\proj}{proj}
-#   \DeclareMathOperator{\prox}{prox}
-#   \DeclareMathOperator*{\argmin}{argmin}
+# .. admonition:: SPDHG algorithm to minimize negative Poisson log-likelihood + regularization
 #
-# .. math::
-#
-#   &\text{select a random data subset number} \ i \ \text{or do prior update} \\\\
-# 	x &= \proj_{\geq 0} (x - T \bar{z}) \\\\
-# 	y_i^+ &= \prox_{D^*}^{S_{A_i}} ( y_i + S_{A_i}  ( A_i x + s)) \\\\
-#   \Delta z &= A_i^T (y_i^+ - y_i) \\\\
-#   \text{or} \\\\
-#   w^+& = \beta \prox_{R^*}^{S_G/\beta} ((w + S_G  \nabla x)/\beta) \\\\
-#   \Delta z &= \nabla^T (w^+ - w) \\\\
-#   z &= z + \Delta z \\\\
-#   \bar{z} &= z + \frac{1}{p_i}\Delta z \\\\
-#   y &= y^+ \\\\
-#   w &= w^+
+#   | **Input** Poisson data :math:`d`
+#   | **Initialize** :math:`x,y_i,w,S_{A_i},S_G,T,p_i`
+#   | **Preprocessing** :math:`\overline{z} = z = \sum_i A_i^T y + \nabla^T w`
+#   | **Repeat**, until stopping criterion fulfilled
+#   |     **Update** :math:`x \gets \text{proj}_{\geq 0} \left( x - T \overline{z} \right)`
+#   |     **select a random data subset number i or do prior update according to** :math:`p_i`
+#   |       **Update** :math:`y_i^+ \gets \text{prox}_{D^*}^{S_{A_i}} ( y_i + S_{A_i}  ( {A_i} x + s))`
+#   |       **Update** :math:`\Delta z \gets A_i^T (y_i^+ - y_i)`
+#   |       **Update** :math:`y_i \gets y_i^+`
+#   |     **or**
+#   |       **Update** :math:`w^+ \gets \beta \, \text{prox}_{R^*}^{S_G/\beta} ((w + S_G  \nabla x)/\beta)`
+#   |       **Update** :math:`\Delta z \gets \nabla^T (w^+ - w)`
+#   |       **Update** :math:`w \gets w^+`
+#   |     **Update** :math:`z \gets z + \Delta z`
+#   |     **Update** :math:`\bar{z} \gets z + (\Delta z \ p_i)`
+#   | **Return** :math:`x`
 #
 # See :cite:p:`Ehrhardt2019` :cite:p:`Schramm2022` for more details.
-
+#
+# .. admonition:: Proximal operator of the convex dual of the negative Poisson log-likelihood
+#
+#  :math:`(\text{prox}_{D^*}^{S}(y))_i = \text{prox}_{D^*}^{S}(y_i) = \frac{1}{2} \left(y_i + 1 - \sqrt{ (y_i-1)^2 + 4 S d_i} \right)`
+#
+# .. admonition:: Step sizes
+#
+#  :math:`S_{A_i} = \gamma \, \text{diag}(\frac{\rho}{A_i 1})`
+#
+#  :math:`S_G = \gamma \, \text{diag}(\frac{\rho}{|\nabla|})`
+#
+#  :math:`T_{A_i} = \gamma^{-1} \text{diag}(\frac{\rho}{A_i^T 1})`
+#
+#  :math:`T_G = \gamma^{-1} \text{diag}(\frac{\rho}{|\nabla|})`
+#
+#  :math:`T = \min T_{A_i}, T_G` pointwise
+#
 
 num_iter = 500
 gamma = 1e-2  # should be roughly 1 / max(x_true) for fast convergence

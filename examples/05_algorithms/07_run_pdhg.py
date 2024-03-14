@@ -1,12 +1,12 @@
 """
-PDHG to optimize the Poisson logL with total variation
-======================================================
+PDHG to optimize the Poisson logL and total variation
+=====================================================
 
 This example demonstrates the use of the primal dual hybrid gradient (PDHG) algorithm to minimize the negative 
 Poisson log-likelihood function combined with a total variation regularizer:
 
 .. math::
-    f(x) = \\underbrace{\sum_{i=1}^m \\bar{y}_i - \\bar{y}_i (x) \log(y_i)}_{D(x)} + \\beta \\underbrace{\\|\\nabla x \\|_{1,2}}_{R(x)}
+    f(x) = \\underbrace{\sum_{i=1}^m \\bar{d}_i (x) - d_i \log(\\bar{d}_i (x))}_{D(x)} + \\beta \\underbrace{\\|\\nabla x \\|_{1,2}}_{R(x)}
 
 subject to
 
@@ -16,7 +16,7 @@ subject to
 using the linear forward model
 
 .. math::
-    \\bar{y}(x) = A x + s
+    \\bar{d}(x) = A x + s
 
 .. tip::
     parallelproj is python array API compatible meaning it supports different 
@@ -58,7 +58,7 @@ elif "torch" in xp.__name__:
 # and an arbritrary contamination vector :math:`s` of length 4.
 #
 # .. note::
-#     The OSEM implementation below works with all linear operators that
+#     The PDHG implementation below works with all linear operators that
 #     subclass :class:`.LinearOperator` (e.g. the high-level projectors).
 
 # setup an arbitrary 4x4 matrix
@@ -124,28 +124,43 @@ def cost_function(x):
 # PDHG update to minimize :math:`f(x)`
 # ------------------------------------
 #
-# We apply multiple pre-conditioned PDHG updates
-# to calculate the minimizer of :math:`f(x)` iteratively.
+# .. admonition:: PDHG algorithm to minimize negative Poisson log-likelihood + regularization
 #
-# .. math::
-#   \DeclareMathOperator{\proj}{proj}
-#   \DeclareMathOperator{\prox}{prox}
-#   \DeclareMathOperator*{\argmin}{argmin}
-#
-# .. math::
-#
-# 	x &= \proj_{\geq 0} (x - T \bar{z}) \\\\
-# 	y^+ &= \prox_{D^*}^{S_A} ( y + S_A  ( A x + s)) \\\\
-#   w^+& = \beta \prox_{R^*}^{S_G/\beta} ((w + S_G  \nabla x)/\beta) \\\\
-#   \Delta z &= A^T (y^+ - y) + \nabla^T (w^+ - w) \\\\
-#   z &= z + \Delta z \\\\
-#   \bar{z} &= z + \Delta z \\\\
-#   y &= y^+ \\\\
-#   w &= w^+
+#   | **Input** Poisson data :math:`d`
+#   | **Initialize** :math:`x,y,w,S_A,S_G,T`
+#   | **Preprocessing** :math:`\overline{z} = z = A^T y + \nabla^T w`
+#   | **Repeat**, until stopping criterion fulfilled
+#   |     **Update** :math:`x \gets \text{proj}_{\geq 0} \left( x - T \overline{z} \right)`
+#   |     **Update** :math:`y^+ \gets \text{prox}_{D^*}^{S_A} ( y + S_A  ( A x + s))`
+#   |     **Update** :math:`w^+ \gets \beta \, \text{prox}_{R^*}^{S_G/\beta} ((w + S_G  \nabla x)/\beta)`
+#   |     **Update** :math:`\Delta z \gets A^T (y^+ - y) + \nabla^T (w^+ - w)`
+#   |     **Update** :math:`z \gets z + \Delta z`
+#   |     **Update** :math:`\bar{z} \gets z + \Delta z`
+#   |     **Update** :math:`y \gets y^+`
+#   |     **Update** :math:`w \gets w^+`
+#   | **Return** :math:`x`
 #
 # See :cite:p:`Ehrhardt2019` :cite:p:`Schramm2022` for more details.
+#
+# .. admonition:: Proximal operator of the convex dual of the negative Poisson log-likelihood
+#
+#  :math:`(\text{prox}_{D^*}^{S}(y))_i = \text{prox}_{D^*}^{S}(y_i) = \frac{1}{2} \left(y_i + 1 - \sqrt{ (y_i-1)^2 + 4 S d_i} \right)`
+#
+# .. admonition:: Step sizes
+#
+#  :math:`S_A = \gamma \, \text{diag}(\frac{\rho}{A 1})`
+#
+#  :math:`S_G = \gamma \, \text{diag}(\frac{\rho}{|\nabla|})`
+#
+#  :math:`T_A = \gamma^{-1} \text{diag}(\frac{\rho}{A^T 1})`
+#
+#  :math:`T_G = \gamma^{-1} \text{diag}(\frac{\rho}{|\nabla|})`
+#
+#  :math:`T = \min T_A, T_G` pointwise
+#
 
-num_iter = 500
+# %%
+
 gamma = 1e-2  # should be roughly 1 / max(x_true) for fast convergence
 rho = 0.9999
 
@@ -156,6 +171,8 @@ w = beta * xp.sign(op_G(x))
 
 z = op_A.adjoint(y) + op_G.adjoint(w)
 zbar = 1.0 * z
+
+# %%
 
 # calculate PHDG step sizes
 S_A = gamma * rho / op_A(xp.ones(op_A.in_shape, dtype=xp.float64, device=dev))
@@ -171,7 +188,10 @@ T_G = (1 / gamma) * rho / op_G_norm
 
 T = xp.where(T_A < T_G, T_A, xp.full(op_A.in_shape, T_G))
 
+# %%
+
 # run PHDG iterations
+num_iter = 500
 cost = xp.zeros(num_iter, dtype=xp.float64, device=dev)
 
 for i in range(num_iter):
