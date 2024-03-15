@@ -194,6 +194,9 @@ num_iter = 500
 gamma = 1e-2  # should be roughly 1 / max(x_true) for fast convergence
 rho = 0.9999
 
+p_g = 0.5
+p_a = (1 - p_g) / len(subset_op_A)
+
 # initialize primal and dual variables
 x = subset_op_A.adjoint(subset_d)
 subset_y = [
@@ -213,9 +216,7 @@ subset_S_A = [
 ]
 subset_T_A = [
     (
-        (1 / gamma)
-        * rho
-        / op.adjoint(xp.ones(op.out_shape, dtype=xp.float64, device=dev))
+        (1 / gamma) * rho * p_a / op.adjoint(xp.ones(op.out_shape, dtype=xp.float64, device=dev))
     )
     for op in subset_op_A
 ]
@@ -225,7 +226,7 @@ T_A = xp.min(xp.asarray(subset_T_A), axis=0)
 
 op_G_norm = op_G.norm(xp, dev, num_iter=100)
 S_G = gamma * rho / op_G_norm
-T_G = (1 / gamma) * rho / op_G_norm
+T_G = (1 / gamma) * rho * p_g / op_G_norm
 
 T = xp.where(T_A < T_G, T_A, xp.full(4, T_G))
 
@@ -256,7 +257,7 @@ for i in range(num_iter):
 
         delta_z = subset_op_A[i_ss].adjoint(y_plus - subset_y[i_ss])
         subset_y[i_ss] = y_plus
-        p = 0.5 / len(subset_op_A)
+        p = p_a
     else:
         w_plus = (w + S_G * op_G(x)) / beta
         # prox of convex conjugate of TV
@@ -266,7 +267,7 @@ for i in range(num_iter):
 
         delta_z = op_G.adjoint(w_plus - w)
         w = 1.0 * w_plus
-        p = 0.5
+        p = p_g
 
     z = z + delta_z
     zbar = z + delta_z / p
@@ -287,7 +288,7 @@ print(f"cost: {cost[-1]:.6e}")
 if xp.__name__.endswith("numpy"):
     print(f"\nReference solution using Powell optimizer:")
     print(x_ref)
-    print(f"rel. distance to DePierro solution: {rel_dist:.2e}")
+    print(f"rel. distance to Powell solution: {rel_dist:.2e}")
     print(f"cost: {cost_function(x_ref):.6e}")
 
 # %%
