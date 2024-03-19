@@ -34,7 +34,6 @@ import array_api_compat.numpy as xp
 # import array_api_compat.torch as xp
 
 import parallelproj
-from array_api_compat import to_device
 import array_api_compat.numpy as np
 import matplotlib.pyplot as plt
 
@@ -216,7 +215,10 @@ subset_S_A = [
 ]
 subset_T_A = [
     (
-        (1 / gamma) * rho * p_a / op.adjoint(xp.ones(op.out_shape, dtype=xp.float64, device=dev))
+        (1 / gamma)
+        * rho
+        * p_a
+        / op.adjoint(xp.ones(op.out_shape, dtype=xp.float64, device=dev))
     )
     for op in subset_op_A
 ]

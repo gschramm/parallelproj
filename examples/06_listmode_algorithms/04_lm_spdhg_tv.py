@@ -1,10 +1,40 @@
+"""
+PDHG, SPDHG and LM-SPHG to optimize the Poisson logL and total variation
+========================================================================
+
+This example demonstrates the use of the primal dual hybrid gradient (PDHG) algorithm, 
+the stochastic PDHG (SPDHG) and the listmode SPDHG (LM-SPDHG) to minimize the negative 
+Poisson log-likelihood function combined with a total variation regularizer:
+
+.. math::
+    f(x) = \sum_{i=1}^m \\bar{d}_i (x) - d_i \log(\\bar{d}_i (x)) + \\beta \\|\\nabla x \\|_{1,2}
+
+subject to
+
+.. math::
+    x \geq 0
+    
+using the linear forward model
+
+.. math::
+    \\bar{d}(x) = A x + s
+
+.. tip::
+    parallelproj is python array API compatible meaning it supports different 
+    array backends (e.g. numpy, cupy, torch, ...) and devices (CPU or GPU).
+    Choose your preferred array API ``xp`` and device ``dev`` below.
+
+.. image:: https://mybinder.org/badge_logo.svg
+ :target: https://mybinder.org/v2/gh/gschramm/parallelproj/master?labpath=examples
+"""
+
 # %%
 from __future__ import annotations
 from copy import copy
 
-import array_api_compat.cupy as xp
+import array_api_compat.numpy as xp
 
-# import array_api_compat.numpy as xp
+# import array_api_compat.cupy as xp
 # import array_api_compat.torch as xp
 
 import parallelproj
@@ -33,11 +63,11 @@ num_iter_mlem = 10
 # number of PDHG iterations
 num_iter_pdhg = 2000
 # number of subsets for SPDHG and LM-SPDHG
-num_subsets = 30
+num_subsets = 10
 # prior weight
 beta = 3e-1
 # step size ratio for LM-SPDHG
-gamma = 1.0 / 5.0
+gamma = 3.0 / 5.0
 # rho value for LM-SPHDHG
 rho = 0.9999
 
@@ -76,7 +106,7 @@ voxel_size = (2.0, 2.0, 2.0)
 
 lor_desc = parallelproj.RegularPolygonPETLORDescriptor(
     scanner,
-    radial_trim=10,
+    radial_trim=40,
     max_ring_difference=2,
     sinogram_order=parallelproj.SinogramSpatialAxisOrder.RVP,
 )
@@ -169,10 +199,8 @@ d = xp.asarray(
 )
 
 # %%
-# RUN MLEM as reference
-# ---------------------
-
-# Run quick MLEM as init.
+# Run quick MLEM as initialization
+# --------------------------------
 
 x_mlem = xp.ones(pet_lin_op.in_shape, dtype=xp.float32, device=dev)
 # calculate A^H 1
@@ -183,18 +211,59 @@ adjoint_ones = pet_lin_op.adjoint(
 for i in range(num_iter_mlem):
     print(f"MLEM iteration {(i + 1):03} / {num_iter_mlem:03}", end="\r")
     dbar = pet_lin_op(x_mlem) + contamination
-    x_mlem *= (pet_lin_op.adjoint(d / dbar) / adjoint_ones)
+    x_mlem *= pet_lin_op.adjoint(d / dbar) / adjoint_ones
+
 
 # %%
+# Setup the cost function
+# -----------------------
+
+
 def cost_function(img):
     exp = pet_lin_op(img) + contamination
     res = float(xp.sum(exp - d * xp.log(exp)))
     res += beta * float(xp.sum(xp.linalg.vector_norm(op_G(img), axis=0)))
     return res
 
+
 # %%
-# PDHG
-# ----
+# PDHG update to minimize :math:`f(x)`
+# ------------------------------------
+#
+# .. admonition:: PDHG algorithm to minimize negative Poisson log-likelihood + regularization
+#
+#   | **Input** Poisson data :math:`d`
+#   | **Initialize** :math:`x,y,w,S_A,S_G,T`
+#   | **Preprocessing** :math:`\overline{z} = z = A^T y + \nabla^T w`
+#   | **Repeat**, until stopping criterion fulfilled
+#   |     **Update** :math:`x \gets \text{proj}_{\geq 0} \left( x - T \overline{z} \right)`
+#   |     **Update** :math:`y^+ \gets \text{prox}_{D^*}^{S_A} ( y + S_A  ( A x + s))`
+#   |     **Update** :math:`w^+ \gets \beta \, \text{prox}_{R^*}^{S_G/\beta} ((w + S_G  \nabla x)/\beta)`
+#   |     **Update** :math:`\Delta z \gets A^T (y^+ - y) + \nabla^T (w^+ - w)`
+#   |     **Update** :math:`z \gets z + \Delta z`
+#   |     **Update** :math:`\bar{z} \gets z + \Delta z`
+#   |     **Update** :math:`y \gets y^+`
+#   |     **Update** :math:`w \gets w^+`
+#   | **Return** :math:`x`
+#
+# See :cite:p:`Ehrhardt2019` :cite:p:`Schramm2022` for more details.
+#
+# .. admonition:: Proximal operator of the convex dual of the negative Poisson log-likelihood
+#
+#  :math:`(\text{prox}_{D^*}^{S}(y))_i = \text{prox}_{D^*}^{S}(y_i) = \frac{1}{2} \left(y_i + 1 - \sqrt{ (y_i-1)^2 + 4 S d_i} \right)`
+#
+# .. admonition:: Step sizes
+#
+#  :math:`S_A = \gamma \, \text{diag}(\frac{\rho}{A 1})`
+#
+#  :math:`S_G = \gamma \, \text{diag}(\frac{\rho}{|\nabla|})`
+#
+#  :math:`T_A = \gamma^{-1} \text{diag}(\frac{\rho}{A^T 1})`
+#
+#  :math:`T_G = \gamma^{-1} \text{diag}(\frac{\rho}{|\nabla|})`
+#
+#  :math:`T = \min T_A, T_G` pointwise
+#
 
 op_G = parallelproj.FiniteForwardDifference(pet_lin_op.in_shape)
 
@@ -209,7 +278,10 @@ zbar = 1.0 * z
 # %%
 
 # calculate PHDG step sizes
-S_A = gamma * rho / pet_lin_op(xp.ones(pet_lin_op.in_shape, dtype=xp.float64, device=dev))
+tmp = pet_lin_op(xp.ones(pet_lin_op.in_shape, dtype=xp.float32, device=dev))
+tmp = xp.where(tmp == 0, xp.min(tmp[tmp > 0]), tmp)
+S_A = gamma * rho / tmp
+
 T_A = (
     (1 / gamma)
     * rho
@@ -223,18 +295,16 @@ T_G = (1 / gamma) * rho / op_G_norm
 T = xp.where(T_A < T_G, T_A, xp.full(pet_lin_op.in_shape, T_G))
 
 
-
 # %%
 # Run PDHG
 # --------
-cost_pdhg = xp.zeros(num_iter_pdhg // 20, dtype=xp.float32)
+cost_pdhg = np.zeros(num_iter_pdhg, dtype=xp.float32)
 
 for i in range(num_iter_pdhg):
     x_pdhg -= T * zbar
     x_pdhg = xp.where(x_pdhg < 0, xp.zeros_like(x_pdhg), x_pdhg)
 
-    if i % 20 == 0:
-        cost_pdhg[i//20] = cost_function(x_pdhg)
+    cost_pdhg[i] = cost_function(x_pdhg)
 
     y_plus = y + S_A * (pet_lin_op(x_pdhg) + contamination)
     # prox of convex conjugate of negative Poisson logL
@@ -253,10 +323,10 @@ for i in range(num_iter_pdhg):
     z = z + delta_z
     zbar = z + delta_z
 
-    print(f"PDHG iter {i:04} / {num_iter_pdhg}, cost {cost_pdhg[i//20]:.7e}", end="\r")
+    print(f"PDHG iter {i:04} / {num_iter_pdhg}, cost {cost_pdhg[i]:.7e}", end="\r")
 
 # %%
-# Splitting of the forward model into subsets :math:`A^k`
+# Splitting of the forward model into subsets :math:`A_i`
 # -------------------------------------------------------
 #
 # Calculate the view numbers and slices for each subset.
@@ -281,8 +351,6 @@ pet_subset_linop_seq = []
 # (2) subset projector
 # (3) multiplication with the corresponding subset of the attenuation sinogram
 for i in range(num_subsets):
-    print(f"subset {i:02} containing views {subset_views[i]}")
-
     # make a copy of the full projector and reset the views to project
     subset_proj = copy(proj)
     subset_proj.views = subset_views[i]
@@ -309,17 +377,58 @@ for i in range(num_subsets):
 
 pet_subset_linop_seq = parallelproj.LinearOperatorSequence(pet_subset_linop_seq)
 
-# RUN SPDHG
-# ---------
+# %%
+# SPDHG updates to minimize :math:`f(x)`
+# --------------------------------------
+#
+# .. admonition:: SPDHG algorithm to minimize negative Poisson log-likelihood + regularization
+#
+#   | **Input** Poisson data :math:`d`
+#   | **Initialize** :math:`x,y_i,w,S_{A_i},S_G,T,p_i`
+#   | **Preprocessing** :math:`\overline{z} = z = \sum_i A_i^T y + \nabla^T w`
+#   | **Repeat**, until stopping criterion fulfilled
+#   |     **Update** :math:`x \gets \text{proj}_{\geq 0} \left( x - T \overline{z} \right)`
+#   |     **select a random data subset number i or do prior update according to** :math:`p_i`
+#   |       **Update** :math:`y_i^+ \gets \text{prox}_{D^*}^{S_{A_i}} ( y_i + S_{A_i}  ( {A_i} x + s))`
+#   |       **Update** :math:`\Delta z \gets A_i^T (y_i^+ - y_i)`
+#   |       **Update** :math:`y_i \gets y_i^+`
+#   |     **or**
+#   |       **Update** :math:`w^+ \gets \beta \, \text{prox}_{R^*}^{S_G/\beta} ((w + S_G  \nabla x)/\beta)`
+#   |       **Update** :math:`\Delta z \gets \nabla^T (w^+ - w)`
+#   |       **Update** :math:`w \gets w^+`
+#   |     **Update** :math:`z \gets z + \Delta z`
+#   |     **Update** :math:`\bar{z} \gets z + (\Delta z \ p_i)`
+#   | **Return** :math:`x`
+#
+# See :cite:p:`Ehrhardt2019` :cite:p:`Schramm2022` for more details.
+#
+# .. admonition:: Step sizes
+#
+#  :math:`S_{A_i} = \gamma \, \text{diag}(\frac{\rho}{A_i 1})`
+#
+#  :math:`S_G = \gamma \, \text{diag}(\frac{\rho}{|\nabla|})`
+#
+#  :math:`T_{A_i} = \gamma^{-1} \text{diag}(\frac{\rho}{A_i^T 1})`
+#
+#  :math:`T_G = \gamma^{-1} \text{diag}(\frac{\rho}{|\nabla|})`
+#
+#  :math:`T = \min T_{A_i}, T_G` pointwise
+#
+
+
+# %%
+# Initialize SPDHG primal and dual variables
+# ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 p_g = 0.5
 p_a = (1 - p_g) / len(pet_subset_linop_seq)
 
-# initialize primal and dual variables
 x_spdhg = 1.0 * x_mlem
 
-ys = [(1 - d[sl] / (pet_subset_linop_seq[k](x_spdhg) + contamination[sl])) 
-      for k, sl in enumerate(subset_slices)]
+ys = [
+    (1 - d[sl] / (pet_subset_linop_seq[k](x_spdhg) + contamination[sl]))
+    for k, sl in enumerate(subset_slices)
+]
 
 w = beta * xp.sign(op_G(x_spdhg))
 
@@ -328,6 +437,7 @@ zbar = 1.0 * z
 
 # %%
 # calculate SPHDG step sizes
+# ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 S_A = []
 for op in pet_subset_linop_seq:
@@ -337,7 +447,10 @@ for op in pet_subset_linop_seq:
 
 subset_T = [
     (
-        (1 / gamma) * rho * p_a / op.adjoint(xp.ones(op.out_shape, dtype=xp.float32, device=dev))
+        (1 / gamma)
+        * rho
+        * p_a
+        / op.adjoint(xp.ones(op.out_shape, dtype=xp.float32, device=dev))
     )
     for op in pet_subset_linop_seq
 ]
@@ -347,21 +460,28 @@ subset_T = [
 op_G_norm = op_G.norm(xp, dev, num_iter=100)
 S_G = gamma * rho / op_G_norm
 
-T_G = (1 / gamma) * rho * p_g / op_G_norm 
+T_G = (1 / gamma) * rho * p_g / op_G_norm
 subset_T.append(xp.full(pet_lin_op.in_shape, T_G))
 
 T = xp.min(xp.asarray(subset_T), axis=0)
 
-num_iter_spdhg = (num_iter_pdhg // num_subsets)
-cost_spdhg = xp.zeros(int(xp.ceil(xp.asarray(num_iter_spdhg / 10))), dtype=xp.float32)
+# %%
+# Run SPDHG
+# ^^^^^^^^^
+
+# num_iter_spdhg = 2 * (num_iter_pdhg // num_subsets)
+num_iter_spdhg = num_iter_pdhg
+cost_spdhg = np.zeros(num_iter_spdhg, dtype=xp.float32)
 
 for i in range(num_iter_spdhg):
     x_spdhg -= T * zbar
     x_spdhg = xp.where(x_spdhg < 0, xp.zeros_like(x_spdhg), x_spdhg)
 
-    if i % 10 == 0:
-        cost_spdhg[i//10] = cost_function(x_spdhg)
-    print(f"SPDHG iter {i:04} / {num_iter_spdhg}, cost {cost_spdhg[i // 10]:.7e}", end="\r")
+    cost_spdhg[i] = cost_function(x_spdhg)
+    print(
+        f"SPDHG iter {i:04} / {num_iter_spdhg}, cost {cost_spdhg[i]:.7e}",
+        end="\r",
+    )
 
     # select a random subset
     # in 50% of the cases we select a subset of the forward operator
@@ -374,9 +494,7 @@ for i in range(num_iter_spdhg):
             )
             # prox of convex conjugate of negative Poisson logL
             y_plus = 0.5 * (
-                y_plus
-                + 1
-                - xp.sqrt((y_plus - 1) ** 2 + 4 * S_A[i_ss] * d[sl])
+                y_plus + 1 - xp.sqrt((y_plus - 1) ** 2 + 4 * S_A[i_ss] * d[sl])
             )
 
             delta_z = pet_subset_linop_seq[i_ss].adjoint(y_plus - ys[i_ss])
@@ -398,7 +516,7 @@ for i in range(num_iter_spdhg):
 
 # %%
 # Conversion of the emission sinogram to listmode
-# ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+# -----------------------------------------------
 #
 # Using :meth:`.RegularPolygonPETProjector.convert_sinogram_to_listmode` we can convert an
 # integer non-TOF or TOF sinogram to an event list for listmode processing.
@@ -407,7 +525,7 @@ for i in range(num_iter_spdhg):
 #     **Note:** The created event list is "ordered" and should be shuffled depending on the
 #     strategy to define subsets in LM-OSEM.
 
-print('Generating LM events')
+print("\nGenerating LM events")
 event_start_coords, event_end_coords, event_tofbins = proj.convert_sinogram_to_listmode(
     d
 )
@@ -500,15 +618,11 @@ mu = parallelproj.count_event_multiplicity(events)
 #   |     **Update** :math:`\bar{z} \gets z + (\Delta z/p_i)`
 #   | **Return** :math:`x`
 #
-# .. admonition:: Proximal operator of the convex dual of the negative Poisson log-likelihood
-#
-#  :math:`(\text{prox}_{D_i^*}^{S_i}(y))_i = \text{prox}_{D_i^*}^{S_i}(y_i) = \frac{1}{2} \left(y_i + 1 - \sqrt{ (y_i-1)^2 + 4 S_i d_i} \right)`
-#
 # .. admonition:: Step sizes
 #
 #  :math:`S_i = \gamma \, \text{diag}(\frac{\rho}{A^{LM}_{N_i} 1})`
 #
-#  :math:`T_i = \gamma^{-1} \text{diag}(\frac{\rho p_i}{{A^{LM}_{N_i}}^T 1})`
+#  :math:`T_i = \gamma^{-1} \text{diag}(\frac{\rho p_i}{{A^{LM}_{N_i}}^T 1/\mu_{N_i}})`
 #
 #  :math:`T = \min_{i=1,\ldots,n+1} T_i` pointwise
 #
@@ -523,7 +637,9 @@ x_lmspdhg = 1.0 * x_mlem
 # setup dual variable for data subsets
 ys = []
 for k, sl in enumerate(subset_slices_lm):
-    ys.append(1 - (mu[sl] / (lm_pet_subset_linop_seq[k](x_lmspdhg) + contamination_list[sl])))
+    ys.append(
+        1 - (mu[sl] / (lm_pet_subset_linop_seq[k](x_lmspdhg) + contamination_list[sl]))
+    )
 
 # setup gradient operator
 op_G = parallelproj.FiniteForwardDifference(pet_lin_op.in_shape)
@@ -555,8 +671,8 @@ op_G_norm = op_G.norm(xp, dev, num_iter=100)
 S_G = gamma * rho / op_G_norm
 
 # if there is no regularization the T_i for all LM data subsets are the same
-#T_A = (rho * p_a / gamma) / (adjoint_ones / num_subsets)
-T_A = xp.zeros((num_subsets,) + pet_lin_op.in_shape, dtype = xp.float32)
+# T_A = (rho * p_a / gamma) / (adjoint_ones / num_subsets)
+T_A = xp.zeros((num_subsets,) + pet_lin_op.in_shape, dtype=xp.float32)
 for k, sl in enumerate(subset_slices_lm):
     tmp = lm_pet_subset_linop_seq[k].adjoint(1 / mu[sl])
     T_A[k] = (rho * p_a / gamma) / tmp
@@ -566,23 +682,29 @@ T_G = (rho * p_g / gamma) / op_G_norm
 T = xp.where(T_A < T_G, T_A, xp.full(T_A.shape, T_G))
 
 # %%
-cost_lmspdhg = xp.zeros(int(xp.ceil(xp.asarray(num_iter_spdhg / 10))), dtype=xp.float32)
+cost_lmspdhg = np.zeros(num_iter_spdhg, dtype=xp.float32)
 
 for i in range(num_iter_spdhg):
-    subset_sequence = np.random.permutation(2*num_subsets)
+    subset_sequence = np.random.permutation(2 * num_subsets)
 
-    if i % 10 == 0:
-        cost_lmspdhg[i//10] = cost_function(x_lmspdhg)
-    print(f"LM-SPDHG iter {i:04} / {num_iter_spdhg}, cost {cost_lmspdhg[i // 10]:.7e}", end="\r")
+    cost_lmspdhg[i] = cost_function(x_lmspdhg)
+    print(
+        f"LM-SPDHG iter {i:04} / {num_iter_spdhg}, cost {cost_lmspdhg[i]:.7e}",
+        end="\r",
+    )
 
     for k in subset_sequence:
         x_lmspdhg -= T * zbar
         x_lmspdhg = xp.where(x_lmspdhg < 0, xp.zeros_like(x_lmspdhg), x_lmspdhg)
- 
+
         if k < num_subsets:
             sl = subset_slices_lm[k]
-            y_plus = ys[k] + S_A[k] * (lm_pet_subset_linop_seq[k](x_lmspdhg) + contamination_list[sl])
-            y_plus = 0.5 * (y_plus + 1 - xp.sqrt((y_plus - 1) ** 2 + 4 * S_A[k] * mu[sl]))
+            y_plus = ys[k] + S_A[k] * (
+                lm_pet_subset_linop_seq[k](x_lmspdhg) + contamination_list[sl]
+            )
+            y_plus = 0.5 * (
+                y_plus + 1 - xp.sqrt((y_plus - 1) ** 2 + 4 * S_A[k] * mu[sl])
+            )
             dz = lm_pet_subset_linop_seq[k].adjoint((y_plus - ys[k]) / mu[sl])
             ys[k] = y_plus
             p = p_a
@@ -614,24 +736,33 @@ pl2 = x_true_np.shape[2] // 2
 pl1 = x_true_np.shape[1] // 2
 pl0 = x_true_np.shape[0] // 2
 
-fig, ax = plt.subplots(3, 5, figsize=(12, 9), tight_layout=True)
+fig, ax = plt.subplots(2, 5, figsize=(12, 4), tight_layout=True)
 vmax = 1.2 * x_true_np.max()
-ax[0,0].imshow(x_true_np[:, :, pl2], cmap="Greys", vmin=0, vmax=vmax)
-ax[0,1].imshow(x_mlem_np[:, :, pl2], cmap="Greys", vmin=0, vmax=vmax)
-ax[0,2].imshow(x_pdhg_np[:, :, pl2], cmap="Greys", vmin=0, vmax=vmax)
-ax[0,3].imshow(x_spdhg_np[:, :, pl2], cmap="Greys", vmin=0, vmax=vmax)
-ax[0,4].imshow(x_lmspdhg_np[:, :, pl2], cmap="Greys", vmin=0, vmax=vmax)
+ax[0, 0].imshow(x_true_np[:, :, pl2], cmap="Greys", vmin=0, vmax=vmax)
+ax[0, 1].imshow(x_mlem_np[:, :, pl2], cmap="Greys", vmin=0, vmax=vmax)
+ax[0, 2].imshow(x_pdhg_np[:, :, pl2], cmap="Greys", vmin=0, vmax=vmax)
+ax[0, 3].imshow(x_spdhg_np[:, :, pl2], cmap="Greys", vmin=0, vmax=vmax)
+ax[0, 4].imshow(x_lmspdhg_np[:, :, pl2], cmap="Greys", vmin=0, vmax=vmax)
 
-ax[1,0].imshow(x_true_np[:, pl1, :].T, cmap="Greys", vmin=0, vmax=vmax)
-ax[1,1].imshow(x_mlem_np[:, pl1, :].T, cmap="Greys", vmin=0, vmax=vmax)
-ax[1,2].imshow(x_pdhg_np[:, pl1, :].T, cmap="Greys", vmin=0, vmax=vmax)
-ax[1,3].imshow(x_spdhg_np[:, pl1, :].T, cmap="Greys", vmin=0, vmax=vmax)
-ax[1,4].imshow(x_lmspdhg_np[:, pl1, :].T, cmap="Greys", vmin=0, vmax=vmax)
+ax[1, 0].imshow(x_true_np[pl0, :, :].T, cmap="Greys", vmin=0, vmax=vmax)
+ax[1, 1].imshow(x_mlem_np[pl0, :, :].T, cmap="Greys", vmin=0, vmax=vmax)
+ax[1, 2].imshow(x_pdhg_np[pl0, :, :].T, cmap="Greys", vmin=0, vmax=vmax)
+ax[1, 3].imshow(x_spdhg_np[pl0, :, :].T, cmap="Greys", vmin=0, vmax=vmax)
+ax[1, 4].imshow(x_lmspdhg_np[pl0, :, :].T, cmap="Greys", vmin=0, vmax=vmax)
 
-ax[2,0].imshow(x_true_np[pl0, :, :].T, cmap="Greys", vmin=0, vmax=vmax)
-ax[2,1].imshow(x_mlem_np[pl0, :, :].T, cmap="Greys", vmin=0, vmax=vmax)
-ax[2,2].imshow(x_pdhg_np[pl0, :, :].T, cmap="Greys", vmin=0, vmax=vmax)
-ax[2,3].imshow(x_spdhg_np[pl0, :, :].T, cmap="Greys", vmin=0, vmax=vmax)
-ax[2,4].imshow(x_lmspdhg_np[pl0, :, :].T, cmap="Greys", vmin=0, vmax=vmax)
+ax[0, 0].set_title("true img")
+ax[0, 1].set_title("init img")
+ax[0, 2].set_title("PDHG")
+ax[0, 3].set_title("SPDHG")
+ax[0, 4].set_title("LM-SPDHG")
 fig.show()
-fig.savefig('pdhg.png')
+
+# %%
+fig2, ax2 = plt.subplots(1, 1, figsize=(6, 4), tight_layout=True)
+ax2.plot(cost_pdhg, ".-", label="PDHG")
+ax2.plot(cost_spdhg, ".-", label="SPDHG")
+ax2.plot(cost_lmspdhg, ".-", label="LM-SPDHG")
+ax2.grid(ls=":")
+ax2.legend()
+ax2.set_ylim((cost_pdhg[10:].min(), cost_pdhg.max()))
+fig2.show()
