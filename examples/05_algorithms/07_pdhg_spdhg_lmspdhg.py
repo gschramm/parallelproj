@@ -469,8 +469,7 @@ T = xp.min(xp.asarray(subset_T), axis=0)
 # Run SPDHG
 # ^^^^^^^^^
 
-# num_iter_spdhg = 2 * (num_iter_pdhg // num_subsets)
-num_iter_spdhg = num_iter_pdhg
+num_iter_spdhg = 3 * (num_iter_pdhg // num_subsets)
 cost_spdhg = np.zeros(num_iter_spdhg, dtype=xp.float32)
 
 for i in range(num_iter_spdhg):
@@ -670,8 +669,6 @@ for lm_op in lm_pet_subset_linop_seq:
 op_G_norm = op_G.norm(xp, dev, num_iter=100)
 S_G = gamma * rho / op_G_norm
 
-# if there is no regularization the T_i for all LM data subsets are the same
-# T_A = (rho * p_a / gamma) / (adjoint_ones / num_subsets)
 T_A = xp.zeros((num_subsets,) + pet_lin_op.in_shape, dtype=xp.float32)
 for k, sl in enumerate(subset_slices_lm):
     tmp = lm_pet_subset_linop_seq[k].adjoint(1 / mu[sl])
@@ -682,6 +679,9 @@ T_G = (rho * p_g / gamma) / op_G_norm
 T = xp.where(T_A < T_G, T_A, xp.full(T_A.shape, T_G))
 
 # %%
+# Run LM-SPDHG
+# ^^^^^^^^^^^^
+
 cost_lmspdhg = np.zeros(num_iter_spdhg, dtype=xp.float32)
 
 for i in range(num_iter_spdhg):
