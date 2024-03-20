@@ -1,3 +1,11 @@
+## 1.8 (March 20, 2024)
+
+- add function to count event multiplicity
+- add more examples (e.g. DePierro and LM SPDHG)
+- re-organize folder structure and pyproject.toml
+- force array-api-compat<1.5 (bug in 1.5.0)
+- use array-api-strict instead of numpy.array_api
+
 ## 1.7.3 (January 26, 2024)
 - print banner
 - test also on Windows

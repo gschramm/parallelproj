@@ -161,6 +161,7 @@ else:
 
 num_visible_cuda_devices = 0
 
+lib_parallelproj_cuda_fname = None
 if cuda_present:
     if "PARALLELPROJ_CUDA_LIB" in os.environ:
         lib_parallelproj_cuda_fname = os.environ["PARALLELPROJ_CUDA_LIB"]
@@ -1383,7 +1384,7 @@ if cupy_enabled:
             ret += (inv_idx,)
         if return_counts:
             nonzero = cp.nonzero(mask)[0]  # may synchronize
-            idx = cp.empty((nonzero.size + 1,), dtype = nonzero.dtype)
+            idx = cp.empty((nonzero.size + 1,), dtype=nonzero.dtype)
             idx[:-1] = nonzero
             idx[-1] = mask.size
             ret += (idx[1:] - idx[:-1],)

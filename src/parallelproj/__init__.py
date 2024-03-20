@@ -13,6 +13,8 @@ from .backend import (
     joseph3d_back_tof_sino,
     joseph3d_fwd_tof_lm,
     joseph3d_back_tof_lm,
+    lib_parallelproj_c_fname,
+    lib_parallelproj_cuda_fname,
 )
 
 from .operators import (
@@ -58,6 +60,8 @@ __all__ = [
     "joseph3d_back_tof_sino",
     "joseph3d_fwd_tof_lm",
     "joseph3d_back_tof_lm",
+    "lib_parallelproj_c_fname",
+    "lib_parallelproj_cuda_fname",
     "LinearOperator",
     "MatrixOperator",
     "ElementwiseMultiplicationOperator",
@@ -80,7 +84,7 @@ __all__ = [
 ]
 
 print(
-    """
+    f"""
           -  -  -  -  -  -  -  -   -  -  -  -
           P  A  R  A  L  L  E  L | P  R  O  J
           -  -  -  -  -  -  -  -   -  -  -  -
@@ -98,6 +102,8 @@ print(
       https://doi.org/10.3389/fnume.2023.1324562
 
     =================================================
-
+ 
+    parallelproj C    lib: {lib_parallelproj_c_fname}
+    parallelproj CUDA lib: {lib_parallelproj_cuda_fname}
     """
 )
