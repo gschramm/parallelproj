@@ -4,7 +4,7 @@ import array_api_compat.numpy as np
 from types import ModuleType
 import pytest
 
-from config import pytestmark
+from .config import pytestmark
 
 
 def isclose(x: float, y: float, atol: float = 1e-8, rtol: float = 1e-5) -> bool:
@@ -70,7 +70,7 @@ def test_tof_lm_fwd(
         tofcenter_offset,
         nsigmas,
         tof_bin,
-        num_chunks=3
+        num_chunks=3,
     )
 
     # check if sum of the projection is correct (should be equal to the voxel
@@ -238,7 +238,7 @@ def test_adjointness(
         tofcenter_offset,
         nsigmas,
         tof_bin,
-        num_chunks=7
+        num_chunks=7,
     )
 
     # backward project
@@ -256,7 +256,7 @@ def test_adjointness(
         tofcenter_offset,
         nsigmas,
         tof_bin,
-        num_chunks=11
+        num_chunks=11,
     )
 
     ip_a = float(xp.sum(back_img * img))

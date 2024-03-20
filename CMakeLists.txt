@@ -9,14 +9,16 @@ include(CMakePackageConfigHelpers)
 include(CheckLanguage)
 
 #-------------------------------------------------------------
-# deduce the VERSION from the last git tag
-# print warnings if we are building from an untagged version or a 
-# version with local changes (dirty)
+# Read the line containing 'version =' from pyproject.toml
+file(STRINGS pyproject.toml versionLine REGEX "^version = ")
 
-# get the version number from package.json
-file(READ "package.json" JSONCONTENT)
-string(REGEX MATCH "([0-9]+\.[0-9]+\.[0-9]+)" PARALLELPROJ_VERSION ${JSONCONTENT})
-message(STATUS "BUILDING VERSION: ${PARALLELPROJ_VERSION}")
+# Extract the version number from the matched line
+if("${versionLine}" MATCHES "^version = \"([0-9]+\\.[0-9]+\\.[0-9]+)\"")
+  set(PARALLELPROJ_VERSION "${CMAKE_MATCH_1}")
+  message(STATUS "BUILDING VERSION: ${PARALLELPROJ_VERSION}")
+else()
+  message(FATAL_ERROR "Version not found in pyproject.toml")
+endif()
 
 #-------------------------------------------------------------
 

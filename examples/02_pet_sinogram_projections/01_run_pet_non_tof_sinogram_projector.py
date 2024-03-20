@@ -123,7 +123,7 @@ for i in range(20):
     axx = ax.ravel()[i]
     if i < proj.lor_descriptor.num_planes:
         axx.imshow(
-            np.asarray(to_device(x_fwd[:, :, i].T, "cpu")),
+            parallelproj.to_numpy_array(x_fwd[:, :, i].T),
             cmap="Greys",
             vmin=0,
             vmax=vmax,
@@ -140,7 +140,7 @@ vmax = float(xp.max(x))
 for i in range(8):
     axx = ax2.ravel()[i]
     axx.imshow(
-        np.asarray(to_device(x[:, i, :].T, "cpu")), cmap="Greys", vmin=0, vmax=vmax
+        parallelproj.to_numpy_array(x[:, i, :].T), cmap="Greys", vmin=0, vmax=vmax
     )
     axx.set_title(f"img plane {i}", fontsize="medium")
 ax2.ravel()[-1].set_axis_off()
@@ -187,7 +187,7 @@ for i in range(20):
     axx = ax.ravel()[i]
     if i < proj.lor_descriptor.num_planes:
         axx.imshow(
-            np.asarray(to_device(x_fwd2[:, :, i].T, "cpu")),
+            parallelproj.to_numpy_array(x_fwd2[:, :, i].T),
             cmap="Greys",
             vmin=0,
             vmax=vmax,
@@ -240,7 +240,7 @@ for i in range(20):
     axx = ax.ravel()[i]
     if i < proj.lor_descriptor.num_planes:
         axx.imshow(
-            np.asarray(to_device(x_fwd3[:, :, i].T, "cpu")),
+            parallelproj.to_numpy_array(x_fwd3[:, :, i].T),
             cmap="Greys",
             vmin=0,
             vmax=vmax,
@@ -257,7 +257,7 @@ vmax = float(xp.max(x_fwd3_back))
 for i in range(8):
     axx = ax2.ravel()[i]
     axx.imshow(
-        np.asarray(to_device(x_fwd3_back[:, i, :].T, "cpu")),
+        parallelproj.to_numpy_array(x_fwd3_back[:, i, :].T),
         cmap="Greys",
         vmin=0,
         vmax=vmax,

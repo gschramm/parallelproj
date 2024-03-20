@@ -5,7 +5,7 @@ TOF listmode MLEM with projection data
 This example demonstrates the use of the listmode MLEM algorithm to minimize the negative Poisson log-likelihood function.
 
 .. math::
-    f(x) = \sum_{i=1}^m \\bar{y}_i - \\bar{y}_i (x) \log(y_i)
+    f(x) = \sum_{i=1}^m \\bar{y}_i (x) - \\bar{y}_i (x) \log(y_i)
 
 subject to
 
@@ -30,7 +30,7 @@ and data stored in listmode format (event by event).
 
 # %%
 from __future__ import annotations
-from numpy.array_api._array_object import Array
+from array_api_strict._array_object import Array
 
 import array_api_compat.numpy as xp
 
@@ -178,7 +178,7 @@ noise_free_data += contamination
 # add Poisson noise
 np.random.seed(1)
 y = xp.asarray(
-    np.random.poisson(np.asarray(to_device(noise_free_data, "cpu"))),
+    np.random.poisson(parallelproj.to_numpy_array(noise_free_data)),
     device=dev,
     dtype=xp.int16,
 )
@@ -236,7 +236,7 @@ lm_pet_lin_op = parallelproj.CompositeLinearOperator((lm_att_op, lm_proj, res_mo
 # The EM update that can be used in LM-MLEM is given by
 #
 # .. math::
-#     x^+ = \frac{x}{A^H 1} A_{LM}^H \frac{1}{A_{LM} x + s_{LM}^k}
+#     x^+ = \frac{x}{A^H 1} A_{LM}^H \frac{1}{A_{LM} x + s_{LM}}
 #
 # to calculate the minimizer of :math:`f(x)` iteratively.
 
@@ -309,8 +309,8 @@ def _update_img(i):
     return (img0, img1)
 
 
-x_true_np = np.asarray(to_device(x_true, "cpu"))
-x_np = np.asarray(to_device(x, "cpu"))
+x_true_np = parallelproj.to_numpy_array(x_true)
+x_np = parallelproj.to_numpy_array(x)
 
 fig, ax = plt.subplots(1, 2, figsize=(10, 5))
 vmax = x_np.max()

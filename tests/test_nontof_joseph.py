@@ -7,7 +7,7 @@ from types import ModuleType
 
 # import the global pytestmark variable containing the xp/dev matrix we
 # want to test
-from config import pytestmark
+from .config import pytestmark
 
 
 def test_fwd(
@@ -64,7 +64,9 @@ def test_fwd(
     xstart = vstart * voxel_size + img_origin
     xend = vend * voxel_size + img_origin
 
-    img_fwd = parallelproj.joseph3d_fwd(xstart, xend, img, img_origin, voxel_size, num_chunks=3)
+    img_fwd = parallelproj.joseph3d_fwd(
+        xstart, xend, img, img_origin, voxel_size, num_chunks=3
+    )
 
     # setup the expected values for the projection
     expected_projections = xp.zeros_like(img_fwd, device=dev)
@@ -153,7 +155,9 @@ def test_adjointness(
     xend[:, 2] = R * costheta
 
     # forward project
-    img_fwd = parallelproj.joseph3d_fwd(xstart, xend, img, img_origin, voxel_size, num_chunks=3)
+    img_fwd = parallelproj.joseph3d_fwd(
+        xstart, xend, img, img_origin, voxel_size, num_chunks=3
+    )
 
     # backward project
     sino = xp.asarray(np.random.rand(*img_fwd.shape), dtype=xp.float32, device=dev)

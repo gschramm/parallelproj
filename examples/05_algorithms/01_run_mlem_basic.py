@@ -5,7 +5,7 @@ Basic MLEM
 This example demonstrates the use of the MLEM algorithm to minimize the negative Poisson log-likelihood function.
 
 .. math::
-    f(x) = \sum_{i=1}^m \\bar{y}_i - \\bar{y}_i (x) \log(y_i)
+    f(x) = \sum_{i=1}^m \\bar{y}_i (x) - y_i \log(\\bar{y}_i (x))
 
 subject to
 
@@ -92,7 +92,7 @@ noise_free_data = op_A(x_true) + contamination
 # add Poisson noise
 np.random.seed(1)
 y = xp.asarray(
-    np.random.poisson(np.asarray(to_device(noise_free_data, "cpu"))),
+    np.random.poisson(parallelproj.to_numpy_array(noise_free_data)),
     device=dev,
     dtype=xp.float64,
 )
@@ -164,8 +164,8 @@ for i in range(num_iter):
 # ------------------
 
 fig, ax = plt.subplots(1, 2, figsize=(8, 4), sharex=True)
-ax[0].semilogx(np.asarray(to_device(rel_cost, "cpu")))
-ax[1].loglog(np.asarray(to_device(rel_dist, "cpu")))
+ax[0].semilogx(parallelproj.to_numpy_array(rel_cost))
+ax[1].loglog(parallelproj.to_numpy_array(rel_dist))
 ax[0].set_ylim(-rel_cost[2], rel_cost[2])
 ax[0].set_ylabel(r"( f($x$) - f($x^*$) )   /   | f($x^*$) |")
 ax[1].set_ylabel(r"rel. distance to optimum $\|x - x^*\| / \|x^*\|$")

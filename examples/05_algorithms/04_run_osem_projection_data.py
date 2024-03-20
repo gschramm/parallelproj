@@ -5,7 +5,7 @@ TOF OSEM with projection data
 This example demonstrates the use of the MLEM algorithm to minimize the negative Poisson log-likelihood function.
 
 .. math::
-    f(x) = \sum_{i=1}^m \\bar{y}_i - \\bar{y}_i (x) \log(y_i)
+    f(x) = \sum_{i=1}^m \\bar{y}_i (x) - y_i \log(\\bar{y}_i (x))
 
 subject to
 
@@ -28,7 +28,7 @@ using the linear forward model
 
 # %%
 from __future__ import annotations
-from numpy.array_api._array_object import Array
+from array_api_strict._array_object import Array
 
 import array_api_compat.numpy as xp
 
@@ -171,7 +171,7 @@ noise_free_data += contamination
 # add Poisson noise
 np.random.seed(1)
 y = xp.asarray(
-    np.random.poisson(np.asarray(to_device(noise_free_data, "cpu"))),
+    np.random.poisson(parallelproj.to_numpy_array(noise_free_data)),
     device=dev,
     dtype=xp.float64,
 )
@@ -348,8 +348,8 @@ def _update_img(i):
     return (img0, img1)
 
 
-x_true_np = np.asarray(to_device(x_true, "cpu"))
-x_np = np.asarray(to_device(x, "cpu"))
+x_true_np = parallelproj.to_numpy_array(x_true)
+x_np = parallelproj.to_numpy_array(x)
 
 fig, ax = plt.subplots(1, 2, figsize=(10, 5))
 vmax = x_np.max()

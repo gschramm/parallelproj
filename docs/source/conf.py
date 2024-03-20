@@ -7,22 +7,22 @@ import os
 import sys
 
 # add parallelproj to the PYTHONPATH
-sys.path.insert(0, os.path.abspath(os.path.join("..", "..", "python")))
+sys.path.insert(0, os.path.abspath(os.path.join("..", "..", "src")))
 
-import json
+import tomllib
 from sphinx_gallery.sorting import FileNameSortKey
 
 # get version string from file
-with open(os.path.join("..", "..", "package.json")) as f:
-    version = json.load(f)["version"]
+with open("../../pyproject.toml", "rb") as f:
+    project_data = tomllib.load(f)["project"]
 
 # -- Project information -----------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 
-project = "parallelproj"
-copyright = "2023, Georg Schramm"
-author = "Georg Schramm"
-release = version
+project = project_data["name"]
+author = project_data["authors"][0]["name"]
+release = project_data["version"]
+copyright = f"2023, {author}"
 
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration

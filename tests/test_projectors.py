@@ -4,7 +4,7 @@ import pytest
 import parallelproj
 import array_api_compat
 
-from config import pytestmark
+from .config import pytestmark
 
 
 def allclose(x, y, atol: float = 1e-8, rtol: float = 1e-5) -> bool:
@@ -61,7 +61,10 @@ def test_parallelviewprojector(xp, dev, verbose=True):
 
     assert allclose(x_fwd, exp_result)
 
-    fig = proj2d.show_views(image=xp.ones(image_shape, dtype=xp.float32, device=dev))
+    # fig = proj2d.show_views(image=xp.ones(image_shape, dtype=xp.float32, device=dev))
+    import numpy as np
+
+    fig = proj2d.show_views(image=np.ones(image_shape))
 
     # setup a simple 3D projector with 2 rings
 

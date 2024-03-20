@@ -3,29 +3,36 @@ from .backend import (
     cupy_enabled,
     torch_enabled,
     is_cuda_array,
+    to_numpy_array,
     empty_cuda_cache,
+    num_visible_cuda_devices,
+    count_event_multiplicity,
+    joseph3d_fwd,
+    joseph3d_back,
+    joseph3d_fwd_tof_sino,
+    joseph3d_back_tof_sino,
+    joseph3d_fwd_tof_lm,
+    joseph3d_back_tof_lm,
 )
-from .backend import num_visible_cuda_devices
-from .backend import joseph3d_fwd, joseph3d_back
-from .backend import joseph3d_fwd_tof_sino, joseph3d_back_tof_sino
-from .backend import joseph3d_fwd_tof_lm, joseph3d_back_tof_lm
 
-from .operators import LinearOperator, MatrixOperator, ElementwiseMultiplicationOperator
-from .operators import TOFNonTOFElementwiseMultiplicationOperator
 from .operators import (
+    LinearOperator,
+    MatrixOperator,
+    ElementwiseMultiplicationOperator,
+    TOFNonTOFElementwiseMultiplicationOperator,
     GaussianFilterOperator,
     CompositeLinearOperator,
     VstackOperator,
     LinearOperatorSequence,
+    FiniteForwardDifference,
 )
-from .operators import FiniteForwardDifference
 
 from .projectors import (
     ParallelViewProjector2D,
     ParallelViewProjector3D,
     RegularPolygonPETProjector,
+    ListmodePETProjector,
 )
-from .projectors import ListmodePETProjector
 
 from .pet_scanners import (
     RegularPolygonPETScannerModule,
@@ -37,10 +44,12 @@ from .pet_lors import SinogramSpatialAxisOrder, RegularPolygonPETLORDescriptor
 from .tof import TOFParameters
 
 __all__ = [
+    "count_event_multiplicity",
     "cuda_present",
     "cupy_enabled",
     "torch_enabled",
     "is_cuda_array",
+    "to_numpy_array",
     "empty_cuda_cache",
     "num_visible_cuda_devices",
     "joseph3d_fwd",

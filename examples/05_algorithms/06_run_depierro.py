@@ -6,7 +6,7 @@ This example demonstrates the use of DePierro's algorithm to minimize the negati
 Poisson log-likelihood function combined with a quadratic intensity prior:
 
 .. math::
-    f(x) = \sum_{i=1}^m \\bar{y}_i - \\bar{y}_i (x) \log(y_i) + \\frac{\\beta}{2} \\|x - z \\|^2
+    f(x) = \sum_{i=1}^m \\bar{y}_i - y_i \log(\\bar{y}_i (x)) + \\frac{\\beta}{2} \\|x - z \\|^2
 
 subject to
 
@@ -94,7 +94,7 @@ noise_free_data = op_A(x_true) + contamination
 # add Poisson noise
 np.random.seed(1)
 y = xp.asarray(
-    np.random.poisson(np.asarray(to_device(noise_free_data, "cpu"))),
+    np.random.poisson(parallelproj.to_numpy_array(noise_free_data)),
     device=dev,
     dtype=xp.float64,
 )
@@ -171,7 +171,7 @@ if xp.__name__.endswith("numpy"):
 fig, ax = plt.subplots(1, 1, tight_layout=True)
 if xp.__name__.endswith("numpy"):
     ax.axhline(cost_function(x_ref), color="k", linestyle="--")
-ax.plot(np.asarray(to_device(cost, "cpu")))
+ax.plot(parallelproj.to_numpy_array(cost))
 ax.set_xlabel("iteration")
 ax.set_ylabel("cost function")
 ax.grid(ls=":")

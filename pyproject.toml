@@ -1,39 +1,42 @@
-# version is auto-derived from git tags / archives
-# see https://pypi.org/project/setuptools-scm/
-[build-system]
-requires = ["setuptools>=45", "setuptools_scm[toml]>=7.0"]
-# needed to detect version number from git tags / archives
-[tool.setuptools_scm]
-
 [project]
 name = "parallelproj"
+version = "1.8.0"
+description = "Python wrappers for parallelproj projectors."
 authors = [
     {name = "Georg Schramm", email = "georg.schramm@kuleuven.be"},
 ]
-description = "Python wrappers for parallelproj projectors."
-readme = "README.md"
+dependencies = [
+    "numpy~=1.22",
+    "scipy~=1.0",
+    "array-api-compat<1.5",
+    "array-api-strict~=1.0",
+    "matplotlib>=3.8.3",
+]
 requires-python = ">=3.9"
+readme = "README.md"
+license = {text = "MIT"}
 classifiers = [
     "License :: OSI Approved :: MIT License",
     "Programming Language :: Python",
 ]
-license = {file = "LICENSE"}
-dependencies = [
-    "numpy>=1.22",
-    "scipy>=1.0",
-    "array-api-compat",
-    "matplotlib",
+
+[project.urls]
+Homepage = "https://github.com/gschramm/parallelproj"
+
+[build-system]
+requires = ["pdm-backend"]
+build-backend = "pdm.backend"
+
+[tool.pdm]
+distribution = true
+
+[tool.pdm.dev-dependencies]
+test = [
+    "pytest>=8.1.1",
+    "tox>=4.14.1",
+    "tox-pdm>=0.7.2",
+    "pytest-cov>=4.1.0",
 ]
-dynamic = ["version"]
-
-# hint where the python sources can be found
-[tool.setuptools.packages.find]
-where = ["python"]
-include = ["parallelproj*"]
-
-[tool.setuptools.package-data]
-"parallelproj" = ["py.typed"]
-
 [tool.coverage.report]
 exclude_lines = [
     "def __repr__",
@@ -60,5 +63,3 @@ exclude_lines = [
     "__str__"
 ]
 
-[tool.pytest.ini_options]
-pythonpath = "./python"

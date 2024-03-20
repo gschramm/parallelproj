@@ -1,19 +1,20 @@
 """high-level geometrical forward and back projectors"""
+
 from __future__ import annotations
 
 import array_api_compat.numpy as np
-from numpy.array_api._array_object import Array
+from array_api_strict._array_object import Array
 import array_api_compat
 import matplotlib.pyplot as plt
 from matplotlib.patches import Rectangle
 from types import ModuleType
-from array_api_compat import device, to_device, get_namespace, size
+from array_api_compat import device, get_namespace, size
 import parallelproj
 
 from .operators import LinearOperator
 from .pet_lors import RegularPolygonPETLORDescriptor
 from .tof import TOFParameters
-from .backend import is_cuda_array, empty_cuda_cache
+from .backend import is_cuda_array, empty_cuda_cache, to_numpy_array
 
 
 class ParallelViewProjector2D(LinearOperator):
@@ -196,14 +197,14 @@ class ParallelViewProjector2D(LinearOperator):
 
         for i, ip in enumerate(views_to_show):
             ax[i].plot(
-                np.asarray(array_api_compat.to_device(self._xstart[:, ip, 1], "cpu")),
-                np.asarray(array_api_compat.to_device(self._xstart[:, ip, 2], "cpu")),
+                to_numpy_array(self._xstart[:, ip, 1]),
+                to_numpy_array(self._xstart[:, ip, 2]),
                 ".",
                 ms=0.5,
             )
             ax[i].plot(
-                np.asarray(array_api_compat.to_device(self._xend[:, ip, 1], "cpu")),
-                np.asarray(array_api_compat.to_device(self._xend[:, ip, 2], "cpu")),
+                to_numpy_array(self._xend[:, ip, 1]),
+                to_numpy_array(self._xend[:, ip, 2]),
                 ".",
                 ms=0.5,
             )
@@ -240,7 +241,7 @@ class ParallelViewProjector2D(LinearOperator):
                 )
 
                 ax[i].imshow(
-                    array_api_compat.to_device(image, "cpu").T,
+                    to_numpy_array(image).T,
                     origin="lower",
                     extent=img_extent,
                     **kwargs,
@@ -878,27 +879,27 @@ class RegularPolygonPETProjector(LinearOperator):
                 # currently there is no "repeat" function in array-api, so
                 # we convert back and forth to numpy cpu array
                 event_sino_inds = self.xp.asarray(
-                    np.repeat(np.arange(ss.shape[0]), to_device(ss, "cpu")),
+                    np.repeat(np.arange(ss.shape[0]), to_numpy_array(ss)),
                     device=self._dev,
                 )
 
                 num_events_ss = int(self.xp.sum(ss))
 
-                event_start_coords[
-                    event_offset : (event_offset + num_events_ss), :
-                ] = self.xp.take(xstart, event_sino_inds, axis=0)
-                event_end_coords[
-                    event_offset : (event_offset + num_events_ss), :
-                ] = self.xp.take(xend, event_sino_inds, axis=0)
+                event_start_coords[event_offset : (event_offset + num_events_ss), :] = (
+                    self.xp.take(xstart, event_sino_inds, axis=0)
+                )
+                event_end_coords[event_offset : (event_offset + num_events_ss), :] = (
+                    self.xp.take(xend, event_sino_inds, axis=0)
+                )
 
                 if self.tof:
-                    event_tofbins[
-                        event_offset : (event_offset + num_events_ss)
-                    ] = self.xp.full(
-                        num_events_ss,
-                        it - num_tofbins // 2,
-                        device=self._dev,
-                        dtype=self.xp.int16,
+                    event_tofbins[event_offset : (event_offset + num_events_ss)] = (
+                        self.xp.full(
+                            num_events_ss,
+                            it - num_tofbins // 2,
+                            device=self._dev,
+                            dtype=self.xp.int16,
+                        )
                     )
 
                 event_offset += num_events_ss
