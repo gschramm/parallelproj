@@ -24,17 +24,20 @@ using the linear forward model
     array backends (e.g. numpy, cupy, torch, ...) and devices (CPU or GPU).
     Choose your preferred array API ``xp`` and device ``dev`` below.
 
+.. warning::
+    Running this example using GPU arrays (e.g. using cupy as array backend) 
+    is highly recommended due to "longer" execution times with CPU arrays
+
 .. image:: https://mybinder.org/badge_logo.svg
  :target: https://mybinder.org/v2/gh/gschramm/parallelproj/master?labpath=examples
 """
 
 # %%
 from __future__ import annotations
-from copy import copy
-
 
 import array_api_compat.cupy as xp
-#import array_api_compat.numpy as xp
+
+# import array_api_compat.numpy as xp
 # import array_api_compat.torch as xp
 
 import parallelproj
@@ -78,8 +81,8 @@ rho = 0.9999
 
 
 # subset probabilities for SPDHG
-p_g = 0.5 # gradient update
-p_a = (1 - p_g) / num_subsets # data subset update
+p_g = 0.5  # gradient update
+p_a = (1 - p_g) / num_subsets  # data subset update
 
 track_cost = True
 
@@ -106,7 +109,7 @@ scanner = parallelproj.RegularPolygonPETScannerGeometry(
     radius=350.0,
     num_sides=28,
     num_lor_endpoints_per_side=16,
-    lor_spacing=4.,
+    lor_spacing=4.0,
     ring_positions=xp.linspace(-10, 10, num_rings),
     symmetry_axis=2,
 )
@@ -119,7 +122,7 @@ voxel_size = (4.0, 4.0, 4.0)
 lor_desc = parallelproj.RegularPolygonPETLORDescriptor(
     scanner,
     radial_trim=170,
-    max_ring_difference=num_rings-1,
+    max_ring_difference=num_rings - 1,
     sinogram_order=parallelproj.SinogramSpatialAxisOrder.RVP,
 )
 
@@ -300,7 +303,7 @@ T_A = (
     / pet_lin_op.adjoint(xp.ones(pet_lin_op.out_shape, dtype=xp.float64, device=dev))
 )
 
-op_G_norm = op_G.norm(xp, dev, num_iter=30)
+op_G_norm = op_G.norm(xp, dev, num_iter=100)
 S_G = gamma * rho / op_G_norm
 T_G = (1 / gamma) * rho / op_G_norm
 
@@ -430,16 +433,21 @@ mu = parallelproj.count_event_multiplicity(events)
 #
 #   | **Input** event list :math:`N`, contamination list :math:`s_N`
 #   | **Calculate** event counts :math:`\mu_e` for each :math:`e` in :math:`N`
-#   | **Initialize** :math:`x,(S_i)_i,T,(p_i)_i`
+#   | **Initialize** :math:`x,(S_i)_i,S_G,T,(p_i)_i`
 #   | **Initialize list** :math:`y_{N} = 1 - (\mu_N /(A^{LM}_{N} x + s_{N}))`
 #   | **Preprocessing** :math:`\overline{z} = z = {A^T} 1 - {A^{LM}_N}^T (y_N-1)/\mu_N`
 #   | **Split lists** :math:`N`, :math:`s_N` and :math:`y_N` into :math:`n` sublists :math:`N_i`, :math:`y_{N_i}` and :math:`s_{N_i}`
 #   | **Repeat**, until stopping criterion fulfilled
 #   |     **Update** :math:`x \gets \text{proj}_{\geq 0} \left( x - T \overline{z} \right)`
 #   |     **Select** :math:`i \in \{ 1,\ldots,n+1\}` randomly according to :math:`(p_i)_i`
-#   |     **Update** :math:`y_{N_i}^+ \gets \text{prox}_{D^*}^{S_i} \left( y_{N_i} + S_i \left(A^{LM}_{N_i} x + s^{LM}_{N_i} \right) \right)`
-#   |     **Update** :math:`\Delta z \gets {A^{LM}_{N_i}}^T \left(\frac{y_{N_i}^+ - y_{N_i}}{\mu_{N_i}}\right)`
-#   |     **Update** :math:`y_{N_i} \gets y_{N_i}^+`
+#   |     **if :math:`i \leq n`:**
+#   |         **Update** :math:`y_{N_i}^+ \gets \text{prox}_{D^*}^{S_i} \left( y_{N_i} + S_i \left(A^{LM}_{N_i} x + s^{LM}_{N_i} \right) \right)`
+#   |         **Update** :math:`\Delta z \gets {A^{LM}_{N_i}}^T \left(\frac{y_{N_i}^+ - y_{N_i}}{\mu_{N_i}}\right)`
+#   |         **Update** :math:`y_{N_i} \gets y_{N_i}^+`
+#   |     **else:**
+#   |         **Update** :math:`w^+ \gets \beta \, \text{prox}_{R^*}^{S_G/\beta} ((w + S_G  \nabla x)/\beta)`
+#   |         **Update** :math:`\Delta z \gets \nabla^T (w^+ - w)`
+#   |         **Update** :math:`w \gets w+`
 #   |     **Update** :math:`z \gets z + \Delta z`
 #   |     **Update** :math:`\bar{z} \gets z + (\Delta z/p_i)`
 #   | **Return** :math:`x`
@@ -475,7 +483,7 @@ w_lm = beta * xp.sign(op_G(x_lmspdhg))
 z = 1.0 * adjoint_ones
 for k, sl in enumerate(subset_slices_lm):
     z += lm_pet_subset_linop_seq[k].adjoint((ys[k] - 1) / mu[sl])
-    #tmp = lm_pet_subset_linop_seq[k].adjoint(1 / mu[sl])
+    # tmp = lm_pet_subset_linop_seq[k].adjoint(1 / mu[sl])
 z += op_G.adjoint(w_lm)
 zbar = 1.0 * z
 
@@ -491,9 +499,6 @@ for lm_op in lm_pet_subset_linop_seq:
     tmp = xp.where(tmp == 0, xp.min(tmp[tmp > 0]), tmp)
     S_A_lm.append(gamma * rho / tmp)
 
-
-# step size for the gradient operator
-op_G_norm = op_G.norm(xp, dev, num_iter=100)
 
 T_A_lm = xp.zeros((num_subsets + 1,) + pet_lin_op.in_shape, dtype=xp.float32)
 for k, sl in enumerate(subset_slices_lm):
@@ -573,10 +578,12 @@ ax[1, 1].imshow(x_mlem_np[pl0, :, :].T, cmap="Greys", vmin=0, vmax=vmax)
 ax[1, 2].imshow(x_pdhg_np[pl0, :, :].T, cmap="Greys", vmin=0, vmax=vmax)
 ax[1, 3].imshow(x_lmspdhg_np[pl0, :, :].T, cmap="Greys", vmin=0, vmax=vmax)
 
-ax[0, 0].set_title("true img", fontsize = "medium")
-ax[0, 1].set_title("init img", fontsize = "medium")
-ax[0, 2].set_title(f"PDHG {num_iter_pdhg} it.", fontsize = "medium")
-ax[0, 3].set_title(f"LM-SPDHG {num_iter_spdhg} it. / {num_subsets} subsets", fontsize = "medium") 
+ax[0, 0].set_title("true img", fontsize="medium")
+ax[0, 1].set_title("init img", fontsize="medium")
+ax[0, 2].set_title(f"PDHG {num_iter_pdhg} it.", fontsize="medium")
+ax[0, 3].set_title(
+    f"LM-SPDHG {num_iter_spdhg} it. / {num_subsets} subsets", fontsize="medium"
+)
 fig.show()
 
 # %%
