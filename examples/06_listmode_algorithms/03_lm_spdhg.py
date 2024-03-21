@@ -60,14 +60,14 @@ elif "torch" in xp.__name__:
         dev = "cpu"
 
 # %%
-# **Define the number of iterations and subsets**
+# **Input Parameters**
 
 # image scale (can be used to simulated more or less counts)
 img_scale = 0.1
 # number of MLEM iterations to init. PDHG and LM-SPDHG
 num_iter_mlem = 10
 # number of PDHG iterations
-num_iter_pdhg = 500
+num_iter_pdhg = 3000
 # number of subsets for SPDHG and LM-SPDHG
 num_subsets = 28
 # number of iterations for stochastic PDHGs
@@ -78,6 +78,8 @@ beta = 10.0
 gamma = 1.0 / img_scale
 # rho value for LM-SPHDHG
 rho = 0.9999
+# contaminaton in every sinogram bin relative to mean of trues sinogram
+contam=1.0
 
 
 # subset probabilities for SPDHG
@@ -198,7 +200,7 @@ noise_free_data = pet_lin_op(x_true)
 # generate a contant contamination sinogram
 contamination = xp.full(
     noise_free_data.shape,
-    0.5 * float(xp.mean(noise_free_data)),
+    contam * float(xp.mean(noise_free_data)),
     device=dev,
     dtype=xp.float32,
 )
@@ -227,7 +229,6 @@ for i in range(num_iter_mlem):
     print(f"MLEM iteration {(i + 1):03} / {num_iter_mlem:03}", end="\r")
     dbar = pet_lin_op(x_mlem) + contamination
     x_mlem *= pet_lin_op.adjoint(d / dbar) / adjoint_ones
-
 
 # %%
 # Setup the cost function
@@ -285,7 +286,9 @@ op_G = parallelproj.FiniteForwardDifference(pet_lin_op.in_shape)
 # initialize primal and dual variables
 x_pdhg = 1.0 * x_mlem
 y = 1 - d / (pet_lin_op(x_pdhg) + contamination)
-w = beta * xp.sign(op_G(x_pdhg))
+
+# initialize dual variable for the gradient 
+w = xp.zeros(op_G.out_shape, dtype=xp.float32, device=dev)
 
 z = pet_lin_op.adjoint(y) + op_G.adjoint(w)
 zbar = 1.0 * z
@@ -323,6 +326,9 @@ for i in range(num_iter_pdhg):
 
     if track_cost:
         cost_pdhg[i] = cost_function(x_pdhg)
+
+    if i == (num_iter_spdhg-1):
+        x_pdhg_early = 1.0 * x_pdhg
 
     y_plus = y + S_A * (pet_lin_op(x_pdhg) + contamination)
     # prox of convex conjugate of negative Poisson logL
@@ -475,10 +481,8 @@ for k, sl in enumerate(subset_slices_lm):
         1 - (mu[sl] / (lm_pet_subset_linop_seq[k](x_lmspdhg) + contamination_list[sl]))
     )
 
-# setup gradient operator
-op_G = parallelproj.FiniteForwardDifference(pet_lin_op.in_shape)
 # initialize dual variable for the gradient
-w_lm = beta * xp.sign(op_G(x_lmspdhg))
+w_lm = xp.zeros(op_G.out_shape, dtype=xp.float32, device=dev)
 
 z = 1.0 * adjoint_ones
 for k, sl in enumerate(subset_slices_lm):
@@ -513,9 +517,14 @@ T_lm = xp.min(T_A_lm, axis=0)
 
 print("")
 cost_lmspdhg = np.zeros(num_iter_spdhg, dtype=xp.float32)
+psnr_lmspdhg = np.zeros(num_iter_spdhg, dtype=xp.float32)
+
+psnr_scale = float(xp.max(x_true)) 
 
 for i in range(num_iter_spdhg):
     subset_sequence = np.random.permutation(2 * num_subsets)
+
+    psnr_lmspdhg[i] = 10*xp.log10((psnr_scale**2) / float(xp.mean((x_lmspdhg - x_pdhg)**2)))
 
     if track_cost:
         cost_lmspdhg[i] = cost_function(x_lmspdhg)
@@ -560,39 +569,52 @@ for i in range(num_iter_spdhg):
 x_true_np = parallelproj.to_numpy_array(x_true)
 x_mlem_np = parallelproj.to_numpy_array(x_mlem)
 x_pdhg_np = parallelproj.to_numpy_array(x_pdhg)
+x_pdhg_early_np = parallelproj.to_numpy_array(x_pdhg_early)
 x_lmspdhg_np = parallelproj.to_numpy_array(x_lmspdhg)
 
 pl2 = x_true_np.shape[2] // 2
 pl1 = x_true_np.shape[1] // 2
 pl0 = x_true_np.shape[0] // 2
 
-fig, ax = plt.subplots(2, 4, figsize=(10, 4), tight_layout=True)
+fig, ax = plt.subplots(2, 5, figsize=(12, 4), tight_layout=True)
 vmax = 1.2 * x_true_np.max()
 ax[0, 0].imshow(x_true_np[:, :, pl2], cmap="Greys", vmin=0, vmax=vmax)
 ax[0, 1].imshow(x_mlem_np[:, :, pl2], cmap="Greys", vmin=0, vmax=vmax)
 ax[0, 2].imshow(x_pdhg_np[:, :, pl2], cmap="Greys", vmin=0, vmax=vmax)
 ax[0, 3].imshow(x_lmspdhg_np[:, :, pl2], cmap="Greys", vmin=0, vmax=vmax)
+ax[0, 4].imshow(x_pdhg_early_np[:, :, pl2], cmap="Greys", vmin=0, vmax=vmax)
 
 ax[1, 0].imshow(x_true_np[pl0, :, :].T, cmap="Greys", vmin=0, vmax=vmax)
 ax[1, 1].imshow(x_mlem_np[pl0, :, :].T, cmap="Greys", vmin=0, vmax=vmax)
 ax[1, 2].imshow(x_pdhg_np[pl0, :, :].T, cmap="Greys", vmin=0, vmax=vmax)
 ax[1, 3].imshow(x_lmspdhg_np[pl0, :, :].T, cmap="Greys", vmin=0, vmax=vmax)
+ax[1, 4].imshow(x_pdhg_early_np[pl0, :, :].T, cmap="Greys", vmin=0, vmax=vmax)
 
 ax[0, 0].set_title("true img", fontsize="medium")
 ax[0, 1].set_title("init img", fontsize="medium")
-ax[0, 2].set_title(f"PDHG {num_iter_pdhg} it.", fontsize="medium")
+ax[0, 2].set_title(f"PDHG {num_iter_pdhg} it. (ref)", fontsize="medium")
 ax[0, 3].set_title(
     f"LM-SPDHG {num_iter_spdhg} it. / {num_subsets} subsets", fontsize="medium"
 )
+ax[0, 4].set_title(f"PDHG {num_iter_spdhg} it.", fontsize="medium")
 fig.show()
 
 # %%
 
 if track_cost:
-    fig2, ax2 = plt.subplots(1, 1, figsize=(6, 4), tight_layout=True)
-    ax2.plot(cost_pdhg, ".-", label="PDHG")
-    ax2.plot(cost_lmspdhg, ".-", label="LM-SPDHG")
-    ax2.grid(ls=":")
-    ax2.legend()
-    ax2.set_ylim(None, cost_pdhg[10:].max())
+    fig2, ax2 = plt.subplots(1, 3, figsize=(12, 4), tight_layout=True)
+    for i in range(2):
+        ax2[i].plot(cost_pdhg, ".-", label="PDHG")
+        ax2[i].plot(cost_lmspdhg, ".-", label="LM-SPDHG")
+        ax2[i].grid(ls=":")
+        ax2[i].legend()
+        ax2[i].set_ylim(None, cost_pdhg[10:].max())
+    ax2[1].set_xlim(0, num_iter_spdhg)
+    ax2[2].plot(psnr_lmspdhg, ".-")
+    ax2[2].grid(ls=":")
+    for axx in ax2.ravel():
+        axx.set_xlabel("iteration")
+    ax2[0].set_title("cost", fontsize="medium")
+    ax2[1].set_title("cost (zoom)", fontsize="medium")
+    ax2[2].set_title("PSNR LM-SPDHG vs ref", fontsize="medium")
     fig2.show()
