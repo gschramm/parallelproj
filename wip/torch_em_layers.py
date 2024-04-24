@@ -1,11 +1,8 @@
 # %%
-
 from __future__ import annotations
 
 import torch
-import matplotlib.pyplot as plt
 import parallelproj
-from array_api_compat import device
 
 
 # device variable (cpu or cuda) that determines whether calculations
@@ -21,7 +18,7 @@ else:
 class PoissonLogLGradLayer(torch.autograd.Function):
     @staticmethod
     def forward(
-        ctx, x: torch.Tensor, operator: parallelproj.LinearOperator, data: torch.Tensor
+        ctx, x: torch.Tensor, operator: parallelproj.LinearOperator, data: torch.Tensor, contam: torch.Tensor
     ) -> torch.Tensor:
 
         ctx.set_materialize_grads(False)
@@ -31,7 +28,7 @@ class PoissonLogLGradLayer(torch.autograd.Function):
         ratio2 = torch.zeros_like(data)
 
         for i in range(x.shape[0]):
-            exp = operator(x[i, 0, ...].detach())
+            exp = operator(x[i, 0, ...].detach()) + contam[i, ...]
             ratio = data[i, ...] / exp
             ratio2[i, ...] = data[i, ...] / (exp**2)
             y[i, 0, ...] = operator.adjoint(ratio - 1)
@@ -41,9 +38,9 @@ class PoissonLogLGradLayer(torch.autograd.Function):
         return y
 
     @staticmethod
-    def backward(ctx, grad_output: torch.Tensor) -> tuple[torch.Tensor, None, None]:
+    def backward(ctx, grad_output: torch.Tensor) -> tuple[torch.Tensor | None, None, None, None]:
         if grad_output is None:
-            return None, None, None
+            return None, None, None, None
         else:
             operator = ctx.operator
             ratio2 = ctx.ratio2
@@ -54,7 +51,7 @@ class PoissonLogLGradLayer(torch.autograd.Function):
                 exp = operator(grad_output[i, 0, ...].detach())
                 x[i, 0, ...] = -operator.adjoint(ratio2[i, ...] * exp)
 
-            return x, None, None
+            return x, None, None, None
 
 
 # %%
@@ -67,19 +64,19 @@ class PoissonEMOperator(torch.autograd.Function):
         x: torch.Tensor,
         operator: parallelproj.LinearOperator,
         data: torch.Tensor,
+        contam: torch.Tensor,
         sens_img: torch.Tensor,
     ) -> torch.Tensor:
 
         ctx.set_materialize_grads(False)
         ctx.operator = operator
 
-        y = torch.zeros_like(x)
         x_sens_ratio = torch.zeros_like(x)
         ratio2 = torch.zeros_like(data)
         mult_update = torch.zeros_like(x)
 
         for i in range(x.shape[0]):
-            exp = operator(x[i, 0, ...].detach())
+            exp = operator(x[i, 0, ...].detach()) + contam[i, ...]
             ratio = data[i, ...] / exp
             ratio2[i, ...] = data[i, ...] / (exp**2)
             x_sens_ratio[i, 0, ...] = x[i, 0, ...] / sens_img[i, 0, ...]
@@ -94,9 +91,9 @@ class PoissonEMOperator(torch.autograd.Function):
     @staticmethod
     def backward(
         ctx, grad_output: torch.Tensor
-    ) -> tuple[torch.Tensor, None, None, None]:
+    ) -> tuple[torch.Tensor | None, None, None, None, None]:
         if grad_output is None:
-            return None, None, None, None
+            return None, None, None, None, None
         else:
             operator = ctx.operator
             ratio2 = ctx.ratio2
@@ -113,11 +110,11 @@ class PoissonEMOperator(torch.autograd.Function):
                     i, 0, ...
                 ] - operator.adjoint(ratio2[i, ...] * exp)
 
-            return x, None, None, None
+            return x, None, None, None, None
 
 # %%
 
-class EMNet(torch.nn.Module):
+class EMNet(torch.nn.Module):  
     def __init__(self) -> None:
         super().__init__()
         self._data_fid_layer = PoissonLogLGradLayer.apply
@@ -126,9 +123,10 @@ class EMNet(torch.nn.Module):
         x: torch.Tensor,
         operator: parallelproj.LinearOperator,
         data: torch.Tensor,
+        contam: torch.Tensor,
         sens_img: torch.Tensor) -> torch.tensor:
 
-        return x + (x / sens_img) * self._data_fid_layer(x, operator, data)
+        return x + (x / sens_img) * self._data_fid_layer(x, operator, data, contam)
 
 
 
@@ -154,35 +152,42 @@ xt = torch.rand(
     requires_grad=True,
 )
 
-yt = torch.rand(
+data_t = torch.rand(
     (batch_size,) + proj.out_shape,
     device=dev,
     dtype=torch.float64,
     requires_grad=False,
 )
 
-sens = torch.zeros_like(xt)
+contam_t = torch.rand(
+    (batch_size,) + proj.out_shape,
+    device=dev,
+    dtype=torch.float64,
+    requires_grad=False,
+)
+
+sens_t = torch.zeros_like(xt)
 ones_data = torch.ones(proj.out_shape, device=dev, dtype=torch.float64)
 for i in range(batch_size):
-    sens[i, 0, ...] = proj.adjoint(ones_data)
+    sens_t[i, 0, ...] = proj.adjoint(ones_data)
 
 # %%
 # Define the forward and backward projection layers
 # -------------------------------------------------
 
 logLgrad_layer = PoissonLogLGradLayer.apply
-f2 = logLgrad_layer(xt, proj, yt)
+f2 = logLgrad_layer(xt, proj, data_t, contam_t)
 
 em_layer = PoissonEMOperator.apply
-em_update_1 = em_layer(xt, proj, yt, sens)
+em_update_1 = em_layer(xt, proj, data_t, contam_t, sens_t)
 
 em_net = EMNet()
-em_update_2 = em_net(xt, proj, yt, sens)
+em_update_2 = em_net(xt, proj, data_t, contam_t, sens_t)
 
 manual_em_update = torch.zeros_like(xt)
 for i in range(batch_size):
-    manual_em_update[i, 0, ...] = (xt[i, 0, ...] / sens[i, 0, ...]) * (
-        A.T @ (yt[i, ...] / (A @ xt[i, 0, ...]))
+    manual_em_update[i, 0, ...] = (xt[i, 0, ...] / sens_t[i, 0, ...]) * (
+        A.T @ (data_t[i, ...] / (A @ xt[i, 0, ...] + contam_t[i, ...]))
     )
 
 # %%
@@ -191,15 +196,15 @@ for i in range(batch_size):
 
 test_logLgrad = torch.autograd.gradcheck(
     logLgrad_layer,
-    (xt, proj, yt),
+    (xt, proj, data_t, contam_t),
 )
 
 test_em = torch.autograd.gradcheck(
     em_layer,
-    (xt, proj, yt, sens),
+    (xt, proj, data_t, contam_t, sens_t),
 )
 
 test_em2 = torch.autograd.gradcheck(
     em_net,
-    (xt, proj, yt, sens),
+    (xt, proj, data_t, contam_t, sens_t),
 )
