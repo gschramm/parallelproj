@@ -250,7 +250,10 @@ class RegularPolygonPETScannerModule(PETScannerModule):
         # angle of each "side"
         if phis is None:
             self._phis = (
-                2 * self.xp.pi * self.xp.arange(self._num_sides) / self.num_sides
+                2
+                * self.xp.pi
+                * self.xp.arange(self._num_sides, dtype=xp.float32)
+                / self.num_sides
             )
         else:
             self._phis = phis
@@ -326,7 +329,7 @@ class RegularPolygonPETScannerModule(PETScannerModule):
             self.num_lor_endpoints_per_side / 2 - 0.5
         )
 
-        phi = self._phis[side]
+        phi = self.xp.take(self._phis, side)
 
         lor_endpoints = self.xp.zeros((self.num_lor_endpoints, 3), device=self.dev)
         lor_endpoints[:, self.ax0] = (
