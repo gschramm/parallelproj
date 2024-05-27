@@ -318,6 +318,16 @@ class RegularPolygonPETScannerModule(PETScannerModule):
         """
         return self._lor_spacing
 
+    @property
+    def phis(self) -> Array:
+        """azimuthal angle of each side
+
+        Returns
+        -------
+        Array
+        """
+        return self._phis
+
     # abstract method from base class to be implemented
     def get_raw_lor_endpoints(self, inds: Array | None = None) -> Array:
         if inds is None:
