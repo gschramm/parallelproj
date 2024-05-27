@@ -158,4 +158,4 @@ def test_regular_polygon_pet_scanner(xp: ModuleType, dev: str) -> None:
         phis=xp.asarray([0.0, xp.pi / 4]),
     )
 
-    assert xp.all(scanner2.phis == xp.asarray([0.0, xp.pi / 4]))
+    assert xp.all(scanner2.modules[0].phis == xp.asarray([0.0, xp.pi / 4]))
