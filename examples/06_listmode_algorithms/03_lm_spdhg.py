@@ -7,12 +7,12 @@ the listmode stochastic PDHG (LM-SPDHG) to minimize the negative
 Poisson log-likelihood function combined with a total variation regularizer:
 
 .. math::
-    f(x) = \sum_{i=1}^m \\bar{d}_i (x) - d_i \log(\\bar{d}_i (x)) + \\beta \\|\\nabla x \\|_{1,2}
+    f(x) = \\sum_{i=1}^m \\bar{d}_i (x) - d_i \\log(\\bar{d}_i (x)) + \\beta \\|\\nabla x \\|_{1,2}
 
 subject to
 
 .. math::
-    x \geq 0
+    x \\geq 0
     
 using the linear forward model
 
@@ -79,7 +79,7 @@ gamma = 1.0 / img_scale
 # rho value for LM-SPHDHG
 rho = 0.9999
 # contaminaton in every sinogram bin relative to mean of trues sinogram
-contam=1.0
+contam = 1.0
 
 
 # subset probabilities for SPDHG
@@ -287,7 +287,7 @@ op_G = parallelproj.FiniteForwardDifference(pet_lin_op.in_shape)
 x_pdhg = 1.0 * x_mlem
 y = 1 - d / (pet_lin_op(x_pdhg) + contamination)
 
-# initialize dual variable for the gradient 
+# initialize dual variable for the gradient
 w = xp.zeros(op_G.out_shape, dtype=xp.float32, device=dev)
 
 z = pet_lin_op.adjoint(y) + op_G.adjoint(w)
@@ -327,7 +327,7 @@ for i in range(num_iter_pdhg):
     if track_cost:
         cost_pdhg[i] = cost_function(x_pdhg)
 
-    if i == (num_iter_spdhg-1):
+    if i == (num_iter_spdhg - 1):
         x_pdhg_early = 1.0 * x_pdhg
 
     y_plus = y + S_A * (pet_lin_op(x_pdhg) + contamination)
@@ -519,12 +519,14 @@ print("")
 cost_lmspdhg = np.zeros(num_iter_spdhg, dtype=xp.float32)
 psnr_lmspdhg = np.zeros(num_iter_spdhg, dtype=xp.float32)
 
-psnr_scale = float(xp.max(x_true)) 
+psnr_scale = float(xp.max(x_true))
 
 for i in range(num_iter_spdhg):
     subset_sequence = np.random.permutation(2 * num_subsets)
 
-    psnr_lmspdhg[i] = 10*xp.log10((psnr_scale**2) / float(xp.mean((x_lmspdhg - x_pdhg)**2)))
+    psnr_lmspdhg[i] = 10 * xp.log10(
+        (psnr_scale**2) / float(xp.mean((x_lmspdhg - x_pdhg) ** 2))
+    )
 
     if track_cost:
         cost_lmspdhg[i] = cost_function(x_lmspdhg)

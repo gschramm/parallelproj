@@ -6,12 +6,12 @@ This example demonstrates the use of the MLEM algorithm with ordered subsets (OS
 to minimize the negative Poisson log-likelihood function.
 
 .. math::
-    f(x) = \sum_{i=1}^m \\bar{y}_i (x) - y_i \log(\\bar{y}_i (x))
+    f(x) = \\sum_{i=1}^m \\bar{y}_i (x) - y_i \\log(\\bar{y}_i (x))
 
 subject to
 
 .. math::
-    x \geq 0
+    x \\geq 0
 
 using the linear forward model
 
@@ -22,7 +22,7 @@ The idea is to split the complete forward operator into a sequence :math:`n` dis
 subset operators
     
 .. math::
-    A = \{ A^1, \ldots, A^n \}
+    A = \\{ A^1, \\ldots, A^n \\}
 
 which is can be used to evaluate a subset of the forward model
 
