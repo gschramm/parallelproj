@@ -151,13 +151,6 @@ open_scanner = parallelproj.RegularPolygonPETScannerGeometry(
     phis=(2 * xp.pi / 12) * xp.asarray([-1, 0, 1, 5, 6, 7]),
 )
 
-# %%
-# Visualize the defined LOR endpoints
-# -----------------------------------
-#
-# :meth:`.RegularPolygonPETScannerGeometry.show_lor_endpoints` can be used
-# to visualize the defined LOR endpoints
-
 fig2 = plt.figure(figsize=(8, 8), tight_layout=True)
 ax2a = fig2.add_subplot(111, projection="3d")
 open_scanner.show_lor_endpoints(ax2a)

@@ -152,7 +152,7 @@ for i in range(lor_desc1.num_planes):
 # to visualize the defined LOR endpoints. Note that a zig-zag sampling pattern
 # is used to define a view.
 
-fig = plt.figure(figsize=(16, 8))
+fig = plt.figure(figsize=(16, 8), tight_layout=True)
 ax1 = fig.add_subplot(121, projection="3d")
 ax2 = fig.add_subplot(122, projection="3d")
 scanner.show_lor_endpoints(ax1)
@@ -163,6 +163,7 @@ lor_desc1.show_views(
     lw=0.5,
     color="k",
 )
+ax1.set_title(f"view 0, plane {num_rings // 2}")
 scanner.show_lor_endpoints(ax2)
 lor_desc1.show_views(
     ax2,
@@ -171,7 +172,7 @@ lor_desc1.show_views(
     lw=0.5,
     color="k",
 )
-fig.tight_layout()
+ax2.set_title(f"view {lor_desc1.num_views // 2}, plane {lor_desc1.num_planes - 1}")
 fig.show()
 
 # %%
@@ -213,7 +214,7 @@ open_lor_desc.show_views(
     lw=0.5,
     color="k",
 )
-ax2a.set_title("view 0")
+ax2a.set_title(f"view 0, plane {num_rings // 2}")
 open_scanner.show_lor_endpoints(ax2b)
 open_lor_desc.show_views(
     ax2b,
@@ -222,5 +223,5 @@ open_lor_desc.show_views(
     lw=0.5,
     color="k",
 )
-ax2b.set_title(f"view {open_lor_desc.num_views // 2}")
+ax2b.set_title(f"view {open_lor_desc.num_views // 2}, plane {num_rings // 2}")
 fig2.show()
