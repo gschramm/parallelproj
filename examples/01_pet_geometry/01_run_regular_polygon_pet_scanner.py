@@ -118,7 +118,7 @@ print(
 # :meth:`.RegularPolygonPETScannerGeometry.show_lor_endpoints` can be used
 # to visualize the defined LOR endpoints
 
-fig = plt.figure(figsize=(8, 8))
+fig = plt.figure(figsize=(8, 8), tight_layout=True)
 ax1 = fig.add_subplot(221, projection="3d")
 ax2 = fig.add_subplot(222, projection="3d")
 ax3 = fig.add_subplot(223, projection="3d")
@@ -127,5 +127,38 @@ scanner1.show_lor_endpoints(ax1)
 scanner2.show_lor_endpoints(ax2)
 scanner3.show_lor_endpoints(ax3)
 scanner4.show_lor_endpoints(ax4)
-fig.tight_layout()
 fig.show()
+
+
+# %%
+# Defining an open PET scanner geometry
+# -------------------------------------
+#
+# The `phis` argument can be used to manually define the azimuthal angles of the
+# polygon "sides". This can be used to create open PET scanner geometries.
+# Here we create an open geometry with 6 sides and 3 rings corresponding to
+# a full geometry using 12 sides where 6 sides were removed.
+
+open_scanner = parallelproj.RegularPolygonPETScannerGeometry(
+    xp,
+    dev,
+    radius=65.0,
+    num_sides=6,
+    num_lor_endpoints_per_side=8,
+    lor_spacing=4.0,
+    ring_positions=xp.linspace(-4, 4, 3),
+    symmetry_axis=2,
+    phis=(2 * xp.pi / 12) * xp.asarray([-1, 0, 1, 5, 6, 7]),
+)
+
+# %%
+# Visualize the defined LOR endpoints
+# -----------------------------------
+#
+# :meth:`.RegularPolygonPETScannerGeometry.show_lor_endpoints` can be used
+# to visualize the defined LOR endpoints
+
+fig2 = plt.figure(figsize=(8, 8), tight_layout=True)
+ax2a = fig2.add_subplot(111, projection="3d")
+open_scanner.show_lor_endpoints(ax2a)
+fig2.show()
