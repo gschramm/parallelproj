@@ -1,8 +1,9 @@
 """
-TOF OSEM with projection data
-=============================
+MLEM with projection data of an open PET geometry
+=================================================
 
-This example demonstrates the use of the MLEM algorithm to minimize the negative Poisson log-likelihood function.
+This example demonstrates the use of the MLEM algorithm to minimize the negative Poisson log-likelihood function
+using "sinogram" data from an open PET geometry.
 
 .. math::
     f(x) = \\sum_{i=1}^m \\bar{y}_i (x) - y_i \\log(\\bar{y}_i (x))
@@ -40,7 +41,6 @@ from array_api_compat import to_device
 import array_api_compat.numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.animation as animation
-from copy import copy
 
 # choose a device (CPU or CUDA GPU)
 if "numpy" in xp.__name__:
@@ -64,32 +64,31 @@ elif "torch" in xp.__name__:
 # We setup a linear forward operator :math:`A` consisting of an
 # image-based resolution model, a non-TOF PET projector and an attenuation model
 #
-# .. note::
-#     The OSEM implementation below works with all linear operators that
-#     subclass :class:`.LinearOperator` (e.g. the high-level projectors).
+# Here we create an open geometry with 6 sides and 5 rings corresponding to
+# a full geometry using 12 sides where 6 sides were removed.
 
-num_rings = 5
+num_rings = 1
 scanner = parallelproj.RegularPolygonPETScannerGeometry(
     xp,
     dev,
     radius=65.0,
-    num_sides=12,
+    num_sides=6,
     num_lor_endpoints_per_side=15,
     lor_spacing=2.3,
-    ring_positions=xp.linspace(-10, 10, num_rings),
+    ring_positions=xp.asarray([0.0], device=dev),
     symmetry_axis=2,
+    phis=(2 * xp.pi / 12) * xp.asarray([-1, 0, 1, 5, 6, 7]),
 )
 
 # %%
 # setup the LOR descriptor that defines the sinogram
 
-img_shape = (40, 40, 8)
+img_shape = (40, 40, 1)
 voxel_size = (2.0, 2.0, 2.0)
 
 lor_desc = parallelproj.RegularPolygonPETLORDescriptor(
     scanner,
-    radial_trim=10,
-    max_ring_difference=2,
+    radial_trim=1,
     sinogram_order=parallelproj.SinogramSpatialAxisOrder.RVP,
 )
 
@@ -101,9 +100,16 @@ proj = parallelproj.RegularPolygonPETProjector(
 x_true = xp.ones(proj.in_shape, device=dev, dtype=xp.float32)
 c0 = proj.in_shape[0] // 2
 c1 = proj.in_shape[1] // 2
-x_true[(c0 - 2) : (c0 + 2), (c1 - 2) : (c1 + 2), :] = 5.0
-x_true[4, c1, 2:] = 5.0
-x_true[c0, 4, :-2] = 5.0
+
+x_true[4, c1, :] = 5.0
+x_true[8, c1, :] = 5.0
+x_true[12, c1, :] = 5.0
+x_true[16, c1, :] = 5.0
+
+x_true[c0, 4, :] = 5.0
+x_true[c0, 8, :] = 5.0
+x_true[c0, 12, :] = 5.0
+x_true[c0, 16, :] = 5.0
 
 x_true[:2, :, :] = 0
 x_true[-2:, :, :] = 0
@@ -119,6 +125,7 @@ x_att = 0.01 * xp.astype(x_true > 0, xp.float32)
 # calculate the attenuation sinogram
 att_sino = xp.exp(-proj(x_att))
 
+
 # %%
 # Complete PET forward model setup
 # --------------------------------
@@ -127,10 +134,12 @@ att_sino = xp.exp(-proj(x_att))
 # a non-TOF or TOF PET projector and an attenuation model
 # into a single linear operator.
 
-# enable TOF - comment if you want to run non-TOF
-proj.tof_parameters = parallelproj.TOFParameters(
-    num_tofbins=13, tofbin_width=12.0, sigma_tof=12.0
-)
+## enable TOF - comment if you want to run non-TOF
+# proj.tof_parameters = parallelproj.TOFParameters(
+#    num_tofbins=13 * 5,
+#    tofbin_width=12.0 / 5,
+#    sigma_tof=12.0 / 5,
+# )
 
 # setup the attenuation multiplication operator which is different
 # for TOF and non-TOF since the attenuation sinogram is always non-TOF
@@ -147,6 +156,35 @@ res_model = parallelproj.GaussianFilterOperator(
 
 # compose all 3 operators into a single linear operator
 pet_lin_op = parallelproj.CompositeLinearOperator((att_op, proj, res_model))
+
+# %%
+# Visualization of the geometry
+# -----------------------------
+#
+
+fig = plt.figure(figsize=(16, 8), tight_layout=True)
+ax1 = fig.add_subplot(121, projection="3d")
+ax2 = fig.add_subplot(122, projection="3d")
+proj.show_geometry(ax1)
+proj.show_geometry(ax2)
+proj.lor_descriptor.show_views(
+    ax1,
+    views=xp.asarray([0], device=dev),
+    planes=xp.asarray([num_rings // 2], device=dev),
+    lw=0.5,
+    color="k",
+)
+ax1.set_title(f"view 0, plane {num_rings // 2}")
+proj.lor_descriptor.show_views(
+    ax2,
+    views=xp.asarray([proj.lor_descriptor.num_views // 2], device=dev),
+    planes=xp.asarray([num_rings // 2], device=dev),
+    lw=0.5,
+    color="k",
+)
+ax2.set_title(f"view {proj.lor_descriptor.num_views // 2}, plane {num_rings // 2}")
+fig.tight_layout()
+fig.show()
 
 # %%
 # Simulation of projection data
@@ -169,68 +207,14 @@ contamination = xp.full(
 noise_free_data += contamination
 
 # add Poisson noise
-np.random.seed(1)
-y = xp.asarray(
-    np.random.poisson(parallelproj.to_numpy_array(noise_free_data)),
-    device=dev,
-    dtype=xp.float64,
-)
+# np.random.seed(1)
+# y = xp.asarray(
+#    np.random.poisson(parallelproj.to_numpy_array(noise_free_data)),
+#    device=dev,
+#    dtype=xp.float64,
+# )
 
-# %%
-# Splitting of the forward model into subsets :math:`A^k`
-# -------------------------------------------------------
-#
-# Calculate the view numbers and slices for each subset.
-# We will use the subset views to setup a sequence of projectors projecting only
-# a subset of views. The slices can be used to extract the corresponding subsets
-# from full data or corrections sinograms.
-
-num_subsets = 10
-
-subset_views, subset_slices = proj.lor_descriptor.get_distributed_views_and_slices(
-    num_subsets, len(proj.out_shape)
-)
-
-_, subset_slices_non_tof = proj.lor_descriptor.get_distributed_views_and_slices(
-    num_subsets, 3
-)
-
-# clear the cached LOR endpoints since we will create many copies of the projector
-proj.clear_cached_lor_endpoints()
-pet_subset_linop_seq = []
-
-# we setup a sequence of subset forward operators each constisting of
-# (1) image-based resolution model
-# (2) subset projector
-# (3) multiplication with the corresponding subset of the attenuation sinogram
-for i in range(num_subsets):
-    print(f"subset {i:02} containing views {subset_views[i]}")
-
-    # make a copy of the full projector and reset the views to project
-    subset_proj = copy(proj)
-    subset_proj.views = subset_views[i]
-
-    if subset_proj.tof:
-        subset_att_op = parallelproj.TOFNonTOFElementwiseMultiplicationOperator(
-            subset_proj.out_shape, att_sino[subset_slices_non_tof[i]]
-        )
-    else:
-        subset_att_op = parallelproj.ElementwiseMultiplicationOperator(
-            att_sino[subset_slices_non_tof[i]]
-        )
-
-    # add the resolution model and multiplication with a subset of the attenuation sinogram
-    pet_subset_linop_seq.append(
-        parallelproj.CompositeLinearOperator(
-            [
-                subset_att_op,
-                subset_proj,
-                res_model,
-            ]
-        )
-    )
-
-pet_subset_linop_seq = parallelproj.LinearOperatorSequence(pet_subset_linop_seq)
+y = noise_free_data
 
 # %%
 # EM update to minimize :math:`f(x)`
@@ -239,7 +223,7 @@ pet_subset_linop_seq = parallelproj.LinearOperatorSequence(pet_subset_linop_seq)
 # The EM update that can be used in MLEM or OSEM is given by cite:p:`Dempster1977` :cite:p:`Shepp1982` :cite:p:`Lange1984` :cite:p:`Hudson1994`
 #
 # .. math::
-#     x^+ = \frac{x}{A^H 1} A^H \frac{y}{A x + s}
+#     x^+ = \frac{x}{(A^k)^H 1} (A^k)^H \frac{y^k}{A^k x + s^k}
 #
 # to calculate the minimizer of :math:`f(x)` iteratively.
 #
@@ -284,43 +268,30 @@ def em_update(
     Returns
     -------
     Array
+        _description_
     """
     ybar = op(x_cur) + s
     return x_cur * op.adjoint(data / ybar) / adjoint_ones
 
 
 # %%
-# Run the OSEM iterations
+# Run the MLEM iterations
 # -----------------------
-#
-# Note that the OSEM iterations are almost the same as the MLEM iterations.
-# The only difference is that in every subset update, we pass an operator
-# that projects a subset, a subset of the data and a subset of the contamination.
-#
-# .. math::
-#     x^+ = \frac{x}{(A^k)^H 1} (A^k)^H \frac{y^k}{A^k x + s^k}
-#
-# The "sensitivity" images are also calculated separately for each subset.
 
-# number of OSEM iterations
-num_iter = 20 // len(pet_subset_linop_seq)
+# number of MLEM iterations
+num_iter = 100
 
 # initialize x
-x = xp.ones(pet_lin_op.in_shape, dtype=xp.float64, device=dev)
+x = xp.ones(pet_lin_op.in_shape, dtype=xp.float32, device=dev)
+# calculate A^H 1
+adjoint_ones = pet_lin_op.adjoint(
+    xp.ones(pet_lin_op.out_shape, dtype=xp.float32, device=dev)
+)
 
-# calculate A_k^H 1 for all subsets k
-subset_adjoint_ones = [
-    x.adjoint(xp.ones(x.out_shape, dtype=xp.float64, device=dev))
-    for x in pet_subset_linop_seq
-]
-
-# OSEM iterations
 for i in range(num_iter):
-    for k, sl in enumerate(subset_slices):
-        print(f"OSEM iteration {(k+1):03} / {(i + 1):03} / {num_iter:03}", end="\r")
-        x = em_update(
-            x, y[sl], pet_subset_linop_seq[k], contamination[sl], subset_adjoint_ones[k]
-        )
+    print(f"MLEM iteration {(i + 1):03} / {num_iter:03}", end="\r")
+    x = em_update(x, y, pet_lin_op, contamination, adjoint_ones)
+
 
 # %%
 # Calculation of the negative Poisson log-likelihood function of the reconstruction
@@ -330,10 +301,7 @@ for i in range(num_iter):
 exp = pet_lin_op(x) + contamination
 # calculate the relative cost and distance to the optimal point
 cost = float(xp.sum(exp - y * xp.log(exp)))
-print(
-    f"\nOSEM cost {cost:.6E} after {num_iter:03} iterations with {num_subsets} subsets"
-)
-
+print(f"\nMLEM cost {cost:.6E} after {num_iter:03} iterations")
 
 # %%
 # Visualize the results
@@ -344,7 +312,7 @@ def _update_img(i):
     img0.set_data(x_true_np[:, :, i])
     img1.set_data(x_np[:, :, i])
     ax[0].set_title(f"true image - plane {i:02}")
-    ax[1].set_title(f"OSEM iteration {num_iter} - {num_subsets} subsets - plane {i:02}")
+    ax[1].set_title(f"MLEM iteration {num_iter} - plane {i:02}")
     return (img0, img1)
 
 
@@ -356,7 +324,7 @@ vmax = x_np.max()
 img0 = ax[0].imshow(x_true_np[:, :, 0], cmap="Greys", vmin=0, vmax=vmax)
 img1 = ax[1].imshow(x_np[:, :, 0], cmap="Greys", vmin=0, vmax=vmax)
 ax[0].set_title(f"true image - plane {0:02}")
-ax[1].set_title(f"OSEM iteration {num_iter} - {num_subsets} subsets - plane {0:02}")
+ax[1].set_title(f"MLEM iteration {num_iter} - plane {0:02}")
 fig.tight_layout()
 ani = animation.FuncAnimation(fig, _update_img, x_np.shape[2], interval=200, blit=False)
 fig.show()

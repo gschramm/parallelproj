@@ -138,6 +138,10 @@ nbsphinx_custom_formats = {
     ".pct.py": ["jupytext.reads", {"fmt": "py:percent"}],
 }
 
+# https://github.com/sphinx-doc/sphinx/issues/12300
+# supress warnings about not being able to pickle objects
+suppress_warnings = ["config.cache"]
+
 # -- print warnings for undocumented things ------------------------------------
 # https://stackoverflow.com/questions/14141170/how-can-i-just-list-undocumented-members-with-sphinx-autodoc
 # set up the types of member to check that are documented

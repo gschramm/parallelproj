@@ -138,9 +138,24 @@ def test_regular_polygon_pet_scanner(xp: ModuleType, dev: str) -> None:
             )
         )
 
-        fig = plt.figure()
-        ax = fig.add_subplot(111, projection="3d")
-        scanner.show_lor_endpoints(ax, show_linear_index=False)
-        scanner.show_lor_endpoints(ax, show_linear_index=True)
-        fig.show()
-        plt.close(fig)
+    fig = plt.figure()
+    ax = fig.add_subplot(111, projection="3d")
+    scanner.show_lor_endpoints(ax, show_linear_index=False)
+    scanner.show_lor_endpoints(ax, show_linear_index=True)
+    fig.show()
+    plt.close(fig)
+
+    # test scanner with manually specified azimuthal angles of the sides
+    scanner2 = parallelproj.RegularPolygonPETScannerGeometry(
+        xp,
+        dev,
+        radius=150,
+        num_sides=2,
+        num_lor_endpoints_per_side=num_lor_endpoints_per_side,
+        lor_spacing=2.5,
+        ring_positions=xp.asarray([0.0]),
+        symmetry_axis=1,
+        phis=xp.asarray([0.0, xp.pi / 4]),
+    )
+
+    assert xp.all(scanner2.modules[0].phis == xp.asarray([0.0, xp.pi / 4]))

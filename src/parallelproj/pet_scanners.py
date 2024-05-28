@@ -204,6 +204,7 @@ class RegularPolygonPETScannerModule(PETScannerModule):
         ax0: int = 2,
         ax1: int = 1,
         affine_transformation_matrix: Array | None = None,
+        phis: None | Array = None,
     ) -> None:
         """
 
@@ -228,6 +229,9 @@ class RegularPolygonPETScannerModule(PETScannerModule):
         affine_transformation_matrix : Array | None, optional
             4x4 affine transformation matrix applied to the LOR endpoint coordinates, default None
             if None, the 4x4 identity matrix is used
+        phis : None | Array, optional
+            angle of each side, by default None
+            means that the sides are equally spaced around a circle
         """
 
         self._radius = radius
@@ -242,6 +246,17 @@ class RegularPolygonPETScannerModule(PETScannerModule):
             num_sides * num_lor_endpoints_per_side,
             affine_transformation_matrix,
         )
+
+        # angle of each "side"
+        if phis is None:
+            self._phis = (
+                2
+                * self.xp.pi
+                * self.xp.arange(self._num_sides, dtype=xp.float32)
+                / self.num_sides
+            )
+        else:
+            self._phis = phis
 
     @property
     def radius(self) -> float:
@@ -303,6 +318,16 @@ class RegularPolygonPETScannerModule(PETScannerModule):
         """
         return self._lor_spacing
 
+    @property
+    def phis(self) -> Array:
+        """azimuthal angle of each side
+
+        Returns
+        -------
+        Array
+        """
+        return self._phis
+
     # abstract method from base class to be implemented
     def get_raw_lor_endpoints(self, inds: Array | None = None) -> Array:
         if inds is None:
@@ -314,7 +339,7 @@ class RegularPolygonPETScannerModule(PETScannerModule):
             self.num_lor_endpoints_per_side / 2 - 0.5
         )
 
-        phi = 2 * self.xp.pi * self.xp.astype(side, self.xp.float32) / self.num_sides
+        phi = self.xp.take(self._phis, side)
 
         lor_endpoints = self.xp.zeros((self.num_lor_endpoints, 3), device=self.dev)
         lor_endpoints[:, self.ax0] = (
@@ -522,6 +547,7 @@ class RegularPolygonPETScannerGeometry(ModularizedPETScannerGeometry):
         lor_spacing: float,
         ring_positions: Array,
         symmetry_axis: int,
+        phis: None | Array = None,
     ) -> None:
         """
         Parameters
@@ -542,6 +568,9 @@ class RegularPolygonPETScannerGeometry(ModularizedPETScannerGeometry):
             1D array with the coordinate of the rings along the ring axis
         symmetry_axis : int
             the ring axis (0,1,2)
+        phis : None | Array, optional
+            angle of each side, by default None
+            means that the sides are equally spaced around a circle
         """
 
         self._radius = radius
@@ -578,6 +607,7 @@ class RegularPolygonPETScannerGeometry(ModularizedPETScannerGeometry):
                     affine_transformation_matrix=aff_mat,
                     ax0=self._ax0,
                     ax1=self._ax1,
+                    phis=phis,
                 )
             )
 
