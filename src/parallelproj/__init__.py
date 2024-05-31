@@ -41,6 +41,8 @@ from .pet_scanners import (
     RegularPolygonPETScannerModule,
     RegularPolygonPETScannerGeometry,
     DemoPETScannerGeometry,
+    BlockPETScannerModule,
+    ModularizedPETScannerGeometry,
 )
 from .pet_lors import SinogramSpatialAxisOrder, RegularPolygonPETLORDescriptor
 
@@ -79,6 +81,8 @@ __all__ = [
     "RegularPolygonPETScannerModule",
     "RegularPolygonPETScannerGeometry",
     "DemoPETScannerGeometry",
+    "BlockPETScannerModule",
+    "ModularizedPETScannerGeometry",
     "TOFParameters",
     "SinogramSpatialAxisOrder",
     "RegularPolygonPETLORDescriptor",
