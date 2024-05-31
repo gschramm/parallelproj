@@ -190,6 +190,95 @@ class PETScannerModule(abc.ABC):
                 )
 
 
+class BlockPETScannerModule(PETScannerModule):
+    """Block (rectangular cuboid) PET scanner module"""
+
+    def __init__(
+        self,
+        xp: ModuleType,
+        dev: str,
+        shape: tuple[int, int, int],
+        spacing: tuple[float, float, float],
+        affine_transformation_matrix: Array | None = None,
+    ) -> None:
+        """
+
+        Parameters
+        ----------
+        xp : ModuleType
+            array module to use for storing the LOR endpoints
+        dev : str
+            device to use for storing the LOR endpoints
+        shape : tuple[int, int, int]
+            shape of the regular grid of LOR endpoints forming the block module
+        spacing : tuple[float, float, float]
+            spacing between the LOR endpoints in each direction
+        affine_transformation_matrix : Array | None, optional
+            4x4 affine transformation matrix applied to the LOR endpoint coordinates, default None
+            if None, the 4x4 identity matrix is used
+        """
+
+        super().__init__(
+            xp, dev, shape[0] * shape[1] * shape[2], affine_transformation_matrix
+        )
+
+        self._shape = shape
+        self._spacing = spacing
+
+        # calculate the LOR endpoints
+        x0 = spacing[0] * (
+            xp.arange(shape[0], device=dev, dtype=xp.float32) - (shape[0] - 1) / 2
+        )
+        x1 = spacing[1] * (
+            xp.arange(shape[1], device=dev, dtype=xp.float32) - (shape[1] - 1) / 2
+        )
+        x2 = spacing[2] * (
+            xp.arange(shape[2], device=dev, dtype=xp.float32) - (shape[2] - 1) / 2
+        )
+
+        X0, X1, X2 = xp.meshgrid(x0, x1, x2, indexing="ij")
+
+        self._lor_endpoints = xp.stack(
+            (xp.reshape(X0, -1), xp.reshape(X1, -1), xp.reshape(X2, -1)), axis=-1
+        )
+
+    @property
+    def shape(self) -> tuple[int, int, int]:
+        """shape of the block module
+
+        Returns
+        -------
+        tuple[int, int, int]
+        """
+        return self._shape
+
+    @property
+    def spacing(self) -> tuple[float, float, float]:
+        """spacing of the block module
+
+        Returns
+        -------
+        tuple[float, float, float]
+        """
+        return self._spacing
+
+    @property
+    def lor_endpoints(self) -> Array:
+        """LOR endpoints of the block module
+
+        Returns
+        -------
+        Array
+        """
+        return self._lor_endpoints
+
+    def get_raw_lor_endpoints(self, inds: Array | None = None) -> Array:
+        if inds is None:
+            inds = self.lor_endpoint_numbers
+
+        return self.xp.take(self.lor_endpoints, inds, axis=0)
+
+
 class RegularPolygonPETScannerModule(PETScannerModule):
     """Regular polygon PET scanner module (detectors on a regular polygon)"""
 
