@@ -46,8 +46,10 @@ class PETScannerModule(abc.ABC):
             aff_mat = self.xp.eye(4, device=self.dev)
             aff_mat[-1, -1] = 0
             self._affine_transformation_matrix = aff_mat
+            self._has_affine_transformation = False
         else:
             self._affine_transformation_matrix = affine_transformation_matrix
+            self._has_affine_transformation = True
 
     @property
     def xp(self) -> ModuleType:
@@ -124,12 +126,14 @@ class PETScannerModule(abc.ABC):
             affine transformation
         """
 
-        raw_lor_endpoints = self.get_raw_lor_endpoints(inds)
+        lor_endpoints = self.get_raw_lor_endpoints(inds)
 
-        tmp = self.xp.ones((raw_lor_endpoints.shape[0], 4), device=self.dev)
-        tmp[:, :-1] = raw_lor_endpoints
+        if self._has_affine_transformation:
+            tmp = self.xp.ones((lor_endpoints.shape[0], 4), device=self.dev)
+            tmp[:, :-1] = lor_endpoints
+            lor_endpoints = (tmp @ self.affine_transformation_matrix.T)[:, :3]
 
-        return (tmp @ self.affine_transformation_matrix.T)[:, :3]
+        return lor_endpoints
 
     def show_lor_endpoints(
         self,
@@ -218,10 +222,6 @@ class BlockPETScannerModule(PETScannerModule):
             if None, the 4x4 identity matrix is used
         """
 
-        super().__init__(
-            xp, dev, shape[0] * shape[1] * shape[2], affine_transformation_matrix
-        )
-
         self._shape = shape
         self._spacing = spacing
 
@@ -241,6 +241,14 @@ class BlockPETScannerModule(PETScannerModule):
         self._lor_endpoints = xp.stack(
             (xp.reshape(X0, -1), xp.reshape(X1, -1), xp.reshape(X2, -1)), axis=-1
         )
+
+        if affine_transformation_matrix is not None:
+            tmp = xp.ones((self._lor_endpoints.shape[0], 4), device=dev)
+            tmp[:, :-1] = self._lor_endpoints
+
+            self._lor_endpoints = (tmp @ affine_transformation_matrix.T)[:, :3]
+
+        super().__init__(xp, dev, shape[0] * shape[1] * shape[2], None)
 
     @property
     def shape(self) -> tuple[int, int, int]:
