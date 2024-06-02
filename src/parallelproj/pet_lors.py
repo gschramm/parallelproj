@@ -75,6 +75,61 @@ class PETLORDescriptor(abc.ABC):
         return self.scanner.dev
 
 
+class BlockPETLORDescriptor(PETLORDescriptor):
+
+    def __init__(
+        self, scanner: ModularizedPETScannerGeometry, all_block_pairs: Array
+    ) -> None:
+        super().__init__(scanner)
+
+        self._scanner = scanner
+        self._all_block_pairs = all_block_pairs
+        self._num_lorendpoints_per_block = self.scanner.modules[0].num_lor_endpoints
+        self._num_lors_per_block_pair = self._num_lorendpoints_per_block**2
+
+    def get_lor_coordinates(
+        self, block_pair_nums: None | Array = None
+    ) -> tuple[Array, Array]:
+
+        if block_pair_nums is None:
+            block_pair_nums = self.xp.arange(
+                self._all_block_pairs.shape[0], device=self.dev
+            )
+
+        xstart = self.xp.zeros(
+            (block_pair_nums.shape[0], self._num_lors_per_block_pair, 3),
+            device=self.dev,
+        )
+
+        xend = self.xp.zeros(
+            (block_pair_nums.shape[0], self._num_lors_per_block_pair, 3),
+            device=self.dev,
+        )
+
+        for i, block_pair_num in enumerate(block_pair_nums):
+            bs = self._all_block_pairs[block_pair_num, 0]
+            be = self._all_block_pairs[block_pair_num, 1]
+
+            eps = self.scanner.get_lor_endpoints(
+                self.xp.asarray([bs]),
+                self.xp.arange(self._num_lorendpoints_per_block, device=self.dev),
+            )
+            epe = self.scanner.get_lor_endpoints(
+                self.xp.asarray([be]),
+                self.xp.arange(self._num_lorendpoints_per_block, device=self.dev),
+            )
+
+            tmp = self.xp.arange(self._num_lorendpoints_per_block, device=self.dev)
+            a, b = self.xp.meshgrid(tmp, tmp, indexing="ij")
+            a = self.xp.reshape(a, -1)
+            b = self.xp.reshape(b, -1)
+
+            xstart[i, ...] = self.xp.take(eps, a, axis=0)
+            xend[i, ...] = self.xp.take(epe, b, axis=0)
+
+        return self.xp.reshape(xstart, (-1, 3)), self.xp.reshape(xend, (-1, 3))
+
+
 class RegularPolygonPETLORDescriptor(PETLORDescriptor):
     """Coincidence descriptor for a regular polygon PET scanner where
     we have coincidences within and between "rings (polygons of modules)"

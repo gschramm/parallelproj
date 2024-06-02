@@ -44,7 +44,11 @@ from .pet_scanners import (
     BlockPETScannerModule,
     ModularizedPETScannerGeometry,
 )
-from .pet_lors import SinogramSpatialAxisOrder, RegularPolygonPETLORDescriptor
+from .pet_lors import (
+    SinogramSpatialAxisOrder,
+    RegularPolygonPETLORDescriptor,
+    BlockPETLORDescriptor,
+)
 
 from .tof import TOFParameters
 
@@ -86,6 +90,7 @@ __all__ = [
     "TOFParameters",
     "SinogramSpatialAxisOrder",
     "RegularPolygonPETLORDescriptor",
+    "BlockPETLORDescriptor",
 ]
 
 print(
