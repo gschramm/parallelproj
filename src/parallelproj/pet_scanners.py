@@ -571,7 +571,6 @@ class ModularizedPETScannerGeometry:
         Array
             the flattened LOR endpoint index
         """
-        #    index_in_module = self._xp.asarray(index_in_module)
 
         return (
             self.xp.take(self.all_lor_endpoints_index_offset, module, axis=0)
