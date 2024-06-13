@@ -82,6 +82,10 @@ void joseph3d_back_tof_sino(const float *xstart,
     float istart_tof_f, iend_tof_f;
     int istart_tof, iend_tof;
 
+    // calculate the effective sigma (standard deviation of the TOF Gaussian convolved with the tofbin width)
+    // we need to to device which TOF bins a certain voxel along an LOR
+    float sig_eff = sqrtf(sig_tof*sig_tof + tofbin_width*tofbin_width/12.0f);
+
     // test whether the ray between the two detectors is most parallel
     // with the 0, 1, or 2 axis
     d0    = xend0 - xstart0;
@@ -208,13 +212,13 @@ void joseph3d_back_tof_sino(const float *xstart,
 
           // get the relevant tof bins (the TOF bins where the TOF weight is not close to 0)
           relevant_tof_bins(x_m0, x_m1, x_m2, x_v0, x_v1, x_v2, u0, u1, u2, 
-                            tofbin_width, tc_offset, sig_tof, n_sigmas, n_half,
+                            tofbin_width, tc_offset, sig_eff, n_sigmas, n_half,
                             &it1, &it2);
           
           for(it = it1; it <= it2; it++){
             //--- add extra check to be compatible with behavior of LM projector
-            istart_tof_f = (x_m0 + (it*tofbin_width - n_sigmas*sig_tof)*u0 - img_origin0) / voxsize0;
-            iend_tof_f   = (x_m0 + (it*tofbin_width + n_sigmas*sig_tof)*u0 - img_origin0) / voxsize0;
+            istart_tof_f = (x_m0 + (it*tofbin_width - n_sigmas*sig_eff)*u0 - img_origin0) / voxsize0;
+            iend_tof_f   = (x_m0 + (it*tofbin_width + n_sigmas*sig_eff)*u0 - img_origin0) / voxsize0;
         
             if (istart_tof_f > iend_tof_f){
               tmp        = iend_tof_f;
@@ -338,13 +342,13 @@ void joseph3d_back_tof_sino(const float *xstart,
 
           // get the relevant tof bins (the TOF bins where the TOF weight is not close to 0)
           relevant_tof_bins(x_m0, x_m1, x_m2, x_v0, x_v1, x_v2, u0, u1, u2, 
-                            tofbin_width, tc_offset, sig_tof, n_sigmas, n_half,
+                            tofbin_width, tc_offset, sig_eff, n_sigmas, n_half,
                             &it1, &it2);
 
           for(it = it1; it <= it2; it++){
             //--- add extra check to be compatible with behavior of LM projector
-            istart_tof_f = (x_m1 + (it*tofbin_width - n_sigmas*sig_tof)*u1 - img_origin1) / voxsize1;
-            iend_tof_f   = (x_m1 + (it*tofbin_width + n_sigmas*sig_tof)*u1 - img_origin1) / voxsize1;
+            istart_tof_f = (x_m1 + (it*tofbin_width - n_sigmas*sig_eff)*u1 - img_origin1) / voxsize1;
+            iend_tof_f   = (x_m1 + (it*tofbin_width + n_sigmas*sig_eff)*u1 - img_origin1) / voxsize1;
         
             if (istart_tof_f > iend_tof_f){
               tmp        = iend_tof_f;
@@ -468,13 +472,13 @@ void joseph3d_back_tof_sino(const float *xstart,
 
           // get the relevant tof bins (the TOF bins where the TOF weight is not close to 0)
           relevant_tof_bins(x_m0, x_m1, x_m2, x_v0, x_v1, x_v2, u0, u1, u2, 
-                            tofbin_width, tc_offset, sig_tof, n_sigmas, n_half,
+                            tofbin_width, tc_offset, sig_eff, n_sigmas, n_half,
                             &it1, &it2);
 
           for(it = it1; it <= it2; it++){
             //--- add extra check to be compatible with behavior of LM projector
-            istart_tof_f = (x_m2 + (it*tofbin_width - n_sigmas*sig_tof)*u2 - img_origin2) / voxsize2;
-            iend_tof_f   = (x_m2 + (it*tofbin_width + n_sigmas*sig_tof)*u2 - img_origin2) / voxsize2;
+            istart_tof_f = (x_m2 + (it*tofbin_width - n_sigmas*sig_eff)*u2 - img_origin2) / voxsize2;
+            iend_tof_f   = (x_m2 + (it*tofbin_width + n_sigmas*sig_eff)*u2 - img_origin2) / voxsize2;
         
             if (istart_tof_f > iend_tof_f){
               tmp        = iend_tof_f;
