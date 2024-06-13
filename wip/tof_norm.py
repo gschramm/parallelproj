@@ -1,57 +1,36 @@
-import numpy as np
-import matplotlib.pyplot as plt
+# import array_api_compat.cupy as xp
+import array_api_strict as xp
 import parallelproj
-from scipy.special import erf
-
-
-def tw(x, sig, bw):
-    return 0.5 * (
-        erf((x + 0.5 * bw) / (np.sqrt(2) * sig))
-        - erf((x - 0.5 * bw) / (np.sqrt(2) * sig))
-    )
-
-
-def tw_int(x, sig, bw):
-    # return erf((x + 0.5 * bw) / (np.sqrt(2) * sig))
-    return erf((x) / (np.sqrt(2) * sig))
-
 
 # %%
 sig_t = 10.0
 delta = 50.0
 ns = 3.0
 
-sig_eff = np.sqrt(sig_t**2 + (delta**2) / 12)
-
-x, dx = np.linspace(-ns * sig_eff, ns * sig_eff, 100000, retstep=True)
-kernel = tw(x, sig_t, delta)
-
-# %%
-
 n = 101
 vsize = 1.0
 
-voxsize = np.array([vsize, vsize, vsize], dtype=np.float32)
+voxsize = xp.asarray([vsize, vsize, vsize], dtype=xp.float32)
 tmp = (-0.5 * n + 0.5) * voxsize[0]
-img_origin = np.array([tmp, tmp, tmp], dtype=np.float32)
+img_origin = xp.asarray([tmp, tmp, tmp], dtype=xp.float32)
 
 num_off = 15
-tof_sums = np.zeros(num_off)
+tof_sums = xp.zeros(num_off)
 
 for offset in range(num_off):
-    img = np.zeros((n, n, n), dtype=np.float32)
+    img = xp.zeros((n, n, n), dtype=xp.float32)
 
     # img[n // 2 + offset, n // 2, n // 2] = 1.0
-    # xstart = np.array([[2 * img_origin[0], 0, 0]])
-    # xend = np.array([[-2 * img_origin[0], 0, 0]])
+    # xstart = xp.asarray([[2 * int(img_origin[0]), 0, 0]])
+    # xend = xp.asarray([[-2 * int(img_origin[0]), 0, 0]])
 
     # img[n // 2, n // 2 + offset, n // 2] = 1.0
-    # xstart = np.array([[0, 2 * img_origin[0], 0]])
-    # xend = np.array([[0, -2 * img_origin[0], 0]])
+    # xstart = xp.asarray([[0, 2 * int(img_origin[0]), 0]])
+    # xend = xp.asarray([[0, -2 * int(img_origin[0]), 0]])
 
     img[n // 2, n // 2, n // 2 + offset] = 1.0
-    xstart = np.array([[0, 0, 2 * img_origin[0]]])
-    xend = np.array([[0, 0, -2 * img_origin[0]]])
+    xstart = xp.asarray([[0, 0, 2 * int(img_origin[0])]])
+    xend = xp.asarray([[0, 0, -2 * int(img_origin[0])]])
 
     p_nontof = parallelproj.joseph3d_fwd(
         xstart,
@@ -68,12 +47,12 @@ for offset in range(num_off):
         img_origin,
         voxsize,
         tofbin_width=delta,
-        sigma_tof=np.array([sig_t], dtype=np.float32),
-        tofcenter_offset=np.array([0], dtype=np.float32),
+        sigma_tof=xp.asarray([sig_t], dtype=xp.float32),
+        tofcenter_offset=xp.asarray([0], dtype=xp.float32),
         nsigmas=ns,
         ntofbins=max(4 * int(n * vsize / delta / 2) + 1, 11),
     )
-    tof_sums[offset] = p_tof.sum()
+    tof_sums[offset] = float(xp.sum(p_tof))
 
-print(tof_sums)
-print(tof_sums.min())
+# print(tof_sums)
+print(float(xp.min(tof_sums)))
