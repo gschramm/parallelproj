@@ -4,7 +4,7 @@ import parallelproj
 
 # %%
 sig_t = 10.0
-delta = 50.0
+delta = 10.0
 ns = 3.0
 
 n = 101
@@ -20,17 +20,17 @@ tof_sums = xp.zeros(num_off)
 for offset in range(num_off):
     img = xp.zeros((n, n, n), dtype=xp.float32)
 
-    # img[n // 2 + offset, n // 2, n // 2] = 1.0
-    # xstart = xp.asarray([[2 * int(img_origin[0]), 0, 0]])
-    # xend = xp.asarray([[-2 * int(img_origin[0]), 0, 0]])
+    img[n // 2 + offset, n // 2, n // 2] = 1.0
+    xstart = xp.asarray([[2 * int(img_origin[0]), 0, 0]])
+    xend = xp.asarray([[-2 * int(img_origin[0]), 0, 0]])
 
     # img[n // 2, n // 2 + offset, n // 2] = 1.0
     # xstart = xp.asarray([[0, 2 * int(img_origin[0]), 0]])
     # xend = xp.asarray([[0, -2 * int(img_origin[0]), 0]])
 
-    img[n // 2, n // 2, n // 2 + offset] = 1.0
-    xstart = xp.asarray([[0, 0, 2 * int(img_origin[0])]])
-    xend = xp.asarray([[0, 0, -2 * int(img_origin[0])]])
+    # img[n // 2, n // 2, n // 2 + offset] = 1.0
+    # xstart = xp.asarray([[0, 0, 2 * int(img_origin[0])]])
+    # xend = xp.asarray([[0, 0, -2 * int(img_origin[0])]])
 
     p_nontof = parallelproj.joseph3d_fwd(
         xstart,
@@ -55,4 +55,4 @@ for offset in range(num_off):
     tof_sums[offset] = float(xp.sum(p_tof))
 
 # print(tof_sums)
-print(float(xp.min(tof_sums)))
+print(1 - float(xp.min(tof_sums)))

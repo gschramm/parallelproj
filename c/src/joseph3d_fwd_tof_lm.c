@@ -72,6 +72,13 @@ void joseph3d_fwd_tof_lm(const float *xstart,
     // we need to to device which TOF bins a certain voxel along an LOR
     float sig_eff = sqrtf(sig_tof*sig_tof + tofbin_width*tofbin_width/12.0f);
 
+    // factor that corrects the sum of the TOF weights to be 1, assuming that tofbin_width << sig_tof
+    // for n_sigma = 3.5, this factor is 1.0004
+    // for n_sigma = 3,   this factor is 1.0027
+    // for n_sigma = 2.5, this factor is 1.0126
+    // for n_sigma = 2,   this factor is 1.0476
+    float tof_trunc_corr_factor = 1.0f / erff(n_sigmas/sqrtf(2));
+
     float xstart0 = xstart[i*3 + 0];
     float xstart1 = xstart[i*3 + 1];
     float xstart2 = xstart[i*3 + 2];
@@ -253,8 +260,8 @@ void joseph3d_fwd_tof_lm(const float *xstart,
                          powf((x_m1 + (it*tofbin_width + tc_offset)*u1 - x_v1), 2) + 
                          powf((x_m2 + (it*tofbin_width + tc_offset)*u2 - x_v2), 2));
 
-            //calculate the TOF weight
-            tw = 0.5f*(erff((dtof + 0.5f*tofbin_width)/(sqrtf(2)*sig_tof)) - 
+            // calculate the TOF weight, including the correction factor for kernel truncation
+            tw = 0.5f*tof_trunc_corr_factor*(erff((dtof + 0.5f*tofbin_width)/(sqrtf(2)*sig_tof)) - 
                       erff((dtof - 0.5f*tofbin_width)/(sqrtf(2)*sig_tof)));
 
             p[i] += (tw * cf * toAdd);
@@ -371,8 +378,8 @@ void joseph3d_fwd_tof_lm(const float *xstart,
                          powf((x_m1 + (it*tofbin_width + tc_offset)*u1 - x_v1), 2) + 
                          powf((x_m2 + (it*tofbin_width + tc_offset)*u2 - x_v2), 2));
 
-            //calculate the TOF weight
-            tw = 0.5f*(erff((dtof + 0.5f*tofbin_width)/(sqrtf(2)*sig_tof)) - 
+            // calculate the TOF weight including the correction factor for kernel truncation
+            tw = 0.5f*tof_trunc_corr_factor*(erff((dtof + 0.5f*tofbin_width)/(sqrtf(2)*sig_tof)) - 
                       erff((dtof - 0.5f*tofbin_width)/(sqrtf(2)*sig_tof)));
 
 
@@ -490,8 +497,8 @@ void joseph3d_fwd_tof_lm(const float *xstart,
                          powf((x_m1 + (it*tofbin_width + tc_offset)*u1 - x_v1), 2) + 
                          powf((x_m2 + (it*tofbin_width + tc_offset)*u2 - x_v2), 2));
 
-            //calculate the TOF weight
-            tw = 0.5f*(erff((dtof + 0.5f*tofbin_width)/(sqrtf(2)*sig_tof)) - 
+            // calculate the TOF weight including the correction factor for kernel truncation
+            tw = 0.5f*tof_trunc_corr_factor*(erff((dtof + 0.5f*tofbin_width)/(sqrtf(2)*sig_tof)) - 
                       erff((dtof - 0.5f*tofbin_width)/(sqrtf(2)*sig_tof)));
 
             p[i] += (tw * cf * toAdd);
