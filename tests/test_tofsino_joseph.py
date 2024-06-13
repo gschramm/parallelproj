@@ -235,7 +235,7 @@ def test_tof_sino_fwd_sum(
     xp: ModuleType,
     dev: str,
     verbose: bool = True,
-    rtol: float = 7e-3,
+    rtol: float = 4e-3,
     ns=3.0,
 ) -> None:
     """test whether the sum over all TOF bins of a TOF projection is equal to the non-TOF projection,
