@@ -104,6 +104,36 @@ def test_tof_lm_fwd(
                 if verbose:
                     print()
 
+    # test whether non-integer tof bin array raise an error
+    with pytest.raises(Exception):
+        p_tof = parallelproj.joseph3d_fwd_tof_lm(
+            xstart,
+            xend,
+            img,
+            img_origin,
+            voxsize,
+            tofbin_width=delta,
+            sigma_tof=xp.asarray([sig_t], dtype=xp.float32, device=dev),
+            tofcenter_offset=xp.asarray([0], dtype=xp.float32, device=dev),
+            nsigmas=ns,
+            tofbin=xp.asarray([i], dtype=xp.float32, device=dev),
+        )
+
+    with pytest.raises(Exception):
+        _ = parallelproj.joseph3d_back_tof_lm(
+            xstart,
+            xend,
+            img.shape,
+            img_origin,
+            voxsize,
+            xp.ones((1,), dtype=xp.float32, device=dev),
+            tofbin_width=delta,
+            sigma_tof=xp.asarray([sig_t], dtype=xp.float32, device=dev),
+            tofcenter_offset=xp.asarray([0], dtype=xp.float32, device=dev),
+            nsigmas=ns,
+            tofbin=xp.asarray([i], dtype=xp.float32, device=dev),
+        )
+
 
 def test_adjointness(
     xp: ModuleType, dev: str, nLORs: int = 10000, seed: int = 1, verbose: bool = True
