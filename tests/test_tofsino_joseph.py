@@ -1,5 +1,7 @@
 import parallelproj
 import array_api_compat.numpy as np
+import math
+from scipy.special import erf
 
 from types import ModuleType
 
@@ -14,129 +16,100 @@ def isclose(x: float, y: float, atol: float = 1e-8, rtol: float = 1e-5) -> bool:
 
 
 def test_tof_sino_fwd(
-    xp: ModuleType, dev: str, verbose: bool = True, atol: float = 1e-6
+    xp: ModuleType,
+    dev: str,
+    verbose: bool = True,
+    atol: float = 1e-7,
+    rtol: float = 1e-4,
 ) -> None:
-    """test fwd sinogram TOF projection of a point source"""
-    nLORs: int = 1
-    voxsize: float = 0.1
+    """compare a TOF forward projection of a central point source against the theoretical value
+    for different combinations of TOF bin width and TOF resolution
+    """
+    sig_t = 10.0
 
-    n0, n1, n2 = (171, 171, 171)
+    n = 101
+    vsize = 1.0
 
-    img_dim = (n0, n1, n2)
-    voxel_size = xp.asarray([voxsize, voxsize, voxsize], dtype=xp.float32, device=dev)
-    img_origin = (
-        -xp.asarray(img_dim, dtype=xp.float32, device=dev) / 2 + 0.5
-    ) * voxel_size
-    img = xp.zeros((n0, n1, n2), dtype=xp.float32, device=dev)
-    img[n0 // 2, n1 // 2, n2 // 2] = 1
+    voxsize = xp.asarray([vsize, vsize, vsize], dtype=xp.float32, device=dev)
+    tmp = (-0.5 * n + 0.5) * float(voxsize[0])
+    img_origin = xp.asarray([tmp, tmp, tmp], dtype=xp.float32, device=dev)
 
-    xstart = xp.zeros((nLORs, 3), dtype=xp.float32, device=dev)
-    xstart[:, 0] = 0
-    xstart[:, 0] = 0
-    xstart[:, 0] = 100
+    img = xp.zeros((n, n, n), dtype=xp.float32, device=dev)
+    img[n // 2, n // 2, n // 2] = 1.0
 
-    xend = xp.zeros((nLORs, 3), dtype=xp.float32, device=dev)
-    xend[:, 0] = 0
-    xend[:, 0] = 0
-    xend[:, 0] = -100
+    # loop over different number of sigmas used for kernel truncation
+    for ns in [2.5, 3.0, 3.5]:
+        # loop over all principal directions
+        for direction in [0, 1, 2]:
+            # loop over different TOF bin widths
+            for delta in [
+                0.1 * sig_t,
+                0.3 * sig_t,
+                0.5 * sig_t,
+                sig_t,
+                3 * sig_t,
+                5 * sig_t,
+            ]:
 
-    # forward project
-    tofbin_width = 0.05
-    num_tof_bins = 501
-    nsigmas = 9.0
-    fwhm_tof = 6.0
-    sigma_tof = xp.asarray(
-        [fwhm_tof / (2 * np.sqrt(2 * np.log(2)))], dtype=xp.float32, device=dev
-    )
-    tofcenter_offset = xp.asarray([0], dtype=xp.float32, device=dev)
+                xstart = xp.zeros((1, 3), dtype=xp.float32, device=dev)
+                xend = xp.zeros((1, 3), dtype=xp.float32, device=dev)
 
-    img_fwd = xp.zeros((xstart.shape[0], num_tof_bins), dtype=xp.float32, device=dev)
+                xstart[0, direction] = 2 * float(img_origin[0])
+                xend[0, direction] = -2 * float(img_origin[0])
 
-    img_fwd = parallelproj.joseph3d_fwd_tof_sino(
-        xstart,
-        xend,
-        img,
-        img_origin,
-        voxel_size,
-        tofbin_width,
-        sigma_tof,
-        tofcenter_offset,
-        nsigmas,
-        num_tof_bins,
-        num_chunks=3,
-    )
+                num_tofbins = max(4 * int(n * vsize / delta / 2) + 1, 11)
 
-    # check if sum of the projection is correct (should be equal to the voxel
-    # size)
-    res1 = isclose(xp.sum(img_fwd), voxsize)
+                p_tof = parallelproj.joseph3d_fwd_tof_sino(
+                    xstart,
+                    xend,
+                    img,
+                    img_origin,
+                    voxsize,
+                    tofbin_width=delta,
+                    sigma_tof=xp.asarray([sig_t], dtype=xp.float32, device=dev),
+                    tofcenter_offset=xp.asarray([0], dtype=xp.float32, device=dev),
+                    nsigmas=ns,
+                    ntofbins=num_tofbins,
+                )
 
-    # check if the FWHM in the projected profile is correct
-    # to do so, we check if the interpolated profile - 0.5 * max(profile) at
-    # +/- FWHM/2 is 0
-    r = (
-        xp.arange(num_tof_bins, dtype=xp.float32, device=dev) - 0.5 * num_tof_bins + 0.5
-    ) * tofbin_width
+                trunc_factor = 1.0 / erf(ns / math.sqrt(2))
+                trunc_dist = ns * math.sqrt(sig_t**2 + (delta**2) / 12)
 
-    if parallelproj.is_cuda_array(img_fwd):
-        import array_api_compat.cupy as cp
+                for i in range(num_tofbins // 2):
 
-        res2 = isclose(
-            float(
-                cp.interp(
-                    cp.asarray([fwhm_tof / 2]),
-                    cp.asarray(r),
-                    cp.asarray(img_fwd[0, :] - 0.5 * xp.max(img_fwd[0, :])),
-                )[0]
-            ),
-            0,
-            atol=atol,
-        )
-        res3 = isclose(
-            float(
-                cp.interp(
-                    cp.asarray([-fwhm_tof / 2]),
-                    cp.asarray(r),
-                    cp.asarray(img_fwd[0, :] - 0.5 * xp.max(img_fwd[0, :])),
-                )[0]
-            ),
-            0,
-            atol=atol,
-        )
+                    if i * delta <= 0.999 * trunc_dist:
+                        # the theoretical value of the TOF projection which is equal to the
+                        # difference of two error functions corrected for kernel truncation
+                        theory_value = (
+                            0.5
+                            * trunc_factor
+                            * (
+                                erf((i * delta + 0.5 * delta) / (math.sqrt(2) * sig_t))
+                                - erf(
+                                    (i * delta - 0.5 * delta) / (math.sqrt(2) * sig_t)
+                                )
+                            )
+                        )
 
-    else:
-        res2 = isclose(
-            float(
-                np.interp(
-                    np.asarray([fwhm_tof / 2]),
-                    r,
-                    img_fwd[0, :] - 0.5 * xp.max(img_fwd[0, :]),
-                )[0]
-            ),
-            0,
-            atol=atol,
-        )
-        res3 = isclose(
-            float(
-                np.interp(
-                    np.asarray([-fwhm_tof / 2]),
-                    r,
-                    img_fwd[0, :] - 0.5 * xp.max(img_fwd[0, :]),
-                )[0]
-            ),
-            0,
-            atol=atol,
-        )
+                        if verbose:
+                            print(
+                                ns,
+                                direction,
+                                delta,
+                                sig_t,
+                                i,
+                                theory_value,
+                                float(p_tof[0, num_tofbins // 2 + i] - theory_value),
+                            )
 
-    if verbose:
-        print(
-            f"module = {xp.__name__}  -  cuda_enabled {parallelproj.num_visible_cuda_devices > 0}"
-        )
-        print(
-            f"sum of TOF profile / expected:    {float(xp.sum(img_fwd)):.4E} / {voxsize:.4E}"
-        )
-        print("")
+                        abs_diff = abs(p_tof[0, num_tofbins // 2 + i] - theory_value)
+                        assert abs_diff < atol
 
-    assert bool(res1 * res2 * res3)
+                        rel_diff = abs_diff / theory_value
+                        assert rel_diff < rtol
+
+                if verbose:
+                    print()
 
 
 def test_adjointness(
