@@ -15,6 +15,7 @@ from .backend import (
     joseph3d_back_tof_lm,
     lib_parallelproj_c_fname,
     lib_parallelproj_cuda_fname,
+    cuda_kernel_file,
 )
 
 from .operators import (
@@ -112,7 +113,10 @@ print(
 
     =================================================
  
-    parallelproj C    lib: {lib_parallelproj_c_fname}
-    parallelproj CUDA lib: {lib_parallelproj_cuda_fname}
+    parallelproj C    lib         ..: {lib_parallelproj_c_fname}
+    parallelproj CUDA lib         ..: {lib_parallelproj_cuda_fname}
+    parallelproj CUDA kernel file ..: {cuda_kernel_file}
+    parallelproj CUDA present     ..: {cuda_present}
+    parallelproj cupy enabled     ..: {cupy_enabled}
     """
 )
