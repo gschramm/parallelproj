@@ -160,8 +160,9 @@ else:
 # ---------------------------------------------------------------------------------------
 
 num_visible_cuda_devices = 0
-
 lib_parallelproj_cuda_fname = None
+cuda_kernel_file = None
+
 if cuda_present:
     if "PARALLELPROJ_CUDA_LIB" in os.environ:
         lib_parallelproj_cuda_fname = os.environ["PARALLELPROJ_CUDA_LIB"]
@@ -319,8 +320,6 @@ if cuda_present:
         ]
 
     # ---------------------------------------------------------------------------------------
-    cuda_kernel_file = None
-
     if cupy_enabled:
         if "PARALLELPROJ_CUDA_KERNEL_FILE" in os.environ:
             cuda_kernel_file = Path(os.environ["PARALLELPROJ_CUDA_KERNEL_FILE"])
