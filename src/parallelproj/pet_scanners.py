@@ -252,7 +252,7 @@ class RegularPolygonPETScannerModule(PETScannerModule):
             self._phis = (
                 2
                 * self.xp.pi
-                * self.xp.arange(self._num_sides, dtype=xp.float32)
+                * self.xp.arange(self._num_sides, dtype=xp.float32, device=dev)
                 / self.num_sides
             )
         else:
