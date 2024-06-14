@@ -76,12 +76,29 @@ class PETLORDescriptor(abc.ABC):
 
 
 class BlockPETLORDescriptor(PETLORDescriptor):
+    """LOR descriptor for scanner consisting of block modules where each
+    block module has the same number of LOR endpoints"""
 
     def __init__(
-        self, scanner: ModularizedPETScannerGeometry, all_block_pairs: Array
+        self,
+        scanner: ModularizedPETScannerGeometry,
+        all_block_pairs: Array
     ) -> None:
-        super().__init__(scanner)
+        """
+        Parameters
+        ----------
+        scanner : ModularizedPETScannerGeometry
+            A modularized PET scanner consisting of block modules
+            with the same number of LOR endpoints.
+        all_block_pairs : Array
+            An array containing pairs of integer numbers encoding
+            which block pairs are in coincidence and form valid LORs.
 
+        Returns
+        -------
+        None
+        """
+        super().__init__(scanner)
         self._scanner = scanner
         self._all_block_pairs = all_block_pairs
         self._num_lorendpoints_per_block = self.scanner.modules[0].num_lor_endpoints
@@ -90,7 +107,22 @@ class BlockPETLORDescriptor(PETLORDescriptor):
     def get_lor_coordinates(
         self, block_pair_nums: None | Array = None
     ) -> tuple[Array, Array]:
+        """
+        Get the coordinates of LORs for the given block pair numbers.
 
+        Parameters
+        ----------
+        block_pair_nums : None or Array, optional
+            The block pair numbers for which to retrieve the LOR coordinates.
+            If None, all block pair numbers will be used.
+
+        Returns
+        -------
+        tuple[Array, Array] 
+        A tuple containing two arrays:
+            - the start coordinates of the LORs, with shape (N, 3), where N is the total number of LORs.
+            - the end coordinates of the LORs, with shape (N, 3)
+        """
         if block_pair_nums is None:
             block_pair_nums = self.xp.arange(
                 self._all_block_pairs.shape[0], device=self.dev
@@ -129,9 +161,34 @@ class BlockPETLORDescriptor(PETLORDescriptor):
 
         return self.xp.reshape(xstart, (-1, 3)), self.xp.reshape(xend, (-1, 3))
 
+    def show_block_pair_lors(
+        self, ax: plt.Axes, block_pair_nums: Array, lw: float = 0.2, **kwargs
+    ) -> None:
+        """show all LORs connecting all endpoints between blocks forming a block pairs
+
+        Parameters
+        ----------
+        ax : plt.Axes
+            a 3D matplotlib axes
+        block_pair_nums : int
+            the block pair numbers to show
+        lw : float, optional
+            the line width, by default 0.2
+        """
+
+        xs, xe = self.get_lor_coordinates(block_pair_nums=block_pair_nums)
+
+        p1s = to_numpy_array(xs)
+        p2s = to_numpy_array(xe)
+
+        ls = np.hstack([p1s, p2s]).copy()
+        ls = ls.reshape((-1, 2, 3))
+        lc = Line3DCollection(ls, linewidths=lw, **kwargs)
+        ax.add_collection(lc)
+
 
 class RegularPolygonPETLORDescriptor(PETLORDescriptor):
-    """Coincidence descriptor for a regular polygon PET scanner where
+    """LOR descriptor for a regular polygon PET scanner where
     we have coincidences within and between "rings (polygons of modules)"
     The geometrical LORs can be sorted into a sinogram having a
     "plane", "view" and "radial" axis.
