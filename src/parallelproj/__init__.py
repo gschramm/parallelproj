@@ -107,5 +107,7 @@ print(
     parallelproj C    lib         ..: {lib_parallelproj_c_fname}
     parallelproj CUDA lib         ..: {lib_parallelproj_cuda_fname}
     parallelproj CUDA kernel file ..: {cuda_kernel_file}
+    parallelproj CUDA present     ..: {cuda_present}
+    parallelproj cupy enabled     ..: {cupy_enabled}
     """
 )
