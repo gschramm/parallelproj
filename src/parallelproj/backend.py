@@ -160,8 +160,9 @@ else:
 # ---------------------------------------------------------------------------------------
 
 num_visible_cuda_devices = 0
-
 lib_parallelproj_cuda_fname = None
+cuda_kernel_file = None
+
 if cuda_present:
     if "PARALLELPROJ_CUDA_LIB" in os.environ:
         lib_parallelproj_cuda_fname = os.environ["PARALLELPROJ_CUDA_LIB"]
@@ -320,21 +321,26 @@ if cuda_present:
 
     # ---------------------------------------------------------------------------------------
     if cupy_enabled:
-        # find all cuda kernel files installed with the parallelproj libs
-        cuda_kernel_files = sorted(
-            list(
-                (Path(lib_parallelproj_cuda_fname).parents[1] / "lib").glob(
-                    "projector_kernels.cu.*"
+        if "PARALLELPROJ_CUDA_KERNEL_FILE" in os.environ:
+            cuda_kernel_file = Path(os.environ["PARALLELPROJ_CUDA_KERNEL_FILE"])
+        else:
+            # find all cuda kernel files installed with the parallelproj libs
+            cuda_kernel_files = sorted(
+                list(
+                    (Path(lib_parallelproj_cuda_fname).parents[1] / "lib").glob(
+                        "projector_kernels.cu.*"
+                    )
                 )
             )
-        )
-        if len(cuda_kernel_files) == 1:
-            cuda_kernel_file = cuda_kernel_files[0]
-        elif len(cuda_kernel_files) > 1:
-            cuda_kernel_file = cuda_kernel_files[-1]
-            warn("More than one kernel file available.")
-        else:
-            raise ImportError("No kernel file found.")
+            if len(cuda_kernel_files) == 1:
+                cuda_kernel_file = cuda_kernel_files[0]
+            elif len(cuda_kernel_files) > 1:
+                cuda_kernel_file = cuda_kernel_files[-1]
+                warn("More than one kernel file available.")
+            else:
+                raise ImportError(
+                    "No kernel file found. Consider setting the environment variable PARALLELPROJ_CUDA_KERNEL_FILE."
+                )
 
         if cuda_kernel_file is not None:
             # load a kernel defined in a external file

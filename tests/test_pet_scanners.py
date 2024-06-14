@@ -146,6 +146,8 @@ def test_regular_polygon_pet_scanner(xp: ModuleType, dev: str) -> None:
     plt.close(fig)
 
     # test scanner with manually specified azimuthal angles of the sides
+    phis = xp.asarray([0.0, xp.pi / 4], dtype=xp.float32, device=dev)
+
     scanner2 = parallelproj.RegularPolygonPETScannerGeometry(
         xp,
         dev,
@@ -153,9 +155,9 @@ def test_regular_polygon_pet_scanner(xp: ModuleType, dev: str) -> None:
         num_sides=2,
         num_lor_endpoints_per_side=num_lor_endpoints_per_side,
         lor_spacing=2.5,
-        ring_positions=xp.asarray([0.0]),
+        ring_positions=xp.asarray([0.0], dtype=xp.float32, device=dev),
         symmetry_axis=1,
-        phis=xp.asarray([0.0, xp.pi / 4]),
+        phis=phis,
     )
 
-    assert xp.all(scanner2.modules[0].phis == xp.asarray([0.0, xp.pi / 4]))
+    assert xp.all(scanner2.modules[0].phis == phis)

@@ -809,7 +809,6 @@ extern "C" __global__ void joseph3d_back_tof_sino_cuda_kernel(float *xstart,
                                                               unsigned char lor_dependent_tofcenter_offset)
 {
   long long i = blockDim.x * blockIdx.x + threadIdx.x;
-  //long long i = blockIdx.x + threadIdx.x * gridDim.x;
 
   int n0 = img_dim[0];
   int n1 = img_dim[1];
@@ -838,6 +837,18 @@ extern "C" __global__ void joseph3d_back_tof_sino_cuda_kernel(float *xstart,
 
     float sig_tof   = (lor_dependent_sigma_tof == 1) ? sigma_tof[i] : sigma_tof[0];
     float tc_offset = (lor_dependent_tofcenter_offset == 1) ? tofcenter_offset[i] : tofcenter_offset[0];
+    
+
+    // calculate the effective sigma (standard deviation of the TOF Gaussian convolved with the tofbin width)
+    // we need to to device which TOF bins a certain voxel along an LOR
+    float sig_eff = sqrtf(sig_tof*sig_tof + tofbin_width*tofbin_width/12.0f);
+
+    // factor that corrects the sum of the TOF weights to be 1, assuming that tofbin_width << sig_tof
+    // for n_sigma = 3.5, this factor is 1.0004
+    // for n_sigma = 3,   this factor is 1.0027
+    // for n_sigma = 2.5, this factor is 1.0126
+    // for n_sigma = 2,   this factor is 1.0476
+    float tof_trunc_corr_factor = 1.0f / erff(n_sigmas/sqrtf(2));
 
     float xstart0 = xstart[i*3 + 0];
     float xstart1 = xstart[i*3 + 1];
@@ -989,13 +1000,13 @@ extern "C" __global__ void joseph3d_back_tof_sino_cuda_kernel(float *xstart,
 
           // get the relevant tof bins (the TOF bins where the TOF weight is not close to 0)
           relevant_tof_bins_cuda(x_m0, x_m1, x_m2, x_v0, x_v1, x_v2, u0, u1, u2, 
-                                 tofbin_width, tc_offset, sig_tof, n_sigmas, n_half,
+                                 tofbin_width, tc_offset, sig_eff, n_sigmas, n_half,
                                  &it1, &it2);
           
           for(it = it1; it <= it2; it++){
             //--- add extra check to be compatible with behavior of LM projector
-            istart_tof_f = (x_m0 + (it*tofbin_width - n_sigmas*sig_tof)*u0 - img_origin0) / voxsize0;
-            iend_tof_f   = (x_m0 + (it*tofbin_width + n_sigmas*sig_tof)*u0 - img_origin0) / voxsize0;
+            istart_tof_f = (x_m0 + (it*tofbin_width - n_sigmas*sig_eff)*u0 - img_origin0) / voxsize0;
+            iend_tof_f   = (x_m0 + (it*tofbin_width + n_sigmas*sig_eff)*u0 - img_origin0) / voxsize0;
         
             if (istart_tof_f > iend_tof_f){
               tmp        = iend_tof_f;
@@ -1014,8 +1025,8 @@ extern "C" __global__ void joseph3d_back_tof_sino_cuda_kernel(float *xstart,
                              powf((x_m1 + (it*tofbin_width + tc_offset)*u1 - x_v1), 2) + 
                              powf((x_m2 + (it*tofbin_width + tc_offset)*u2 - x_v2), 2));
 
-                //calculate the TOF weight
-                tw = 0.5f*(erff((dtof + 0.5f*tofbin_width)/(sqrtf(2)*sig_tof)) - 
+                // calculate the TOF weight inclduing correction for kernel truncation
+                tw = 0.5f*tof_trunc_corr_factor*(erff((dtof + 0.5f*tofbin_width)/(sqrtf(2)*sig_tof)) - 
                           erff((dtof - 0.5f*tofbin_width)/(sqrtf(2)*sig_tof)));
 
                 if ((i1_floor >= 0) && (i1_floor < n1) && (i2_floor >= 0) && (i2_floor < n2))
@@ -1114,13 +1125,13 @@ extern "C" __global__ void joseph3d_back_tof_sino_cuda_kernel(float *xstart,
 
           // get the relevant tof bins (the TOF bins where the TOF weight is not close to 0)
           relevant_tof_bins_cuda(x_m0, x_m1, x_m2, x_v0, x_v1, x_v2, u0, u1, u2, 
-                                 tofbin_width, tc_offset, sig_tof, n_sigmas, n_half,
+                                 tofbin_width, tc_offset, sig_eff, n_sigmas, n_half,
                                  &it1, &it2);
 
           for(it = it1; it <= it2; it++){
             //--- add extra check to be compatible with behavior of LM projector
-            istart_tof_f = (x_m1 + (it*tofbin_width - n_sigmas*sig_tof)*u1 - img_origin1) / voxsize1;
-            iend_tof_f   = (x_m1 + (it*tofbin_width + n_sigmas*sig_tof)*u1 - img_origin1) / voxsize1;
+            istart_tof_f = (x_m1 + (it*tofbin_width - n_sigmas*sig_eff)*u1 - img_origin1) / voxsize1;
+            iend_tof_f   = (x_m1 + (it*tofbin_width + n_sigmas*sig_eff)*u1 - img_origin1) / voxsize1;
         
             if (istart_tof_f > iend_tof_f){
               tmp        = iend_tof_f;
@@ -1139,8 +1150,8 @@ extern "C" __global__ void joseph3d_back_tof_sino_cuda_kernel(float *xstart,
                              powf((x_m1 + (it*tofbin_width + tc_offset)*u1 - x_v1), 2) + 
                              powf((x_m2 + (it*tofbin_width + tc_offset)*u2 - x_v2), 2));
 
-                //calculate the TOF weight
-                tw = 0.5f*(erff((dtof + 0.5f*tofbin_width)/(sqrtf(2)*sig_tof)) - 
+                // calculate the TOF weight, including correction for kernel truncation
+                tw = 0.5f*tof_trunc_corr_factor*(erff((dtof + 0.5f*tofbin_width)/(sqrtf(2)*sig_tof)) - 
                           erff((dtof - 0.5f*tofbin_width)/(sqrtf(2)*sig_tof)));
 
                 if ((i0_floor >= 0) && (i0_floor < n0) && (i2_floor >= 0) && (i2_floor < n2)) 
@@ -1239,13 +1250,13 @@ extern "C" __global__ void joseph3d_back_tof_sino_cuda_kernel(float *xstart,
 
           // get the relevant tof bins (the TOF bins where the TOF weight is not close to 0)
           relevant_tof_bins_cuda(x_m0, x_m1, x_m2, x_v0, x_v1, x_v2, u0, u1, u2, 
-                                 tofbin_width, tc_offset, sig_tof, n_sigmas, n_half,
+                                 tofbin_width, tc_offset, sig_eff, n_sigmas, n_half,
                                  &it1, &it2);
 
           for(it = it1; it <= it2; it++){
             //--- add extra check to be compatible with behavior of LM projector
-            istart_tof_f = (x_m2 + (it*tofbin_width - n_sigmas*sig_tof)*u2 - img_origin2) / voxsize2;
-            iend_tof_f   = (x_m2 + (it*tofbin_width + n_sigmas*sig_tof)*u2 - img_origin2) / voxsize2;
+            istart_tof_f = (x_m2 + (it*tofbin_width - n_sigmas*sig_eff)*u2 - img_origin2) / voxsize2;
+            iend_tof_f   = (x_m2 + (it*tofbin_width + n_sigmas*sig_eff)*u2 - img_origin2) / voxsize2;
         
             if (istart_tof_f > iend_tof_f){
               tmp        = iend_tof_f;
@@ -1264,8 +1275,8 @@ extern "C" __global__ void joseph3d_back_tof_sino_cuda_kernel(float *xstart,
                              powf((x_m1 + (it*tofbin_width + tc_offset)*u1 - x_v1), 2) + 
                              powf((x_m2 + (it*tofbin_width + tc_offset)*u2 - x_v2), 2));
 
-                //calculate the TOF weight
-                tw = 0.5f*(erff((dtof + 0.5f*tofbin_width)/(sqrtf(2)*sig_tof)) - 
+                // calculate the TOF weight, including correction for kernel truncation
+                tw = 0.5f*tof_trunc_corr_factor*(erff((dtof + 0.5f*tofbin_width)/(sqrtf(2)*sig_tof)) - 
                           erff((dtof - 0.5f*tofbin_width)/(sqrtf(2)*sig_tof)));
 
                 if ((i0_floor >= 0) && (i0_floor < n0) && (i1_floor >= 0) && (i1_floor < n1))
@@ -1349,6 +1360,17 @@ extern "C" __global__ void joseph3d_fwd_tof_sino_cuda_kernel(float *xstart,
 
     float sig_tof   = (lor_dependent_sigma_tof == 1) ? sigma_tof[i] : sigma_tof[0];
     float tc_offset = (lor_dependent_tofcenter_offset == 1) ? tofcenter_offset[i] : tofcenter_offset[0];
+
+    // calculate the effective sigma (standard deviation of the TOF Gaussian convolved with the tofbin width)
+    // we need to to device which TOF bins a certain voxel along an LOR
+    float sig_eff = sqrtf(sig_tof*sig_tof + tofbin_width*tofbin_width/12.0f);
+
+    // factor that corrects the sum of the TOF weights to be 1, assuming that tofbin_width << sig_tof
+    // for n_sigma = 3.5, this factor is 1.0004
+    // for n_sigma = 3,   this factor is 1.0027
+    // for n_sigma = 2.5, this factor is 1.0126
+    // for n_sigma = 2,   this factor is 1.0476
+    float tof_trunc_corr_factor = 1.0f / erff(n_sigmas/sqrtf(2));
 
     float xstart0 = xstart[i*3 + 0];
     float xstart1 = xstart[i*3 + 1];
@@ -1516,14 +1538,17 @@ extern "C" __global__ void joseph3d_fwd_tof_sino_cuda_kernel(float *xstart,
 
           // get the relevant tof bins (the TOF bins where the TOF weight is not close to 0)
           relevant_tof_bins_cuda(x_m0, x_m1, x_m2, x_v0, x_v1, x_v2, u0, u1, u2, 
-                                 tofbin_width, tc_offset, sig_tof, n_sigmas, n_half,
+                                 tofbin_width, tc_offset, sig_eff, n_sigmas, n_half,
                                  &it1, &it2);
 
           if(toAdd != 0){
+            // correct for the fact that the sum of the TOF weights is not 1
+            toAdd *= tof_trunc_corr_factor;
+            
             for(it = it1; it <= it2; it++){
               //--- add extra check to be compatible with behavior of LM projector
-              istart_tof_f = (x_m0 + (it*tofbin_width - n_sigmas*sig_tof)*u0 - img_origin0) / voxsize0;
-              iend_tof_f   = (x_m0 + (it*tofbin_width + n_sigmas*sig_tof)*u0 - img_origin0) / voxsize0;
+              istart_tof_f = (x_m0 + (it*tofbin_width - n_sigmas*sig_eff)*u0 - img_origin0) / voxsize0;
+              iend_tof_f   = (x_m0 + (it*tofbin_width + n_sigmas*sig_eff)*u0 - img_origin0) / voxsize0;
         
               if (istart_tof_f > iend_tof_f){
                 tmp        = iend_tof_f;
@@ -1641,14 +1666,17 @@ extern "C" __global__ void joseph3d_fwd_tof_sino_cuda_kernel(float *xstart,
 
           // get the relevant tof bins (the TOF bins where the TOF weight is not close to 0)
           relevant_tof_bins_cuda(x_m0, x_m1, x_m2, x_v0, x_v1, x_v2, u0, u1, u2, 
-                                 tofbin_width, tc_offset, sig_tof, n_sigmas, n_half,
+                                 tofbin_width, tc_offset, sig_eff, n_sigmas, n_half,
                                  &it1, &it2);
 
           if(toAdd != 0){
+            // correct for the fact that the sum of the TOF weights is not 1
+            toAdd *= tof_trunc_corr_factor;
+            
             for(it = it1; it <= it2; it++){
               //--- add extra check to be compatible with behavior of LM projector
-              istart_tof_f = (x_m1 + (it*tofbin_width - n_sigmas*sig_tof)*u1 - img_origin1) / voxsize1;
-              iend_tof_f   = (x_m1 + (it*tofbin_width + n_sigmas*sig_tof)*u1 - img_origin1) / voxsize1;
+              istart_tof_f = (x_m1 + (it*tofbin_width - n_sigmas*sig_eff)*u1 - img_origin1) / voxsize1;
+              iend_tof_f   = (x_m1 + (it*tofbin_width + n_sigmas*sig_eff)*u1 - img_origin1) / voxsize1;
         
               if (istart_tof_f > iend_tof_f){
                 tmp        = iend_tof_f;
@@ -1767,14 +1795,17 @@ extern "C" __global__ void joseph3d_fwd_tof_sino_cuda_kernel(float *xstart,
 
           // get the relevant tof bins (the TOF bins where the TOF weight is not close to 0)
           relevant_tof_bins_cuda(x_m0, x_m1, x_m2, x_v0, x_v1, x_v2, u0, u1, u2, 
-                                 tofbin_width, tc_offset, sig_tof, n_sigmas, n_half,
+                                 tofbin_width, tc_offset, sig_eff, n_sigmas, n_half,
                                  &it1, &it2);
 
           if(toAdd != 0){
+            // correct for the fact that the sum of the TOF weights is not 1
+            toAdd *= tof_trunc_corr_factor;
+            
             for(it = it1; it <= it2; it++){
               //--- add extra check to be compatible with behavior of LM projector
-              istart_tof_f = (x_m2 + (it*tofbin_width - n_sigmas*sig_tof)*u2 - img_origin2) / voxsize2;
-              iend_tof_f   = (x_m2 + (it*tofbin_width + n_sigmas*sig_tof)*u2 - img_origin2) / voxsize2;
+              istart_tof_f = (x_m2 + (it*tofbin_width - n_sigmas*sig_eff)*u2 - img_origin2) / voxsize2;
+              iend_tof_f   = (x_m2 + (it*tofbin_width + n_sigmas*sig_eff)*u2 - img_origin2) / voxsize2;
         
               if (istart_tof_f > iend_tof_f){
                 tmp        = iend_tof_f;
@@ -1852,6 +1883,17 @@ extern "C" __global__ void joseph3d_back_tof_lm_cuda_kernel(float *xstart,
 
     float sig_tof   = (lor_dependent_sigma_tof == 1) ? sigma_tof[i] : sigma_tof[0];
     float tc_offset = (lor_dependent_tofcenter_offset == 1) ? tofcenter_offset[i] : tofcenter_offset[0];
+
+    // calculate the effective sigma (standard deviation of the TOF Gaussian convolved with the tofbin width)
+    // we need to to device which TOF bins a certain voxel along an LOR
+    float sig_eff = sqrtf(sig_tof*sig_tof + tofbin_width*tofbin_width/12.0f);
+
+    // factor that corrects the sum of the TOF weights to be 1, assuming that tofbin_width << sig_tof
+    // for n_sigma = 3.5, this factor is 1.0004
+    // for n_sigma = 3,   this factor is 1.0027
+    // for n_sigma = 2.5, this factor is 1.0126
+    // for n_sigma = 2,   this factor is 1.0476
+    float tof_trunc_corr_factor = 1.0f / erff(n_sigmas/sqrtf(2));
 
     float xstart0 = xstart[i*3 + 0];
     float xstart1 = xstart[i*3 + 1];
@@ -1974,8 +2016,8 @@ extern "C" __global__ void joseph3d_back_tof_lm_cuda_kernel(float *xstart,
         //-- check where we should start and stop according to the TOF kernel
         //-- the tof weights outside +- 3 sigma will be close to 0 so we can
         //-- ignore them         
-        istart_tof_f = (x_m0 + (it*tofbin_width - n_sigmas*sig_tof)*u0 - img_origin0) / voxsize0;
-        iend_tof_f   = (x_m0 + (it*tofbin_width + n_sigmas*sig_tof)*u0 - img_origin0) / voxsize0;
+        istart_tof_f = (x_m0 + (it*tofbin_width - n_sigmas*sig_eff)*u0 - img_origin0) / voxsize0;
+        iend_tof_f   = (x_m0 + (it*tofbin_width + n_sigmas*sig_eff)*u0 - img_origin0) / voxsize0;
         
         if (istart_tof_f > iend_tof_f){
           tmp        = iend_tof_f;
@@ -2023,8 +2065,8 @@ extern "C" __global__ void joseph3d_back_tof_lm_cuda_kernel(float *xstart,
                          powf((x_m1 + (it*tofbin_width + tc_offset)*u1 - x_v1), 2) + 
                          powf((x_m2 + (it*tofbin_width + tc_offset)*u2 - x_v2), 2));
 
-            //calculate the TOF weight
-            tw = 0.5f*(erff((dtof + 0.5f*tofbin_width)/(sqrtf(2)*sig_tof)) - 
+            // calculate the TOF weight, including the correction for kernel truncation
+            tw = 0.5f*tof_trunc_corr_factor*(erff((dtof + 0.5f*tofbin_width)/(sqrtf(2)*sig_tof)) - 
                       erff((dtof - 0.5f*tofbin_width)/(sqrtf(2)*sig_tof)));
 
             if ((i1_floor >= 0) && (i1_floor < n1) && (i2_floor >= 0) && (i2_floor < n2))
@@ -2092,8 +2134,8 @@ extern "C" __global__ void joseph3d_back_tof_lm_cuda_kernel(float *xstart,
         //-- check where we should start and stop according to the TOF kernel
         //-- the tof weights outside +- 3 sigma will be close to 0 so we can
         //-- ignore them         
-        istart_tof_f = (x_m1 + (it*tofbin_width - n_sigmas*sig_tof)*u1 - img_origin1) / voxsize1;
-        iend_tof_f   = (x_m1 + (it*tofbin_width + n_sigmas*sig_tof)*u1 - img_origin1) / voxsize1;
+        istart_tof_f = (x_m1 + (it*tofbin_width - n_sigmas*sig_eff)*u1 - img_origin1) / voxsize1;
+        iend_tof_f   = (x_m1 + (it*tofbin_width + n_sigmas*sig_eff)*u1 - img_origin1) / voxsize1;
         
         if (istart_tof_f > iend_tof_f){
           tmp        = iend_tof_f;
@@ -2143,8 +2185,8 @@ extern "C" __global__ void joseph3d_back_tof_lm_cuda_kernel(float *xstart,
                          powf((x_m1 + (it*tofbin_width + tc_offset)*u1 - x_v1), 2) + 
                          powf((x_m2 + (it*tofbin_width + tc_offset)*u2 - x_v2), 2));
 
-            //calculate the TOF weight
-            tw = 0.5f*(erff((dtof + 0.5f*tofbin_width)/(sqrtf(2)*sig_tof)) - 
+            // calculate the TOF weight, including the correction for kernel truncation
+            tw = 0.5f*tof_trunc_corr_factor*(erff((dtof + 0.5f*tofbin_width)/(sqrtf(2)*sig_tof)) - 
                       erff((dtof - 0.5f*tofbin_width)/(sqrtf(2)*sig_tof)));
 
             if ((i0_floor >= 0) && (i0_floor < n0) && (i2_floor >= 0) && (i2_floor < n2)) 
@@ -2212,8 +2254,8 @@ extern "C" __global__ void joseph3d_back_tof_lm_cuda_kernel(float *xstart,
         //-- check where we should start and stop according to the TOF kernel
         //-- the tof weights outside +- 3 sigma will be close to 0 so we can
         //-- ignore them         
-        istart_tof_f = (x_m2 + (it*tofbin_width - n_sigmas*sig_tof)*u2 - img_origin2) / voxsize2;
-        iend_tof_f   = (x_m2 + (it*tofbin_width + n_sigmas*sig_tof)*u2 - img_origin2) / voxsize2;
+        istart_tof_f = (x_m2 + (it*tofbin_width - n_sigmas*sig_eff)*u2 - img_origin2) / voxsize2;
+        iend_tof_f   = (x_m2 + (it*tofbin_width + n_sigmas*sig_eff)*u2 - img_origin2) / voxsize2;
         
         if (istart_tof_f > iend_tof_f){
           tmp        = iend_tof_f;
@@ -2262,8 +2304,8 @@ extern "C" __global__ void joseph3d_back_tof_lm_cuda_kernel(float *xstart,
                          powf((x_m1 + (it*tofbin_width + tc_offset)*u1 - x_v1), 2) + 
                          powf((x_m2 + (it*tofbin_width + tc_offset)*u2 - x_v2), 2));
 
-            //calculate the TOF weight
-            tw = 0.5f*(erff((dtof + 0.5f*tofbin_width)/(sqrtf(2)*sig_tof)) - 
+            // calculate the TOF weight, including the correction for kernel truncation
+            tw = 0.5f*tof_trunc_corr_factor*(erff((dtof + 0.5f*tofbin_width)/(sqrtf(2)*sig_tof)) - 
                       erff((dtof - 0.5f*tofbin_width)/(sqrtf(2)*sig_tof)));
 
             if ((i0_floor >= 0) && (i0_floor < n0) && (i1_floor >= 0) && (i1_floor < n1))
@@ -2343,6 +2385,17 @@ extern "C" __global__ void joseph3d_fwd_tof_lm_cuda_kernel(float *xstart,
 
     float sig_tof   = (lor_dependent_sigma_tof == 1) ? sigma_tof[i] : sigma_tof[0];
     float tc_offset = (lor_dependent_tofcenter_offset == 1) ? tofcenter_offset[i] : tofcenter_offset[0];
+
+    // calculate the effective sigma (standard deviation of the TOF Gaussian convolved with the tofbin width)
+    // we need to to device which TOF bins a certain voxel along an LOR
+    float sig_eff = sqrtf(sig_tof*sig_tof + tofbin_width*tofbin_width/12.0f);
+
+    // factor that corrects the sum of the TOF weights to be 1, assuming that tofbin_width << sig_tof
+    // for n_sigma = 3.5, this factor is 1.0004
+    // for n_sigma = 3,   this factor is 1.0027
+    // for n_sigma = 2.5, this factor is 1.0126
+    // for n_sigma = 2,   this factor is 1.0476
+    float tof_trunc_corr_factor = 1.0f / erff(n_sigmas/sqrtf(2));
 
     float xstart0 = xstart[i*3 + 0];
     float xstart1 = xstart[i*3 + 1];
@@ -2461,8 +2514,8 @@ extern "C" __global__ void joseph3d_fwd_tof_lm_cuda_kernel(float *xstart,
         //-- check where we should start and stop according to the TOF kernel
         //-- the tof weights outside +- 3 sigma will be close to 0 so we can
         //-- ignore them         
-        istart_tof_f = (x_m0 + (it*tofbin_width - n_sigmas*sig_tof)*u0 - img_origin0) / voxsize0;
-        iend_tof_f   = (x_m0 + (it*tofbin_width + n_sigmas*sig_tof)*u0 - img_origin0) / voxsize0;
+        istart_tof_f = (x_m0 + (it*tofbin_width - n_sigmas*sig_eff)*u0 - img_origin0) / voxsize0;
+        iend_tof_f   = (x_m0 + (it*tofbin_width + n_sigmas*sig_eff)*u0 - img_origin0) / voxsize0;
         
         if (istart_tof_f > iend_tof_f){
           tmp        = iend_tof_f;
@@ -2528,8 +2581,8 @@ extern "C" __global__ void joseph3d_fwd_tof_lm_cuda_kernel(float *xstart,
                          powf((x_m1 + (it*tofbin_width + tc_offset)*u1 - x_v1), 2) + 
                          powf((x_m2 + (it*tofbin_width + tc_offset)*u2 - x_v2), 2));
 
-            //calculate the TOF weight
-            tw = 0.5f*(erff((dtof + 0.5f*tofbin_width)/(sqrtf(2)*sig_tof)) - 
+            // calculate the TOF weight, including the correction for kernel truncation
+            tw = 0.5f*tof_trunc_corr_factor*(erff((dtof + 0.5f*tofbin_width)/(sqrtf(2)*sig_tof)) - 
                       erff((dtof - 0.5f*tofbin_width)/(sqrtf(2)*sig_tof)));
 
             p[i] += (tw * cf * toAdd);
@@ -2578,8 +2631,8 @@ extern "C" __global__ void joseph3d_fwd_tof_lm_cuda_kernel(float *xstart,
         //-- check where we should start and stop according to the TOF kernel
         //-- the tof weights outside +- 3 sigma will be close to 0 so we can
         //-- ignore them         
-        istart_tof_f = (x_m1 + (it*tofbin_width - n_sigmas*sig_tof)*u1 - img_origin1) / voxsize1;
-        iend_tof_f   = (x_m1 + (it*tofbin_width + n_sigmas*sig_tof)*u1 - img_origin1) / voxsize1;
+        istart_tof_f = (x_m1 + (it*tofbin_width - n_sigmas*sig_eff)*u1 - img_origin1) / voxsize1;
+        iend_tof_f   = (x_m1 + (it*tofbin_width + n_sigmas*sig_eff)*u1 - img_origin1) / voxsize1;
         
         if (istart_tof_f > iend_tof_f){
           tmp        = iend_tof_f;
@@ -2646,8 +2699,8 @@ extern "C" __global__ void joseph3d_fwd_tof_lm_cuda_kernel(float *xstart,
                          powf((x_m1 + (it*tofbin_width + tc_offset)*u1 - x_v1), 2) + 
                          powf((x_m2 + (it*tofbin_width + tc_offset)*u2 - x_v2), 2));
 
-            //calculate the TOF weight
-            tw = 0.5f*(erff((dtof + 0.5f*tofbin_width)/(sqrtf(2)*sig_tof)) - 
+            // calculate the TOF weight, including the correction for kernel truncation
+            tw = 0.5f*tof_trunc_corr_factor*(erff((dtof + 0.5f*tofbin_width)/(sqrtf(2)*sig_tof)) - 
                       erff((dtof - 0.5f*tofbin_width)/(sqrtf(2)*sig_tof)));
 
 
@@ -2697,8 +2750,8 @@ extern "C" __global__ void joseph3d_fwd_tof_lm_cuda_kernel(float *xstart,
         //-- check where we should start and stop according to the TOF kernel
         //-- the tof weights outside +- 3 sigma will be close to 0 so we can
         //-- ignore them         
-        istart_tof_f = (x_m2 + (it*tofbin_width - n_sigmas*sig_tof)*u2 - img_origin2) / voxsize2;
-        iend_tof_f   = (x_m2 + (it*tofbin_width + n_sigmas*sig_tof)*u2 - img_origin2) / voxsize2;
+        istart_tof_f = (x_m2 + (it*tofbin_width - n_sigmas*sig_eff)*u2 - img_origin2) / voxsize2;
+        iend_tof_f   = (x_m2 + (it*tofbin_width + n_sigmas*sig_eff)*u2 - img_origin2) / voxsize2;
         
         if (istart_tof_f > iend_tof_f){
           tmp        = iend_tof_f;
@@ -2765,8 +2818,8 @@ extern "C" __global__ void joseph3d_fwd_tof_lm_cuda_kernel(float *xstart,
                          powf((x_m1 + (it*tofbin_width + tc_offset)*u1 - x_v1), 2) + 
                          powf((x_m2 + (it*tofbin_width + tc_offset)*u2 - x_v2), 2));
 
-            //calculate the TOF weight
-            tw = 0.5f*(erff((dtof + 0.5f*tofbin_width)/(sqrtf(2)*sig_tof)) - 
+            // calculate the TOF weight, including the correction for kernel truncation
+            tw = 0.5f*tof_trunc_corr_factor*(erff((dtof + 0.5f*tofbin_width)/(sqrtf(2)*sig_tof)) - 
                       erff((dtof - 0.5f*tofbin_width)/(sqrtf(2)*sig_tof)));
 
             p[i] += (tw * cf * toAdd);
