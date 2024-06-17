@@ -117,7 +117,7 @@ fig.show()
 # To do this, we have manually define a list containing pairs of block numbers.
 # Here, we define 11 block pairs. Note that more paris would be possible.
 
-lor_desc = parallelproj.BlockPETLORDescriptor(
+lor_desc = parallelproj.EqualBlockPETLORDescriptor(
     scanner,
     xp.asarray(
         [
