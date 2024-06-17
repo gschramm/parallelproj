@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import pytest
 import parallelproj
 import matplotlib.pyplot as plt
 
@@ -142,3 +143,80 @@ def test_pet_lors(xp: ModuleType, dev: str) -> None:
             sl = num_dim * [slice(None)]
             sl[lor_desc2.view_axis_num] = slice(0, None, num_subsets)
             assert subset_slices[0] == tuple(sl)
+
+
+def test_regular_equal_block_scanner(xp: ModuleType, dev: str) -> None:
+
+    # grid shape of LOR endpoints forming a block module
+    block_shape = (2, 2, 2)
+    # spacing between LOR endpoints in a block module
+    block_spacing = (4.0, 3.0, 2.0)
+    # radius of the scanner
+    scanner_radius = 10
+
+    aff1 = xp.eye(4, device=dev)
+    aff1[1, -1] = scanner_radius
+
+    aff2 = xp.eye(4, device=dev)
+    aff2[1, -1] = -scanner_radius
+
+    block1 = parallelproj.BlockPETScannerModule(
+        xp,
+        dev,
+        block_shape,
+        block_spacing,
+        affine_transformation_matrix=aff1,
+    )
+
+    block2 = parallelproj.BlockPETScannerModule(
+        xp,
+        dev,
+        block_shape,
+        block_spacing,
+        affine_transformation_matrix=aff2,
+    )
+
+    block3 = parallelproj.BlockPETScannerModule(
+        xp,
+        dev,
+        (2, 2, 3),
+        (4.0, 4.0, 4.0),
+        affine_transformation_matrix=aff2,
+    )
+
+    scanner = parallelproj.ModularizedPETScannerGeometry([block1, block2])
+
+    lor_desc = parallelproj.EqualBlockPETLORDescriptor(
+        scanner,
+        xp.asarray(
+            [
+                [0, 1],
+            ]
+        ),
+    )
+
+    assert lor_desc.scanner == scanner
+    assert (
+        xp.max(xp.abs(lor_desc.all_block_pairs - xp.asarray([[0, 1]], device=dev))) == 0
+    )
+    assert lor_desc.num_block_pairs == 1
+    assert lor_desc.num_lorendpoints_per_block == 8
+    assert lor_desc.num_lors_per_block_pair == 64
+
+    scanner2 = parallelproj.ModularizedPETScannerGeometry([block1, block2, block3])
+    with pytest.raises(Exception):
+        lor_desc2 = parallelproj.EqualBlockPETLORDescriptor(
+            scanner2,
+            xp.asarray(
+                [
+                    [0, 1],
+                    [1, 2],
+                ]
+            ),
+        )
+
+    fig3 = plt.figure(tight_layout=True)
+    ax3 = fig3.add_subplot(111, projection="3d")
+    scanner.show_lor_endpoints(ax3, annotation_fontsize=4, show_linear_index=False)
+    lor_desc.show_block_pair_lors(ax3, block_pair_nums=None, color=plt.cm.tab10(0))
+    fig3.show()

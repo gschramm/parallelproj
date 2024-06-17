@@ -161,3 +161,61 @@ def test_regular_polygon_pet_scanner(xp: ModuleType, dev: str) -> None:
     )
 
     assert xp.all(scanner2.modules[0].phis == phis)
+
+
+def test_regular_equal_block_scanner(xp: ModuleType, dev: str) -> None:
+
+    # grid shape of LOR endpoints forming a block module
+    block_shape = (2, 2, 2)
+    # spacing between LOR endpoints in a block module
+    block_spacing = (4.0, 3.0, 2.0)
+    # radius of the scanner
+    scanner_radius = 10
+
+    aff1 = xp.eye(4, device=dev)
+    aff1[1, -1] = scanner_radius
+
+    aff2 = xp.eye(4, device=dev)
+    aff2[1, -1] = -scanner_radius
+
+    block1 = parallelproj.BlockPETScannerModule(
+        xp,
+        dev,
+        block_shape,
+        block_spacing,
+        affine_transformation_matrix=aff1,
+    )
+
+    block2 = parallelproj.BlockPETScannerModule(
+        xp,
+        dev,
+        block_shape,
+        block_spacing,
+        affine_transformation_matrix=aff2,
+    )
+
+    assert block1.shape == block_shape
+    assert block1.spacing == block_spacing
+    lor_endpoints1a = block1.lor_endpoints
+    lor_endpoints1b = xp.asarray(
+        [
+            [-2.0, 8.5, -1.0],
+            [-2.0, 8.5, 1.0],
+            [-2.0, 11.5, -1.0],
+            [-2.0, 11.5, 1.0],
+            [2.0, 8.5, -1.0],
+            [2.0, 8.5, 1.0],
+            [2.0, 11.5, -1.0],
+            [2.0, 11.5, 1.0],
+        ],
+        device=dev,
+    )
+
+    assert xp.max(xp.abs(lor_endpoints1a - lor_endpoints1b)) < 1e-7
+
+    scanner = parallelproj.ModularizedPETScannerGeometry([block1, block2])
+
+    fig = plt.figure(tight_layout=True)
+    ax = fig.add_subplot(111, projection="3d")
+    scanner.show_lor_endpoints(ax, annotation_fontsize=4, show_linear_index=False)
+    fig.show()

@@ -129,6 +129,11 @@ class EqualBlockPETLORDescriptor(PETLORDescriptor):
         """number of LORs per block pair"""
         return self._num_lors_per_block_pair
 
+    @property
+    def scanner(self) -> ModularizedPETScannerGeometry:
+        """the scanner for which coincidences are described"""
+        return self._scanner
+
     def get_lor_coordinates(
         self, block_pair_nums: None | Array = None
     ) -> tuple[Array, Array]:
