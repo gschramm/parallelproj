@@ -75,7 +75,7 @@ class PETLORDescriptor(abc.ABC):
         return self.scanner.dev
 
 
-class BlockPETLORDescriptor(PETLORDescriptor):
+class EqualBlockPETLORDescriptor(PETLORDescriptor):
     """LOR descriptor for scanner consisting of block modules where each
     block module has the same number of LOR endpoints"""
 
