@@ -202,6 +202,8 @@ def test_regular_equal_block_scanner(xp: ModuleType, dev: str) -> None:
     assert lor_desc.num_block_pairs == 1
     assert lor_desc.num_lorendpoints_per_block == 8
     assert lor_desc.num_lors_per_block_pair == 64
+    assert lor_desc.xp == xp
+    assert lor_desc.dev == dev
 
     scanner2 = parallelproj.ModularizedPETScannerGeometry([block1, block2, block3])
     with pytest.raises(Exception):

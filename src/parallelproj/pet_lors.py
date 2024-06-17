@@ -134,6 +134,16 @@ class EqualBlockPETLORDescriptor(PETLORDescriptor):
         """the scanner for which coincidences are described"""
         return self._scanner
 
+    @property
+    def xp(self) -> ModuleType:
+        """array module to use for storing the LOR endpoints"""
+        return self.scanner.xp
+
+    @property
+    def dev(self) -> str:
+        """device to use for storing the LOR endpoints"""
+        return self.scanner.dev
+
     def get_lor_coordinates(
         self, block_pair_nums: None | Array = None
     ) -> tuple[Array, Array]:
