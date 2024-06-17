@@ -193,8 +193,8 @@ class EqualBlockPETLORDescriptor(PETLORDescriptor):
 
             tmp = self.xp.arange(self._num_lorendpoints_per_block, device=self.dev)
             a, b = self.xp.meshgrid(tmp, tmp, indexing="ij")
-            a = self.xp.reshape(a, -1)
-            b = self.xp.reshape(b, -1)
+            a = self.xp.reshape(a, (-1,))
+            b = self.xp.reshape(b, (-1,))
 
             xstart[i, ...] = self.xp.take(eps, a, axis=0)
             xend[i, ...] = self.xp.take(epe, b, axis=0)
