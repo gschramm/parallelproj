@@ -80,9 +80,7 @@ class BlockPETLORDescriptor(PETLORDescriptor):
     block module has the same number of LOR endpoints"""
 
     def __init__(
-        self,
-        scanner: ModularizedPETScannerGeometry,
-        all_block_pairs: Array
+        self, scanner: ModularizedPETScannerGeometry, all_block_pairs: Array
     ) -> None:
         """
         Parameters
@@ -98,11 +96,38 @@ class BlockPETLORDescriptor(PETLORDescriptor):
         -------
         None
         """
+        # check if all modules (blocks) have the same number of LOR enpoints
+        lor_endpoints_per_block = [x.num_lor_endpoints for x in scanner.modules]
+        if not all(x == lor_endpoints_per_block[0] for x in lor_endpoints_per_block):
+            raise ValueError(
+                "All modules (blocks) must have the same number of LOR endpoints"
+            )
+
         super().__init__(scanner)
         self._scanner = scanner
         self._all_block_pairs = all_block_pairs
         self._num_lorendpoints_per_block = self.scanner.modules[0].num_lor_endpoints
         self._num_lors_per_block_pair = self._num_lorendpoints_per_block**2
+
+    @property
+    def all_block_pairs(self) -> Array:
+        """all block pairs in coincidence"""
+        return self._all_block_pairs
+
+    @property
+    def num_block_pairs(self) -> int:
+        """number of block pairs in coincidence"""
+        return self._all_block_pairs.shape[0]
+
+    @property
+    def num_lorendpoints_per_block(self) -> int:
+        """number of LOR endpoints per block"""
+        return self._num_lorendpoints_per_block
+
+    @property
+    def num_lors_per_block_pair(self) -> int:
+        """number of LORs per block pair"""
+        return self._num_lors_per_block_pair
 
     def get_lor_coordinates(
         self, block_pair_nums: None | Array = None
@@ -118,7 +143,7 @@ class BlockPETLORDescriptor(PETLORDescriptor):
 
         Returns
         -------
-        tuple[Array, Array] 
+        tuple[Array, Array]
         A tuple containing two arrays:
             - the start coordinates of the LORs, with shape (N, 3), where N is the total number of LORs.
             - the end coordinates of the LORs, with shape (N, 3)
