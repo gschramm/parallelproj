@@ -18,9 +18,10 @@ a description of which block pairs are in coincidence.
 """
 
 # %%
-import array_api_compat.numpy as xp
+# import array_api_compat.numpy as xp
 
-# import array_api_compat.cupy as xp
+import array_api_compat.cupy as xp
+
 # import array_api_compat.torch as xp
 
 import parallelproj
@@ -74,7 +75,6 @@ for phi in [
     5 * delta_phi,
     6 * delta_phi,
     7 * delta_phi,
-    8 * delta_phi,
 ]:
     # setup an affine transformation matrix to rotate the block modules around the center
     # (of the "2" axis)
@@ -101,21 +101,13 @@ for phi in [
 scanner = parallelproj.ModularizedPETScannerGeometry(mods)
 
 # %%
-# Show the scanner geometry consisting of 7 block modules
-
-fig = plt.figure(tight_layout=True)
-ax = fig.add_subplot(111, projection="3d")
-scanner.show_lor_endpoints(ax, annotation_fontsize=4, show_linear_index=False)
-fig.show()
-
-# %%
 # Setup of a LOR descriptor consisting of block pairs
 # ---------------------------------------------------
 #
 # Once the geometry of the LOR endpoints is defined, we can define the LORs
 # by specifying which block pairs are in coincidence and for "valid" LORs.
 # To do this, we have manually define a list containing pairs of block numbers.
-# Here, we define 12 block pairs. Note that more paris would be possible.
+# Here, we define 9 block pairs. Note that more paris would be possible.
 
 lor_desc = parallelproj.EqualBlockPETLORDescriptor(
     scanner,
@@ -124,57 +116,106 @@ lor_desc = parallelproj.EqualBlockPETLORDescriptor(
             [0, 3],
             [0, 4],
             [0, 5],
-            [0, 6],
             [1, 3],
             [1, 4],
             [1, 5],
-            [1, 6],
             [2, 3],
             [2, 4],
             [2, 5],
-            [2, 6],
         ]
     ),
 )
 
 # %%
-# Visualize all LORs of 3 block pairs
-# block pair 0: connecting block 0 and block 3
-# block pair 5: connecting block 1 and block 4
-# block pair 11: connecting block 2 and block 6
+# Setup of the projector
+# ----------------------
+#
+# Now that the LOR descriptor is defined, we can setup the projector.
 
-fig2 = plt.figure(tight_layout=True)
-ax2 = fig2.add_subplot(111, projection="3d")
-scanner.show_lor_endpoints(ax2, annotation_fontsize=4, show_linear_index=False)
-lor_desc.show_block_pair_lors(
-    ax2, block_pair_nums=xp.asarray([0], device=dev), color=plt.cm.tab10(0)
-)
-lor_desc.show_block_pair_lors(
-    ax2, block_pair_nums=xp.asarray([5], device=dev), color=plt.cm.tab10(1)
-)
-lor_desc.show_block_pair_lors(
-    ax2, block_pair_nums=xp.asarray([11], device=dev), color=plt.cm.tab10(2)
-)
-fig2.show()
+img_shape = (28, 20, 3)
+voxel_size = (0.5, 0.5, 1.0)
+img = xp.ones(img_shape, dtype=xp.float32, device=dev)
+
+proj = parallelproj.EqualBlockPETProjector(lor_desc, img_shape, voxel_size)
+assert proj.adjointness_test(xp, dev)
 
 # %%
-# Visualize all LORs of all defined block pairs
+# Visualize the projector geometry and all LORs
 
-fig3 = plt.figure(tight_layout=True)
-ax3 = fig3.add_subplot(111, projection="3d")
-scanner.show_lor_endpoints(ax3, annotation_fontsize=4, show_linear_index=False)
-lor_desc.show_block_pair_lors(ax3, block_pair_nums=None, color=plt.cm.tab10(0))
+fig = plt.figure(figsize=(8, 4), tight_layout=True)
+ax0 = fig.add_subplot(121, projection="3d")
+ax1 = fig.add_subplot(122, projection="3d")
+proj.show_geometry(ax0)
+proj.show_geometry(ax1)
+lor_desc.show_block_pair_lors(ax1, block_pair_nums=None, color=plt.cm.tab10(0))
+fig.show()
+
+
+# %%
+# forward project an image full of ones and backproject a "data histogram" full of ones
+# ("sensitivity image")
+
+img_fwd = proj(img)
+ones_back = proj.adjoint(xp.ones_like(img_fwd))
+
+# %%
+# Visualize the forward and backward projection results
+
+fig3, ax3 = plt.subplots(figsize=(8, 2), tight_layout=True)
+ax3.imshow(parallelproj.to_numpy_array(img_fwd), cmap="Greys", aspect=3.0)
+ax3.set_xlabel("LOR number in block pair")
+ax3.set_ylabel("block pair")
+ax3.set_title("forward projection of ones")
 fig3.show()
 
+fig4, ax4 = plt.subplots(1, 3, figsize=(7, 3), tight_layout=True)
+vmin = float(xp.min(ones_back))
+vmax = float(xp.max(ones_back))
+for i in range(3):
+    ax4[i].imshow(
+        parallelproj.to_numpy_array(ones_back[:, :, i]),
+        vmin=vmin,
+        vmax=vmax,
+        cmap="Greys",
+    )
+ax4[1].set_title("back projection of ones")
+fig4.show()
+
 # %%
-# We can get the start and end coordinates of LORs for a specific block pair
-# or for all block pairs.
+# Setup of the TOF projector
+# --------------------------
+#
+# Now that the LOR descriptor is defined, we can setup the projector.
 
-# get the start and end coordinates of all LORs in block pair 0 (connecting block 0 and block 3)
-xstart0, xend0 = lor_desc.get_lor_coordinates(xp.asarray([0], device=dev))
+proj_tof = parallelproj.EqualBlockPETProjector(lor_desc, img_shape, voxel_size)
+proj_tof.tof_parameters = parallelproj.TOFParameters(
+    num_tofbins=27, tofbin_width=0.8, sigma_tof=2.0, num_sigmas=3.0
+)
 
-# get the start and end coordinates of all LORs in block pair 4 (connecting block 1 and block 3)
-xstart3, xend3 = lor_desc.get_lor_coordinates(xp.asarray([4], device=dev))
+assert proj_tof.adjointness_test(xp, dev)
 
-# get the start and end coordinates of all LORs of all block pairs
-xstart, xend = lor_desc.get_lor_coordinates()
+# %%
+# TOF forward project an image full of ones and TOF backproject a "TOF data histogram" full of ones
+# ("sensitivity image")
+
+img_fwd_tof = proj_tof(img)
+ones_back_tof = proj_tof.adjoint(xp.ones_like(img_fwd_tof))
+
+fig5, ax5 = plt.subplots(figsize=(6, 3), tight_layout=True)
+ax5.plot(parallelproj.to_numpy_array(img_fwd_tof[0, 0, :]), ".-")
+ax5.set_xlabel("TOF bin")
+ax5.set_title("TOF profile of LOR 0 in block pair 0")
+fig5.show()
+
+fig6, ax6 = plt.subplots(1, 3, figsize=(7, 3), tight_layout=True)
+vmin = float(xp.min(ones_back_tof))
+vmax = float(xp.max(ones_back_tof))
+for i in range(3):
+    ax6[i].imshow(
+        parallelproj.to_numpy_array(ones_back_tof[:, :, i]),
+        vmin=vmin,
+        vmax=vmax,
+        cmap="Greys",
+    )
+ax6[1].set_title("TOF back projection of ones")
+fig6.show()

@@ -12,7 +12,7 @@ from array_api_compat import device, get_namespace, size
 import parallelproj
 
 from .operators import LinearOperator
-from .pet_lors import RegularPolygonPETLORDescriptor
+from .pet_lors import RegularPolygonPETLORDescriptor, EqualBlockPETLORDescriptor
 from .tof import TOFParameters
 from .backend import is_cuda_array, empty_cuda_cache, to_numpy_array
 
@@ -1113,3 +1113,271 @@ class ListmodePETProjector(LinearOperator):
             )
 
         return y_back
+
+
+class EqualBlockPETProjector(LinearOperator):
+    """geometric non-TOF and TOF sinogram projector for regular polygon PET scanners
+
+    Examples
+    --------
+    .. minigallery:: parallelproj.RegularPolygonPETProjector
+    """
+
+    def __init__(
+        self,
+        lor_descriptor: EqualBlockPETLORDescriptor,
+        img_shape: tuple[int, int, int],
+        voxel_size: tuple[float, float, float],
+        img_origin: None | Array = None,
+    ) -> None:
+        """
+        Parameters
+        ----------
+        lor_descriptor : RegularPolygonPETLORDescriptor
+            descriptor of the LOR start / end points
+        img_shape : tuple[int, int, int]
+            shape of the image to be projected
+        voxel_size : tuple[float, float, float]
+            the voxel size of the image to be projected
+        img_origin : None | Array, optional
+            the origin of the image to be projected, by default None
+            means that the center of the image is at world coordinate (0,0,0)
+        """
+
+        super().__init__()
+        self._dev = lor_descriptor.dev
+
+        self._lor_descriptor = lor_descriptor
+        self._img_shape = img_shape
+        self._voxel_size = self.xp.asarray(
+            voxel_size, dtype=self.xp.float32, device=self._dev
+        )
+
+        if img_origin is None:
+            self._img_origin = (
+                -(
+                    self.xp.asarray(
+                        self._img_shape, dtype=self.xp.float32, device=self._dev
+                    )
+                    / 2
+                )
+                + 0.5
+            ) * self._voxel_size
+        else:
+            self._img_origin = self.xp.asarray(
+                img_origin, dtype=self.xp.float32, device=self._dev
+            )
+
+        self._tof_parameters = None
+        self._tof = False
+
+    @property
+    def xp(self) -> ModuleType:
+        """array module"""
+        return self._lor_descriptor.xp
+
+    @property
+    def dev(self) -> str:
+        """device"""
+        return self._dev
+
+    @property
+    def in_shape(self) -> tuple[int, int, int]:
+        return self._img_shape
+
+    @property
+    def out_shape(self) -> tuple[int, int, int]:
+        out_shape = list(
+            [
+                self._lor_descriptor.num_block_pairs,
+                self._lor_descriptor.num_lors_per_block_pair,
+            ]
+        )
+
+        if self.tof:
+            out_shape += [self.tof_parameters.num_tofbins]
+
+        return tuple(out_shape)
+
+    @property
+    def tof(self) -> bool:
+        """bool indicating whether to use TOF or not"""
+        return self._tof
+
+    @tof.setter
+    def tof(self, value: bool) -> None:
+        self._tof = value
+
+        if self.tof_parameters is None:
+            raise ValueError("tof_parameters must not be None")
+
+    @property
+    def tof_parameters(self) -> TOFParameters | None:
+        """TOF parameters"""
+        return self._tof_parameters
+
+    @tof_parameters.setter
+    def tof_parameters(self, value: TOFParameters | None) -> None:
+        if not (isinstance(value, TOFParameters) or value is None):
+            raise ValueError("tof_parameters must be a TOFParameters object or None")
+        self._tof_parameters = value
+
+        if value is None:
+            self._tof = False
+        else:
+            self._tof = True
+
+    @property
+    def lor_descriptor(self) -> EqualBlockPETLORDescriptor:
+        """LOR descriptor"""
+        return self._lor_descriptor
+
+    @property
+    def img_origin(self) -> Array:
+        """image origin - world coordinates of the [0,0,0] voxel"""
+        return self._img_origin
+
+    @property
+    def voxel_size(self) -> Array:
+        """voxel size"""
+        return self._voxel_size
+
+    def _apply(self, x):
+        """nonTOF forward projection of input image x including image based resolution model"""
+
+        dev = array_api_compat.device(x)
+
+        x_fwd = self.xp.zeros(self.out_shape, dtype=self.xp.float32, device=dev)
+
+        for i in range(self.lor_descriptor.num_block_pairs):
+            xstart, xend = self.lor_descriptor.get_lor_coordinates(
+                self.xp.asarray([i], device=dev)
+            )
+
+            if not self.tof:
+                x_fwd[i, ...] = parallelproj.joseph3d_fwd(
+                    xstart, xend, x, self._img_origin, self._voxel_size
+                )
+            else:
+                x_fwd[i, ...] = parallelproj.joseph3d_fwd_tof_sino(
+                    xstart,
+                    xend,
+                    x,
+                    self._img_origin,
+                    self._voxel_size,
+                    self._tof_parameters.tofbin_width,
+                    self.xp.asarray(
+                        [self._tof_parameters.sigma_tof],
+                        dtype=self.xp.float32,
+                        device=dev,
+                    ),
+                    self.xp.asarray(
+                        [self._tof_parameters.tofcenter_offset],
+                        dtype=self.xp.float32,
+                        device=dev,
+                    ),
+                    self.tof_parameters.num_sigmas,
+                    self.tof_parameters.num_tofbins,
+                )
+
+        return x_fwd
+
+    def _adjoint(self, y):
+        """nonTOF back projection of sinogram y"""
+        dev = array_api_compat.device(y)
+
+        y_back = self.xp.zeros(self.in_shape, dtype=self.xp.float32, device=dev)
+
+        for i in range(self.lor_descriptor.num_block_pairs):
+            xstart, xend = self.lor_descriptor.get_lor_coordinates(
+                self.xp.asarray([i], device=dev)
+            )
+            if not self.tof:
+                y_back += parallelproj.joseph3d_back(
+                    xstart,
+                    xend,
+                    self._img_shape,
+                    self._img_origin,
+                    self._voxel_size,
+                    y[i, ...],
+                )
+            else:
+                y_back += parallelproj.joseph3d_back_tof_sino(
+                    xstart,
+                    xend,
+                    self._img_shape,
+                    self._img_origin,
+                    self._voxel_size,
+                    y[i, ...],
+                    self._tof_parameters.tofbin_width,
+                    self.xp.asarray(
+                        [self._tof_parameters.sigma_tof],
+                        dtype=self.xp.float32,
+                        device=dev,
+                    ),
+                    self.xp.asarray(
+                        [self._tof_parameters.tofcenter_offset],
+                        dtype=self.xp.float32,
+                        device=dev,
+                    ),
+                    self.tof_parameters.num_sigmas,
+                    self.tof_parameters.num_tofbins,
+                )
+
+        return y_back
+
+    def show_geometry(
+        self,
+        ax: plt.Axes,
+        color: tuple[float, float, float] = (1.0, 0.0, 0.0),
+        edgecolor: str = "grey",
+        alpha: float = 0.1,
+    ) -> None:
+        """show the geometry of the scanner and the FOV of the image
+
+        Parameters
+        ----------
+        ax : plt.Axes
+            matplotlib axes object with projection = '3d'
+        color : tuple[float, float, float], optional
+            color to use for the FOV cube, by default (1.,0.,0.)
+        edgecolor : str, optional
+            edgecolor to use for the FOV cube, by default 'grey'
+        alpha : float, optional
+            alpha value of the FOV cube, by default 0.1
+        """
+
+        # dimensions of the "voxel" array for the FOV cube
+        # (1,1,1) means that FOV cube is represented by a single voxel
+        sh = (1, 1, 1)
+
+        x, y, z = np.indices((sh[0] + 1, sh[1] + 1, sh[2] + 1)).astype(float)
+
+        x /= sh[0]
+        y /= sh[1]
+        z /= sh[2]
+
+        x *= int(self.in_shape[0]) * float(self.voxel_size[0])
+        y *= int(self.in_shape[1]) * float(self.voxel_size[1])
+        z *= int(self.in_shape[2]) * float(self.voxel_size[2])
+
+        x += float(self.img_origin[0]) - 0.5 * float(self.voxel_size[0])
+        y += float(self.img_origin[1]) - 0.5 * float(self.voxel_size[1])
+        z += float(self.img_origin[2]) - 0.5 * float(self.voxel_size[2])
+
+        colors = np.empty(sh + (4,), dtype=np.float32)
+        colors[..., 0] = color[0]
+        colors[..., 1] = color[1]
+        colors[..., 2] = color[2]
+        colors[..., 3] = alpha
+
+        ax.voxels(
+            x,
+            y,
+            z,
+            filled=np.ones(sh, dtype=np.bool),
+            facecolors=colors,
+            edgecolors=edgecolor,
+        )
+
+        self.lor_descriptor.scanner.show_lor_endpoints(ax)

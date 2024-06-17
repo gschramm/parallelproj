@@ -35,6 +35,7 @@ from .projectors import (
     ParallelViewProjector3D,
     RegularPolygonPETProjector,
     ListmodePETProjector,
+    EqualBlockPETProjector,
 )
 
 from .pet_scanners import (
@@ -81,6 +82,7 @@ __all__ = [
     "ParallelViewProjector2D",
     "ParallelViewProjector3D",
     "RegularPolygonPETProjector",
+    "EqualBlockPETProjector",
     "ListmodePETProjector",
     "RegularPolygonPETScannerModule",
     "RegularPolygonPETScannerGeometry",
