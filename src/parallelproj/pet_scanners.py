@@ -239,7 +239,12 @@ class BlockPETScannerModule(PETScannerModule):
         X0, X1, X2 = xp.meshgrid(x0, x1, x2, indexing="ij")
 
         self._lor_endpoints = xp.stack(
-            (xp.reshape(X0, -1), xp.reshape(X1, -1), xp.reshape(X2, -1)), axis=-1
+            (
+                xp.reshape(X0, (-1,)),
+                xp.reshape(X1, (-1,)),
+                xp.reshape(X2, (-1,)),
+            ),
+            axis=-1,
         )
 
         if affine_transformation_matrix is not None:

@@ -18,10 +18,9 @@ a description of which block pairs are in coincidence.
 """
 
 # %%
-# import array_api_compat.numpy as xp
+import array_api_compat.numpy as xp
 
-import array_api_compat.cupy as xp
-
+# import array_api_compat.cupy as xp
 # import array_api_compat.torch as xp
 
 import parallelproj

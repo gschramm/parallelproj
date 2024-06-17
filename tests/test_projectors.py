@@ -3,6 +3,7 @@ from __future__ import annotations
 import pytest
 import parallelproj
 import array_api_compat
+import matplotlib.pyplot as plt
 
 from .config import pytestmark
 
@@ -277,3 +278,90 @@ def test_lmprojector(
 
     # test a projector with img_origin = None
     lm_proj2 = parallelproj.ListmodePETProjector(xstart, xend, img_dim, voxel_size)
+
+
+def test_equalblock_projector(xp, dev, verbose=True):
+
+    # grid shape of LOR endpoints forming a block module
+    block_shape = (2, 2, 2)
+    # spacing between LOR endpoints in a block module
+    block_spacing = (4.0, 3.0, 2.0)
+    # radius of the scanner
+    scanner_radius = 10
+
+    aff1 = xp.eye(4, device=dev)
+    aff1[1, -1] = scanner_radius
+
+    aff2 = xp.eye(4, device=dev)
+    aff2[1, -1] = -scanner_radius
+
+    block1 = parallelproj.BlockPETScannerModule(
+        xp,
+        dev,
+        block_shape,
+        block_spacing,
+        affine_transformation_matrix=aff1,
+    )
+
+    block2 = parallelproj.BlockPETScannerModule(
+        xp,
+        dev,
+        block_shape,
+        block_spacing,
+        affine_transformation_matrix=aff2,
+    )
+
+    scanner = parallelproj.ModularizedPETScannerGeometry([block1, block2])
+
+    lor_desc = parallelproj.EqualBlockPETLORDescriptor(
+        scanner,
+        xp.asarray(
+            [
+                [0, 1],
+            ]
+        ),
+    )
+
+    img_shape = (14, 10, 3)
+    voxel_size = (1.0, 1.0, 1.0)
+    img = xp.ones(img_shape, dtype=xp.float32, device=dev)
+
+    proj = parallelproj.EqualBlockPETProjector(lor_desc, img_shape, voxel_size)
+    assert proj.adjointness_test(xp, dev)
+    assert proj.xp == xp
+    assert proj.dev == dev
+    assert proj.in_shape == img_shape
+    assert proj.out_shape == (
+        lor_desc.num_block_pairs,
+        lor_desc.num_lors_per_block_pair,
+    )
+    assert proj.tof == False
+    assert proj.lor_descriptor == lor_desc
+    assert allclose(
+        proj.img_origin, xp.asarray([-6.5, -4.5, -1.0], dtype=xp.float32, device=dev)
+    )
+    assert allclose(
+        proj.voxel_size, xp.asarray(voxel_size, dtype=xp.float32, device=dev)
+    )
+
+    img_fwd = proj(img)
+    ones_back = proj.adjoint(xp.ones_like(img_fwd))
+
+    proj_tof = parallelproj.EqualBlockPETProjector(lor_desc, img_shape, voxel_size)
+    tof_params = parallelproj.TOFParameters(
+        num_tofbins=27, tofbin_width=0.8, sigma_tof=2.0, num_sigmas=3.0
+    )
+
+    proj_tof.tof_parameters = tof_params
+
+    assert proj_tof.adjointness_test(xp, dev)
+    assert proj_tof.tof == True
+    assert proj_tof.tof_parameters == tof_params
+
+    img_fwd_tof = proj_tof(img)
+    ones_back_tof = proj_tof.adjoint(xp.ones_like(img_fwd_tof))
+
+    fig = plt.figure(figsize=(8, 4), tight_layout=True)
+    ax = fig.add_subplot(111, projection="3d")
+    proj.show_geometry(ax)
+    fig.show()
