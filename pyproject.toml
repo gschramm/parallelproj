@@ -6,7 +6,7 @@ authors = [
     {name = "Georg Schramm", email = "georg.schramm@kuleuven.be"},
 ]
 dependencies = [
-    "numpy~=1.22",
+    "numpy>=1.22",
     "scipy~=1.0",
     "array-api-compat<1.5",
     "array-api-strict~=1.0",
