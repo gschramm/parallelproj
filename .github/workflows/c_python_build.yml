@@ -47,7 +47,7 @@ jobs:
         pdm show --version
     - name: Install dependencies and package
       run: |
-        pdm update -d -G test
+        pdm install -d -G test
 
     - if: matrix.os == 'ubuntu-latest'
       name: Run Tests
