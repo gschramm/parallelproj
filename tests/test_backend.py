@@ -29,7 +29,8 @@ def test_event_multiplicity(xp: ModuleType, dev: str) -> None:
             [1, 1, 1, 1, 1],
             [2, 1, 1, 1, 1],
             [1, 1, 1, 1, 1],
-        ], device = dev
+        ],
+        device=dev,
     )
 
     mu = parallelproj.count_event_multiplicity(events)

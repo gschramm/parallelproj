@@ -191,7 +191,8 @@ def test_regular_equal_block_scanner(xp: ModuleType, dev: str) -> None:
         xp.asarray(
             [
                 [0, 1],
-            ]
+            ],
+            device=dev,
         ),
     )
 
@@ -213,7 +214,8 @@ def test_regular_equal_block_scanner(xp: ModuleType, dev: str) -> None:
                 [
                     [0, 1],
                     [1, 2],
-                ]
+                ],
+                device=dev,
             ),
         )
 
@@ -222,3 +224,4 @@ def test_regular_equal_block_scanner(xp: ModuleType, dev: str) -> None:
     scanner.show_lor_endpoints(ax3, annotation_fontsize=4, show_linear_index=False)
     lor_desc.show_block_pair_lors(ax3, block_pair_nums=None, color=plt.cm.tab10(0))
     fig3.show()
+    plt.close(fig3)
