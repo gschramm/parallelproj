@@ -5,7 +5,7 @@
 groups = ["default", "test", "numpy122"]
 strategy = ["cross_platform", "inherit_metadata"]
 lock_version = "4.4.1"
-content_hash = "sha256:cea32a0bdd5ee69e4a1ad896424aa19f74854ffeb926e85dbdb3f064f038789c"
+content_hash = "sha256:11eb9db40be0f15f9cf52da6e00f62cc4d399cf3dbe37ea6082d8a7781293354"
 
 [[package]]
 name = "array-api-compat"
@@ -480,7 +480,7 @@ name = "numpy"
 version = "1.22.0"
 requires_python = ">=3.8"
 summary = "NumPy is the fundamental package for array computing with Python."
-groups = ["default", "numpy122"]
+groups = ["default"]
 files = [
     {file = "numpy-1.22.0-cp310-cp310-macosx_10_9_universal2.whl", hash = "sha256:3d22662b4b10112c545c91a0741f2436f8ca979ab3d69d03d19322aa970f9695"},
     {file = "numpy-1.22.0-cp310-cp310-macosx_10_9_x86_64.whl", hash = "sha256:11a1f3816ea82eed4178102c56281782690ab5993251fdfd75039aad4d20385f"},
