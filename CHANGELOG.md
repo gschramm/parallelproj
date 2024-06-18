@@ -1,3 +1,8 @@
+## 1.9 (June 18, 2024)
+
+- add functionality to create scanners, LOR descriptors and projectors for scanners consiting of equal "block" modules
+- **BUGFIX:** correct behavior of TOF kernel truncation which was wrong in the case that the tof bin width was >> tof resolution   
+
 ## 1.8 (March 20, 2024)
 
 - add function to count event multiplicity
