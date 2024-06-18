@@ -36,7 +36,6 @@ test = [
     "tox>=4.14.1",
     "tox-pdm>=0.7.2",
     "pytest-cov>=4.1.0",
-    "torch>=2.3.1",
 ]
 [tool.coverage.report]
 exclude_lines = [
