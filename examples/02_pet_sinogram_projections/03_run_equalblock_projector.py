@@ -124,8 +124,8 @@ lor_desc = parallelproj.EqualBlockPETLORDescriptor(
 )
 
 # %%
-# Setup of the projector
-# ----------------------
+# Setup of a non-TOF projector
+# ----------------------------
 #
 # Now that the LOR descriptor is defined, we can setup the projector.
 
@@ -186,8 +186,8 @@ ax4[1].set_title("back projection of ones")
 fig4.show()
 
 # %%
-# Setup of the TOF projector
-# --------------------------
+# Setup of a TOF projector
+# ------------------------
 #
 # Now that the LOR descriptor is defined, we can setup the projector.
 
