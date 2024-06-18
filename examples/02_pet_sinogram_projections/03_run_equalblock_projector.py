@@ -104,7 +104,7 @@ scanner = parallelproj.ModularizedPETScannerGeometry(mods)
 # Once the geometry of the LOR endpoints is defined, we can define the LORs
 # by specifying which block pairs are in coincidence and for "valid" LORs.
 # To do this, we have manually define a list containing pairs of block numbers.
-# Here, we define 9 block pairs. Note that more paris would be possible.
+# Here, we define 9 block pairs. Note that more pairs would be possible.
 
 lor_desc = parallelproj.EqualBlockPETLORDescriptor(
     scanner,
