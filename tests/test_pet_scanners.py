@@ -219,3 +219,4 @@ def test_regular_equal_block_scanner(xp: ModuleType, dev: str) -> None:
     ax = fig.add_subplot(111, projection="3d")
     scanner.show_lor_endpoints(ax, annotation_fontsize=4, show_linear_index=False)
     fig.show()
+    plt.close(fig)

@@ -107,7 +107,7 @@ class EqualBlockPETLORDescriptor(PETLORDescriptor):
         self._scanner = scanner
         self._all_block_pairs = all_block_pairs
         self._num_lorendpoints_per_block = self.scanner.modules[0].num_lor_endpoints
-        self._num_lors_per_block_pair = self._num_lorendpoints_per_block**2
+        self._num_lors_per_block_pair = self._num_lorendpoints_per_block ** 2
 
     @property
     def all_block_pairs(self) -> Array:
@@ -183,11 +183,11 @@ class EqualBlockPETLORDescriptor(PETLORDescriptor):
             be = self._all_block_pairs[block_pair_num, 1]
 
             eps = self.scanner.get_lor_endpoints(
-                self.xp.asarray([bs]),
+                self.xp.asarray([bs], device=self.dev),
                 self.xp.arange(self._num_lorendpoints_per_block, device=self.dev),
             )
             epe = self.scanner.get_lor_endpoints(
-                self.xp.asarray([be]),
+                self.xp.asarray([be], device=self.dev),
                 self.xp.arange(self._num_lorendpoints_per_block, device=self.dev),
             )
 

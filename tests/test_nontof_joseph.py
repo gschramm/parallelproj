@@ -138,7 +138,7 @@ def test_adjointness(
 
     phis = xp.asarray(np.random.rand(nLORs) * 2 * np.pi, device=dev)
     costheta = xp.asarray(np.random.rand(nLORs) * 2 - 1, device=dev)
-    sintheta = xp.sqrt(1 - costheta**2)
+    sintheta = xp.sqrt(1 - costheta ** 2)
 
     xstart = xp.zeros((nLORs, 3), dtype=xp.float32, device=dev)
     xstart[:, 0] = R * sintheta * xp.cos(phis)
@@ -147,7 +147,7 @@ def test_adjointness(
 
     phis = xp.asarray(np.random.rand(nLORs) * 2 * np.pi, device=dev)
     costheta = xp.asarray(np.random.rand(nLORs) * 2 - 1, device=dev)
-    sintheta = xp.sqrt(1 - costheta**2)
+    sintheta = xp.sqrt(1 - costheta ** 2)
 
     xend = xp.zeros((nLORs, 3), dtype=xp.float32, device=dev)
     xend[:, 0] = R * sintheta * xp.cos(phis)

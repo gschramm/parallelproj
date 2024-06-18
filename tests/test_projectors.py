@@ -62,7 +62,6 @@ def test_parallelviewprojector(xp, dev, verbose=True):
 
     assert allclose(x_fwd, exp_result)
 
-    # fig = proj2d.show_views(image=xp.ones(image_shape, dtype=xp.float32, device=dev))
     import numpy as np
 
     fig = proj2d.show_views(image=np.ones(image_shape))
@@ -371,6 +370,7 @@ def test_equalblock_projector(xp, dev, verbose=True):
     ax = fig.add_subplot(111, projection="3d")
     proj.show_geometry(ax)
     fig.show()
+    plt.close(fig)
 
     proj_tof.tof = False
     proj_tof.tof = True

@@ -13,7 +13,7 @@ xp_dev_list.append((nparr, None))
 if parallelproj.cupy_enabled:
     import array_api_compat.cupy as cp
 
-    xp_dev_list.append((cp, "cuda"))
+    xp_dev_list.append((cp, cp.cuda.Device(0)))
 
 if parallelproj.torch_enabled:
     import array_api_compat.torch as torch
