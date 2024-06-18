@@ -325,6 +325,7 @@ def test_equalblock_projector(xp, dev, verbose=True):
     img_shape = (14, 10, 3)
     voxel_size = (1.0, 1.0, 1.0)
     img = xp.ones(img_shape, dtype=xp.float32, device=dev)
+    img_origin = xp.asarray([-6.5, -4.5, -1.0], dtype=xp.float32, device=dev)
 
     proj = parallelproj.EqualBlockPETProjector(lor_desc, img_shape, voxel_size)
     assert proj.adjointness_test(xp, dev)
@@ -337,9 +338,7 @@ def test_equalblock_projector(xp, dev, verbose=True):
     )
     assert proj.tof == False
     assert proj.lor_descriptor == lor_desc
-    assert allclose(
-        proj.img_origin, xp.asarray([-6.5, -4.5, -1.0], dtype=xp.float32, device=dev)
-    )
+    assert allclose(img_origin, proj.img_origin)
     assert allclose(
         proj.voxel_size, xp.asarray(voxel_size, dtype=xp.float32, device=dev)
     )
@@ -347,7 +346,14 @@ def test_equalblock_projector(xp, dev, verbose=True):
     img_fwd = proj(img)
     ones_back = proj.adjoint(xp.ones_like(img_fwd))
 
-    proj_tof = parallelproj.EqualBlockPETProjector(lor_desc, img_shape, voxel_size)
+    with pytest.raises(Exception):
+        proj.tof = True
+
+    # test TOF projector
+
+    proj_tof = parallelproj.EqualBlockPETProjector(
+        lor_desc, img_shape, voxel_size, img_origin=img_origin
+    )
     tof_params = parallelproj.TOFParameters(
         num_tofbins=27, tofbin_width=0.8, sigma_tof=2.0, num_sigmas=3.0
     )
@@ -365,3 +371,14 @@ def test_equalblock_projector(xp, dev, verbose=True):
     ax = fig.add_subplot(111, projection="3d")
     proj.show_geometry(ax)
     fig.show()
+
+    proj_tof.tof = False
+    proj_tof.tof = True
+
+    with pytest.raises(Exception):
+        proj_tof.tof_parameters = 2
+
+    proj_tof.tof_parameters = None
+    assert proj_tof.tof == False
+    proj_tof.tof_parameters = tof_params
+    assert proj_tof.tof == True
