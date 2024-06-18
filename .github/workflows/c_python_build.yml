@@ -47,8 +47,8 @@ jobs:
         pdm show --version
     - name: Install dependencies and package
       run: |
-        pdm sync -d -G test
-        #pdm update -d -G test
+        #pdm sync -d -G test
+        pdm update -d -G test
         #pdm list
 
     - if: matrix.os == 'ubuntu-latest'
