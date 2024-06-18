@@ -37,6 +37,9 @@ test = [
     "tox-pdm>=0.7.2",
     "pytest-cov>=4.1.0",
 ]
+numpy122 = [
+    "numpy==1.22",
+]
 [tool.coverage.report]
 exclude_lines = [
     "def __repr__",
