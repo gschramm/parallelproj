@@ -23,7 +23,7 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest] # not building on mac-os because there is no OpenMP
-        python-version: ['3.9','3.11']
+        python-version: ['3.9','3.12']
 
     steps:
     - uses: actions/checkout@v4
@@ -54,8 +54,6 @@ jobs:
     - if: matrix.os == 'ubuntu-latest'
       name: Run Tests
       run: |
-        #pdm run tox
-        #pytest tests -v --cov-report term-missing --cov "{envsitepackagesdir}/parallelproj"  --cov-fail-under=100
         pdm run -v pytest tests -v --cov-report term-missing --cov "src/parallelproj"  --cov-fail-under=100
       env: 
         PARALLELPROJ_C_LIB: ${{github.workspace}}/libparallelproj_install/lib/libparallelproj_c.so
@@ -63,7 +61,7 @@ jobs:
     - if: matrix.os == 'windows-latest'
       name: Run Tests
       run: |
-        #pdm run tox
         pdm run -v pytest tests -v --cov-report term-missing --cov "src/parallelproj"  --cov-fail-under=100
       env: 
         PARALLELPROJ_C_LIB: ${{github.workspace}}\libparallelproj_install\bin\parallelproj_c.dll
+
