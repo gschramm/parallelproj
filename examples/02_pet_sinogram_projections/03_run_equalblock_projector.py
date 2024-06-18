@@ -1,12 +1,10 @@
 """
-Modularized (block) PET scanner geometry
-========================================
+Non-TOF and TOF projections using a modularized (block) PET scanner geometry
+============================================================================
 
-In this example, we show how to setup a generic PET scanner consisting 
-of multiple block modules where each block module consists of a regular 
-grid of LOR endpoints.
-We also show how to define a LOR descriptor for this geometry using
-a description of which block pairs are in coincidence.
+In this example, we show how to perform non-TOF and TOF projections using a 
+PET scanner consisting of multiple block modules where each block module 
+consists of a regular grid of LOR endpoints.
 
 .. tip::
     parallelproj is python array API compatible meaning it supports different 
@@ -151,11 +149,18 @@ fig.show()
 
 
 # %%
-# forward project an image full of ones and backproject a "data histogram" full of ones
-# ("sensitivity image")
+# Forward project an image full of ones. The forward projection has the
+# shape (num_block_pairs, num_lors_per_block_pair)
 
 img_fwd = proj(img)
-ones_back = proj.adjoint(xp.ones_like(img_fwd))
+print(img_fwd.shape)
+
+# %%
+# Backproject a "histogram" full of ones ("sensitivity image" when attenuation
+# and normalization are ignored)
+
+ones_back = proj.adjoint(xp.ones(proj.out_shape, dtype=xp.float32, device=dev))
+print(ones_back.shape)
 
 # %%
 # Visualize the forward and backward projection results
@@ -194,11 +199,23 @@ proj_tof.tof_parameters = parallelproj.TOFParameters(
 assert proj_tof.adjointness_test(xp, dev)
 
 # %%
-# TOF forward project an image full of ones and TOF backproject a "TOF data histogram" full of ones
-# ("sensitivity image")
+# TOF forward project an image full of ones. The forward projection has the
+# shape (num_block_pairs, num_lors_per_block_pair, num_tofbins)
 
 img_fwd_tof = proj_tof(img)
-ones_back_tof = proj_tof.adjoint(xp.ones_like(img_fwd_tof))
+print(img_fwd_tof.shape)
+
+# %%
+# TOF backproject a "TOF histogram" full of ones ("sensitivity image" when attenuation
+# and normalization are ignored)
+
+ones_back_tof = proj_tof.adjoint(
+    xp.ones(proj_tof.out_shape, dtype=xp.float32, device=dev)
+)
+print(ones_back_tof.shape)
+
+# %%
+# Visualize the forward and backward projection results
 
 fig5, ax5 = plt.subplots(figsize=(6, 3), tight_layout=True)
 ax5.plot(parallelproj.to_numpy_array(img_fwd_tof[0, 0, :]), ".-")
