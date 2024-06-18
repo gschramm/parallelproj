@@ -56,7 +56,7 @@ jobs:
       run: |
         #pdm run tox
         #pytest tests -v --cov-report term-missing --cov "{envsitepackagesdir}/parallelproj"  --cov-fail-under=100
-        pytest tests -v --cov-report term-missing --cov "src/parallelproj"  --cov-fail-under=100
+        pdm run -v pytest tests -v --cov-report term-missing --cov "src/parallelproj"  --cov-fail-under=100
       env: 
         PARALLELPROJ_C_LIB: ${{github.workspace}}/libparallelproj_install/lib/libparallelproj_c.so
 
@@ -64,6 +64,6 @@ jobs:
       name: Run Tests
       run: |
         #pdm run tox
-        pytest tests -v --cov-report term-missing --cov "src/parallelproj"  --cov-fail-under=100
+        pdm run -v pytest tests -v --cov-report term-missing --cov "src/parallelproj"  --cov-fail-under=100
       env: 
         PARALLELPROJ_C_LIB: ${{github.workspace}}\libparallelproj_install\bin\parallelproj_c.dll
