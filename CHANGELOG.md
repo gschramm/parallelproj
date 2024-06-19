@@ -1,3 +1,7 @@
+## 1.9.1 (June 19, 2024)
+
+- BUGFIX: add missing device in BlockPET LOR descriptor (needed for pytorch + cuda backend)
+
 ## 1.9 (June 18, 2024)
 
 - add functionality to create scanners, LOR descriptors and projectors for scanners consiting of equal "block" modules
