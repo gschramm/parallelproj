@@ -1,3 +1,5 @@
+import os
+
 from .backend import (
     cuda_present,
     cupy_enabled,
@@ -95,30 +97,31 @@ __all__ = [
     "EqualBlockPETLORDescriptor",
 ]
 
-print(
-    f"""
-          -  -  -  -  -  -  -  -   -  -  -  -
-          P  A  R  A  L  L  E  L | P  R  O  J
-          -  -  -  -  -  -  -  -   -  -  -  -
+if os.getenv('PARALLELPROJ_SILENT_IMPORT') is None:
+    print(
+        f"""
+              -  -  -  -  -  -  -  -   -  -  -  -
+              P  A  R  A  L  L  E  L | P  R  O  J
+              -  -  -  -  -  -  -  -   -  -  -  -
 
-    =================================================
+        =================================================
 
-         Please consider citing our publication
-      ---------------------------------------------
-      Georg Schramm and Kris Thielemans:
-      "PARALLELPROJ—an open-source framework for
-       fast calculation of projections in
-       tomography"
-      Front. Nucl. Med., 08 January 2024
-      Sec. PET and SPECT, Vol 3
-      https://doi.org/10.3389/fnume.2023.1324562
+             Please consider citing our publication
+          ---------------------------------------------
+          Georg Schramm and Kris Thielemans:
+          "PARALLELPROJ—an open-source framework for
+           fast calculation of projections in
+           tomography"
+          Front. Nucl. Med., 08 January 2024
+          Sec. PET and SPECT, Vol 3
+          https://doi.org/10.3389/fnume.2023.1324562
 
-    =================================================
+        =================================================
  
-    parallelproj C    lib         ..: {lib_parallelproj_c_fname}
-    parallelproj CUDA lib         ..: {lib_parallelproj_cuda_fname}
-    parallelproj CUDA kernel file ..: {cuda_kernel_file}
-    parallelproj CUDA present     ..: {cuda_present}
-    parallelproj cupy enabled     ..: {cupy_enabled}
-    """
-)
+        parallelproj C    lib         ..: {lib_parallelproj_c_fname}
+        parallelproj CUDA lib         ..: {lib_parallelproj_cuda_fname}
+        parallelproj CUDA kernel file ..: {cuda_kernel_file}
+        parallelproj CUDA present     ..: {cuda_present}
+        parallelproj cupy enabled     ..: {cupy_enabled}
+        """
+    )
