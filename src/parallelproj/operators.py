@@ -7,7 +7,7 @@ import abc
 import numpy as np
 import array_api_compat
 from array_api_compat import device
-from array_api_strict._array_object import Array
+from parallelproj import Array
 from collections.abc import Sequence
 
 import parallelproj

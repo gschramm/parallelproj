@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import array_api_compat.numpy as np
-from array_api_strict._array_object import Array
+from parallelproj import Array
 import array_api_compat
 import matplotlib.pyplot as plt
 from matplotlib.patches import Rectangle
@@ -885,21 +885,21 @@ class RegularPolygonPETProjector(LinearOperator):
 
                 num_events_ss = int(self.xp.sum(ss))
 
-                event_start_coords[
-                    event_offset : (event_offset + num_events_ss), :
-                ] = self.xp.take(xstart, event_sino_inds, axis=0)
-                event_end_coords[
-                    event_offset : (event_offset + num_events_ss), :
-                ] = self.xp.take(xend, event_sino_inds, axis=0)
+                event_start_coords[event_offset : (event_offset + num_events_ss), :] = (
+                    self.xp.take(xstart, event_sino_inds, axis=0)
+                )
+                event_end_coords[event_offset : (event_offset + num_events_ss), :] = (
+                    self.xp.take(xend, event_sino_inds, axis=0)
+                )
 
                 if self.tof:
-                    event_tofbins[
-                        event_offset : (event_offset + num_events_ss)
-                    ] = self.xp.full(
-                        num_events_ss,
-                        it - num_tofbins // 2,
-                        device=self._dev,
-                        dtype=self.xp.int16,
+                    event_tofbins[event_offset : (event_offset + num_events_ss)] = (
+                        self.xp.full(
+                            num_events_ss,
+                            it - num_tofbins // 2,
+                            device=self._dev,
+                            dtype=self.xp.int16,
+                        )
                     )
 
                 event_offset += num_events_ss

@@ -1,6 +1,6 @@
 from collections.abc import Sequence
 import abc
-from array_api_strict._array_object import Array
+from parallelproj import Array
 
 from types import ModuleType
 

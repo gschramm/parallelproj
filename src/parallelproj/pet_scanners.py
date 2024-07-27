@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import abc
-from array_api_strict._array_object import Array
+from parallelproj import Array
 import matplotlib.pyplot as plt
 
 from types import ModuleType
