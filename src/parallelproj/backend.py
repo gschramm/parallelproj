@@ -18,7 +18,6 @@ import numpy as np
 import array_api_compat
 import numpy.ctypeslib as npct
 
-from typing import TypeAlias
 from types import ModuleType
 
 
@@ -35,17 +34,21 @@ if cupy_enabled and torch_enabled:
     import array_api_compat.cupy as cp
     import array_api_compat.torch as torch
 
-    Array: TypeAlias = np.ndarray | cp.ndarray | torch.Tensor
+    # type alias for array
+    Array = np.ndarray | cp.ndarray | torch.Tensor
 elif cupy_enabled and not torch_enabled:
     import array_api_compat.cupy as cp
 
-    Array: TypeAlias = np.ndarray | cp.ndarray
+    # type alias for array
+    Array = np.ndarray | cp.ndarray
 elif not cupy_enabled and torch_enabled:
     import array_api_compat.torch as torch
 
-    Array: TypeAlias = np.ndarray | torch.Tensor
+    # type alias for array
+    Array = np.ndarray | torch.Tensor
 else:
-    Array: TypeAlias = np.ndarray
+    # type alias for array
+    Array = np.ndarray
 
 
 # numpy ctypes lib array definitions
