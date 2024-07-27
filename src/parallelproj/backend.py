@@ -19,6 +19,7 @@ import array_api_compat
 import numpy.ctypeslib as npct
 
 from types import ModuleType
+from typing import Union
 
 
 # check if cuda is present
@@ -35,17 +36,17 @@ if cupy_enabled and torch_enabled:
     import array_api_compat.torch as torch
 
     # type alias for array
-    Array = np.ndarray | cp.ndarray | torch.Tensor
+    Array = Union[np.ndarray, cp.ndarray, torch.Tensor]
 elif cupy_enabled and not torch_enabled:
     import array_api_compat.cupy as cp
 
     # type alias for array
-    Array = np.ndarray | cp.ndarray
+    Array = Union[np.ndarray, cp.ndarray]
 elif not cupy_enabled and torch_enabled:
     import array_api_compat.torch as torch
 
     # type alias for array
-    Array = np.ndarray | torch.Tensor
+    Array = Union[np.ndarray, torch.Tensor]
 else:
     # type alias for array
     Array = np.ndarray
