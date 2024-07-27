@@ -48,7 +48,7 @@ jobs:
         pdm show --version
     - name: Install dependencies and package
       run: |
-        pdm add numpy==${{ matrix.numpy-version }}
+        pdm add -dG test numpy==${{ matrix.numpy-version }}
         pdm install -d -G test
 
     - if: matrix.os == 'ubuntu-latest'
