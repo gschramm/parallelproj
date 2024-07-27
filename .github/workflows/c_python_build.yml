@@ -24,6 +24,7 @@ jobs:
       matrix:
         os: [ubuntu-latest, windows-latest] # not building on mac-os because there is no OpenMP
         python-version: ['3.9','3.12']
+        numpy-version: ['1.23', '>=2.0']
 
     steps:
     - uses: actions/checkout@v4
@@ -47,6 +48,7 @@ jobs:
         pdm show --version
     - name: Install dependencies and package
       run: |
+        pdm add numpy==${{ matrix.numpy-version }}
         pdm install -d -G test
 
     - if: matrix.os == 'ubuntu-latest'

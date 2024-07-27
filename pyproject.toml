@@ -36,8 +36,7 @@ test = [
     "torch~=2.0",
     "array-api-strict~=1.0",
 ]
-numpy122 = [
-]
+
 [tool.coverage.report]
 exclude_lines = [
     "def __repr__",
