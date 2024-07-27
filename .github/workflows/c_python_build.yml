@@ -48,6 +48,7 @@ jobs:
         pdm show --version
     - name: Install dependencies and package
       run: |
+        pdm use ${{ matrix.python-version }}
         pdm add -dG test numpy==${{ matrix.numpy-version }}
         pdm install -d -G test
 
