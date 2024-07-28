@@ -24,7 +24,7 @@ jobs:
       matrix:
         os: [ubuntu-latest, windows-latest] # not building on mac-os because there is no OpenMP
         python-version: [3.9, 3.12]
-        numpy-version: ['1.23', '2.0']
+        numpy-version: ['1.23', '1.26', '2.0']
         exclude:
           - os: ubuntu-latest
             python-version: 3.9
