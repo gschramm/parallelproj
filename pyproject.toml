@@ -33,7 +33,6 @@ distribution = true
 test = [
     "pytest>=8.1.1",
     "pytest-cov>=4.1.0",
-    "torch~=2.0",
     "array-api-strict~=1.0",
 ]
 
