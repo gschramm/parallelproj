@@ -30,10 +30,18 @@ build-backend = "pdm.backend"
 distribution = true
 
 [tool.pdm.dev-dependencies]
-test = [
+test-numpy-1 = [
     "pytest>=8.1.1",
     "pytest-cov>=4.1.0",
     "array-api-strict~=1.0",
+    "numpy<2",
+    "torch~=2.0"
+]
+test-numpy-2 = [
+    "pytest>=8.1.1",
+    "pytest-cov>=4.1.0",
+    "array-api-strict~=1.0",
+    "numpy>=2"
 ]
 
 [tool.coverage.report]
