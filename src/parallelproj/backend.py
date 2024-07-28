@@ -1452,7 +1452,7 @@ def count_event_multiplicity(events: Array) -> Array:
         tmp = np.unique(events, axis=0, return_counts=True, return_inverse=True)
 
     mu = xp.asarray(tmp[2][tmp[1]], device=dev)
-    mu = xp.reshape(mu, (mu.size,))
+    mu = xp.reshape(mu, (array_api_compat.size(mu),))
 
     return mu
 
