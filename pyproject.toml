@@ -60,6 +60,8 @@ exclude_lines = [
     "lib_parallelproj_c_fname",
     "empty_cuda_cache",
     "__str__",
-    "Array =" 
+    "Array =",
+    "elif not cupy_enabled and torch_enabled",
+    "elif cupy_enabled and not torch_enabled"
 ]
 
