@@ -5,7 +5,7 @@ from __future__ import annotations
 import abc
 import enum
 import array_api_compat.numpy as np
-from array_api_strict._array_object import Array
+from parallelproj import Array
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d.art3d import Line3DCollection
 
@@ -107,7 +107,7 @@ class EqualBlockPETLORDescriptor(PETLORDescriptor):
         self._scanner = scanner
         self._all_block_pairs = all_block_pairs
         self._num_lorendpoints_per_block = self.scanner.modules[0].num_lor_endpoints
-        self._num_lors_per_block_pair = self._num_lorendpoints_per_block ** 2
+        self._num_lors_per_block_pair = self._num_lorendpoints_per_block**2
 
     @property
     def all_block_pairs(self) -> Array:

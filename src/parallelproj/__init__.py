@@ -18,6 +18,7 @@ from .backend import (
     lib_parallelproj_c_fname,
     lib_parallelproj_cuda_fname,
     cuda_kernel_file,
+    Array,
 )
 
 from .operators import (
@@ -95,9 +96,10 @@ __all__ = [
     "SinogramSpatialAxisOrder",
     "RegularPolygonPETLORDescriptor",
     "EqualBlockPETLORDescriptor",
+    "Array",
 ]
 
-if os.getenv('PARALLELPROJ_SILENT_IMPORT') is None:
+if os.getenv("PARALLELPROJ_SILENT_IMPORT") is None:
     print(
         f"""
               -  -  -  -  -  -  -  -   -  -  -  -

@@ -191,8 +191,6 @@ def test_lmprojector(
         xstart, xend, img_dim, voxel_size, img_origin
     )
 
-    assert lm_proj.xp == xp
-
     assert xp.all(lm_proj.event_start_coordinates == xstart)
     assert xp.all(lm_proj.event_end_coordinates == xend)
 

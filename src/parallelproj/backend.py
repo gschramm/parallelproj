@@ -17,9 +17,10 @@ from warnings import warn
 import numpy as np
 import array_api_compat
 import numpy.ctypeslib as npct
-from array_api_strict._array_object import Array
 
 from types import ModuleType
+from typing import Union
+
 
 # check if cuda is present
 cuda_present = shutil.which("nvidia-smi") is not None
@@ -30,9 +31,26 @@ cupy_enabled = importlib.util.find_spec("cupy") is not None
 # check if cupy is available
 torch_enabled = importlib.util.find_spec("torch") is not None
 
-# define type for cupy or numpy array
-if cupy_enabled:
+if cupy_enabled and torch_enabled:
     import array_api_compat.cupy as cp
+    import array_api_compat.torch as torch
+
+    # type alias for array
+    Array = Union[np.ndarray, cp.ndarray, torch.Tensor]
+elif cupy_enabled and not torch_enabled:
+    import array_api_compat.cupy as cp
+
+    # type alias for array
+    Array = Union[np.ndarray, cp.ndarray]
+elif not cupy_enabled and torch_enabled:
+    import array_api_compat.torch as torch
+
+    # type alias for array
+    Array = Union[np.ndarray, torch.Tensor]
+else:
+    # type alias for array
+    Array = np.ndarray
+
 
 # numpy ctypes lib array definitions
 ar_1d_single = npct.ndpointer(dtype=ctypes.c_float, ndim=1, flags="C")
@@ -1434,8 +1452,10 @@ def count_event_multiplicity(events: Array) -> Array:
         tmp = np.unique(events, axis=0, return_counts=True, return_inverse=True)
 
     mu = xp.asarray(tmp[2][tmp[1]], device=dev)
+    mu = xp.reshape(mu, (array_api_compat.size(mu),))
 
     return mu
+
 
 
 def to_numpy_array(x: Array) -> np.ndarray:
