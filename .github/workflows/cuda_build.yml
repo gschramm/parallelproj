@@ -9,6 +9,7 @@ on:
     paths-ignore:
       - 'README.md'
       - 'CHANGELOG.md'
+      - 'docs/**'
 
 env:
   # Customize the CMake build type here (Release, Debug, RelWithDebInfo, etc.)

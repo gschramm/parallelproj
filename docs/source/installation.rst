@@ -40,13 +40,18 @@ To install parallelproj and cupy (optional and only if you have a CUDA GPU) from
 
         .. code-block:: console
         
-           $ mamba install libparallelproj parallelproj cupy
+           $ mamba install libparallelproj parallelproj cupy "numpy<2"
 
     .. tab-item:: conda
 
         .. code-block:: console
         
-           $ conda install -c conda-forge libparallelproj parallelproj cupy
+           $ conda install -c conda-forge libparallelproj parallelproj cupy "numpy<2"
+
+.. note::
+   Support for numpy version 2 is not yet available in cupy and pytorch. Therefore, we have to restrict the numpy version for now (July 2024).
+   In the future, this will change.
+
 
 .. tip::
 
@@ -60,13 +65,13 @@ To install parallelproj and pytorch (optional) from conda-forge, run
 
         .. code-block:: console
         
-           $ mamba install libparallelproj parallelproj pytorch
+           $ mamba install libparallelproj parallelproj pytorch "numpy<2"
 
     .. tab-item:: conda
 
         .. code-block:: console
         
-           $ conda install -c conda-forge libparallelproj parallelproj pytorch
+           $ conda install -c conda-forge libparallelproj parallelproj pytorch "numpy<2"
 
 
 .. note::
