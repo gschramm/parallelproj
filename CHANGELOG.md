@@ -1,3 +1,9 @@
+## 1.10.0 (July 29, 2024)
+
+- add support for numpy>=2.0
+- add tests with numpy 2.0 on python 3.9 and 3.12
+- remove tox.ini
+
 ## 1.9.1 (June 19, 2024)
 
 - BUGFIX: add missing device in BlockPET LOR descriptor (needed for pytorch + cuda backend)
