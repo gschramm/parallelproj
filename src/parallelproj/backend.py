@@ -479,7 +479,7 @@ def joseph3d_fwd(
     nLORs = np.int64(array_api_compat.size(xstart) // 3)
     xp = array_api_compat.get_namespace(img)
 
-    if is_cuda_array(img):
+    if is_cuda_array(img)*cupy_enabled:
         # projection of GPU array (cupy to torch GPU array) using the cupy raw
         # kernel
         img_fwd = cp.zeros(xstart.shape[:-1], dtype=cp.float32)
@@ -586,7 +586,7 @@ def joseph3d_back(
     nLORs = np.int64(array_api_compat.size(xstart) // 3)
     xp = array_api_compat.get_namespace(img_fwd)
 
-    if is_cuda_array(img_fwd):
+    if is_cuda_array(img_fwd)*cupy_enabled:
         # back projection of cupy or torch GPU array using the cupy raw kernel
         back_img = cp.zeros(img_shape, dtype=cp.float32)
 
@@ -725,7 +725,7 @@ def joseph3d_fwd_tof_sino(
     lor_dependent_sigma_tof = np.uint8(sigma_tof.shape[0] == nLORs)
     lor_dependent_tofcenter_offset = np.uint8(tofcenter_offset.shape[0] == nLORs)
 
-    if is_cuda_array(img):
+    if is_cuda_array(img)*cupy_enabled:
         # projection of cupy or torch GPU array using the cupy raw kernel
         img_fwd = cp.zeros(xstart.shape[:-1] + (ntofbins,), dtype=cp.float32)
 
@@ -893,7 +893,7 @@ def joseph3d_back_tof_sino(
     lor_dependent_sigma_tof = np.uint8(sigma_tof.shape[0] == nLORs)
     lor_dependent_tofcenter_offset = np.uint8(tofcenter_offset.shape[0] == nLORs)
 
-    if is_cuda_array(img_fwd):
+    if is_cuda_array(img_fwd)*cupy_enabled:
         # back projection of cupy or torch GPU array using the cupy raw kernel
         back_img = cp.zeros(img_shape, dtype=cp.float32)
 
@@ -1074,7 +1074,7 @@ def joseph3d_fwd_tof_lm(
     lor_dependent_sigma_tof = np.uint8(sigma_tof.shape[0] == nLORs)
     lor_dependent_tofcenter_offset = np.uint8(tofcenter_offset.shape[0] == nLORs)
 
-    if is_cuda_array(img):
+    if is_cuda_array(img)*cupy_enabled:
         # projection of cupy or torch GPU array using the cupy raw kernel
         img_fwd = cp.zeros(nLORs, dtype=cp.float32)
 
@@ -1245,7 +1245,7 @@ def joseph3d_back_tof_lm(
     lor_dependent_sigma_tof = np.uint8(sigma_tof.shape[0] == nLORs)
     lor_dependent_tofcenter_offset = np.uint8(tofcenter_offset.shape[0] == nLORs)
 
-    if is_cuda_array(img_fwd):
+    if is_cuda_array(img_fwd)*cupy_enabled:
         # back projection of cupy or torch GPU array using the cupy raw kernel
         back_img = cp.zeros(img_shape, dtype=cp.float32)
 
@@ -1436,7 +1436,7 @@ def count_event_multiplicity(events: Array) -> Array:
     xp = array_api_compat.get_namespace(events)
     dev = array_api_compat.device(events)
 
-    if is_cuda_array(events):
+    if is_cuda_array(events)*cupy_enabled:
         if cupy_enabled:
             tmp = _cupy_unique_axis0(
                 cp.asarray(events), return_counts=True, return_inverse=True
