@@ -79,6 +79,7 @@ jobs:
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: _build/html
+          keep_files: true
 
       - name: Deploy PR preview to GitHub Pages preview branch
         if: env.build_context == 'pr'
