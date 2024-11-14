@@ -1,0 +1,1245 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MLEM with projection data of an open PET geometry &mdash; parallelproj 1.10.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../../_static/copybutton.css?v=76b2166b" />
+      <link rel="stylesheet" type="text/css" href="../../_static/sg_gallery.css?v=d2d258e8" />
+      <link rel="stylesheet" type="text/css" href="../../_static/sg_gallery-binder.css?v=f4aeca0c" />
+      <link rel="stylesheet" type="text/css" href="../../_static/sg_gallery-dataframe.css?v=2082cf3c" />
+      <link rel="stylesheet" type="text/css" href="../../_static/sg_gallery-rendered-html.css?v=1277b6f3" />
+      <link rel="stylesheet" type="text/css" href="../../_static/sphinx-design.min.css?v=95c83b7e" />
+
+  
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../_static/documentation_options.js?v=1d24b1d9"></script>
+      <script src="../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../_static/clipboard.min.js?v=a7894cd8"></script>
+      <script src="../../_static/copybutton.js?v=f281be69"></script>
+      <script src="../../_static/design-tabs.js?v=f930bc37"></script>
+      <script async="async" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="TOF listmode MLEM with projection data" href="../06_listmode_algorithms/01_listmode_mlem.html" />
+    <link rel="prev" title="DePierro’s algorithm to optimize the Poisson logL with quadratic intensity prior" href="06_run_depierro.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html">
+            
+              <img src="../../_static/parallelproj-logo.svg" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Getting started</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../installation.html">Installation</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../index.html">Examples</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../index.html#pet-scanner-and-sinogram-geometry-examples">PET scanner and sinogram geometry examples</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../index.html#high-level-pet-sinogram-projector-examples">High-level PET sinogram projector examples</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../index.html#high-level-pet-listmode-projector-examples">High-level PET listmode projector examples</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../index.html#low-level-projection-examples">Low-level projection examples</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="../index.html#iterative-algorithm-examples">Iterative algorithm examples</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="01_run_mlem_basic.html">Basic MLEM</a></li>
+<li class="toctree-l3"><a class="reference internal" href="02_run_osem_basic.html">Basic OSEM</a></li>
+<li class="toctree-l3"><a class="reference internal" href="03_run_mlem_projection_data.html">TOF-MLEM with projection data</a></li>
+<li class="toctree-l3"><a class="reference internal" href="04_run_osem_projection_data.html">TOF OSEM with projection data</a></li>
+<li class="toctree-l3"><a class="reference internal" href="05_run_fbp.html">2D non-TOF filtered back projection (FBP) of Poisson data</a></li>
+<li class="toctree-l3"><a class="reference internal" href="06_run_depierro.html">DePierro’s algorithm to optimize the Poisson logL with quadratic intensity prior</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">MLEM with projection data of an open PET geometry</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#setup-of-the-forward-model-bar-y-x-a-x-s">Setup of the forward model <span class="math notranslate nohighlight">\(\bar{y}(x) = A x + s\)</span></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#attenuation-image-and-sinogram-setup">Attenuation image and sinogram setup</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#complete-pet-forward-model-setup">Complete PET forward model setup</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#visualization-of-the-geometry">Visualization of the geometry</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#simulation-of-projection-data">Simulation of projection data</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#em-update-to-minimize-f-x">EM update to minimize <span class="math notranslate nohighlight">\(f(x)\)</span></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#run-the-mlem-iterations">Run the MLEM iterations</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#calculation-of-the-negative-poisson-log-likelihood-function-of-the-reconstruction">Calculation of the negative Poisson log-likelihood function of the reconstruction</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#visualize-the-results">Visualize the results</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../index.html#iterative-listmode-algorithm-examples">Iterative listmode algorithm examples</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../index.html#parallelproj-pytorch-examples">Parallelproj pytorch examples</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Python API</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../python_api.html">Low-level projector interface <code class="docutils literal notranslate"><span class="pre">parallelproj.backend</span></code></a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../python_api.html#module-parallelproj.pet_scanners">PET scanner geometries <code class="docutils literal notranslate"><span class="pre">parallelproj.pet_scanners</span></code></a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../python_api.html#module-parallelproj.pet_lors">PET LOR / sinogram descriptors <code class="docutils literal notranslate"><span class="pre">parallelproj.pet_lors</span></code></a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../python_api.html#module-parallelproj.tof">PET TOF parameters <code class="docutils literal notranslate"><span class="pre">parallelproj.tof</span></code></a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../python_api.html#module-parallelproj.projectors">PET projectors <code class="docutils literal notranslate"><span class="pre">parallelproj.projectors</span></code></a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../python_api.html#module-parallelproj.operators">Linear operators <code class="docutils literal notranslate"><span class="pre">parallelproj.operators</span></code></a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">C/CUDA lib API</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../libparallelproj_c.html">libparallelproj_c</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../libparallelproj_cuda.html">libparallelproj_cuda</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../cuda_kernels.html">cuda projector kernels</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">parallelproj</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Examples</a></li>
+      <li class="breadcrumb-item active">MLEM with projection data of an open PET geometry</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../../_sources/auto_examples/05_algorithms/07_run_mlem_open_geometry.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <div class="sphx-glr-download-link-note admonition note">
+<p class="admonition-title">Note</p>
+<p><a class="reference internal" href="#sphx-glr-download-auto-examples-05-algorithms-07-run-mlem-open-geometry-py"><span class="std std-ref">Go to the end</span></a>
+to download the full example code.</p>
+</div>
+<section class="sphx-glr-example-title" id="mlem-with-projection-data-of-an-open-pet-geometry">
+<span id="sphx-glr-auto-examples-05-algorithms-07-run-mlem-open-geometry-py"></span><h1>MLEM with projection data of an open PET geometry<a class="headerlink" href="#mlem-with-projection-data-of-an-open-pet-geometry" title="Link to this heading"></a></h1>
+<p>This example demonstrates the use of the MLEM algorithm to minimize the negative Poisson log-likelihood function
+using “sinogram” data from an open PET geometry.</p>
+<div class="math notranslate nohighlight">
+\[f(x) = \sum_{i=1}^m \bar{y}_i (x) - y_i \log(\bar{y}_i (x))\]</div>
+<p>subject to</p>
+<div class="math notranslate nohighlight">
+\[x \geq 0\]</div>
+<p>using the linear forward model</p>
+<div class="math notranslate nohighlight">
+\[\bar{y}(x) = A x + s\]</div>
+<div class="admonition tip">
+<p class="admonition-title">Tip</p>
+<p>parallelproj is python array API compatible meaning it supports different
+array backends (e.g. numpy, cupy, torch, …) and devices (CPU or GPU).
+Choose your preferred array API <code class="docutils literal notranslate"><span class="pre">xp</span></code> and device <code class="docutils literal notranslate"><span class="pre">dev</span></code> below.</p>
+</div>
+<a class="reference external image-reference" href="https://mybinder.org/v2/gh/gschramm/parallelproj/master?labpath=examples"><img alt="https://mybinder.org/badge_logo.svg" src="https://mybinder.org/badge_logo.svg" />
+</a>
+<div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><span class="linenos">31</span> <span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">annotations</span>
+<span class="linenos">32</span> <span class="kn">from</span> <span class="nn">parallelproj</span> <span class="kn">import</span> <span class="n">Array</span>
+<span class="linenos">33</span>
+<span class="linenos">34</span> <span class="kn">import</span> <span class="nn">array_api_compat.numpy</span> <span class="k">as</span> <span class="nn">xp</span>
+<span class="linenos">35</span>
+<span class="linenos">36</span> <span class="c1"># import array_api_compat.cupy as xp</span>
+<span class="linenos">37</span> <span class="c1"># import array_api_compat.torch as xp</span>
+<span class="linenos">38</span>
+<span class="linenos">39</span> <span class="kn">import</span> <span class="nn">parallelproj</span>
+<span class="linenos">40</span> <span class="kn">from</span> <span class="nn">array_api_compat</span> <span class="kn">import</span> <span class="n">to_device</span>
+<span class="linenos">41</span> <span class="kn">import</span> <span class="nn">array_api_compat.numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="linenos">42</span> <span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+<span class="linenos">43</span> <span class="kn">import</span> <span class="nn">matplotlib.animation</span> <span class="k">as</span> <span class="nn">animation</span>
+<span class="linenos">44</span>
+<span class="linenos">45</span> <span class="c1"># choose a device (CPU or CUDA GPU)</span>
+<span class="linenos">46</span> <span class="k">if</span> <span class="s2">&quot;numpy&quot;</span> <span class="ow">in</span> <span class="n">xp</span><span class="o">.</span><span class="vm">__name__</span><span class="p">:</span>
+<span class="linenos">47</span>     <span class="c1"># using numpy, device must be cpu</span>
+<span class="linenos">48</span>     <a href="https://docs.python.org/3/library/stdtypes.html#str" title="builtins.str" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">dev</span></a> <span class="o">=</span> <span class="s2">&quot;cpu&quot;</span>
+<span class="linenos">49</span> <span class="k">elif</span> <span class="s2">&quot;cupy&quot;</span> <span class="ow">in</span> <span class="n">xp</span><span class="o">.</span><span class="vm">__name__</span><span class="p">:</span>
+<span class="linenos">50</span>     <span class="c1"># using cupy, only cuda devices are possible</span>
+<span class="linenos">51</span>     <a href="https://docs.python.org/3/library/stdtypes.html#str" title="builtins.str" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">dev</span></a> <span class="o">=</span> <span class="n">xp</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">Device</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="linenos">52</span> <span class="k">elif</span> <span class="s2">&quot;torch&quot;</span> <span class="ow">in</span> <span class="n">xp</span><span class="o">.</span><span class="vm">__name__</span><span class="p">:</span>
+<span class="linenos">53</span>     <span class="c1"># using torch valid choices are &#39;cpu&#39; or &#39;cuda&#39;</span>
+<span class="linenos">54</span>     <span class="k">if</span> <a href="https://docs.python.org/3/library/functions.html#bool" title="builtins.bool" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">parallelproj</span><span class="o">.</span><span class="n">cuda_present</span></a><span class="p">:</span>
+<span class="linenos">55</span>         <a href="https://docs.python.org/3/library/stdtypes.html#str" title="builtins.str" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">dev</span></a> <span class="o">=</span> <span class="s2">&quot;cuda&quot;</span>
+<span class="linenos">56</span>     <span class="k">else</span><span class="p">:</span>
+<span class="linenos">57</span>         <a href="https://docs.python.org/3/library/stdtypes.html#str" title="builtins.str" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">dev</span></a> <span class="o">=</span> <span class="s2">&quot;cpu&quot;</span>
+</pre></div>
+</div>
+<section id="setup-of-the-forward-model-bar-y-x-a-x-s">
+<h2>Setup of the forward model <span class="math notranslate nohighlight">\(\bar{y}(x) = A x + s\)</span><a class="headerlink" href="#setup-of-the-forward-model-bar-y-x-a-x-s" title="Link to this heading"></a></h2>
+<p>We setup a linear forward operator <span class="math notranslate nohighlight">\(A\)</span> consisting of an
+image-based resolution model, a non-TOF PET projector and an attenuation model</p>
+<p>Here we create an open geometry with 6 sides and 5 rings corresponding to
+a full geometry using 12 sides where 6 sides were removed.</p>
+<div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><span class="linenos">70</span> <a href="https://docs.python.org/3/library/functions.html#int" title="builtins.int" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">num_rings</span></a> <span class="o">=</span> <span class="mi">1</span>
+<span class="linenos">71</span> <span class="n">scanner</span> <span class="o">=</span> <span class="n">parallelproj</span><span class="o">.</span><span class="n">RegularPolygonPETScannerGeometry</span><span class="p">(</span>
+<span class="linenos">72</span>     <span class="n">xp</span><span class="p">,</span>
+<span class="linenos">73</span>     <a href="https://docs.python.org/3/library/stdtypes.html#str" title="builtins.str" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">dev</span></a><span class="p">,</span>
+<span class="linenos">74</span>     <span class="n">radius</span><span class="o">=</span><span class="mf">65.0</span><span class="p">,</span>
+<span class="linenos">75</span>     <span class="n">num_sides</span><span class="o">=</span><span class="mi">6</span><span class="p">,</span>
+<span class="linenos">76</span>     <span class="n">num_lor_endpoints_per_side</span><span class="o">=</span><span class="mi">15</span><span class="p">,</span>
+<span class="linenos">77</span>     <span class="n">lor_spacing</span><span class="o">=</span><span class="mf">2.3</span><span class="p">,</span>
+<span class="linenos">78</span>     <span class="n">ring_positions</span><span class="o">=</span><span class="n">xp</span><span class="o">.</span><span class="n">asarray</span><span class="p">([</span><span class="mf">0.0</span><span class="p">],</span> <span class="n">device</span><span class="o">=</span><a href="https://docs.python.org/3/library/stdtypes.html#str" title="builtins.str" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">dev</span></a><span class="p">),</span>
+<span class="linenos">79</span>     <span class="n">symmetry_axis</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
+<span class="linenos">80</span>     <span class="n">phis</span><span class="o">=</span><span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <a href="https://docs.python.org/3/library/functions.html#float" title="builtins.float" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">xp</span><span class="o">.</span><span class="n">pi</span></a> <span class="o">/</span> <span class="mi">12</span><span class="p">)</span> <span class="o">*</span> <span class="n">xp</span><span class="o">.</span><span class="n">asarray</span><span class="p">([</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">6</span><span class="p">,</span> <span class="mi">7</span><span class="p">]),</span>
+<span class="linenos">81</span> <span class="p">)</span>
+</pre></div>
+</div>
+<p>setup the LOR descriptor that defines the sinogram</p>
+<div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><span class="linenos"> 86</span> <a href="https://docs.python.org/3/library/stdtypes.html#tuple" title="builtins.tuple" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">img_shape</span></a> <span class="o">=</span> <span class="p">(</span><span class="mi">40</span><span class="p">,</span> <span class="mi">40</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+<span class="linenos"> 87</span> <a href="https://docs.python.org/3/library/stdtypes.html#tuple" title="builtins.tuple" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">voxel_size</span></a> <span class="o">=</span> <span class="p">(</span><span class="mf">2.0</span><span class="p">,</span> <span class="mf">2.0</span><span class="p">,</span> <span class="mf">2.0</span><span class="p">)</span>
+<span class="linenos"> 88</span>
+<span class="linenos"> 89</span> <span class="n">lor_desc</span> <span class="o">=</span> <a href="https://docs.python.org/3/library/abc.html#abc.ABC" title="abc.ABC" class="sphx-glr-backref-module-abc sphx-glr-backref-type-py-class"><span class="n">parallelproj</span><span class="o">.</span><span class="n">RegularPolygonPETLORDescriptor</span></a><span class="p">(</span>
+<span class="linenos"> 90</span>     <span class="n">scanner</span><span class="p">,</span>
+<span class="linenos"> 91</span>     <span class="n">radial_trim</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+<span class="linenos"> 92</span>     <span class="n">sinogram_order</span><span class="o">=</span><span class="n">parallelproj</span><span class="o">.</span><span class="n">SinogramSpatialAxisOrder</span><span class="o">.</span><span class="n">RVP</span><span class="p">,</span>
+<span class="linenos"> 93</span> <span class="p">)</span>
+<span class="linenos"> 94</span>
+<span class="linenos"> 95</span> <span class="n">proj</span> <span class="o">=</span> <a href="https://docs.python.org/3/library/abc.html#abc.ABC" title="abc.ABC" class="sphx-glr-backref-module-abc sphx-glr-backref-type-py-class"><span class="n">parallelproj</span><span class="o">.</span><span class="n">RegularPolygonPETProjector</span></a><span class="p">(</span>
+<span class="linenos"> 96</span>     <span class="n">lor_desc</span><span class="p">,</span> <a href="https://docs.python.org/3/library/stdtypes.html#tuple" title="builtins.tuple" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">img_shape</span></a><span class="o">=</span><a href="https://docs.python.org/3/library/stdtypes.html#tuple" title="builtins.tuple" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">img_shape</span></a><span class="p">,</span> <a href="https://docs.python.org/3/library/stdtypes.html#tuple" title="builtins.tuple" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">voxel_size</span></a><span class="o">=</span><a href="https://docs.python.org/3/library/stdtypes.html#tuple" title="builtins.tuple" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">voxel_size</span></a>
+<span class="linenos"> 97</span> <span class="p">)</span>
+<span class="linenos"> 98</span>
+<span class="linenos"> 99</span> <span class="c1"># setup a simple test image containing a few &quot;hot rods&quot;</span>
+<span class="linenos">100</span> <span class="n">x_true</span> <span class="o">=</span> <span class="n">xp</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">proj</span><span class="o">.</span><span class="n">in_shape</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><a href="https://docs.python.org/3/library/stdtypes.html#str" title="builtins.str" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">dev</span></a><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">xp</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+<span class="linenos">101</span> <a href="https://docs.python.org/3/library/functions.html#int" title="builtins.int" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">c0</span></a> <span class="o">=</span> <span class="n">proj</span><span class="o">.</span><span class="n">in_shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">//</span> <span class="mi">2</span>
+<span class="linenos">102</span> <a href="https://docs.python.org/3/library/functions.html#int" title="builtins.int" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">c1</span></a> <span class="o">=</span> <span class="n">proj</span><span class="o">.</span><span class="n">in_shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">//</span> <span class="mi">2</span>
+<span class="linenos">103</span>
+<span class="linenos">104</span> <span class="n">x_true</span><span class="p">[</span><span class="mi">4</span><span class="p">,</span> <a href="https://docs.python.org/3/library/functions.html#int" title="builtins.int" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">c1</span></a><span class="p">,</span> <span class="p">:]</span> <span class="o">=</span> <span class="mf">5.0</span>
+<span class="linenos">105</span> <span class="n">x_true</span><span class="p">[</span><span class="mi">8</span><span class="p">,</span> <a href="https://docs.python.org/3/library/functions.html#int" title="builtins.int" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">c1</span></a><span class="p">,</span> <span class="p">:]</span> <span class="o">=</span> <span class="mf">5.0</span>
+<span class="linenos">106</span> <span class="n">x_true</span><span class="p">[</span><span class="mi">12</span><span class="p">,</span> <a href="https://docs.python.org/3/library/functions.html#int" title="builtins.int" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">c1</span></a><span class="p">,</span> <span class="p">:]</span> <span class="o">=</span> <span class="mf">5.0</span>
+<span class="linenos">107</span> <span class="n">x_true</span><span class="p">[</span><span class="mi">16</span><span class="p">,</span> <a href="https://docs.python.org/3/library/functions.html#int" title="builtins.int" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">c1</span></a><span class="p">,</span> <span class="p">:]</span> <span class="o">=</span> <span class="mf">5.0</span>
+<span class="linenos">108</span>
+<span class="linenos">109</span> <span class="n">x_true</span><span class="p">[</span><a href="https://docs.python.org/3/library/functions.html#int" title="builtins.int" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">c0</span></a><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="p">:]</span> <span class="o">=</span> <span class="mf">5.0</span>
+<span class="linenos">110</span> <span class="n">x_true</span><span class="p">[</span><a href="https://docs.python.org/3/library/functions.html#int" title="builtins.int" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">c0</span></a><span class="p">,</span> <span class="mi">8</span><span class="p">,</span> <span class="p">:]</span> <span class="o">=</span> <span class="mf">5.0</span>
+<span class="linenos">111</span> <span class="n">x_true</span><span class="p">[</span><a href="https://docs.python.org/3/library/functions.html#int" title="builtins.int" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">c0</span></a><span class="p">,</span> <span class="mi">12</span><span class="p">,</span> <span class="p">:]</span> <span class="o">=</span> <span class="mf">5.0</span>
+<span class="linenos">112</span> <span class="n">x_true</span><span class="p">[</span><a href="https://docs.python.org/3/library/functions.html#int" title="builtins.int" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">c0</span></a><span class="p">,</span> <span class="mi">16</span><span class="p">,</span> <span class="p">:]</span> <span class="o">=</span> <span class="mf">5.0</span>
+<span class="linenos">113</span>
+<span class="linenos">114</span> <span class="n">x_true</span><span class="p">[:</span><span class="mi">2</span><span class="p">,</span> <span class="p">:,</span> <span class="p">:]</span> <span class="o">=</span> <span class="mi">0</span>
+<span class="linenos">115</span> <span class="n">x_true</span><span class="p">[</span><span class="o">-</span><span class="mi">2</span><span class="p">:,</span> <span class="p">:,</span> <span class="p">:]</span> <span class="o">=</span> <span class="mi">0</span>
+<span class="linenos">116</span> <span class="n">x_true</span><span class="p">[:,</span> <span class="p">:</span><span class="mi">2</span><span class="p">,</span> <span class="p">:]</span> <span class="o">=</span> <span class="mi">0</span>
+<span class="linenos">117</span> <span class="n">x_true</span><span class="p">[:,</span> <span class="o">-</span><span class="mi">2</span><span class="p">:,</span> <span class="p">:]</span> <span class="o">=</span> <span class="mi">0</span>
+</pre></div>
+</div>
+</section>
+<section id="attenuation-image-and-sinogram-setup">
+<h2>Attenuation image and sinogram setup<a class="headerlink" href="#attenuation-image-and-sinogram-setup" title="Link to this heading"></a></h2>
+<div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><span class="linenos">123</span> <span class="c1"># setup an attenuation image</span>
+<span class="linenos">124</span> <span class="n">x_att</span> <span class="o">=</span> <span class="mf">0.01</span> <span class="o">*</span> <span class="n">xp</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">x_true</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">,</span> <span class="n">xp</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+<span class="linenos">125</span> <span class="c1"># calculate the attenuation sinogram</span>
+<span class="linenos">126</span> <span class="n">att_sino</span> <span class="o">=</span> <span class="n">xp</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">proj</span><span class="p">(</span><span class="n">x_att</span><span class="p">))</span>
+</pre></div>
+</div>
+</section>
+<section id="complete-pet-forward-model-setup">
+<h2>Complete PET forward model setup<a class="headerlink" href="#complete-pet-forward-model-setup" title="Link to this heading"></a></h2>
+<p>We combine an image-based resolution model,
+a non-TOF or TOF PET projector and an attenuation model
+into a single linear operator.</p>
+<div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><span class="linenos">137</span> <span class="c1">## enable TOF - comment if you want to run non-TOF</span>
+<span class="linenos">138</span> <span class="c1"># proj.tof_parameters = parallelproj.TOFParameters(</span>
+<span class="linenos">139</span> <span class="c1">#    num_tofbins=13 * 5,</span>
+<span class="linenos">140</span> <span class="c1">#    tofbin_width=12.0 / 5,</span>
+<span class="linenos">141</span> <span class="c1">#    sigma_tof=12.0 / 5,</span>
+<span class="linenos">142</span> <span class="c1"># )</span>
+<span class="linenos">143</span>
+<span class="linenos">144</span> <span class="c1"># setup the attenuation multiplication operator which is different</span>
+<span class="linenos">145</span> <span class="c1"># for TOF and non-TOF since the attenuation sinogram is always non-TOF</span>
+<span class="linenos">146</span> <span class="k">if</span> <span class="n">proj</span><span class="o">.</span><span class="n">tof</span><span class="p">:</span>
+<span class="linenos">147</span>     <span class="n">att_op</span> <span class="o">=</span> <a href="https://docs.python.org/3/library/abc.html#abc.ABC" title="abc.ABC" class="sphx-glr-backref-module-abc sphx-glr-backref-type-py-class"><span class="n">parallelproj</span><span class="o">.</span><span class="n">TOFNonTOFElementwiseMultiplicationOperator</span></a><span class="p">(</span>
+<span class="linenos">148</span>         <span class="n">proj</span><span class="o">.</span><span class="n">out_shape</span><span class="p">,</span> <span class="n">att_sino</span>
+<span class="linenos">149</span>     <span class="p">)</span>
+<span class="linenos">150</span> <span class="k">else</span><span class="p">:</span>
+<span class="linenos">151</span>     <span class="n">att_op</span> <span class="o">=</span> <a href="https://docs.python.org/3/library/abc.html#abc.ABC" title="abc.ABC" class="sphx-glr-backref-module-abc sphx-glr-backref-type-py-class"><span class="n">parallelproj</span><span class="o">.</span><span class="n">ElementwiseMultiplicationOperator</span></a><span class="p">(</span><span class="n">att_sino</span><span class="p">)</span>
+<span class="linenos">152</span>
+<span class="linenos">153</span> <span class="n">res_model</span> <span class="o">=</span> <a href="https://docs.python.org/3/library/abc.html#abc.ABC" title="abc.ABC" class="sphx-glr-backref-module-abc sphx-glr-backref-type-py-class"><span class="n">parallelproj</span><span class="o">.</span><span class="n">GaussianFilterOperator</span></a><span class="p">(</span>
+<span class="linenos">154</span>     <span class="n">proj</span><span class="o">.</span><span class="n">in_shape</span><span class="p">,</span> <span class="n">sigma</span><span class="o">=</span><span class="mf">4.5</span> <span class="o">/</span> <span class="p">(</span><span class="mf">2.35</span> <span class="o">*</span> <span class="n">proj</span><span class="o">.</span><a href="https://docs.python.org/3/library/stdtypes.html#tuple" title="builtins.tuple" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">voxel_size</span></a><span class="p">)</span>
+<span class="linenos">155</span> <span class="p">)</span>
+<span class="linenos">156</span>
+<span class="linenos">157</span> <span class="c1"># compose all 3 operators into a single linear operator</span>
+<span class="linenos">158</span> <span class="n">pet_lin_op</span> <span class="o">=</span> <a href="https://docs.python.org/3/library/abc.html#abc.ABC" title="abc.ABC" class="sphx-glr-backref-module-abc sphx-glr-backref-type-py-class"><span class="n">parallelproj</span><span class="o">.</span><span class="n">CompositeLinearOperator</span></a><span class="p">((</span><span class="n">att_op</span><span class="p">,</span> <span class="n">proj</span><span class="p">,</span> <span class="n">res_model</span><span class="p">))</span>
+</pre></div>
+</div>
+</section>
+<section id="visualization-of-the-geometry">
+<h2>Visualization of the geometry<a class="headerlink" href="#visualization-of-the-geometry" title="Link to this heading"></a></h2>
+<div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><span class="linenos">165</span> <span class="n">fig</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">16</span><span class="p">,</span> <span class="mi">8</span><span class="p">),</span> <span class="n">tight_layout</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="linenos">166</span> <span class="n">ax1</span> <span class="o">=</span> <span class="n">fig</span><span class="o">.</span><span class="n">add_subplot</span><span class="p">(</span><span class="mi">121</span><span class="p">,</span> <span class="n">projection</span><span class="o">=</span><span class="s2">&quot;3d&quot;</span><span class="p">)</span>
+<span class="linenos">167</span> <span class="n">ax2</span> <span class="o">=</span> <span class="n">fig</span><span class="o">.</span><span class="n">add_subplot</span><span class="p">(</span><span class="mi">122</span><span class="p">,</span> <span class="n">projection</span><span class="o">=</span><span class="s2">&quot;3d&quot;</span><span class="p">)</span>
+<span class="linenos">168</span> <span class="n">proj</span><span class="o">.</span><span class="n">show_geometry</span><span class="p">(</span><span class="n">ax1</span><span class="p">)</span>
+<span class="linenos">169</span> <span class="n">proj</span><span class="o">.</span><span class="n">show_geometry</span><span class="p">(</span><span class="n">ax2</span><span class="p">)</span>
+<span class="linenos">170</span> <span class="n">proj</span><span class="o">.</span><span class="n">lor_descriptor</span><span class="o">.</span><span class="n">show_views</span><span class="p">(</span>
+<span class="linenos">171</span>     <span class="n">ax1</span><span class="p">,</span>
+<span class="linenos">172</span>     <span class="n">views</span><span class="o">=</span><span class="n">xp</span><span class="o">.</span><span class="n">asarray</span><span class="p">([</span><span class="mi">0</span><span class="p">],</span> <span class="n">device</span><span class="o">=</span><a href="https://docs.python.org/3/library/stdtypes.html#str" title="builtins.str" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">dev</span></a><span class="p">),</span>
+<span class="linenos">173</span>     <span class="n">planes</span><span class="o">=</span><span class="n">xp</span><span class="o">.</span><span class="n">asarray</span><span class="p">([</span><a href="https://docs.python.org/3/library/functions.html#int" title="builtins.int" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">num_rings</span></a> <span class="o">//</span> <span class="mi">2</span><span class="p">],</span> <span class="n">device</span><span class="o">=</span><a href="https://docs.python.org/3/library/stdtypes.html#str" title="builtins.str" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">dev</span></a><span class="p">),</span>
+<span class="linenos">174</span>     <span class="n">lw</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span>
+<span class="linenos">175</span>     <span class="n">color</span><span class="o">=</span><span class="s2">&quot;k&quot;</span><span class="p">,</span>
+<span class="linenos">176</span> <span class="p">)</span>
+<span class="linenos">177</span> <span class="n">ax1</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;view 0, plane </span><span class="si">{</span><a href="https://docs.python.org/3/library/functions.html#int" title="builtins.int" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">num_rings</span></a><span class="w"> </span><span class="o">//</span><span class="w"> </span><span class="mi">2</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="linenos">178</span> <span class="n">proj</span><span class="o">.</span><span class="n">lor_descriptor</span><span class="o">.</span><span class="n">show_views</span><span class="p">(</span>
+<span class="linenos">179</span>     <span class="n">ax2</span><span class="p">,</span>
+<span class="linenos">180</span>     <span class="n">views</span><span class="o">=</span><span class="n">xp</span><span class="o">.</span><span class="n">asarray</span><span class="p">([</span><span class="n">proj</span><span class="o">.</span><span class="n">lor_descriptor</span><span class="o">.</span><span class="n">num_views</span> <span class="o">//</span> <span class="mi">2</span><span class="p">],</span> <span class="n">device</span><span class="o">=</span><a href="https://docs.python.org/3/library/stdtypes.html#str" title="builtins.str" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">dev</span></a><span class="p">),</span>
+<span class="linenos">181</span>     <span class="n">planes</span><span class="o">=</span><span class="n">xp</span><span class="o">.</span><span class="n">asarray</span><span class="p">([</span><a href="https://docs.python.org/3/library/functions.html#int" title="builtins.int" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">num_rings</span></a> <span class="o">//</span> <span class="mi">2</span><span class="p">],</span> <span class="n">device</span><span class="o">=</span><a href="https://docs.python.org/3/library/stdtypes.html#str" title="builtins.str" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">dev</span></a><span class="p">),</span>
+<span class="linenos">182</span>     <span class="n">lw</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span>
+<span class="linenos">183</span>     <span class="n">color</span><span class="o">=</span><span class="s2">&quot;k&quot;</span><span class="p">,</span>
+<span class="linenos">184</span> <span class="p">)</span>
+<span class="linenos">185</span> <span class="n">ax2</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;view </span><span class="si">{</span><span class="n">proj</span><span class="o">.</span><span class="n">lor_descriptor</span><span class="o">.</span><span class="n">num_views</span><span class="w"> </span><span class="o">//</span><span class="w"> </span><span class="mi">2</span><span class="si">}</span><span class="s2">, plane </span><span class="si">{</span><a href="https://docs.python.org/3/library/functions.html#int" title="builtins.int" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">num_rings</span></a><span class="w"> </span><span class="o">//</span><span class="w"> </span><span class="mi">2</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="linenos">186</span> <span class="n">fig</span><span class="o">.</span><span class="n">tight_layout</span><span class="p">()</span>
+<span class="linenos">187</span> <span class="n">fig</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+<img src="../../_images/sphx_glr_07_run_mlem_open_geometry_001.png" srcset="../../_images/sphx_glr_07_run_mlem_open_geometry_001.png" alt="view 0, plane 0, view 22, plane 0" class = "sphx-glr-single-img"/></section>
+<section id="simulation-of-projection-data">
+<h2>Simulation of projection data<a class="headerlink" href="#simulation-of-projection-data" title="Link to this heading"></a></h2>
+<p>We setup an arbitrary ground truth <span class="math notranslate nohighlight">\(x_{true}\)</span> and simulate
+noise-free and noisy data <span class="math notranslate nohighlight">\(y\)</span> by adding Poisson noise.</p>
+<div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><span class="linenos">196</span> <span class="c1"># simulated noise-free data</span>
+<span class="linenos">197</span> <span class="n">noise_free_data</span> <span class="o">=</span> <span class="n">pet_lin_op</span><span class="p">(</span><span class="n">x_true</span><span class="p">)</span>
+<span class="linenos">198</span>
+<span class="linenos">199</span> <span class="c1"># generate a contant contamination sinogram</span>
+<span class="linenos">200</span> <span class="n">contamination</span> <span class="o">=</span> <span class="n">xp</span><span class="o">.</span><span class="n">full</span><span class="p">(</span>
+<span class="linenos">201</span>     <a href="https://docs.python.org/3/library/stdtypes.html#tuple" title="builtins.tuple" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">noise_free_data</span><span class="o">.</span><span class="n">shape</span></a><span class="p">,</span>
+<span class="linenos">202</span>     <span class="mf">0.5</span> <span class="o">*</span> <span class="nb">float</span><span class="p">(</span><span class="n">xp</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">noise_free_data</span><span class="p">)),</span>
+<span class="linenos">203</span>     <span class="n">device</span><span class="o">=</span><a href="https://docs.python.org/3/library/stdtypes.html#str" title="builtins.str" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">dev</span></a><span class="p">,</span>
+<span class="linenos">204</span>     <span class="n">dtype</span><span class="o">=</span><span class="n">xp</span><span class="o">.</span><span class="n">float32</span><span class="p">,</span>
+<span class="linenos">205</span> <span class="p">)</span>
+<span class="linenos">206</span>
+<span class="linenos">207</span> <span class="n">noise_free_data</span> <span class="o">+=</span> <span class="n">contamination</span>
+<span class="linenos">208</span>
+<span class="linenos">209</span> <span class="c1"># add Poisson noise</span>
+<span class="linenos">210</span> <span class="c1"># np.random.seed(1)</span>
+<span class="linenos">211</span> <span class="c1"># y = xp.asarray(</span>
+<span class="linenos">212</span> <span class="c1">#    np.random.poisson(parallelproj.to_numpy_array(noise_free_data)),</span>
+<span class="linenos">213</span> <span class="c1">#    device=dev,</span>
+<span class="linenos">214</span> <span class="c1">#    dtype=xp.float64,</span>
+<span class="linenos">215</span> <span class="c1"># )</span>
+<span class="linenos">216</span>
+<span class="linenos">217</span> <span class="n">y</span> <span class="o">=</span> <span class="n">noise_free_data</span>
+</pre></div>
+</div>
+</section>
+<section id="em-update-to-minimize-f-x">
+<h2>EM update to minimize <span class="math notranslate nohighlight">\(f(x)\)</span><a class="headerlink" href="#em-update-to-minimize-f-x" title="Link to this heading"></a></h2>
+<p>The EM update that can be used in MLEM or OSEM is given by cite:p:<cite>Dempster1977</cite> <span id="id1">[<a class="reference internal" href="../../index.html#id9" title="L. A. Shepp and Y. Vardi. Maximum Likelihood Reconstruction for Emission Tomography. IEEE Transactions on Medical Imaging, 1(2):113–122, 1982. doi:10.1109/TMI.1982.4307558.">SV82</a>]</span> <span id="id2">[<a class="reference internal" href="../../index.html#id6" title="Kenneth Lange and Richard Carson. EM reconstruction algorithms for emission and transmission tomography. Journal of Computer Assisted Tomography, 8(2):306–316, 1984.">LC84</a>]</span> <span id="id3">[<a class="reference internal" href="../../index.html#id8" title="H. M. Hudson and R. S. Larkin. Accelerated Image Reconstructiong using Ordered Subsets of Projection Data. IEEE transactions on medical imaging, 13(4):601–609, 1994. doi:10.1109/42.363108.">HL94</a>]</span></p>
+<div class="math notranslate nohighlight">
+\[x^+ = \frac{x}{(A^k)^H 1} (A^k)^H \frac{y^k}{A^k x + s^k}\]</div>
+<p>to calculate the minimizer of <span class="math notranslate nohighlight">\(f(x)\)</span> iteratively.</p>
+<p>To monitor the convergence we calculate the relative cost</p>
+<div class="math notranslate nohighlight">
+\[\frac{f(x) - f(x^*)}{|f(x^*)|}\]</div>
+<p>and the distance to the optimal point</p>
+<div class="math notranslate nohighlight">
+\[\frac{\|x - x^*\|}{\|x^*\|}.\]</div>
+<p>We setup a function that calculates a single MLEM/OSEM
+update given the current solution, a linear forward operator,
+data, contamination and the adjoint of ones.</p>
+<div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><span class="linenos">246</span> <span class="k">def</span> <span class="nf">em_update</span><span class="p">(</span>
+<span class="linenos">247</span>     <span class="n">x_cur</span><span class="p">:</span> <span class="n">Array</span><span class="p">,</span>
+<span class="linenos">248</span>     <span class="n">data</span><span class="p">:</span> <span class="n">Array</span><span class="p">,</span>
+<span class="linenos">249</span>     <span class="n">op</span><span class="p">:</span> <a href="https://docs.python.org/3/library/abc.html#abc.ABC" title="abc.ABC" class="sphx-glr-backref-module-abc sphx-glr-backref-type-py-class"><span class="n">parallelproj</span><span class="o">.</span><span class="n">LinearOperator</span></a><span class="p">,</span>
+<span class="linenos">250</span>     <span class="n">s</span><span class="p">:</span> <span class="n">Array</span><span class="p">,</span>
+<span class="linenos">251</span>     <span class="n">adjoint_ones</span><span class="p">:</span> <span class="n">Array</span><span class="p">,</span>
+<span class="linenos">252</span> <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Array</span><span class="p">:</span>
+<span class="linenos">253</span><span class="w">     </span><span class="sd">&quot;&quot;&quot;EM update</span>
+<span class="linenos">254</span>
+<span class="linenos">255</span><span class="sd">     Parameters</span>
+<span class="linenos">256</span><span class="sd">     ----------</span>
+<span class="linenos">257</span><span class="sd">     x_cur : Array</span>
+<span class="linenos">258</span><span class="sd">         current solution</span>
+<span class="linenos">259</span><span class="sd">     data : Array</span>
+<span class="linenos">260</span><span class="sd">         data</span>
+<span class="linenos">261</span><span class="sd">     op : parallelproj.LinearOperator</span>
+<span class="linenos">262</span><span class="sd">         linear forward operator</span>
+<span class="linenos">263</span><span class="sd">     s : Array</span>
+<span class="linenos">264</span><span class="sd">         contamination</span>
+<span class="linenos">265</span><span class="sd">     adjoint_ones : Array</span>
+<span class="linenos">266</span><span class="sd">         adjoint of ones</span>
+<span class="linenos">267</span>
+<span class="linenos">268</span><span class="sd">     Returns</span>
+<span class="linenos">269</span><span class="sd">     -------</span>
+<span class="linenos">270</span><span class="sd">     Array</span>
+<span class="linenos">271</span><span class="sd">         _description_</span>
+<span class="linenos">272</span><span class="sd">     &quot;&quot;&quot;</span>
+<span class="linenos">273</span>     <span class="n">ybar</span> <span class="o">=</span> <span class="n">op</span><span class="p">(</span><span class="n">x_cur</span><span class="p">)</span> <span class="o">+</span> <span class="n">s</span>
+<span class="linenos">274</span>     <span class="k">return</span> <span class="n">x_cur</span> <span class="o">*</span> <span class="n">op</span><span class="o">.</span><span class="n">adjoint</span><span class="p">(</span><span class="n">data</span> <span class="o">/</span> <span class="n">ybar</span><span class="p">)</span> <span class="o">/</span> <span class="n">adjoint_ones</span>
+</pre></div>
+</div>
+</section>
+<section id="run-the-mlem-iterations">
+<h2>Run the MLEM iterations<a class="headerlink" href="#run-the-mlem-iterations" title="Link to this heading"></a></h2>
+<div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><span class="linenos">281</span> <span class="c1"># number of MLEM iterations</span>
+<span class="linenos">282</span> <a href="https://docs.python.org/3/library/functions.html#int" title="builtins.int" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">num_iter</span></a> <span class="o">=</span> <span class="mi">100</span>
+<span class="linenos">283</span>
+<span class="linenos">284</span> <span class="c1"># initialize x</span>
+<span class="linenos">285</span> <span class="n">x</span> <span class="o">=</span> <span class="n">xp</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">pet_lin_op</span><span class="o">.</span><span class="n">in_shape</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">xp</span><span class="o">.</span><span class="n">float32</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><a href="https://docs.python.org/3/library/stdtypes.html#str" title="builtins.str" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">dev</span></a><span class="p">)</span>
+<span class="linenos">286</span> <span class="c1"># calculate A^H 1</span>
+<span class="linenos">287</span> <span class="n">adjoint_ones</span> <span class="o">=</span> <span class="n">pet_lin_op</span><span class="o">.</span><span class="n">adjoint</span><span class="p">(</span>
+<span class="linenos">288</span>     <span class="n">xp</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">pet_lin_op</span><span class="o">.</span><span class="n">out_shape</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">xp</span><span class="o">.</span><span class="n">float32</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><a href="https://docs.python.org/3/library/stdtypes.html#str" title="builtins.str" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">dev</span></a><span class="p">)</span>
+<span class="linenos">289</span> <span class="p">)</span>
+<span class="linenos">290</span>
+<span class="linenos">291</span> <span class="k">for</span> <a href="https://docs.python.org/3/library/functions.html#int" title="builtins.int" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">i</span></a> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><a href="https://docs.python.org/3/library/functions.html#int" title="builtins.int" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">num_iter</span></a><span class="p">):</span>
+<span class="linenos">292</span>     <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;MLEM iteration </span><span class="si">{</span><span class="p">(</span><a href="https://docs.python.org/3/library/functions.html#int" title="builtins.int" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">i</span></a><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="p">)</span><span class="si">:</span><span class="s2">03</span><span class="si">}</span><span class="s2"> / </span><span class="si">{</span><a href="https://docs.python.org/3/library/functions.html#int" title="builtins.int" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">num_iter</span></a><span class="si">:</span><span class="s2">03</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">end</span><span class="o">=</span><span class="s2">&quot;</span><span class="se">\r</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="linenos">293</span>     <span class="n">x</span> <span class="o">=</span> <span class="n">em_update</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">pet_lin_op</span><span class="p">,</span> <span class="n">contamination</span><span class="p">,</span> <span class="n">adjoint_ones</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>MLEM iteration 001 / 100
+MLEM iteration 002 / 100
+MLEM iteration 003 / 100
+MLEM iteration 004 / 100
+MLEM iteration 005 / 100
+MLEM iteration 006 / 100
+MLEM iteration 007 / 100
+MLEM iteration 008 / 100
+MLEM iteration 009 / 100
+MLEM iteration 010 / 100
+MLEM iteration 011 / 100
+MLEM iteration 012 / 100
+MLEM iteration 013 / 100
+MLEM iteration 014 / 100
+MLEM iteration 015 / 100
+MLEM iteration 016 / 100
+MLEM iteration 017 / 100
+MLEM iteration 018 / 100
+MLEM iteration 019 / 100
+MLEM iteration 020 / 100
+MLEM iteration 021 / 100
+MLEM iteration 022 / 100
+MLEM iteration 023 / 100
+MLEM iteration 024 / 100
+MLEM iteration 025 / 100
+MLEM iteration 026 / 100
+MLEM iteration 027 / 100
+MLEM iteration 028 / 100
+MLEM iteration 029 / 100
+MLEM iteration 030 / 100
+MLEM iteration 031 / 100
+MLEM iteration 032 / 100
+MLEM iteration 033 / 100
+MLEM iteration 034 / 100
+MLEM iteration 035 / 100
+MLEM iteration 036 / 100
+MLEM iteration 037 / 100
+MLEM iteration 038 / 100
+MLEM iteration 039 / 100
+MLEM iteration 040 / 100
+MLEM iteration 041 / 100
+MLEM iteration 042 / 100
+MLEM iteration 043 / 100
+MLEM iteration 044 / 100
+MLEM iteration 045 / 100
+MLEM iteration 046 / 100
+MLEM iteration 047 / 100
+MLEM iteration 048 / 100
+MLEM iteration 049 / 100
+MLEM iteration 050 / 100
+MLEM iteration 051 / 100
+MLEM iteration 052 / 100
+MLEM iteration 053 / 100
+MLEM iteration 054 / 100
+MLEM iteration 055 / 100
+MLEM iteration 056 / 100
+MLEM iteration 057 / 100
+MLEM iteration 058 / 100
+MLEM iteration 059 / 100
+MLEM iteration 060 / 100
+MLEM iteration 061 / 100
+MLEM iteration 062 / 100
+MLEM iteration 063 / 100
+MLEM iteration 064 / 100
+MLEM iteration 065 / 100
+MLEM iteration 066 / 100
+MLEM iteration 067 / 100
+MLEM iteration 068 / 100
+MLEM iteration 069 / 100
+MLEM iteration 070 / 100
+MLEM iteration 071 / 100
+MLEM iteration 072 / 100
+MLEM iteration 073 / 100
+MLEM iteration 074 / 100
+MLEM iteration 075 / 100
+MLEM iteration 076 / 100
+MLEM iteration 077 / 100
+MLEM iteration 078 / 100
+MLEM iteration 079 / 100
+MLEM iteration 080 / 100
+MLEM iteration 081 / 100
+MLEM iteration 082 / 100
+MLEM iteration 083 / 100
+MLEM iteration 084 / 100
+MLEM iteration 085 / 100
+MLEM iteration 086 / 100
+MLEM iteration 087 / 100
+MLEM iteration 088 / 100
+MLEM iteration 089 / 100
+MLEM iteration 090 / 100
+MLEM iteration 091 / 100
+MLEM iteration 092 / 100
+MLEM iteration 093 / 100
+MLEM iteration 094 / 100
+MLEM iteration 095 / 100
+MLEM iteration 096 / 100
+MLEM iteration 097 / 100
+MLEM iteration 098 / 100
+MLEM iteration 099 / 100
+MLEM iteration 100 / 100
+</pre></div>
+</div>
+</section>
+<section id="calculation-of-the-negative-poisson-log-likelihood-function-of-the-reconstruction">
+<h2>Calculation of the negative Poisson log-likelihood function of the reconstruction<a class="headerlink" href="#calculation-of-the-negative-poisson-log-likelihood-function-of-the-reconstruction" title="Link to this heading"></a></h2>
+<div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><span class="linenos">300</span> <span class="c1"># calculate the negative Poisson log-likelihood function of the reconstruction</span>
+<span class="linenos">301</span> <span class="n">exp</span> <span class="o">=</span> <span class="n">pet_lin_op</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="o">+</span> <span class="n">contamination</span>
+<span class="linenos">302</span> <span class="c1"># calculate the relative cost and distance to the optimal point</span>
+<span class="linenos">303</span> <a href="https://docs.python.org/3/library/functions.html#float" title="builtins.float" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">cost</span></a> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">xp</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">exp</span> <span class="o">-</span> <span class="n">y</span> <span class="o">*</span> <span class="n">xp</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">exp</span><span class="p">)))</span>
+<span class="linenos">304</span> <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">MLEM cost </span><span class="si">{</span><a href="https://docs.python.org/3/library/functions.html#float" title="builtins.float" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">cost</span></a><span class="si">:</span><span class="s2">.6E</span><span class="si">}</span><span class="s2"> after </span><span class="si">{</span><a href="https://docs.python.org/3/library/functions.html#int" title="builtins.int" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">num_iter</span></a><span class="si">:</span><span class="s2">03</span><span class="si">}</span><span class="s2"> iterations&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>MLEM cost -2.586407E+05 after 100 iterations
+</pre></div>
+</div>
+</section>
+<section id="visualize-the-results">
+<h2>Visualize the results<a class="headerlink" href="#visualize-the-results" title="Link to this heading"></a></h2>
+<div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><span class="linenos">311</span> <span class="k">def</span> <span class="nf">_update_img</span><span class="p">(</span><a href="https://docs.python.org/3/library/functions.html#int" title="builtins.int" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">i</span></a><span class="p">):</span>
+<span class="linenos">312</span>     <span class="n">img0</span><span class="o">.</span><span class="n">set_data</span><span class="p">(</span><span class="n">x_true_np</span><span class="p">[:,</span> <span class="p">:,</span> <a href="https://docs.python.org/3/library/functions.html#int" title="builtins.int" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">i</span></a><span class="p">])</span>
+<span class="linenos">313</span>     <span class="n">img1</span><span class="o">.</span><span class="n">set_data</span><span class="p">(</span><span class="n">x_np</span><span class="p">[:,</span> <span class="p">:,</span> <a href="https://docs.python.org/3/library/functions.html#int" title="builtins.int" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">i</span></a><span class="p">])</span>
+<span class="linenos">314</span>     <span class="n">ax</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;true image - plane </span><span class="si">{</span><a href="https://docs.python.org/3/library/functions.html#int" title="builtins.int" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">i</span></a><span class="si">:</span><span class="s2">02</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="linenos">315</span>     <span class="n">ax</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;MLEM iteration </span><span class="si">{</span><a href="https://docs.python.org/3/library/functions.html#int" title="builtins.int" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">num_iter</span></a><span class="si">}</span><span class="s2"> - plane </span><span class="si">{</span><a href="https://docs.python.org/3/library/functions.html#int" title="builtins.int" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">i</span></a><span class="si">:</span><span class="s2">02</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="linenos">316</span>     <span class="k">return</span> <span class="p">(</span><span class="n">img0</span><span class="p">,</span> <span class="n">img1</span><span class="p">)</span>
+<span class="linenos">317</span>
+<span class="linenos">318</span>
+<span class="linenos">319</span> <span class="n">x_true_np</span> <span class="o">=</span> <span class="n">parallelproj</span><span class="o">.</span><span class="n">to_numpy_array</span><span class="p">(</span><span class="n">x_true</span><span class="p">)</span>
+<span class="linenos">320</span> <span class="n">x_np</span> <span class="o">=</span> <span class="n">parallelproj</span><span class="o">.</span><span class="n">to_numpy_array</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+<span class="linenos">321</span>
+<span class="linenos">322</span> <span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">5</span><span class="p">))</span>
+<span class="linenos">323</span> <span class="n">vmax</span> <span class="o">=</span> <span class="n">x_np</span><span class="o">.</span><span class="n">max</span><span class="p">()</span>
+<span class="linenos">324</span> <span class="n">img0</span> <span class="o">=</span> <span class="n">ax</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span><span class="n">x_true_np</span><span class="p">[:,</span> <span class="p">:,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">cmap</span><span class="o">=</span><span class="s2">&quot;Greys&quot;</span><span class="p">,</span> <span class="n">vmin</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">vmax</span><span class="o">=</span><span class="n">vmax</span><span class="p">)</span>
+<span class="linenos">325</span> <span class="n">img1</span> <span class="o">=</span> <span class="n">ax</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span><span class="n">x_np</span><span class="p">[:,</span> <span class="p">:,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">cmap</span><span class="o">=</span><span class="s2">&quot;Greys&quot;</span><span class="p">,</span> <span class="n">vmin</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">vmax</span><span class="o">=</span><span class="n">vmax</span><span class="p">)</span>
+<span class="linenos">326</span> <span class="n">ax</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;true image - plane </span><span class="si">{</span><span class="mi">0</span><span class="si">:</span><span class="s2">02</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="linenos">327</span> <span class="n">ax</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;MLEM iteration </span><span class="si">{</span><a href="https://docs.python.org/3/library/functions.html#int" title="builtins.int" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">num_iter</span></a><span class="si">}</span><span class="s2"> - plane </span><span class="si">{</span><span class="mi">0</span><span class="si">:</span><span class="s2">02</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="linenos">328</span> <span class="n">fig</span><span class="o">.</span><span class="n">tight_layout</span><span class="p">()</span>
+<span class="linenos">329</span> <span class="n">ani</span> <span class="o">=</span> <span class="n">animation</span><span class="o">.</span><span class="n">FuncAnimation</span><span class="p">(</span><span class="n">fig</span><span class="p">,</span> <span class="n">_update_img</span><span class="p">,</span> <a href="https://docs.python.org/3/library/stdtypes.html#tuple" title="builtins.tuple" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">x_np</span><span class="o">.</span><span class="n">shape</span></a><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="n">interval</span><span class="o">=</span><span class="mi">200</span><span class="p">,</span> <span class="n">blit</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<span class="linenos">330</span> <span class="n">fig</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+<div class="sphx-glr-animation docutils container">
+<link rel="stylesheet"
+href="https://maxcdn.bootstrapcdn.com/font-awesome/4.4.0/css/font-awesome.min.css">
+<script language="javascript">
+  function isInternetExplorer() {
+    ua = navigator.userAgent;
+    /* MSIE used to detect old browsers and Trident used to newer ones*/
+    return ua.indexOf("MSIE ") > -1 || ua.indexOf("Trident/") > -1;
+  }
+
+  /* Define the Animation class */
+  function Animation(frames, img_id, slider_id, interval, loop_select_id){
+    this.img_id = img_id;
+    this.slider_id = slider_id;
+    this.loop_select_id = loop_select_id;
+    this.interval = interval;
+    this.current_frame = 0;
+    this.direction = 0;
+    this.timer = null;
+    this.frames = new Array(frames.length);
+
+    for (var i=0; i<frames.length; i++)
+    {
+     this.frames[i] = new Image();
+     this.frames[i].src = frames[i];
+    }
+    var slider = document.getElementById(this.slider_id);
+    slider.max = this.frames.length - 1;
+    if (isInternetExplorer()) {
+        // switch from oninput to onchange because IE <= 11 does not conform
+        // with W3C specification. It ignores oninput and onchange behaves
+        // like oninput. In contrast, Microsoft Edge behaves correctly.
+        slider.setAttribute('onchange', slider.getAttribute('oninput'));
+        slider.setAttribute('oninput', null);
+    }
+    this.set_frame(this.current_frame);
+  }
+
+  Animation.prototype.get_loop_state = function(){
+    var button_group = document[this.loop_select_id].state;
+    for (var i = 0; i < button_group.length; i++) {
+        var button = button_group[i];
+        if (button.checked) {
+            return button.value;
+        }
+    }
+    return undefined;
+  }
+
+  Animation.prototype.set_frame = function(frame){
+    this.current_frame = frame;
+    document.getElementById(this.img_id).src =
+            this.frames[this.current_frame].src;
+    document.getElementById(this.slider_id).value = this.current_frame;
+  }
+
+  Animation.prototype.next_frame = function()
+  {
+    this.set_frame(Math.min(this.frames.length - 1, this.current_frame + 1));
+  }
+
+  Animation.prototype.previous_frame = function()
+  {
+    this.set_frame(Math.max(0, this.current_frame - 1));
+  }
+
+  Animation.prototype.first_frame = function()
+  {
+    this.set_frame(0);
+  }
+
+  Animation.prototype.last_frame = function()
+  {
+    this.set_frame(this.frames.length - 1);
+  }
+
+  Animation.prototype.slower = function()
+  {
+    this.interval /= 0.7;
+    if(this.direction > 0){this.play_animation();}
+    else if(this.direction < 0){this.reverse_animation();}
+  }
+
+  Animation.prototype.faster = function()
+  {
+    this.interval *= 0.7;
+    if(this.direction > 0){this.play_animation();}
+    else if(this.direction < 0){this.reverse_animation();}
+  }
+
+  Animation.prototype.anim_step_forward = function()
+  {
+    this.current_frame += 1;
+    if(this.current_frame < this.frames.length){
+      this.set_frame(this.current_frame);
+    }else{
+      var loop_state = this.get_loop_state();
+      if(loop_state == "loop"){
+        this.first_frame();
+      }else if(loop_state == "reflect"){
+        this.last_frame();
+        this.reverse_animation();
+      }else{
+        this.pause_animation();
+        this.last_frame();
+      }
+    }
+  }
+
+  Animation.prototype.anim_step_reverse = function()
+  {
+    this.current_frame -= 1;
+    if(this.current_frame >= 0){
+      this.set_frame(this.current_frame);
+    }else{
+      var loop_state = this.get_loop_state();
+      if(loop_state == "loop"){
+        this.last_frame();
+      }else if(loop_state == "reflect"){
+        this.first_frame();
+        this.play_animation();
+      }else{
+        this.pause_animation();
+        this.first_frame();
+      }
+    }
+  }
+
+  Animation.prototype.pause_animation = function()
+  {
+    this.direction = 0;
+    if (this.timer){
+      clearInterval(this.timer);
+      this.timer = null;
+    }
+  }
+
+  Animation.prototype.play_animation = function()
+  {
+    this.pause_animation();
+    this.direction = 1;
+    var t = this;
+    if (!this.timer) this.timer = setInterval(function() {
+        t.anim_step_forward();
+    }, this.interval);
+  }
+
+  Animation.prototype.reverse_animation = function()
+  {
+    this.pause_animation();
+    this.direction = -1;
+    var t = this;
+    if (!this.timer) this.timer = setInterval(function() {
+        t.anim_step_reverse();
+    }, this.interval);
+  }
+</script>
+
+<style>
+.animation {
+    display: inline-block;
+    text-align: center;
+}
+input[type=range].anim-slider {
+    width: 374px;
+    margin-left: auto;
+    margin-right: auto;
+}
+.anim-buttons {
+    margin: 8px 0px;
+}
+.anim-buttons button {
+    padding: 0;
+    width: 36px;
+}
+.anim-state label {
+    margin-right: 8px;
+}
+.anim-state input {
+    margin: 0;
+    vertical-align: middle;
+}
+</style>
+
+<div class="animation">
+  <img id="_anim_img21b5e5fd0dfb4947b62edee7226f2e2e">
+  <div class="anim-controls">
+    <input id="_anim_slider21b5e5fd0dfb4947b62edee7226f2e2e" type="range" class="anim-slider"
+           name="points" min="0" max="1" step="1" value="0"
+           oninput="anim21b5e5fd0dfb4947b62edee7226f2e2e.set_frame(parseInt(this.value));">
+    <div class="anim-buttons">
+      <button title="Decrease speed" aria-label="Decrease speed" onclick="anim21b5e5fd0dfb4947b62edee7226f2e2e.slower()">
+          <i class="fa fa-minus"></i></button>
+      <button title="First frame" aria-label="First frame" onclick="anim21b5e5fd0dfb4947b62edee7226f2e2e.first_frame()">
+        <i class="fa fa-fast-backward"></i></button>
+      <button title="Previous frame" aria-label="Previous frame" onclick="anim21b5e5fd0dfb4947b62edee7226f2e2e.previous_frame()">
+          <i class="fa fa-step-backward"></i></button>
+      <button title="Play backwards" aria-label="Play backwards" onclick="anim21b5e5fd0dfb4947b62edee7226f2e2e.reverse_animation()">
+          <i class="fa fa-play fa-flip-horizontal"></i></button>
+      <button title="Pause" aria-label="Pause" onclick="anim21b5e5fd0dfb4947b62edee7226f2e2e.pause_animation()">
+          <i class="fa fa-pause"></i></button>
+      <button title="Play" aria-label="Play" onclick="anim21b5e5fd0dfb4947b62edee7226f2e2e.play_animation()">
+          <i class="fa fa-play"></i></button>
+      <button title="Next frame" aria-label="Next frame" onclick="anim21b5e5fd0dfb4947b62edee7226f2e2e.next_frame()">
+          <i class="fa fa-step-forward"></i></button>
+      <button title="Last frame" aria-label="Last frame" onclick="anim21b5e5fd0dfb4947b62edee7226f2e2e.last_frame()">
+          <i class="fa fa-fast-forward"></i></button>
+      <button title="Increase speed" aria-label="Increase speed" onclick="anim21b5e5fd0dfb4947b62edee7226f2e2e.faster()">
+          <i class="fa fa-plus"></i></button>
+    </div>
+    <form title="Repetition mode" aria-label="Repetition mode" action="#n" name="_anim_loop_select21b5e5fd0dfb4947b62edee7226f2e2e"
+          class="anim-state">
+      <input type="radio" name="state" value="once" id="_anim_radio1_21b5e5fd0dfb4947b62edee7226f2e2e"
+             >
+      <label for="_anim_radio1_21b5e5fd0dfb4947b62edee7226f2e2e">Once</label>
+      <input type="radio" name="state" value="loop" id="_anim_radio2_21b5e5fd0dfb4947b62edee7226f2e2e"
+             checked>
+      <label for="_anim_radio2_21b5e5fd0dfb4947b62edee7226f2e2e">Loop</label>
+      <input type="radio" name="state" value="reflect" id="_anim_radio3_21b5e5fd0dfb4947b62edee7226f2e2e"
+             >
+      <label for="_anim_radio3_21b5e5fd0dfb4947b62edee7226f2e2e">Reflect</label>
+    </form>
+  </div>
+</div>
+
+
+<script language="javascript">
+  /* Instantiate the Animation class. */
+  /* The IDs given should match those used in the template above. */
+  (function() {
+    var img_id = "_anim_img21b5e5fd0dfb4947b62edee7226f2e2e";
+    var slider_id = "_anim_slider21b5e5fd0dfb4947b62edee7226f2e2e";
+    var loop_select_id = "_anim_loop_select21b5e5fd0dfb4947b62edee7226f2e2e";
+    var frames = new Array(1);
+
+  frames[0] = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAA+gAAAH0CAYAAACuKActAAAAOXRFWHRTb2Z0d2FyZQBNYXRwbG90\
+bGliIHZlcnNpb24zLjkuMiwgaHR0cHM6Ly9tYXRwbG90bGliLm9yZy8hTgPZAAAACXBIWXMAAA9h\
+AAAPYQGoP6dpAABRqklEQVR4nO3de3xU9Z3/8ffMJJlcSCLIJQlgTFVQ5OJ6w1CVoAsVK1WwlGpr\
+CV5qFeuyeGnBKthVYGnrQ1uV7nYVcBVxraK1XrEK7hZpwWJF2lqsoLESUJAkQK4z398f/jJ1SELO\
+N5mT+c7wej4e81DOfOZ7Pt/zPXO+88k5cyZgjDECAAAAAABJFUx2AgAAAAAAgAIdAAAAAAAnUKAj\
+Laxbt07z58/X3r17k51Ku44++mhVVlYmO42UVFlZqaOPPjrZaXTqvffe05QpU3TEEUeoV69eGj9+\
+vP7whz+0G7ty5UqddNJJys7OVklJiWbNmqV9+/b1cMYADhfLli1TIBBQIBDQmjVr2jxvjNGxxx6r\
+QCCgioqKuOcCgYCuu+66Q7ZfUVERa//gx+eP32vWrIktX7ZsWbttnXPOOW1e15H25ocFCxboqaee\
+6vS1fusoj9Zt0N44+G3Lli269tprVV5erry8vE7z8DpX7du3T7NmzVJJSYmys7N10kknaeXKlT72\
+pHPz589XIBBIag5e7Nq1S5WVlerbt69yc3NVXl6u3/zmN+3GvvzyyyovL1dubq769u2ryspK7dq1\
+q4czRk+gQEdaWLdunW6//XZnC/RVq1bp1ltvTXYa8MnHH3+ss846S3/961/14IMP6n/+53/U0NCg\
+iooKvfPOO3GxjzzyiC655BKddtppev755zVv3jwtW7ZMU6ZMSVL2AA4X+fn5euCBB9osX7t2rf72\
+t78pPz+/y21/4Qtf0Ouvv97msWrVKs95bNu2TWvWrFFBQYGndd56661t2ne9QD/55JP1+uuv6+ST\
+T+7xnDZu3KinnnpKffr00bnnnnvIWJu5asqUKVq+fLnmzZun559/XqeddpouueQSrVixwq+upIXG\
+xkade+65+s1vfqN77rlHTz/9tAYMGKDzzjtPa9eujYtdu3atJk6cqAEDBujpp5/WPffco5dfflnn\
+nnuuGhsbk9QD+MYAaeBHP/qRkWS2bdvmKf7AgQP+JoSEmT59uiktLU12God00003mczMTLN9+/bY\
+spqaGtO3b1/zta99LbaspaXFFBcXmwkTJsS9/pFHHjGSzHPPPddjOQM4fCxdutRIMldeeaXJyckx\
+NTU1cc9/85vfNOXl5ebEE080Y8eOjXtOkpk5c+Yh2x87dqw58cQTO83j1VdfjeUhyfz1r3+Ne/4H\
+P/iBGTRokJk4cWKXj/t5eXlm+vTpXXptR1paWkxDQ0PS8+iuSCQS+//HH3/cSDKvvvpqmzibuerZ\
+Z581ksyKFSviYsePH29KSkpMS0tLYjvh0bx584zrZc59991nJJl169bFljU3N5thw4aZ008/PS72\
+tNNOM8OGDTPNzc2xZb/97W+NJHP//ff3WM7oGZxBR8qbP3++brrpJklSWVlZm8v4jj76aF1wwQV6\
+8skn9U//9E/Kzs7W7bffru3bt3d4mV0gEND8+fPjlm3dulWXXnqp+vfvr3A4rBNOOEH33XefpxwP\
+vsS99RK3FStW6Hvf+56Ki4vVq1cvTZo0STt37lRdXZ2+/e1vq2/fvurbt69mzJjR5rKy++67T2ef\
+fbb69++vvLw8jRgxQosXL1Zzc3NcnDFGCxYsUGlpqbKzs3Xqqadq9erVqqioaHMpY21trW688UaV\
+lZUpKytLAwcO1KxZs7R//35P/fSq9XLL1atXa8aMGerTp4/y8vI0adIkvffee52+3mvfKyoqNHz4\
+cG3YsEFnnXWWcnNz9YUvfEGLFi1SNBpNWN9XrVqlc845R6WlpbFlBQUFmjJlip555hm1tLRIktav\
+X68dO3ZoxowZca+fOnWqevXq1e6ZJgBIlEsuuUSS9Oijj8aW1dTU6IknntDll1/eY3mMHz9egwcP\
+1oMPPhhbFo1GtXz5ck2fPl3BoLePpwdf4h4IBLR//34tX7489lng8/NcdXW1rr76ag0aNEhZWVkq\
+KyvT7bffHjtGS4p9Nli8eLHuuOMOlZWVKRwO69VXX1VDQ4NuuOEGnXTSSSosLFSfPn1UXl6up59+\
+Oi6vQ+XR0SXuv/rVr2KXL+fn52v8+PF6/fXX42JaL9vesmWLLrnkEhUWFmrAgAG6/PLLVVNT0+n2\
+8rpdbeaqVatWqVevXpo6dWpc7IwZM/TRRx/pd7/7nad1etG67R5++GHNnj1bRUVFysnJ0dixY7Vp\
+06ZOX//YY49pwoQJKi4uVk5Ojk444QR9//vfbzPPV1ZWqlevXnr33Xd1/vnnq1evXho8eLBuuOGG\
+Nmerm5qadMcdd+j4449XOBxWv379NGPGDH388ced5rNq1SoNHTpU5eXlsWUZGRn65je/qd///vf6\
++9//Lkn6+9//rg0bNuiyyy5TRkZGLHbMmDEaMmQInx3SUEbnIYDbrrzySu3Zs0c/+9nP9OSTT6q4\
+uFiSNGzYsFjMH/7wB/35z3/WD37wA5WVlSkvL89qHX/60580ZswYHXXUUfrJT36ioqIivfjii7r+\
++uv1ySefaN68eV3Kfe7cuRo3bpyWLVum7du368Ybb9Qll1yijIwMjRo1So8++qg2bdqkuXPnKj8/\
+Xz/96U9jr/3b3/6mSy+9NFZQ/vGPf9Sdd96pv/zlL3Efem655RYtXLhQ3/72tzVlyhRVVVXpyiuv\
+VHNzs4YMGRKLO3DggMaOHasPP/xQc+fO1ciRI7Vlyxbddttt2rx5s15++eWEf5/riiuu0Pjx47Vi\
+xQpVVVXpBz/4gSoqKvTWW2/piCOO6PB1XvsuffaB7Bvf+IZuuOEGzZs3T6tWrdKcOXNUUlKib33r\
+W93ue319vf72t79p8uTJbZ4bOXKk6uvr9d5772nIkCF6++23Y8s/LzMzU8cff3zseQDwQ0FBgb76\
+1a/qwQcf1NVXXy3ps2I9GAxq2rRpuvvuu7vV/ucL3VbBYLBNYRgMBlVZWakHHnhAd9xxh0KhkF56\
+6SV9+OGHmjFjhv7lX/6lS+t//fXXdc4552jcuHGxr5W1Xi5fXV2t008/XcFgULfddpuOOeYYvf76\
+67rjjju0fft2LV26NK6tn/70pxoyZIh+/OMfq6CgQMcdd5waGxu1Z88e3XjjjRo4cKCampr08ssv\
+a8qUKVq6dGlsTjlUHu1ZsWKFvvGNb2jChAl69NFH1djYqMWLF6uiokK/+c1vdOaZZ8bFX3zxxZo2\
+bZquuOIKbd68WXPmzJGkNvNfV9nMVW+//bZOOOGEuMLx8699++23NWbMmITk1Wru3Lk6+eST9V//\
+9V+qqanR/PnzVVFRoU2bNukLX/hCh6/bunWrzj//fM2aNUt5eXn6y1/+on//93/X73//e73yyitx\
+sc3NzfrKV76iK664QjfccINee+01/du//ZsKCwt12223Sfrsj0oXXnih/vd//1c333yzxowZo/ff\
+f1/z5s1TRUWFNm7cqJycnA7zefvtt3XWWWe1Wd667bZs2aKBAwd2OB6ty3772992vtGQWpJ9Ch9I\
+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\
+f1NxcbG2bt3qKY+DBYNBLV68WN/4xjd0wQUX6Oqrr1ZjY6N+9KMfae/evVbj1JkDBw7oueeek6TY\
+WK1du1affPKJ8vLyYt/Ht5mrJk6cqPHjx+uaa65RbW2tjj32WD366KN64YUX9PDDD8eKyUTatWuX\
+Jk+erKuuuko1NTWaN2+esrOzY3ezb8+YMWPUu3dvfec739G8efOUmZmpRx555JCXxXfm61//uh55\
+5BGdf/75+pd/+RedfvrpyszM1IcffqhXX31VF154Ybu/8NLq8ssv13333aepU6dq0aJF6t+/v+6/\
+/3698847evnll+Ni//3f/13jx4/X1KlTde2112rXrl36/ve/r+HDh7f5iiHSQFJvUQck0Jw5c0xJ\
+SYkJBoNxdyYtLS01X/7yl9t9TU1NjbnyyivNgAEDTF5enpk0aZLZvn17m7u4G/PZnV0vv/xyM3Dg\
+QJOZmWn69etnxowZE3fH8Y50dBf3xx9/PC7u83fa/bzWu5F+/PHHsWXPPPOMGTVqlMnOzjYDBw40\
+N910k3n++efb3JU1Go2aO+64wwwaNMhkZWWZkSNHml//+tdm1KhRbe6ivm/fPvODH/zADB061GRl\
+ZZnCwkIzYsQI86//+q+murq603561drPl156yVx22WXmiCOOMDk5Oeb88883W7dujYtt7y69Xvs+\
+duxYc+KJJ7ZZf3ttdrfv7777rrnoootMQUGByc3NNeeee65544032o1dsWKFGTlypMnKyjJFRUXm\
++uuvN3V1dZ2uAwC6oqO55WAd3cW9o0frPHmou7hLMs3NzcaYjue+g3XnLu5vvvmm+eIXv2hyc3Pb\
+/FrJxx9/bK6//npTVlZmMjMzTZ8+fcwpp5xibrnlFrNv3z5jzD/u4v6jH/2o3XUuWrTIHH300SYc\
+DpsTTjjB/OIXv2j3juEd5XHwXdxbPfXUU2b06NEmOzvb5OXlmXPPPdf89re/jYtp77OAMf8Y3/Z+\
+yebzWvvW3qO97e11rqqrqzPXX3+9KSoqin3OePTRRw+ZS1e0brv//u//Ntdff73p16+fCYfD5qyz\
+zjIbN26Mi21vTNatW2fKy8tNbm6u6devn7nyyivNH/7whza/6DN9+nSTl5fXZv3ttdnc3Gx+/OMf\
+xz6T9OrVyxx//PHm6quvbvN5pj3V1dXmW9/6lunTp4/Jzs42Z5xxhlm9enW7sS+99JI544wzTHZ2\
+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\
+j9MQXzsrDX0AAAAASUVORK5CYII=\
+"
+
+
+    /* set a timeout to make sure all the above elements are created before
+       the object is initialized. */
+    setTimeout(function() {
+        anim21b5e5fd0dfb4947b62edee7226f2e2e = new Animation(frames, img_id, slider_id, 200.0,
+                                 loop_select_id);
+    }, 0);
+  })()
+</script></div>
+<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> (0 minutes 0.820 seconds)</p>
+<div class="sphx-glr-footer sphx-glr-footer-example docutils container" id="sphx-glr-download-auto-examples-05-algorithms-07-run-mlem-open-geometry-py">
+<div class="sphx-glr-download sphx-glr-download-jupyter docutils container">
+<p><a class="reference download internal" download="" href="../../_downloads/833212230b6d3f2efcf849731ddd25af/07_run_mlem_open_geometry.ipynb"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Jupyter</span> <span class="pre">notebook:</span> <span class="pre">07_run_mlem_open_geometry.ipynb</span></code></a></p>
+</div>
+<div class="sphx-glr-download sphx-glr-download-python docutils container">
+<p><a class="reference download internal" download="" href="../../_downloads/ffd1b86af10dbb4a904b0e52fe43de40/07_run_mlem_open_geometry.py"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Python</span> <span class="pre">source</span> <span class="pre">code:</span> <span class="pre">07_run_mlem_open_geometry.py</span></code></a></p>
+</div>
+<div class="sphx-glr-download sphx-glr-download-zip docutils container">
+<p><a class="reference download internal" download="" href="../../_downloads/594253e02fa0b819b7750520a9df130e/07_run_mlem_open_geometry.zip"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">zipped:</span> <span class="pre">07_run_mlem_open_geometry.zip</span></code></a></p>
+</div>
+</div>
+<p class="rubric">Related examples</p>
+<div class="sphx-glr-thumbnails"><div class="sphx-glr-thumbcontainer" tooltip="This example demonstrates the use of the MLEM algorithm to minimize the negative Poisson log-likelihood function."><img alt="" src="../../_images/sphx_glr_03_run_mlem_projection_data_thumb.gif" />
+<p><a class="reference internal" href="03_run_mlem_projection_data.html#sphx-glr-auto-examples-05-algorithms-03-run-mlem-projection-data-py"><span class="std std-ref">TOF-MLEM with projection data</span></a></p>
+  <div class="sphx-glr-thumbnail-title">TOF-MLEM with projection data</div>
+</div><div class="sphx-glr-thumbcontainer" tooltip="This example demonstrates the use of the MLEM algorithm to minimize the negative Poisson log-likelihood function."><img alt="" src="../../_images/sphx_glr_04_run_osem_projection_data_thumb.gif" />
+<p><a class="reference internal" href="04_run_osem_projection_data.html#sphx-glr-auto-examples-05-algorithms-04-run-osem-projection-data-py"><span class="std std-ref">TOF OSEM with projection data</span></a></p>
+  <div class="sphx-glr-thumbnail-title">TOF OSEM with projection data</div>
+</div><div class="sphx-glr-thumbcontainer" tooltip="This example demonstrates the use of the listmode MLEM algorithm to minimize the negative Poisson log-likelihood function."><img alt="" src="../../_images/sphx_glr_01_listmode_mlem_thumb.png" />
+<p><a class="reference internal" href="../06_listmode_algorithms/01_listmode_mlem.html#sphx-glr-auto-examples-06-listmode-algorithms-01-listmode-mlem-py"><span class="std std-ref">TOF listmode MLEM with projection data</span></a></p>
+  <div class="sphx-glr-thumbnail-title">TOF listmode MLEM with projection data</div>
+</div><div class="sphx-glr-thumbcontainer" tooltip="This example demonstrates the use of the listmode OSEM algorithm to minimize the negative Poisson log-likelihood function."><img alt="" src="../../_images/sphx_glr_02_listmode_osem_thumb.png" />
+<p><a class="reference internal" href="../06_listmode_algorithms/02_listmode_osem.html#sphx-glr-auto-examples-06-listmode-algorithms-02-listmode-osem-py"><span class="std std-ref">TOF listmode OSEM with projection data</span></a></p>
+  <div class="sphx-glr-thumbnail-title">TOF listmode OSEM with projection data</div>
+</div></div><p class="sphx-glr-signature"><a class="reference external" href="https://sphinx-gallery.github.io">Gallery generated by Sphinx-Gallery</a></p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="06_run_depierro.html" class="btn btn-neutral float-left" title="DePierro’s algorithm to optimize the Poisson logL with quadratic intensity prior" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="../06_listmode_algorithms/01_listmode_mlem.html" class="btn btn-neutral float-right" title="TOF listmode MLEM with projection data" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2023, Georg Schramm.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  
+<div class="rst-versions" data-toggle="rst-versions" role="note" aria-label="versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    <span class="fa fa-book"> Other Versions</span>
+    v: v1.10.0
+    <span class="fa fa-caret-down"></span>
+  </span>
+  <div class="rst-other-versions">
+    <dl>
+      <dt>Tags</dt>
+      <dd><a href="07_run_mlem_open_geometry.html">v1.10.0</a></dd>
+    </dl>
+    <dl>
+      <dt>Branches</dt>
+      <dd><a href="../../../master/index.html">master</a></dd>
+    </dl>
+  </div>
+</div><script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+    <!-- Theme Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-WFK38K0TGS"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+
+      gtag('config', 'G-WFK38K0TGS', {
+          'anonymize_ip': true,
+      });
+    </script> 
+
+</body>
+</html>

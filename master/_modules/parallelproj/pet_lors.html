@@ -1,0 +1,760 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>parallelproj.pet_lors &mdash; parallelproj 1.10.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../../_static/copybutton.css?v=76b2166b" />
+      <link rel="stylesheet" type="text/css" href="../../_static/sg_gallery.css?v=d2d258e8" />
+      <link rel="stylesheet" type="text/css" href="../../_static/sg_gallery-binder.css?v=f4aeca0c" />
+      <link rel="stylesheet" type="text/css" href="../../_static/sg_gallery-dataframe.css?v=2082cf3c" />
+      <link rel="stylesheet" type="text/css" href="../../_static/sg_gallery-rendered-html.css?v=1277b6f3" />
+      <link rel="stylesheet" type="text/css" href="../../_static/sphinx-design.min.css?v=95c83b7e" />
+
+  
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../_static/documentation_options.js?v=1d24b1d9"></script>
+      <script src="../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../_static/clipboard.min.js?v=a7894cd8"></script>
+      <script src="../../_static/copybutton.js?v=f281be69"></script>
+      <script src="../../_static/design-tabs.js?v=f930bc37"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html">
+            
+              <img src="../../_static/parallelproj-logo.svg" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Getting started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../auto_examples/index.html">Examples</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Python API</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../python_api.html">Low-level projector interface <code class="docutils literal notranslate"><span class="pre">parallelproj.backend</span></code></a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../python_api.html#module-parallelproj.pet_scanners">PET scanner geometries <code class="docutils literal notranslate"><span class="pre">parallelproj.pet_scanners</span></code></a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../python_api.html#module-parallelproj.pet_lors">PET LOR / sinogram descriptors <code class="docutils literal notranslate"><span class="pre">parallelproj.pet_lors</span></code></a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../python_api.html#module-parallelproj.tof">PET TOF parameters <code class="docutils literal notranslate"><span class="pre">parallelproj.tof</span></code></a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../python_api.html#module-parallelproj.projectors">PET projectors <code class="docutils literal notranslate"><span class="pre">parallelproj.projectors</span></code></a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../python_api.html#module-parallelproj.operators">Linear operators <code class="docutils literal notranslate"><span class="pre">parallelproj.operators</span></code></a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">C/CUDA lib API</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../libparallelproj_c.html">libparallelproj_c</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../libparallelproj_cuda.html">libparallelproj_cuda</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../cuda_kernels.html">cuda projector kernels</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">parallelproj</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">parallelproj.pet_lors</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for parallelproj.pet_lors</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;description of PET LORs (and sinograms bins) consisting of two detector endpoints&quot;&quot;&quot;</span>
+
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">annotations</span>
+
+<span class="kn">import</span> <span class="nn">abc</span>
+<span class="kn">import</span> <span class="nn">enum</span>
+<span class="kn">import</span> <span class="nn">array_api_compat.numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">parallelproj</span> <span class="kn">import</span> <span class="n">Array</span>
+<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+<span class="kn">from</span> <span class="nn">mpl_toolkits.mplot3d.art3d</span> <span class="kn">import</span> <span class="n">Line3DCollection</span>
+
+<span class="kn">from</span> <span class="nn">types</span> <span class="kn">import</span> <span class="n">ModuleType</span>
+
+<span class="kn">from</span> <span class="nn">.pet_scanners</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">ModularizedPETScannerGeometry</span><span class="p">,</span>
+    <span class="n">RegularPolygonPETScannerGeometry</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="kn">from</span> <span class="nn">.backend</span> <span class="kn">import</span> <span class="n">to_numpy_array</span>
+
+
+<div class="viewcode-block" id="SinogramSpatialAxisOrder">
+<a class="viewcode-back" href="../../python_api.html#parallelproj.pet_lors.SinogramSpatialAxisOrder">[docs]</a>
+<span class="k">class</span> <span class="nc">SinogramSpatialAxisOrder</span><span class="p">(</span><span class="n">enum</span><span class="o">.</span><span class="n">Enum</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;order of spatial axis in a sinogram R (radial), V (view), P (plane)</span>
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    .. minigallery:: parallelproj.SinogramSpatialAxisOrder</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">RVP</span> <span class="o">=</span> <span class="n">enum</span><span class="o">.</span><span class="n">auto</span><span class="p">()</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;[radial,view,plane]&quot;&quot;&quot;</span>
+    <span class="n">RPV</span> <span class="o">=</span> <span class="n">enum</span><span class="o">.</span><span class="n">auto</span><span class="p">()</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;[radial,plane,view]&quot;&quot;&quot;</span>
+    <span class="n">VRP</span> <span class="o">=</span> <span class="n">enum</span><span class="o">.</span><span class="n">auto</span><span class="p">()</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;[view,radial,plane]&quot;&quot;&quot;</span>
+    <span class="n">VPR</span> <span class="o">=</span> <span class="n">enum</span><span class="o">.</span><span class="n">auto</span><span class="p">()</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;[view,plane,radial]&quot;&quot;&quot;</span>
+    <span class="n">PRV</span> <span class="o">=</span> <span class="n">enum</span><span class="o">.</span><span class="n">auto</span><span class="p">()</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;[plane,radial,view]&quot;&quot;&quot;</span>
+    <span class="n">PVR</span> <span class="o">=</span> <span class="n">enum</span><span class="o">.</span><span class="n">auto</span><span class="p">()</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;[plane,view,radial]&quot;&quot;&quot;</span></div>
+
+
+
+<div class="viewcode-block" id="PETLORDescriptor">
+<a class="viewcode-back" href="../../python_api.html#parallelproj.pet_lors.PETLORDescriptor">[docs]</a>
+<span class="k">class</span> <span class="nc">PETLORDescriptor</span><span class="p">(</span><span class="n">abc</span><span class="o">.</span><span class="n">ABC</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;abstract base class to describe which modules / indices in modules of a</span>
+<span class="sd">    modularized PET scanner are in coincidence; defining geometrical LORs&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scanner</span><span class="p">:</span> <span class="n">ModularizedPETScannerGeometry</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        scanner : ModularizedPETScannerGeometry</span>
+<span class="sd">            a modularized PET scanner</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_scanner</span> <span class="o">=</span> <span class="n">scanner</span>
+
+<div class="viewcode-block" id="PETLORDescriptor.get_lor_coordinates">
+<a class="viewcode-back" href="../../python_api.html#parallelproj.pet_lors.PETLORDescriptor.get_lor_coordinates">[docs]</a>
+    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+    <span class="k">def</span> <span class="nf">get_lor_coordinates</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">Array</span><span class="p">,</span> <span class="n">Array</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;return the start and end coordinates of all (or a subset of) LORs&quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span></div>
+
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">scanner</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ModularizedPETScannerGeometry</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;the scanner for which coincidences are described&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_scanner</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">xp</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ModuleType</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;array module to use for storing the LOR endpoints&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">scanner</span><span class="o">.</span><span class="n">xp</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">dev</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;device to use for storing the LOR endpoints&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">scanner</span><span class="o">.</span><span class="n">dev</span></div>
+
+
+
+<div class="viewcode-block" id="EqualBlockPETLORDescriptor">
+<a class="viewcode-back" href="../../python_api.html#parallelproj.pet_lors.EqualBlockPETLORDescriptor">[docs]</a>
+<span class="k">class</span> <span class="nc">EqualBlockPETLORDescriptor</span><span class="p">(</span><span class="n">PETLORDescriptor</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;LOR descriptor for scanner consisting of block modules where each</span>
+<span class="sd">    block module has the same number of LOR endpoints&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">scanner</span><span class="p">:</span> <span class="n">ModularizedPETScannerGeometry</span><span class="p">,</span> <span class="n">all_block_pairs</span><span class="p">:</span> <span class="n">Array</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        scanner : ModularizedPETScannerGeometry</span>
+<span class="sd">            A modularized PET scanner consisting of block modules</span>
+<span class="sd">            with the same number of LOR endpoints.</span>
+<span class="sd">        all_block_pairs : Array</span>
+<span class="sd">            An array containing pairs of integer numbers encoding</span>
+<span class="sd">            which block pairs are in coincidence and form valid LORs.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        None</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># check if all modules (blocks) have the same number of LOR enpoints</span>
+        <span class="n">lor_endpoints_per_block</span> <span class="o">=</span> <span class="p">[</span><span class="n">x</span><span class="o">.</span><span class="n">num_lor_endpoints</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">scanner</span><span class="o">.</span><span class="n">modules</span><span class="p">]</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">all</span><span class="p">(</span><span class="n">x</span> <span class="o">==</span> <span class="n">lor_endpoints_per_block</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">lor_endpoints_per_block</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;All modules (blocks) must have the same number of LOR endpoints&quot;</span>
+            <span class="p">)</span>
+
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">scanner</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_scanner</span> <span class="o">=</span> <span class="n">scanner</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_all_block_pairs</span> <span class="o">=</span> <span class="n">all_block_pairs</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_num_lorendpoints_per_block</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">scanner</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">num_lor_endpoints</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_num_lors_per_block_pair</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_num_lorendpoints_per_block</span><span class="o">**</span><span class="mi">2</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">all_block_pairs</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Array</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;all block pairs in coincidence&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_all_block_pairs</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">num_block_pairs</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;number of block pairs in coincidence&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_all_block_pairs</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">num_lorendpoints_per_block</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;number of LOR endpoints per block&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_num_lorendpoints_per_block</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">num_lors_per_block_pair</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;number of LORs per block pair&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_num_lors_per_block_pair</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">scanner</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ModularizedPETScannerGeometry</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;the scanner for which coincidences are described&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_scanner</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">xp</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ModuleType</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;array module to use for storing the LOR endpoints&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">scanner</span><span class="o">.</span><span class="n">xp</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">dev</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;device to use for storing the LOR endpoints&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">scanner</span><span class="o">.</span><span class="n">dev</span>
+
+<div class="viewcode-block" id="EqualBlockPETLORDescriptor.get_lor_coordinates">
+<a class="viewcode-back" href="../../python_api.html#parallelproj.pet_lors.EqualBlockPETLORDescriptor.get_lor_coordinates">[docs]</a>
+    <span class="k">def</span> <span class="nf">get_lor_coordinates</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">block_pair_nums</span><span class="p">:</span> <span class="kc">None</span> <span class="o">|</span> <span class="n">Array</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">Array</span><span class="p">,</span> <span class="n">Array</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the coordinates of LORs for the given block pair numbers.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        block_pair_nums : None or Array, optional</span>
+<span class="sd">            The block pair numbers for which to retrieve the LOR coordinates.</span>
+<span class="sd">            If None, all block pair numbers will be used.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        tuple[Array, Array]</span>
+<span class="sd">        A tuple containing two arrays:</span>
+<span class="sd">            - the start coordinates of the LORs, with shape (N, 3), where N is the total number of LORs.</span>
+<span class="sd">            - the end coordinates of the LORs, with shape (N, 3)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">block_pair_nums</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">block_pair_nums</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">xp</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_all_block_pairs</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">device</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">dev</span>
+            <span class="p">)</span>
+
+        <span class="n">xstart</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">xp</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span>
+            <span class="p">(</span><span class="n">block_pair_nums</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">_num_lors_per_block_pair</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span>
+            <span class="n">device</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">dev</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="n">xend</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">xp</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span>
+            <span class="p">(</span><span class="n">block_pair_nums</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">_num_lors_per_block_pair</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span>
+            <span class="n">device</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">dev</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">block_pair_num</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">block_pair_nums</span><span class="p">):</span>
+            <span class="n">bs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_all_block_pairs</span><span class="p">[</span><span class="n">block_pair_num</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span>
+            <span class="n">be</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_all_block_pairs</span><span class="p">[</span><span class="n">block_pair_num</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span>
+
+            <span class="n">eps</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">scanner</span><span class="o">.</span><span class="n">get_lor_endpoints</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">xp</span><span class="o">.</span><span class="n">asarray</span><span class="p">([</span><span class="n">bs</span><span class="p">],</span> <span class="n">device</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">dev</span><span class="p">),</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">xp</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_num_lorendpoints_per_block</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">dev</span><span class="p">),</span>
+            <span class="p">)</span>
+            <span class="n">epe</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">scanner</span><span class="o">.</span><span class="n">get_lor_endpoints</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">xp</span><span class="o">.</span><span class="n">asarray</span><span class="p">([</span><span class="n">be</span><span class="p">],</span> <span class="n">device</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">dev</span><span class="p">),</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">xp</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_num_lorendpoints_per_block</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">dev</span><span class="p">),</span>
+            <span class="p">)</span>
+
+            <span class="n">tmp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">xp</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_num_lorendpoints_per_block</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">dev</span><span class="p">)</span>
+            <span class="n">a</span><span class="p">,</span> <span class="n">b</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">xp</span><span class="o">.</span><span class="n">meshgrid</span><span class="p">(</span><span class="n">tmp</span><span class="p">,</span> <span class="n">tmp</span><span class="p">,</span> <span class="n">indexing</span><span class="o">=</span><span class="s2">&quot;ij&quot;</span><span class="p">)</span>
+            <span class="n">a</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">xp</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,))</span>
+            <span class="n">b</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">xp</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">b</span><span class="p">,</span> <span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,))</span>
+
+            <span class="n">xstart</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">xp</span><span class="o">.</span><span class="n">take</span><span class="p">(</span><span class="n">eps</span><span class="p">,</span> <span class="n">a</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+            <span class="n">xend</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">xp</span><span class="o">.</span><span class="n">take</span><span class="p">(</span><span class="n">epe</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">xp</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">xstart</span><span class="p">,</span> <span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">)),</span> <span class="bp">self</span><span class="o">.</span><span class="n">xp</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">xend</span><span class="p">,</span> <span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">))</span></div>
+
+
+<div class="viewcode-block" id="EqualBlockPETLORDescriptor.show_block_pair_lors">
+<a class="viewcode-back" href="../../python_api.html#parallelproj.pet_lors.EqualBlockPETLORDescriptor.show_block_pair_lors">[docs]</a>
+    <span class="k">def</span> <span class="nf">show_block_pair_lors</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">ax</span><span class="p">:</span> <span class="n">plt</span><span class="o">.</span><span class="n">Axes</span><span class="p">,</span> <span class="n">block_pair_nums</span><span class="p">:</span> <span class="n">Array</span><span class="p">,</span> <span class="n">lw</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.2</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;show all LORs connecting all endpoints between blocks forming a block pairs</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        ax : plt.Axes</span>
+<span class="sd">            a 3D matplotlib axes</span>
+<span class="sd">        block_pair_nums : int</span>
+<span class="sd">            the block pair numbers to show</span>
+<span class="sd">        lw : float, optional</span>
+<span class="sd">            the line width, by default 0.2</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">xs</span><span class="p">,</span> <span class="n">xe</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_lor_coordinates</span><span class="p">(</span><span class="n">block_pair_nums</span><span class="o">=</span><span class="n">block_pair_nums</span><span class="p">)</span>
+
+        <span class="n">p1s</span> <span class="o">=</span> <span class="n">to_numpy_array</span><span class="p">(</span><span class="n">xs</span><span class="p">)</span>
+        <span class="n">p2s</span> <span class="o">=</span> <span class="n">to_numpy_array</span><span class="p">(</span><span class="n">xe</span><span class="p">)</span>
+
+        <span class="n">ls</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">hstack</span><span class="p">([</span><span class="n">p1s</span><span class="p">,</span> <span class="n">p2s</span><span class="p">])</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+        <span class="n">ls</span> <span class="o">=</span> <span class="n">ls</span><span class="o">.</span><span class="n">reshape</span><span class="p">((</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">))</span>
+        <span class="n">lc</span> <span class="o">=</span> <span class="n">Line3DCollection</span><span class="p">(</span><span class="n">ls</span><span class="p">,</span> <span class="n">linewidths</span><span class="o">=</span><span class="n">lw</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">add_collection</span><span class="p">(</span><span class="n">lc</span><span class="p">)</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="RegularPolygonPETLORDescriptor">
+<a class="viewcode-back" href="../../python_api.html#parallelproj.pet_lors.RegularPolygonPETLORDescriptor">[docs]</a>
+<span class="k">class</span> <span class="nc">RegularPolygonPETLORDescriptor</span><span class="p">(</span><span class="n">PETLORDescriptor</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;LOR descriptor for a regular polygon PET scanner where</span>
+<span class="sd">    we have coincidences within and between &quot;rings (polygons of modules)&quot;</span>
+<span class="sd">    The geometrical LORs can be sorted into a sinogram having a</span>
+<span class="sd">    &quot;plane&quot;, &quot;view&quot; and &quot;radial&quot; axis.</span>
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    .. minigallery:: parallelproj.RegularPolygonPETLORDescriptor</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">scanner</span><span class="p">:</span> <span class="n">RegularPolygonPETScannerGeometry</span><span class="p">,</span>
+        <span class="n">radial_trim</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">3</span><span class="p">,</span>
+        <span class="n">max_ring_difference</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">sinogram_order</span><span class="p">:</span> <span class="n">SinogramSpatialAxisOrder</span> <span class="o">=</span> <span class="n">SinogramSpatialAxisOrder</span><span class="o">.</span><span class="n">RVP</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        scanner : RegularPolygonPETScannerGeometry</span>
+<span class="sd">            a regular polygon PET scanner</span>
+<span class="sd">        radial_trim : int, optional</span>
+<span class="sd">            number of geometrial LORs to disregard in the radial direction, by default 3</span>
+<span class="sd">        max_ring_difference : int | None, optional</span>
+<span class="sd">            maximim ring difference to consider for coincidences, by default None means</span>
+<span class="sd">            all ring differences are included</span>
+<span class="sd">        sinogram_order : SinogramSpatialAxisOrder, optional</span>
+<span class="sd">            the order of the sinogram axes, by default SinogramSpatialAxisOrder.RVP</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">scanner</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_scanner</span> <span class="o">=</span> <span class="n">scanner</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_radial_trim</span> <span class="o">=</span> <span class="n">radial_trim</span>
+
+        <span class="k">if</span> <span class="n">max_ring_difference</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_max_ring_difference</span> <span class="o">=</span> <span class="n">scanner</span><span class="o">.</span><span class="n">num_rings</span> <span class="o">-</span> <span class="mi">1</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_max_ring_difference</span> <span class="o">=</span> <span class="n">max_ring_difference</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_num_rad</span> <span class="o">=</span> <span class="p">(</span><span class="n">scanner</span><span class="o">.</span><span class="n">num_lor_endpoints_per_ring</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">-</span> <span class="mi">2</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">_radial_trim</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_num_views</span> <span class="o">=</span> <span class="n">scanner</span><span class="o">.</span><span class="n">num_lor_endpoints_per_ring</span> <span class="o">//</span> <span class="mi">2</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_sinogram_order</span> <span class="o">=</span> <span class="n">sinogram_order</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_setup_plane_indices</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_setup_view_indices</span><span class="p">()</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">radial_trim</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;number of geometrial LORs to disregard in the radial direction&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_radial_trim</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">max_ring_difference</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;the maximum ring difference&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_max_ring_difference</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">num_planes</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;number of planes in the sinogram&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_num_planes</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">num_rad</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;number of radial elements in the sinogram&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_num_rad</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">num_views</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;number of views in the sinogram&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_num_views</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">start_plane_index</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Array</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;start plane for all planes&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_start_plane_index</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">end_plane_index</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Array</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;end plane for all planes&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_end_plane_index</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">start_in_ring_index</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Array</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;start index within ring for all views - shape (num_view, num_rad)&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_start_in_ring_index</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">end_in_ring_index</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Array</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;end index within ring for all views - shape (num_view, num_rad)&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_end_in_ring_index</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">sinogram_order</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">SinogramSpatialAxisOrder</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;the order of the sinogram axes&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sinogram_order</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">plane_axis_num</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;the axis number of the plane axis&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">sinogram_order</span><span class="o">.</span><span class="n">name</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="s2">&quot;P&quot;</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">radial_axis_num</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;the axis number of the radial axis&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">sinogram_order</span><span class="o">.</span><span class="n">name</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="s2">&quot;R&quot;</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">view_axis_num</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;the axis number of the view axis&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">sinogram_order</span><span class="o">.</span><span class="n">name</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="s2">&quot;V&quot;</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">spatial_sinogram_shape</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;the shape of the sinogram in spatial order&quot;&quot;&quot;</span>
+        <span class="n">shape</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span>
+        <span class="n">shape</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">plane_axis_num</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_planes</span>
+        <span class="n">shape</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">view_axis_num</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_views</span>
+        <span class="n">shape</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">radial_axis_num</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_rad</span>
+        <span class="k">return</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">shape</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;string representation&quot;&quot;&quot;</span>
+
+        <span class="k">return</span> <span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span>
+            <span class="o">+</span> <span class="s2">&quot; with spatial sinogram shape (&quot;</span>
+            <span class="o">+</span> <span class="s2">&quot;, &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
+                <span class="p">[</span>
+                    <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">spatial_sinogram_shape</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="si">}{</span><span class="bp">self</span><span class="o">.</span><span class="n">sinogram_order</span><span class="o">.</span><span class="n">name</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span>
+                    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>
+                <span class="p">]</span>
+            <span class="p">)</span>
+            <span class="o">+</span> <span class="s2">&quot;)&quot;</span>
+        <span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_setup_plane_indices</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;setup the start / end plane indices (similar to a Michelogram)&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_start_plane_index</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">xp</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">scanner</span><span class="o">.</span><span class="n">num_rings</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">xp</span><span class="o">.</span><span class="n">int32</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">dev</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_end_plane_index</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">xp</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">scanner</span><span class="o">.</span><span class="n">num_rings</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">xp</span><span class="o">.</span><span class="n">int32</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">dev</span>
+        <span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_max_ring_difference</span> <span class="o">+</span> <span class="mi">1</span><span class="p">):</span>
+            <span class="n">tmp1</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">xp</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">scanner</span><span class="o">.</span><span class="n">num_rings</span> <span class="o">-</span> <span class="n">i</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">xp</span><span class="o">.</span><span class="n">int16</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">dev</span>
+            <span class="p">)</span>
+            <span class="n">tmp2</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">xp</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">scanner</span><span class="o">.</span><span class="n">num_rings</span> <span class="o">-</span> <span class="n">i</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">xp</span><span class="o">.</span><span class="n">int16</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">dev</span>
+                <span class="p">)</span>
+                <span class="o">+</span> <span class="n">i</span>
+            <span class="p">)</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">_start_plane_index</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">xp</span><span class="o">.</span><span class="n">concat</span><span class="p">(</span>
+                <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_start_plane_index</span><span class="p">,</span> <span class="n">tmp1</span><span class="p">,</span> <span class="n">tmp2</span><span class="p">)</span>
+            <span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_end_plane_index</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">xp</span><span class="o">.</span><span class="n">concat</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">_end_plane_index</span><span class="p">,</span> <span class="n">tmp2</span><span class="p">,</span> <span class="n">tmp1</span><span class="p">))</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_num_planes</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_start_plane_index</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+    <span class="k">def</span> <span class="nf">_setup_view_indices</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;setup the start / end view indices&quot;&quot;&quot;</span>
+        <span class="n">n</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">scanner</span><span class="o">.</span><span class="n">num_lor_endpoints_per_ring</span>
+
+        <span class="n">m</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">*</span> <span class="p">(</span><span class="n">n</span> <span class="o">//</span> <span class="mi">2</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_start_in_ring_index</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">xp</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span>
+            <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_num_views</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_num_rad</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">xp</span><span class="o">.</span><span class="n">int32</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">dev</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_end_in_ring_index</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">xp</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span>
+            <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_num_views</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_num_rad</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">xp</span><span class="o">.</span><span class="n">int32</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">dev</span>
+        <span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">view</span> <span class="ow">in</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_num_views</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_start_in_ring_index</span><span class="p">[</span><span class="n">view</span><span class="p">,</span> <span class="p">:]</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">xp</span><span class="o">.</span><span class="n">concat</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">xp</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">m</span><span class="p">)</span> <span class="o">//</span> <span class="mi">2</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">xp</span><span class="o">.</span><span class="n">asarray</span><span class="p">([</span><span class="n">n</span> <span class="o">//</span> <span class="mi">2</span><span class="p">])))</span>
+                <span class="o">-</span> <span class="n">view</span>
+            <span class="p">)[</span><span class="bp">self</span><span class="o">.</span><span class="n">_radial_trim</span> <span class="p">:</span> <span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">_radial_trim</span><span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_end_in_ring_index</span><span class="p">[</span><span class="n">view</span><span class="p">,</span> <span class="p">:]</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">xp</span><span class="o">.</span><span class="n">concat</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">xp</span><span class="o">.</span><span class="n">asarray</span><span class="p">([</span><span class="o">-</span><span class="mi">1</span><span class="p">]),</span> <span class="o">-</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">xp</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">m</span><span class="p">)</span> <span class="o">+</span> <span class="mi">4</span><span class="p">)</span> <span class="o">//</span> <span class="mi">2</span><span class="p">)))</span>
+                <span class="o">-</span> <span class="n">view</span>
+            <span class="p">)[</span><span class="bp">self</span><span class="o">.</span><span class="n">_radial_trim</span> <span class="p">:</span> <span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">_radial_trim</span><span class="p">]</span>
+
+        <span class="c1"># shift the negative indices</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_start_in_ring_index</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">xp</span><span class="o">.</span><span class="n">where</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_start_in_ring_index</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_start_in_ring_index</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_start_in_ring_index</span> <span class="o">+</span> <span class="n">n</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_end_in_ring_index</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">xp</span><span class="o">.</span><span class="n">where</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_end_in_ring_index</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_end_in_ring_index</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_end_in_ring_index</span> <span class="o">+</span> <span class="n">n</span><span class="p">,</span>
+        <span class="p">)</span>
+
+<div class="viewcode-block" id="RegularPolygonPETLORDescriptor.get_lor_coordinates">
+<a class="viewcode-back" href="../../python_api.html#parallelproj.pet_lors.RegularPolygonPETLORDescriptor.get_lor_coordinates">[docs]</a>
+    <span class="k">def</span> <span class="nf">get_lor_coordinates</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">views</span><span class="p">:</span> <span class="kc">None</span> <span class="o">|</span> <span class="n">Array</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">Array</span><span class="p">,</span> <span class="n">Array</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;return the start and end coordinates of all LORs / or a subset of views</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        views : None | Array, optional</span>
+<span class="sd">            the views to consider, by default None means all views</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        xstart, xend : Array</span>
+<span class="sd">           2 dimensional floating point arrays containing the start and end coordinates of all LORs</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="n">views</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">views</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">xp</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">num_views</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">dev</span><span class="p">)</span>
+
+        <span class="c1"># --- (1) setup the LOR start / end points for all views of plane 0</span>
+
+        <span class="n">start_in_ring_index</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">xp</span><span class="o">.</span><span class="n">take</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">start_in_ring_index</span><span class="p">,</span> <span class="n">views</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+        <span class="n">end_in_ring_index</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">xp</span><span class="o">.</span><span class="n">take</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">end_in_ring_index</span><span class="p">,</span> <span class="n">views</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">view_axis_num</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">radial_axis_num</span><span class="p">:</span>
+            <span class="n">start_in_ring_index</span> <span class="o">=</span> <span class="n">start_in_ring_index</span><span class="o">.</span><span class="n">T</span>
+            <span class="n">end_in_ring_index</span> <span class="o">=</span> <span class="n">end_in_ring_index</span><span class="o">.</span><span class="n">T</span>
+
+        <span class="n">shape_2d</span> <span class="o">=</span> <span class="n">start_in_ring_index</span><span class="o">.</span><span class="n">shape</span>
+
+        <span class="n">start_inds_2d</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">xp</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">start_in_ring_index</span><span class="p">,</span> <span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,))</span>
+        <span class="n">end_inds_2d</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">xp</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">end_in_ring_index</span><span class="p">,</span> <span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,))</span>
+
+        <span class="n">xstart_2d</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">xp</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">scanner</span><span class="o">.</span><span class="n">get_lor_endpoints</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">xp</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">start_inds_2d</span><span class="p">),</span> <span class="n">start_inds_2d</span>
+            <span class="p">),</span>
+            <span class="n">shape_2d</span> <span class="o">+</span> <span class="p">(</span><span class="mi">3</span><span class="p">,),</span>
+        <span class="p">)</span>
+        <span class="n">xend_2d</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">xp</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">scanner</span><span class="o">.</span><span class="n">get_lor_endpoints</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">xp</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">end_inds_2d</span><span class="p">),</span> <span class="n">end_inds_2d</span>
+            <span class="p">),</span>
+            <span class="n">shape_2d</span> <span class="o">+</span> <span class="p">(</span><span class="mi">3</span><span class="p">,),</span>
+        <span class="p">)</span>
+
+        <span class="n">xstart_3d</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">xend_3d</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="c1"># --- (2) stack copies of the plane 0 LOR start / end points for all planes with updated &quot;z&quot; coordinates</span>
+
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">num_planes</span><span class="p">):</span>
+            <span class="c1"># make a copy of the 2D coordinates</span>
+            <span class="c1"># stupid way of adding 0, since asarray with torch and cuda does</span>
+            <span class="c1"># not seem to work</span>
+            <span class="n">xstart</span> <span class="o">=</span> <span class="n">xstart_2d</span> <span class="o">+</span> <span class="mi">0</span>
+            <span class="n">xend</span> <span class="o">=</span> <span class="n">xend_2d</span> <span class="o">+</span> <span class="mi">0</span>
+
+            <span class="n">xstart</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">scanner</span><span class="o">.</span><span class="n">symmetry_axis</span><span class="p">]</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">scanner</span><span class="o">.</span><span class="n">ring_positions</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">start_plane_index</span><span class="p">[</span><span class="n">i</span><span class="p">]]</span>
+            <span class="p">)</span>
+            <span class="n">xend</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">scanner</span><span class="o">.</span><span class="n">symmetry_axis</span><span class="p">]</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">scanner</span><span class="o">.</span><span class="n">ring_positions</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">end_plane_index</span><span class="p">[</span><span class="n">i</span><span class="p">]]</span>
+            <span class="p">)</span>
+
+            <span class="n">xstart_3d</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">xstart</span><span class="p">)</span>
+            <span class="n">xend_3d</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">xend</span><span class="p">)</span>
+
+        <span class="n">xstart_3d</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">xp</span><span class="o">.</span><span class="n">stack</span><span class="p">(</span><span class="n">xstart_3d</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">plane_axis_num</span><span class="p">)</span>
+        <span class="n">xend_3d</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">xp</span><span class="o">.</span><span class="n">stack</span><span class="p">(</span><span class="n">xend_3d</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">plane_axis_num</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">xstart_3d</span><span class="p">,</span> <span class="n">xend_3d</span></div>
+
+
+<div class="viewcode-block" id="RegularPolygonPETLORDescriptor.show_views">
+<a class="viewcode-back" href="../../python_api.html#parallelproj.pet_lors.RegularPolygonPETLORDescriptor.show_views">[docs]</a>
+    <span class="k">def</span> <span class="nf">show_views</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">ax</span><span class="p">:</span> <span class="n">plt</span><span class="o">.</span><span class="n">Axes</span><span class="p">,</span> <span class="n">views</span><span class="p">:</span> <span class="n">Array</span><span class="p">,</span> <span class="n">planes</span><span class="p">:</span> <span class="n">Array</span><span class="p">,</span> <span class="n">lw</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.2</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;show all LORs of a single view in a given plane</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        ax : plt.Axes</span>
+<span class="sd">            a 3D matplotlib axes</span>
+<span class="sd">        view : int</span>
+<span class="sd">            the view number</span>
+<span class="sd">        plane : int</span>
+<span class="sd">            the plane number</span>
+<span class="sd">        lw : float, optional</span>
+<span class="sd">            the line width, by default 0.2</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">xs</span><span class="p">,</span> <span class="n">xe</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_lor_coordinates</span><span class="p">(</span><span class="n">views</span><span class="o">=</span><span class="n">views</span><span class="p">)</span>
+
+        <span class="n">xs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">xp</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">xp</span><span class="o">.</span><span class="n">take</span><span class="p">(</span><span class="n">xs</span><span class="p">,</span> <span class="n">planes</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">plane_axis_num</span><span class="p">),</span> <span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
+        <span class="p">)</span>
+        <span class="n">xe</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">xp</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">xp</span><span class="o">.</span><span class="n">take</span><span class="p">(</span><span class="n">xe</span><span class="p">,</span> <span class="n">planes</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">plane_axis_num</span><span class="p">),</span> <span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
+        <span class="p">)</span>
+
+        <span class="n">p1s</span> <span class="o">=</span> <span class="n">to_numpy_array</span><span class="p">(</span><span class="n">xs</span><span class="p">)</span>
+        <span class="n">p2s</span> <span class="o">=</span> <span class="n">to_numpy_array</span><span class="p">(</span><span class="n">xe</span><span class="p">)</span>
+
+        <span class="n">ls</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">hstack</span><span class="p">([</span><span class="n">p1s</span><span class="p">,</span> <span class="n">p2s</span><span class="p">])</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+        <span class="n">ls</span> <span class="o">=</span> <span class="n">ls</span><span class="o">.</span><span class="n">reshape</span><span class="p">((</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">))</span>
+        <span class="n">lc</span> <span class="o">=</span> <span class="n">Line3DCollection</span><span class="p">(</span><span class="n">ls</span><span class="p">,</span> <span class="n">linewidths</span><span class="o">=</span><span class="n">lw</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">add_collection</span><span class="p">(</span><span class="n">lc</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="RegularPolygonPETLORDescriptor.get_distributed_views_and_slices">
+<a class="viewcode-back" href="../../python_api.html#parallelproj.pet_lors.RegularPolygonPETLORDescriptor.get_distributed_views_and_slices">[docs]</a>
+    <span class="k">def</span> <span class="nf">get_distributed_views_and_slices</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">num_subsets</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">num_dim</span><span class="p">:</span> <span class="nb">int</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">list</span><span class="p">[</span><span class="n">Array</span><span class="p">],</span> <span class="nb">list</span><span class="p">[</span><span class="nb">tuple</span><span class="p">[</span><span class="nb">slice</span><span class="p">,</span> <span class="o">...</span><span class="p">]]]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;distribute sinogram views numbers into subsets</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        num_subsets : int</span>
+<span class="sd">            number of subsets</span>
+<span class="sd">        num_dim : int</span>
+<span class="sd">            number of dimensions of the sinogram</span>
+<span class="sd">            to setup the subset slices</span>
+<span class="sd">            (e.g. 3 for non-TOF, 4 for TOF)</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        tuple[list[Array], list[tuple[slice, ...]]]</span>
+<span class="sd">            subset views numbers and subset slices</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">subset_nums</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">num_subsets</span> <span class="o">//</span> <span class="mi">2</span><span class="p">):</span>
+            <span class="n">subset_nums</span> <span class="o">+=</span> <span class="p">[</span><span class="n">x</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">num_subsets</span><span class="p">,</span> <span class="n">num_subsets</span> <span class="o">//</span> <span class="mi">2</span><span class="p">)]</span>
+
+        <span class="n">subset_slices</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">subset_views</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">all_views</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">xp</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">num_views</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">dev</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">subset_nums</span><span class="p">:</span>
+            <span class="n">sl</span> <span class="o">=</span> <span class="n">num_dim</span> <span class="o">*</span> <span class="p">[</span><span class="nb">slice</span><span class="p">(</span><span class="kc">None</span><span class="p">)]</span>
+            <span class="n">sl</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">view_axis_num</span><span class="p">]</span> <span class="o">=</span> <span class="nb">slice</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="n">num_subsets</span><span class="p">)</span>
+            <span class="n">sl</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">sl</span><span class="p">)</span>
+            <span class="n">subset_slices</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">sl</span><span class="p">)</span>
+            <span class="n">subset_views</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">all_views</span><span class="p">[</span><span class="n">sl</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">view_axis_num</span><span class="p">]])</span>
+
+        <span class="k">return</span> <span class="n">subset_views</span><span class="p">,</span> <span class="n">subset_slices</span></div>
+</div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2023, Georg Schramm.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  
+<div class="rst-versions" data-toggle="rst-versions" role="note" aria-label="versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    <span class="fa fa-book"> Other Versions</span>
+    v: master
+    <span class="fa fa-caret-down"></span>
+  </span>
+  <div class="rst-other-versions">
+    <dl>
+      <dt>Tags</dt>
+      <dd><a href="../../../v1.10.0/index.html">v1.10.0</a></dd>
+    </dl>
+    <dl>
+      <dt>Branches</dt>
+      <dd><a href="pet_lors.html">master</a></dd>
+    </dl>
+  </div>
+</div><script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+    <!-- Theme Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-WFK38K0TGS"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+
+      gtag('config', 'G-WFK38K0TGS', {
+          'anonymize_ip': true,
+      });
+    </script> 
+
+</body>
+</html>

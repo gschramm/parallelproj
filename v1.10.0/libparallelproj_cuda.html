@@ -1,0 +1,510 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>libparallelproj_cuda &mdash; parallelproj 1.10.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="_static/copybutton.css?v=76b2166b" />
+      <link rel="stylesheet" type="text/css" href="_static/sg_gallery.css?v=d2d258e8" />
+      <link rel="stylesheet" type="text/css" href="_static/sg_gallery-binder.css?v=f4aeca0c" />
+      <link rel="stylesheet" type="text/css" href="_static/sg_gallery-dataframe.css?v=2082cf3c" />
+      <link rel="stylesheet" type="text/css" href="_static/sg_gallery-rendered-html.css?v=1277b6f3" />
+      <link rel="stylesheet" type="text/css" href="_static/sphinx-design.min.css?v=95c83b7e" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=1d24b1d9"></script>
+      <script src="_static/doctools.js?v=9bcbadda"></script>
+      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="_static/clipboard.min.js?v=a7894cd8"></script>
+      <script src="_static/copybutton.js?v=f281be69"></script>
+      <script src="_static/design-tabs.js?v=f930bc37"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="cuda projector kernels" href="cuda_kernels.html" />
+    <link rel="prev" title="libparallelproj_c" href="libparallelproj_c.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html">
+            
+              <img src="_static/parallelproj-logo.svg" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Getting started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="auto_examples/index.html">Examples</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Python API</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="python_api.html">Low-level projector interface <code class="docutils literal notranslate"><span class="pre">parallelproj.backend</span></code></a></li>
+<li class="toctree-l1"><a class="reference internal" href="python_api.html#module-parallelproj.pet_scanners">PET scanner geometries <code class="docutils literal notranslate"><span class="pre">parallelproj.pet_scanners</span></code></a></li>
+<li class="toctree-l1"><a class="reference internal" href="python_api.html#module-parallelproj.pet_lors">PET LOR / sinogram descriptors <code class="docutils literal notranslate"><span class="pre">parallelproj.pet_lors</span></code></a></li>
+<li class="toctree-l1"><a class="reference internal" href="python_api.html#module-parallelproj.tof">PET TOF parameters <code class="docutils literal notranslate"><span class="pre">parallelproj.tof</span></code></a></li>
+<li class="toctree-l1"><a class="reference internal" href="python_api.html#module-parallelproj.projectors">PET projectors <code class="docutils literal notranslate"><span class="pre">parallelproj.projectors</span></code></a></li>
+<li class="toctree-l1"><a class="reference internal" href="python_api.html#module-parallelproj.operators">Linear operators <code class="docutils literal notranslate"><span class="pre">parallelproj.operators</span></code></a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">C/CUDA lib API</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="libparallelproj_c.html">libparallelproj_c</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">libparallelproj_cuda</a></li>
+<li class="toctree-l1"><a class="reference internal" href="cuda_kernels.html">cuda projector kernels</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">parallelproj</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">libparallelproj_cuda</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/libparallelproj_cuda.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="libparallelproj-cuda">
+<h1>libparallelproj_cuda<a class="headerlink" href="#libparallelproj-cuda" title="Link to this heading"></a></h1>
+<div class="highlight-c notranslate"><div class="highlight"><pre><span></span><span class="linenos">  1</span><span class="cm">/**</span>
+<span class="linenos">  2</span><span class="cm"> * @file parallelproj_cuda.h</span>
+<span class="linenos">  3</span><span class="cm"> */</span>
+<span class="linenos">  4</span>
+<span class="linenos">  5</span><span class="cp">#ifndef __PARALLELPROJ_CUDA_H__</span>
+<span class="linenos">  6</span><span class="cp">#define __PARALLELPROJ_CUDA_H__</span>
+<span class="linenos">  7</span>
+<span class="linenos">  8</span><span class="cp">#ifdef __cplusplus</span>
+<span class="linenos">  9</span><span class="k">extern</span><span class="w"> </span><span class="s">&quot;C&quot;</span>
+<span class="linenos"> 10</span><span class="p">{</span>
+<span class="linenos"> 11</span><span class="cp">#endif</span>
+<span class="linenos"> 12</span>
+<span class="linenos"> 13</span><span class="w">    </span><span class="cm">/** @brief 3D non-tof joseph back projector CUDA wrapper</span>
+<span class="linenos"> 14</span><span class="cm">     *</span>
+<span class="linenos"> 15</span><span class="cm">     *  @param h_xstart array of shape [3*nlors] with the coordinates of the start points of the LORs.</span>
+<span class="linenos"> 16</span><span class="cm">     *                  The start coordinates of the n-th LOR are at xstart[n*3 + i] with i = 0,1,2.</span>
+<span class="linenos"> 17</span><span class="cm">     *                  Units are the ones of voxsize.</span>
+<span class="linenos"> 18</span><span class="cm">     *  @param h_xend   array of shape [3*nlors] with the coordinates of the end   points of the LORs.</span>
+<span class="linenos"> 19</span><span class="cm">     *                  The start coordinates of the n-th LOR are at xstart[n*3 + i] with i = 0,1,2.</span>
+<span class="linenos"> 20</span><span class="cm">     *                  Units are the ones of voxsize.</span>
+<span class="linenos"> 21</span><span class="cm">     *  @param d_img    Pointer to device arrays of shape [n0*n1*n2] containing the 3D image to</span>
+<span class="linenos"> 22</span><span class="cm">     *                  used to store the back projections.</span>
+<span class="linenos"> 23</span><span class="cm">     *                  The pixel [i,j,k] is stored at [n1*n2*i + n2*j + k].</span>
+<span class="linenos"> 24</span><span class="cm">     *                  The backprojector adds existing values.</span>
+<span class="linenos"> 25</span><span class="cm">     *  @param h_img_origin  array [x0_0,x0_1,x0_2] of coordinates of the center of the [0,0,0] voxel</span>
+<span class="linenos"> 26</span><span class="cm">     *  @param h_voxsize     array [vs0, vs1, vs2] of the voxel sizes</span>
+<span class="linenos"> 27</span><span class="cm">     *  @param h_p           array of length nlors containg the values to be back projected</span>
+<span class="linenos"> 28</span><span class="cm">     *  @param nlors          number of projections (length of p array)</span>
+<span class="linenos"> 29</span><span class="cm">     *  @param h_img_dim      array with dimensions of image [n0,n1,n2]</span>
+<span class="linenos"> 30</span><span class="cm">     *  @param threadsperblock number of threads per block</span>
+<span class="linenos"> 31</span><span class="cm">     */</span>
+<span class="linenos"> 32</span><span class="w">    </span><span class="kt">void</span><span class="w"> </span><span class="nf">joseph3d_back_cuda</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="kt">float</span><span class="w"> </span><span class="o">*</span><span class="n">h_xstart</span><span class="p">,</span>
+<span class="linenos"> 33</span><span class="w">                            </span><span class="k">const</span><span class="w"> </span><span class="kt">float</span><span class="w"> </span><span class="o">*</span><span class="n">h_xend</span><span class="p">,</span>
+<span class="linenos"> 34</span><span class="w">                            </span><span class="kt">float</span><span class="w"> </span><span class="o">**</span><span class="n">d_img</span><span class="p">,</span>
+<span class="linenos"> 35</span><span class="w">                            </span><span class="k">const</span><span class="w"> </span><span class="kt">float</span><span class="w"> </span><span class="o">*</span><span class="n">h_img_origin</span><span class="p">,</span>
+<span class="linenos"> 36</span><span class="w">                            </span><span class="k">const</span><span class="w"> </span><span class="kt">float</span><span class="w"> </span><span class="o">*</span><span class="n">h_voxsize</span><span class="p">,</span>
+<span class="linenos"> 37</span><span class="w">                            </span><span class="k">const</span><span class="w"> </span><span class="kt">float</span><span class="w"> </span><span class="o">*</span><span class="n">h_p</span><span class="p">,</span>
+<span class="linenos"> 38</span><span class="w">                            </span><span class="kt">long</span><span class="w"> </span><span class="kt">long</span><span class="w"> </span><span class="n">nlors</span><span class="p">,</span>
+<span class="linenos"> 39</span><span class="w">                            </span><span class="k">const</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="o">*</span><span class="n">h_img_dim</span><span class="p">,</span>
+<span class="linenos"> 40</span><span class="w">                            </span><span class="kt">int</span><span class="w"> </span><span class="n">threadsperblock</span><span class="p">);</span>
+<span class="linenos"> 41</span>
+<span class="linenos"> 42</span><span class="w">    </span><span class="cm">/** @brief 3D listmode tof joseph back projector CUDA wrapper</span>
+<span class="linenos"> 43</span><span class="cm">     *</span>
+<span class="linenos"> 44</span><span class="cm">     *  @param h_xstart array of shape [3*nlors] with the coordinates of the start points of the LORs.</span>
+<span class="linenos"> 45</span><span class="cm">     *                  The start coordinates of the n-th LOR are at xstart[n*3 + i] with i = 0,1,2.</span>
+<span class="linenos"> 46</span><span class="cm">     *                  Units are the ones of voxsize.</span>
+<span class="linenos"> 47</span><span class="cm">     *  @param h_xend   array of shape [3*nlors] with the coordinates of the end   points of the LORs.</span>
+<span class="linenos"> 48</span><span class="cm">     *                  The start coordinates of the n-th LOR are at xstart[n*3 + i] with i = 0,1,2.</span>
+<span class="linenos"> 49</span><span class="cm">     *                  Units are the ones of voxsize.</span>
+<span class="linenos"> 50</span><span class="cm">     *  @param d_img    Pointer to device arrays of shape [n0*n1*n2] containing the 3D image to</span>
+<span class="linenos"> 51</span><span class="cm">     *                  used to store the back projections.</span>
+<span class="linenos"> 52</span><span class="cm">     *                  The pixel [i,j,k] is stored at [n1*n2*i + n2*j + k].</span>
+<span class="linenos"> 53</span><span class="cm">     *                  The backprojector adds existing values.</span>
+<span class="linenos"> 54</span><span class="cm">     *  @param h_img_origin  array [x0_0,x0_1,x0_2] of coordinates of the center of the [0,0,0] voxel</span>
+<span class="linenos"> 55</span><span class="cm">     *  @param h_voxsize     array [vs0, vs1, vs2] of the voxel sizes</span>
+<span class="linenos"> 56</span><span class="cm">     *  @param h_p           array of length nlors containg the values to be back projected</span>
+<span class="linenos"> 57</span><span class="cm">     *  @param nlors         number of projections (length of p array)</span>
+<span class="linenos"> 58</span><span class="cm">     *  @param h_img_dim     array with dimensions of image [n0,n1,n2]</span>
+<span class="linenos"> 59</span><span class="cm">     *  @param tofbin_width     width of the TOF bins in spatial units (units of xstart and xend)</span>
+<span class="linenos"> 60</span><span class="cm">     *  @param h_sigma_tof      array of length 1 or nlors (depending on lor_dependent_sigma_tof)</span>
+<span class="linenos"> 61</span><span class="cm">     *                          with the TOF resolution (sigma) for each LOR in</span>
+<span class="linenos"> 62</span><span class="cm">     *                          spatial units (units of xstart and xend)</span>
+<span class="linenos"> 63</span><span class="cm">     *  @param h_tofcenter_offset array of length 1 or nlors (depending on lor_dependent_tofcenter_offset)</span>
+<span class="linenos"> 64</span><span class="cm">     *                            with the offset of the central TOF bin from the</span>
+<span class="linenos"> 65</span><span class="cm">     *                            midpoint of each LOR in spatial units (units of xstart and xend).</span>
+<span class="linenos"> 66</span><span class="cm">     *                            A positive value means a shift towards the end point of the LOR.</span>
+<span class="linenos"> 67</span><span class="cm">     *  @param n_sigmas        number of sigmas to consider for calculation of TOF kernel</span>
+<span class="linenos"> 68</span><span class="cm">     *  @param h_tof_bin          signed integer array with the tofbin of the events</span>
+<span class="linenos"> 69</span><span class="cm">     *                            the center of TOF bin 0 is assumed to be at the center of the LOR</span>
+<span class="linenos"> 70</span><span class="cm">     *                            (shifted by the tofcenter_offset)</span>
+<span class="linenos"> 71</span><span class="cm">     *  @param lor_dependent_sigma_tof unsigned char 0 or 1</span>
+<span class="linenos"> 72</span><span class="cm">     *                                 1 means that the TOF sigmas are LOR dependent</span>
+<span class="linenos"> 73</span><span class="cm">     *                                 any other value means that the first value in the sigma_tof</span>
+<span class="linenos"> 74</span><span class="cm">     *                                 array is used for all LORs</span>
+<span class="linenos"> 75</span><span class="cm">     *  @param lor_dependent_tofcenter_offset unsigned char 0 or 1</span>
+<span class="linenos"> 76</span><span class="cm">     *                                        1 means that the TOF center offsets are LOR dependent</span>
+<span class="linenos"> 77</span><span class="cm">     *                                        any other value means that the first value in the</span>
+<span class="linenos"> 78</span><span class="cm">     *                                        tofcenter_offset array is used for all LORs</span>
+<span class="linenos"> 79</span><span class="cm">     *  @param threadsperblock number of threads per block</span>
+<span class="linenos"> 80</span><span class="cm">     */</span>
+<span class="linenos"> 81</span><span class="w">    </span><span class="kt">void</span><span class="w"> </span><span class="nf">joseph3d_back_tof_lm_cuda</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="kt">float</span><span class="w"> </span><span class="o">*</span><span class="n">h_xstart</span><span class="p">,</span>
+<span class="linenos"> 82</span><span class="w">                                   </span><span class="k">const</span><span class="w"> </span><span class="kt">float</span><span class="w"> </span><span class="o">*</span><span class="n">h_xend</span><span class="p">,</span>
+<span class="linenos"> 83</span><span class="w">                                   </span><span class="kt">float</span><span class="w"> </span><span class="o">**</span><span class="n">d_img</span><span class="p">,</span>
+<span class="linenos"> 84</span><span class="w">                                   </span><span class="k">const</span><span class="w"> </span><span class="kt">float</span><span class="w"> </span><span class="o">*</span><span class="n">h_img_origin</span><span class="p">,</span>
+<span class="linenos"> 85</span><span class="w">                                   </span><span class="k">const</span><span class="w"> </span><span class="kt">float</span><span class="w"> </span><span class="o">*</span><span class="n">h_voxsize</span><span class="p">,</span>
+<span class="linenos"> 86</span><span class="w">                                   </span><span class="k">const</span><span class="w"> </span><span class="kt">float</span><span class="w"> </span><span class="o">*</span><span class="n">h_p</span><span class="p">,</span>
+<span class="linenos"> 87</span><span class="w">                                   </span><span class="kt">long</span><span class="w"> </span><span class="kt">long</span><span class="w"> </span><span class="n">nlors</span><span class="p">,</span>
+<span class="linenos"> 88</span><span class="w">                                   </span><span class="k">const</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="o">*</span><span class="n">h_img_dim</span><span class="p">,</span>
+<span class="linenos"> 89</span><span class="w">                                   </span><span class="kt">float</span><span class="w"> </span><span class="n">tofbin_width</span><span class="p">,</span>
+<span class="linenos"> 90</span><span class="w">                                   </span><span class="k">const</span><span class="w"> </span><span class="kt">float</span><span class="w"> </span><span class="o">*</span><span class="n">h_sigma_tof</span><span class="p">,</span>
+<span class="linenos"> 91</span><span class="w">                                   </span><span class="k">const</span><span class="w"> </span><span class="kt">float</span><span class="w"> </span><span class="o">*</span><span class="n">h_tofcenter_offset</span><span class="p">,</span>
+<span class="linenos"> 92</span><span class="w">                                   </span><span class="kt">float</span><span class="w"> </span><span class="n">n_sigmas</span><span class="p">,</span>
+<span class="linenos"> 93</span><span class="w">                                   </span><span class="k">const</span><span class="w"> </span><span class="kt">short</span><span class="w"> </span><span class="o">*</span><span class="n">h_tof_bin</span><span class="p">,</span>
+<span class="linenos"> 94</span><span class="w">                                   </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">char</span><span class="w"> </span><span class="n">lor_dependent_sigma_tof</span><span class="p">,</span>
+<span class="linenos"> 95</span><span class="w">                                   </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">char</span><span class="w"> </span><span class="n">lor_dependent_tofcenter_offset</span><span class="p">,</span>
+<span class="linenos"> 96</span><span class="w">                                   </span><span class="kt">int</span><span class="w"> </span><span class="n">threadsperblock</span><span class="p">);</span>
+<span class="linenos"> 97</span>
+<span class="linenos"> 98</span><span class="w">    </span><span class="cm">/** @brief 3D sinogram tof joseph back projector CUDA wrapper</span>
+<span class="linenos"> 99</span><span class="cm">     *</span>
+<span class="linenos">100</span><span class="cm">     *  @param h_xstart array of shape [3*nlors] with the coordinates of the start points of the LORs.</span>
+<span class="linenos">101</span><span class="cm">     *                  The start coordinates of the n-th LOR are at xstart[n*3 + i] with i = 0,1,2.</span>
+<span class="linenos">102</span><span class="cm">     *                  Units are the ones of voxsize.</span>
+<span class="linenos">103</span><span class="cm">     *  @param h_xend   array of shape [3*nlors] with the coordinates of the end   points of the LORs.</span>
+<span class="linenos">104</span><span class="cm">     *                  The start coordinates of the n-th LOR are at xstart[n*3 + i] with i = 0,1,2.</span>
+<span class="linenos">105</span><span class="cm">     *                  Units are the ones of voxsize.</span>
+<span class="linenos">106</span><span class="cm">     *  @param d_img    Pointer to device arrays of shape [n0*n1*n2] containing the 3D image to</span>
+<span class="linenos">107</span><span class="cm">     *                  used to store the back projections.</span>
+<span class="linenos">108</span><span class="cm">     *                  The pixel [i,j,k] is stored at [n1*n2*i + n2*j + k].</span>
+<span class="linenos">109</span><span class="cm">     *                  The backprojector adds existing values.</span>
+<span class="linenos">110</span><span class="cm">     *  @param h_img_origin  array [x0_0,x0_1,x0_2] of coordinates of the center of the [0,0,0] voxel</span>
+<span class="linenos">111</span><span class="cm">     *  @param h_voxsize     array [vs0, vs1, vs2] of the voxel sizes</span>
+<span class="linenos">112</span><span class="cm">     *  @param h_p           array of length nlors*n_tofbins with the values to be back projected</span>
+<span class="linenos">113</span><span class="cm">     *                       the order of the array is</span>
+<span class="linenos">114</span><span class="cm">     *                       [LOR0-TOFBIN-0, LOR0-TOFBIN-1, ... LOR0_TOFBIN-(n-1),</span>
+<span class="linenos">115</span><span class="cm">     *                        LOR1-TOFBIN-0, LOR1-TOFBIN-1, ... LOR1_TOFBIN-(n-1),</span>
+<span class="linenos">116</span><span class="cm">     *                        ...</span>
+<span class="linenos">117</span><span class="cm">     *                        LOR(N-1)-TOFBIN-0, LOR(N-1)-TOFBIN-1, ... LOR(N-1)_TOFBIN-(n-1)]</span>
+<span class="linenos">118</span><span class="cm">     *  @param nlors          number of gemeometrical projections</span>
+<span class="linenos">119</span><span class="cm">     *  @param h_img_dim      array with dimensions of image [n0,n1,n2]</span>
+<span class="linenos">120</span><span class="cm">     *  @param tofbin_width     width of the TOF bins in spatial units (units of xstart and xend)</span>
+<span class="linenos">121</span><span class="cm">     *  @param h_sigma_tof      array of length 1 or nlors (depending on lor_dependent_sigma_tof)</span>
+<span class="linenos">122</span><span class="cm">     *                          with the TOF resolution (sigma) for each LOR in</span>
+<span class="linenos">123</span><span class="cm">     *                          spatial units (units of xstart and xend)</span>
+<span class="linenos">124</span><span class="cm">     *  @param h_tofcenter_offset array of length 1 or nlors (depending on lor_dependent_tofcenter_offset)</span>
+<span class="linenos">125</span><span class="cm">     *                            with the offset of the central TOF bin from the</span>
+<span class="linenos">126</span><span class="cm">     *                            midpoint of each LOR in spatial units (units of xstart and xend).</span>
+<span class="linenos">127</span><span class="cm">     *                            A positive value means a shift towards the end point of the LOR.</span>
+<span class="linenos">128</span><span class="cm">     *  @param n_sigmas           number of sigmas to consider for calculation of TOF kernel</span>
+<span class="linenos">129</span><span class="cm">     *  @param n_tofbins          number of TOF bins</span>
+<span class="linenos">130</span><span class="cm">     *  @param lor_dependent_sigma_tof unsigned char 0 or 1</span>
+<span class="linenos">131</span><span class="cm">     *                                 1 means that the TOF sigmas are LOR dependent</span>
+<span class="linenos">132</span><span class="cm">     *                                 any other value means that the first value in the sigma_tof</span>
+<span class="linenos">133</span><span class="cm">     *                                 array is used for all LORs</span>
+<span class="linenos">134</span><span class="cm">     *  @param lor_dependent_tofcenter_offset unsigned char 0 or 1</span>
+<span class="linenos">135</span><span class="cm">     *                                        1 means that the TOF center offsets are LOR dependent</span>
+<span class="linenos">136</span><span class="cm">     *                                        any other value means that the first value in the</span>
+<span class="linenos">137</span><span class="cm">     *                                        tofcenter_offset array is used for all LORs</span>
+<span class="linenos">138</span><span class="cm">     *  @param threadsperblock number of threads per block</span>
+<span class="linenos">139</span><span class="cm">     */</span>
+<span class="linenos">140</span><span class="w">    </span><span class="kt">void</span><span class="w"> </span><span class="nf">joseph3d_back_tof_sino_cuda</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="kt">float</span><span class="w"> </span><span class="o">*</span><span class="n">h_xstart</span><span class="p">,</span>
+<span class="linenos">141</span><span class="w">                                     </span><span class="k">const</span><span class="w"> </span><span class="kt">float</span><span class="w"> </span><span class="o">*</span><span class="n">h_xend</span><span class="p">,</span>
+<span class="linenos">142</span><span class="w">                                     </span><span class="kt">float</span><span class="w"> </span><span class="o">**</span><span class="n">d_img</span><span class="p">,</span>
+<span class="linenos">143</span><span class="w">                                     </span><span class="k">const</span><span class="w"> </span><span class="kt">float</span><span class="w"> </span><span class="o">*</span><span class="n">h_img_origin</span><span class="p">,</span>
+<span class="linenos">144</span><span class="w">                                     </span><span class="k">const</span><span class="w"> </span><span class="kt">float</span><span class="w"> </span><span class="o">*</span><span class="n">h_voxsize</span><span class="p">,</span>
+<span class="linenos">145</span><span class="w">                                     </span><span class="k">const</span><span class="w"> </span><span class="kt">float</span><span class="w"> </span><span class="o">*</span><span class="n">h_p</span><span class="p">,</span>
+<span class="linenos">146</span><span class="w">                                     </span><span class="kt">long</span><span class="w"> </span><span class="kt">long</span><span class="w"> </span><span class="n">nlors</span><span class="p">,</span>
+<span class="linenos">147</span><span class="w">                                     </span><span class="k">const</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="o">*</span><span class="n">h_img_dim</span><span class="p">,</span>
+<span class="linenos">148</span><span class="w">                                     </span><span class="kt">float</span><span class="w"> </span><span class="n">tofbin_width</span><span class="p">,</span>
+<span class="linenos">149</span><span class="w">                                     </span><span class="k">const</span><span class="w"> </span><span class="kt">float</span><span class="w"> </span><span class="o">*</span><span class="n">h_sigma_tof</span><span class="p">,</span>
+<span class="linenos">150</span><span class="w">                                     </span><span class="k">const</span><span class="w"> </span><span class="kt">float</span><span class="w"> </span><span class="o">*</span><span class="n">h_tofcenter_offset</span><span class="p">,</span>
+<span class="linenos">151</span><span class="w">                                     </span><span class="kt">float</span><span class="w"> </span><span class="n">n_sigmas</span><span class="p">,</span>
+<span class="linenos">152</span><span class="w">                                     </span><span class="kt">short</span><span class="w"> </span><span class="n">n_tofbins</span><span class="p">,</span>
+<span class="linenos">153</span><span class="w">                                     </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">char</span><span class="w"> </span><span class="n">lor_dependent_sigma_tof</span><span class="p">,</span>
+<span class="linenos">154</span><span class="w">                                     </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">char</span><span class="w"> </span><span class="n">lor_dependent_tofcenter_offset</span><span class="p">,</span>
+<span class="linenos">155</span><span class="w">                                     </span><span class="kt">int</span><span class="w"> </span><span class="n">threadsperblock</span><span class="p">);</span>
+<span class="linenos">156</span>
+<span class="linenos">157</span><span class="w">    </span><span class="cm">/** @brief 3D non-tof joseph forward projector CUDA wrapper</span>
+<span class="linenos">158</span><span class="cm">     *</span>
+<span class="linenos">159</span><span class="cm">     *  @param h_xstart array of shape [3*nlors] with the coordinates of the start points of the LORs.</span>
+<span class="linenos">160</span><span class="cm">     *                  The start coordinates of the n-th LOR are at xstart[n*3 + i] with i = 0,1,2.</span>
+<span class="linenos">161</span><span class="cm">     *                  Units are the ones of voxsize.</span>
+<span class="linenos">162</span><span class="cm">     *  @param h_xend   array of shape [3*nlors] with the coordinates of the end   points of the LORs.</span>
+<span class="linenos">163</span><span class="cm">     *                  The start coordinates of the n-th LOR are at xstart[n*3 + i] with i = 0,1,2.</span>
+<span class="linenos">164</span><span class="cm">     *                  Units are the ones of voxsize.</span>
+<span class="linenos">165</span><span class="cm">     *  @param d_img    Pointer to device arrays of shape [n0*n1*n2] containing the 3D image to</span>
+<span class="linenos">166</span><span class="cm">     *                  be projected.</span>
+<span class="linenos">167</span><span class="cm">     *                  The pixel [i,j,k] ist stored at [n1*n2*i + n2*j + k].</span>
+<span class="linenos">168</span><span class="cm">     *  @param h_img_origin  array [x0_0,x0_1,x0_2] of coordinates of the center of the [0,0,0] voxel</span>
+<span class="linenos">169</span><span class="cm">     *  @param h_voxsize     array [vs0, vs1, vs2] of the voxel sizes</span>
+<span class="linenos">170</span><span class="cm">     *  @param h_p           array of length nlors (output) used to store the projections</span>
+<span class="linenos">171</span><span class="cm">     *  @param nlors           number of projections (length of p array)</span>
+<span class="linenos">172</span><span class="cm">     *  @param h_img_dim       array with dimensions of image [n0,n1,n2]</span>
+<span class="linenos">173</span><span class="cm">     *  @param threadsperblock number of threads per block</span>
+<span class="linenos">174</span><span class="cm">     */</span>
+<span class="linenos">175</span><span class="w">    </span><span class="kt">void</span><span class="w"> </span><span class="nf">joseph3d_fwd_cuda</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="kt">float</span><span class="w"> </span><span class="o">*</span><span class="n">h_xstart</span><span class="p">,</span>
+<span class="linenos">176</span><span class="w">                           </span><span class="k">const</span><span class="w"> </span><span class="kt">float</span><span class="w"> </span><span class="o">*</span><span class="n">h_xend</span><span class="p">,</span>
+<span class="linenos">177</span><span class="w">                           </span><span class="kt">float</span><span class="w"> </span><span class="o">**</span><span class="n">d_img</span><span class="p">,</span>
+<span class="linenos">178</span><span class="w">                           </span><span class="k">const</span><span class="w"> </span><span class="kt">float</span><span class="w"> </span><span class="o">*</span><span class="n">h_img_origin</span><span class="p">,</span>
+<span class="linenos">179</span><span class="w">                           </span><span class="k">const</span><span class="w"> </span><span class="kt">float</span><span class="w"> </span><span class="o">*</span><span class="n">h_voxsize</span><span class="p">,</span>
+<span class="linenos">180</span><span class="w">                           </span><span class="kt">float</span><span class="w"> </span><span class="o">*</span><span class="n">h_p</span><span class="p">,</span>
+<span class="linenos">181</span><span class="w">                           </span><span class="kt">long</span><span class="w"> </span><span class="kt">long</span><span class="w"> </span><span class="n">nlors</span><span class="p">,</span>
+<span class="linenos">182</span><span class="w">                           </span><span class="k">const</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="o">*</span><span class="n">h_img_dim</span><span class="p">,</span>
+<span class="linenos">183</span><span class="w">                           </span><span class="kt">int</span><span class="w"> </span><span class="n">threadsperblock</span><span class="p">);</span>
+<span class="linenos">184</span>
+<span class="linenos">185</span><span class="w">    </span><span class="cm">/** @brief 3D listmode tof joseph forward projector CUDA wrapper</span>
+<span class="linenos">186</span><span class="cm">     *</span>
+<span class="linenos">187</span><span class="cm">     *  @param h_xstart array of shape [3*nlors] with the coordinates of the start points of the LORs.</span>
+<span class="linenos">188</span><span class="cm">     *                  The start coordinates of the n-th LOR are at xstart[n*3 + i] with i = 0,1,2.</span>
+<span class="linenos">189</span><span class="cm">     *                  Units are the ones of voxsize.</span>
+<span class="linenos">190</span><span class="cm">     *  @param h_xend   array of shape [3*nlors] with the coordinates of the end   points of the LORs.</span>
+<span class="linenos">191</span><span class="cm">     *                  The start coordinates of the n-th LOR are at xstart[n*3 + i] with i = 0,1,2.</span>
+<span class="linenos">192</span><span class="cm">     *                  Units are the ones of voxsize.</span>
+<span class="linenos">193</span><span class="cm">     *  @param d_img    Pointer to device arrays of shape [n0*n1*n2] containing the 3D image to</span>
+<span class="linenos">194</span><span class="cm">     *                  used to store the back projections.</span>
+<span class="linenos">195</span><span class="cm">     *                  The pixel [i,j,k] is stored at [n1*n2*i + n2*j + k].</span>
+<span class="linenos">196</span><span class="cm">     *  @param h_img_origin  array [x0_0,x0_1,x0_2] of coordinates of the center of the [0,0,0] voxel</span>
+<span class="linenos">197</span><span class="cm">     *  @param h_voxsize     array [vs0, vs1, vs2] of the voxel sizes</span>
+<span class="linenos">198</span><span class="cm">     *  @param h_p           array of length nlors (output) used to store the projections</span>
+<span class="linenos">199</span><span class="cm">     *  @param nlors         number of projections (length of p array)</span>
+<span class="linenos">200</span><span class="cm">     *  @param h_img_dim     array with dimensions of image [n0,n1,n2]</span>
+<span class="linenos">201</span><span class="cm">     *  @param tofbin_width  width of the TOF bins in spatial units (units of xstart and xend)</span>
+<span class="linenos">202</span><span class="cm">     *  @param h_sigma_tof   array of length 1 or nlors (depending on lor_dependent_sigma_tof)</span>
+<span class="linenos">203</span><span class="cm">     *                       with the TOF resolution (sigma) for each LOR in</span>
+<span class="linenos">204</span><span class="cm">     *                       spatial units (units of xstart and xend)</span>
+<span class="linenos">205</span><span class="cm">     *  @param h_tofcenter_offset array of length 1 or nlors (depending on lor_dependent_tofcenter_offset)</span>
+<span class="linenos">206</span><span class="cm">     *                            with the offset of the central TOF bin from the</span>
+<span class="linenos">207</span><span class="cm">     *                            midpoint of each LOR in spatial units (units of xstart and xend).</span>
+<span class="linenos">208</span><span class="cm">     *                            A positive value means a shift towards the end point of the LOR.</span>
+<span class="linenos">209</span><span class="cm">     *  @param n_sigmas           number of sigmas to consider for calculation of TOF kernel</span>
+<span class="linenos">210</span><span class="cm">     *  @param h_tof_bin          signed integer array with the tofbin of the events</span>
+<span class="linenos">211</span><span class="cm">     *                            the center of TOF bin 0 is assumed to be at the center of the LOR</span>
+<span class="linenos">212</span><span class="cm">     *                            (shifted by the tofcenter_offset)</span>
+<span class="linenos">213</span><span class="cm">     *  @param lor_dependent_sigma_tof unsigned char 0 or 1</span>
+<span class="linenos">214</span><span class="cm">     *                                 1 means that the TOF sigmas are LOR dependent</span>
+<span class="linenos">215</span><span class="cm">     *                                 any other value means that the first value in the sigma_tof</span>
+<span class="linenos">216</span><span class="cm">     *                                 array is used for all LORs</span>
+<span class="linenos">217</span><span class="cm">     *  @param lor_dependent_tofcenter_offset unsigned char 0 or 1</span>
+<span class="linenos">218</span><span class="cm">     *                                        1 means that the TOF center offsets are LOR dependent</span>
+<span class="linenos">219</span><span class="cm">     *                                        any other value means that the first value in the</span>
+<span class="linenos">220</span><span class="cm">     *                                        tofcenter_offset array is used for all LORs</span>
+<span class="linenos">221</span><span class="cm">     *  @param threadsperblock    number of threads per block</span>
+<span class="linenos">222</span><span class="cm">     */</span>
+<span class="linenos">223</span><span class="w">    </span><span class="kt">void</span><span class="w"> </span><span class="nf">joseph3d_fwd_tof_lm_cuda</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="kt">float</span><span class="w"> </span><span class="o">*</span><span class="n">h_xstart</span><span class="p">,</span>
+<span class="linenos">224</span><span class="w">                                  </span><span class="k">const</span><span class="w"> </span><span class="kt">float</span><span class="w"> </span><span class="o">*</span><span class="n">h_xend</span><span class="p">,</span>
+<span class="linenos">225</span><span class="w">                                  </span><span class="kt">float</span><span class="w"> </span><span class="o">**</span><span class="n">d_img</span><span class="p">,</span>
+<span class="linenos">226</span><span class="w">                                  </span><span class="k">const</span><span class="w"> </span><span class="kt">float</span><span class="w"> </span><span class="o">*</span><span class="n">h_img_origin</span><span class="p">,</span>
+<span class="linenos">227</span><span class="w">                                  </span><span class="k">const</span><span class="w"> </span><span class="kt">float</span><span class="w"> </span><span class="o">*</span><span class="n">h_voxsize</span><span class="p">,</span>
+<span class="linenos">228</span><span class="w">                                  </span><span class="kt">float</span><span class="w"> </span><span class="o">*</span><span class="n">h_p</span><span class="p">,</span>
+<span class="linenos">229</span><span class="w">                                  </span><span class="kt">long</span><span class="w"> </span><span class="kt">long</span><span class="w"> </span><span class="n">nlors</span><span class="p">,</span>
+<span class="linenos">230</span><span class="w">                                  </span><span class="k">const</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="o">*</span><span class="n">h_img_dim</span><span class="p">,</span>
+<span class="linenos">231</span><span class="w">                                  </span><span class="kt">float</span><span class="w"> </span><span class="n">tofbin_width</span><span class="p">,</span>
+<span class="linenos">232</span><span class="w">                                  </span><span class="k">const</span><span class="w"> </span><span class="kt">float</span><span class="w"> </span><span class="o">*</span><span class="n">h_sigma_tof</span><span class="p">,</span>
+<span class="linenos">233</span><span class="w">                                  </span><span class="k">const</span><span class="w"> </span><span class="kt">float</span><span class="w"> </span><span class="o">*</span><span class="n">h_tofcenter_offset</span><span class="p">,</span>
+<span class="linenos">234</span><span class="w">                                  </span><span class="kt">float</span><span class="w"> </span><span class="n">n_sigmas</span><span class="p">,</span>
+<span class="linenos">235</span><span class="w">                                  </span><span class="k">const</span><span class="w"> </span><span class="kt">short</span><span class="w"> </span><span class="o">*</span><span class="n">h_tof_bin</span><span class="p">,</span>
+<span class="linenos">236</span><span class="w">                                  </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">char</span><span class="w"> </span><span class="n">lor_dependent_sigma_tof</span><span class="p">,</span>
+<span class="linenos">237</span><span class="w">                                  </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">char</span><span class="w"> </span><span class="n">lor_dependent_tofcenter_offset</span><span class="p">,</span>
+<span class="linenos">238</span><span class="w">                                  </span><span class="kt">int</span><span class="w"> </span><span class="n">threadsperblock</span><span class="p">);</span>
+<span class="linenos">239</span>
+<span class="linenos">240</span><span class="w">    </span><span class="cm">/** @brief 3D sinogram tof joseph forward projector CUDA wrapper</span>
+<span class="linenos">241</span><span class="cm">     *</span>
+<span class="linenos">242</span><span class="cm">     *  @param h_xstart array of shape [3*nlors] with the coordinates of the start points of the LORs.</span>
+<span class="linenos">243</span><span class="cm">     *                  The start coordinates of the n-th LOR are at xstart[n*3 + i] with i = 0,1,2.</span>
+<span class="linenos">244</span><span class="cm">     *                  Units are the ones of voxsize.</span>
+<span class="linenos">245</span><span class="cm">     *  @param h_xend   array of shape [3*nlors] with the coordinates of the end   points of the LORs.</span>
+<span class="linenos">246</span><span class="cm">     *                  The start coordinates of the n-th LOR are at xstart[n*3 + i] with i = 0,1,2.</span>
+<span class="linenos">247</span><span class="cm">     *                  Units are the ones of voxsize.</span>
+<span class="linenos">248</span><span class="cm">     *  @param d_img    Pointer to device arrays of shape [n0*n1*n2] containing the 3D image to</span>
+<span class="linenos">249</span><span class="cm">     *                  used to store the back projections.</span>
+<span class="linenos">250</span><span class="cm">     *                  The pixel [i,j,k] is stored at [n1*n2*i + n2*j + k].</span>
+<span class="linenos">251</span><span class="cm">     *  @param h_img_origin  array [x0_0,x0_1,x0_2] of coordinates of the center of the [0,0,0] voxel</span>
+<span class="linenos">252</span><span class="cm">     *  @param h_voxsize     array [vs0, vs1, vs2] of the voxel sizes</span>
+<span class="linenos">253</span><span class="cm">     *  @param h_p           array of length nlors*n_tofbins (output) used to store the projections</span>
+<span class="linenos">254</span><span class="cm">     *                       the order of the array is</span>
+<span class="linenos">255</span><span class="cm">     *                       [LOR0-TOFBIN-0, LOR0-TOFBIN-1, ... LOR0_TOFBIN-(n-1),</span>
+<span class="linenos">256</span><span class="cm">     *                        LOR1-TOFBIN-0, LOR1-TOFBIN-1, ... LOR1_TOFBIN-(n-1),</span>
+<span class="linenos">257</span><span class="cm">     *                        ...</span>
+<span class="linenos">258</span><span class="cm">     *                        LOR(N-1)-TOFBIN-0, LOR(N-1)-TOFBIN-1, ... LOR(N-1)_TOFBIN-(n-1)]</span>
+<span class="linenos">259</span><span class="cm">     *  @param nlors         number of geometrical LORs</span>
+<span class="linenos">260</span><span class="cm">     *  @param h_img_dim     array with dimensions of image [n0,n1,n2]</span>
+<span class="linenos">261</span><span class="cm">     *  @param tofbin_width  width of the TOF bins in spatial units (units of xstart and xend)</span>
+<span class="linenos">262</span><span class="cm">     *  @param h_sigma_tof   array of length 1 or nlors (depending on lor_dependent_sigma_tof)</span>
+<span class="linenos">263</span><span class="cm">     *                       with the TOF resolution (sigma) for each LOR in</span>
+<span class="linenos">264</span><span class="cm">     *                       spatial units (units of xstart and xend)</span>
+<span class="linenos">265</span><span class="cm">     *  @param h_tofcenter_offset array of length 1 or nlors (depending on lor_dependent_tofcenter_offset)</span>
+<span class="linenos">266</span><span class="cm">     *                            with the offset of the central TOF bin from the</span>
+<span class="linenos">267</span><span class="cm">     *                            midpoint of each LOR in spatial units (units of xstart and xend).</span>
+<span class="linenos">268</span><span class="cm">     *                            A positive value means a shift towards the end point of the LOR.</span>
+<span class="linenos">269</span><span class="cm">     *  @param n_sigmas           number of sigmas to consider for calculation of TOF kernel</span>
+<span class="linenos">270</span><span class="cm">     *  @param n_tofbins          number of TOF bins</span>
+<span class="linenos">271</span><span class="cm">     *  @param lor_dependent_sigma_tof unsigned char 0 or 1</span>
+<span class="linenos">272</span><span class="cm">     *                                 1 means that the TOF sigmas are LOR dependent</span>
+<span class="linenos">273</span><span class="cm">     *                                 any other value means that the first value in the sigma_tof</span>
+<span class="linenos">274</span><span class="cm">     *                                 array is used for all LORs</span>
+<span class="linenos">275</span><span class="cm">     *  @param lor_dependent_tofcenter_offset unsigned char 0 or 1</span>
+<span class="linenos">276</span><span class="cm">     *                                        1 means that the TOF center offsets are LOR dependent</span>
+<span class="linenos">277</span><span class="cm">     *                                        any other value means that the first value in the</span>
+<span class="linenos">278</span><span class="cm">     *                                        tofcenter_offset array is used for all LORs</span>
+<span class="linenos">279</span><span class="cm">     *  @param threadsperblock    number of threads per block</span>
+<span class="linenos">280</span><span class="cm">     */</span>
+<span class="linenos">281</span><span class="w">    </span><span class="kt">void</span><span class="w"> </span><span class="nf">joseph3d_fwd_tof_sino_cuda</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="kt">float</span><span class="w"> </span><span class="o">*</span><span class="n">h_xstart</span><span class="p">,</span>
+<span class="linenos">282</span><span class="w">                                    </span><span class="k">const</span><span class="w"> </span><span class="kt">float</span><span class="w"> </span><span class="o">*</span><span class="n">h_xend</span><span class="p">,</span>
+<span class="linenos">283</span><span class="w">                                    </span><span class="kt">float</span><span class="w"> </span><span class="o">**</span><span class="n">d_img</span><span class="p">,</span>
+<span class="linenos">284</span><span class="w">                                    </span><span class="k">const</span><span class="w"> </span><span class="kt">float</span><span class="w"> </span><span class="o">*</span><span class="n">h_img_origin</span><span class="p">,</span>
+<span class="linenos">285</span><span class="w">                                    </span><span class="k">const</span><span class="w"> </span><span class="kt">float</span><span class="w"> </span><span class="o">*</span><span class="n">h_voxsize</span><span class="p">,</span>
+<span class="linenos">286</span><span class="w">                                    </span><span class="kt">float</span><span class="w"> </span><span class="o">*</span><span class="n">h_p</span><span class="p">,</span>
+<span class="linenos">287</span><span class="w">                                    </span><span class="kt">long</span><span class="w"> </span><span class="kt">long</span><span class="w"> </span><span class="n">nlors</span><span class="p">,</span>
+<span class="linenos">288</span><span class="w">                                    </span><span class="k">const</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="o">*</span><span class="n">h_img_dim</span><span class="p">,</span>
+<span class="linenos">289</span><span class="w">                                    </span><span class="kt">float</span><span class="w"> </span><span class="n">tofbin_width</span><span class="p">,</span>
+<span class="linenos">290</span><span class="w">                                    </span><span class="k">const</span><span class="w"> </span><span class="kt">float</span><span class="w"> </span><span class="o">*</span><span class="n">h_sigma_tof</span><span class="p">,</span>
+<span class="linenos">291</span><span class="w">                                    </span><span class="k">const</span><span class="w"> </span><span class="kt">float</span><span class="w"> </span><span class="o">*</span><span class="n">h_tofcenter_offset</span><span class="p">,</span>
+<span class="linenos">292</span><span class="w">                                    </span><span class="kt">float</span><span class="w"> </span><span class="n">n_sigmas</span><span class="p">,</span>
+<span class="linenos">293</span><span class="w">                                    </span><span class="kt">short</span><span class="w"> </span><span class="n">n_tofbins</span><span class="p">,</span>
+<span class="linenos">294</span><span class="w">                                    </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">char</span><span class="w"> </span><span class="n">lor_dependent_sigma_tof</span><span class="p">,</span>
+<span class="linenos">295</span><span class="w">                                    </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">char</span><span class="w"> </span><span class="n">lor_dependent_tofcenter_offset</span><span class="p">,</span>
+<span class="linenos">296</span><span class="w">                                    </span><span class="kt">int</span><span class="w"> </span><span class="n">threadsperblock</span><span class="p">);</span>
+<span class="linenos">297</span>
+<span class="linenos">298</span><span class="w">    </span><span class="cm">/** @brief copy a float array to all visible cuda devices</span>
+<span class="linenos">299</span><span class="cm">     *</span>
+<span class="linenos">300</span><span class="cm">     *  The number of visible cuda devices is determined automatically via the CUDA API</span>
+<span class="linenos">301</span><span class="cm">     *</span>
+<span class="linenos">302</span><span class="cm">     *  @param    h_array   array of shape [n] on the host</span>
+<span class="linenos">303</span><span class="cm">     *  @param    n         number of array elements</span>
+<span class="linenos">304</span><span class="cm">     *  @return   a pointer to all devices arrays</span>
+<span class="linenos">305</span><span class="cm">     */</span>
+<span class="linenos">306</span><span class="w">    </span><span class="kt">float</span><span class="w"> </span><span class="o">**</span><span class="nf">copy_float_array_to_all_devices</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="kt">float</span><span class="w"> </span><span class="o">*</span><span class="n">h_array</span><span class="p">,</span><span class="w"> </span><span class="kt">long</span><span class="w"> </span><span class="kt">long</span><span class="w"> </span><span class="n">n</span><span class="p">);</span>
+<span class="linenos">307</span>
+<span class="linenos">308</span><span class="w">    </span><span class="cm">/** @brief free device array on all visible cuda devices</span>
+<span class="linenos">309</span><span class="cm">     *</span>
+<span class="linenos">310</span><span class="cm">     *  The number of visible cuda devices is determined automatically via the CUDA API</span>
+<span class="linenos">311</span><span class="cm">     *</span>
+<span class="linenos">312</span><span class="cm">     *  @param d_array a pointer to all devices arrays</span>
+<span class="linenos">313</span><span class="cm">     */</span>
+<span class="linenos">314</span><span class="w">    </span><span class="kt">void</span><span class="w"> </span><span class="nf">free_float_array_on_all_devices</span><span class="p">(</span><span class="kt">float</span><span class="w"> </span><span class="o">**</span><span class="n">d_array</span><span class="p">);</span>
+<span class="linenos">315</span>
+<span class="linenos">316</span><span class="w">    </span><span class="cm">/** @brief sum multiple versions of an array on different devices on first device</span>
+<span class="linenos">317</span><span class="cm">     *</span>
+<span class="linenos">318</span><span class="cm">     *  The number of visible cuda devices is determined automatically via the CUDA API</span>
+<span class="linenos">319</span><span class="cm">     *  This becomes usefule when multiple devices backproject into separate images.</span>
+<span class="linenos">320</span><span class="cm">     *</span>
+<span class="linenos">321</span><span class="cm">     *  @param d_array a pointer to all devices arrays</span>
+<span class="linenos">322</span><span class="cm">     *  @param    n         number of array elements</span>
+<span class="linenos">323</span><span class="cm">     */</span>
+<span class="linenos">324</span><span class="w">    </span><span class="kt">void</span><span class="w"> </span><span class="nf">sum_float_arrays_on_first_device</span><span class="p">(</span><span class="kt">float</span><span class="w"> </span><span class="o">**</span><span class="n">d_array</span><span class="p">,</span><span class="w"> </span><span class="kt">long</span><span class="w"> </span><span class="kt">long</span><span class="w"> </span><span class="n">n</span><span class="p">);</span>
+<span class="linenos">325</span>
+<span class="linenos">326</span><span class="w">    </span><span class="cm">/** @brief copy a (summed) float array from first device back to host</span>
+<span class="linenos">327</span><span class="cm">     *</span>
+<span class="linenos">328</span><span class="cm">     *  The number of visible cuda devices is determined automatically via the CUDA API</span>
+<span class="linenos">329</span><span class="cm">     *</span>
+<span class="linenos">330</span><span class="cm">     *  @param  d_array   a pointer to all devices arrays of shape [n]</span>
+<span class="linenos">331</span><span class="cm">     *  @param  n         number of array elements</span>
+<span class="linenos">332</span><span class="cm">     *  @param  i_dev     device number</span>
+<span class="linenos">333</span><span class="cm">     *  @param  h_array   array of shape [n] on the host used for output</span>
+<span class="linenos">334</span><span class="cm">     */</span>
+<span class="linenos">335</span><span class="w">    </span><span class="kt">void</span><span class="w"> </span><span class="nf">get_float_array_from_device</span><span class="p">(</span><span class="kt">float</span><span class="w"> </span><span class="o">**</span><span class="n">d_array</span><span class="p">,</span><span class="w"> </span><span class="kt">long</span><span class="w"> </span><span class="kt">long</span><span class="w"> </span><span class="n">n</span><span class="p">,</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">i_dev</span><span class="p">,</span><span class="w"> </span><span class="kt">float</span><span class="w"> </span><span class="o">*</span><span class="n">h_array</span><span class="p">);</span>
+<span class="linenos">336</span>
+<span class="linenos">337</span><span class="w">    </span><span class="cm">/** @brief get the number of visible cuda devices</span>
+<span class="linenos">338</span><span class="cm">     */</span>
+<span class="linenos">339</span><span class="w">    </span><span class="kt">int</span><span class="w"> </span><span class="nf">get_cuda_device_count</span><span class="p">();</span>
+<span class="linenos">340</span>
+<span class="linenos">341</span><span class="cp">#ifdef __cplusplus</span>
+<span class="linenos">342</span><span class="p">}</span><span class="w"> </span><span class="cm">/* extern &quot;C&quot; */</span>
+<span class="linenos">343</span><span class="cp">#endif</span>
+<span class="linenos">344</span>
+<span class="linenos">345</span><span class="cp">#endif</span>
+</pre></div>
+</div>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="libparallelproj_c.html" class="btn btn-neutral float-left" title="libparallelproj_c" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="cuda_kernels.html" class="btn btn-neutral float-right" title="cuda projector kernels" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2023, Georg Schramm.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  
+<div class="rst-versions" data-toggle="rst-versions" role="note" aria-label="versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    <span class="fa fa-book"> Other Versions</span>
+    v: v1.10.0
+    <span class="fa fa-caret-down"></span>
+  </span>
+  <div class="rst-other-versions">
+    <dl>
+      <dt>Tags</dt>
+      <dd><a href="libparallelproj_cuda.html">v1.10.0</a></dd>
+    </dl>
+    <dl>
+      <dt>Branches</dt>
+      <dd><a href="../master/libparallelproj_cuda.html">master</a></dd>
+    </dl>
+  </div>
+</div><script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+    <!-- Theme Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-WFK38K0TGS"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+
+      gtag('config', 'G-WFK38K0TGS', {
+          'anonymize_ip': true,
+      });
+    </script> 
+
+</body>
+</html>

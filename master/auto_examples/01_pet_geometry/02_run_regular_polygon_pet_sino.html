@@ -1,0 +1,472 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LOR descriptors and sinogram definition &mdash; parallelproj 1.10.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../../_static/copybutton.css?v=76b2166b" />
+      <link rel="stylesheet" type="text/css" href="../../_static/sg_gallery.css?v=d2d258e8" />
+      <link rel="stylesheet" type="text/css" href="../../_static/sg_gallery-binder.css?v=f4aeca0c" />
+      <link rel="stylesheet" type="text/css" href="../../_static/sg_gallery-dataframe.css?v=2082cf3c" />
+      <link rel="stylesheet" type="text/css" href="../../_static/sg_gallery-rendered-html.css?v=1277b6f3" />
+      <link rel="stylesheet" type="text/css" href="../../_static/sphinx-design.min.css?v=95c83b7e" />
+
+  
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../_static/documentation_options.js?v=1d24b1d9"></script>
+      <script src="../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../_static/clipboard.min.js?v=a7894cd8"></script>
+      <script src="../../_static/copybutton.js?v=f281be69"></script>
+      <script src="../../_static/design-tabs.js?v=f930bc37"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="Modularized (block) PET scanner geometry" href="03_run_block_scanner.html" />
+    <link rel="prev" title="Regular polygon PET scanner geometry" href="01_run_regular_polygon_pet_scanner.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html">
+            
+              <img src="../../_static/parallelproj-logo.svg" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Getting started</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../installation.html">Installation</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../index.html">Examples</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="../index.html#pet-scanner-and-sinogram-geometry-examples">PET scanner and sinogram geometry examples</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="01_run_regular_polygon_pet_scanner.html">Regular polygon PET scanner geometry</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">LOR descriptors and sinogram definition</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#defining-a-sinogram-using-an-lor-descriptor">Defining a sinogram using an LOR descriptor</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#obtaining-world-coordinates-of-lor-start-and-endpoints">Obtaining world coordinates of LOR start and endpoints</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#definition-of-plane-numbers">Definition of plane numbers</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#visualize-the-defined-lor-endpoints">Visualize the defined LOR endpoints</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#defining-sinograms-in-open-pet-scanner-geometries">Defining sinograms in open PET scanner geometries</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="03_run_block_scanner.html">Modularized (block) PET scanner geometry</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../index.html#high-level-pet-sinogram-projector-examples">High-level PET sinogram projector examples</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../index.html#high-level-pet-listmode-projector-examples">High-level PET listmode projector examples</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../index.html#low-level-projection-examples">Low-level projection examples</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../index.html#iterative-algorithm-examples">Iterative algorithm examples</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../index.html#iterative-listmode-algorithm-examples">Iterative listmode algorithm examples</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../index.html#parallelproj-pytorch-examples">Parallelproj pytorch examples</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Python API</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../python_api.html">Low-level projector interface <code class="docutils literal notranslate"><span class="pre">parallelproj.backend</span></code></a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../python_api.html#module-parallelproj.pet_scanners">PET scanner geometries <code class="docutils literal notranslate"><span class="pre">parallelproj.pet_scanners</span></code></a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../python_api.html#module-parallelproj.pet_lors">PET LOR / sinogram descriptors <code class="docutils literal notranslate"><span class="pre">parallelproj.pet_lors</span></code></a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../python_api.html#module-parallelproj.tof">PET TOF parameters <code class="docutils literal notranslate"><span class="pre">parallelproj.tof</span></code></a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../python_api.html#module-parallelproj.projectors">PET projectors <code class="docutils literal notranslate"><span class="pre">parallelproj.projectors</span></code></a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../python_api.html#module-parallelproj.operators">Linear operators <code class="docutils literal notranslate"><span class="pre">parallelproj.operators</span></code></a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">C/CUDA lib API</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../libparallelproj_c.html">libparallelproj_c</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../libparallelproj_cuda.html">libparallelproj_cuda</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../cuda_kernels.html">cuda projector kernels</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">parallelproj</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Examples</a></li>
+      <li class="breadcrumb-item active">LOR descriptors and sinogram definition</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../../_sources/auto_examples/01_pet_geometry/02_run_regular_polygon_pet_sino.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <div class="sphx-glr-download-link-note admonition note">
+<p class="admonition-title">Note</p>
+<p><a class="reference internal" href="#sphx-glr-download-auto-examples-01-pet-geometry-02-run-regular-polygon-pet-sino-py"><span class="std std-ref">Go to the end</span></a>
+to download the full example code.</p>
+</div>
+<section class="sphx-glr-example-title" id="lor-descriptors-and-sinogram-definition">
+<span id="sphx-glr-auto-examples-01-pet-geometry-02-run-regular-polygon-pet-sino-py"></span><h1>LOR descriptors and sinogram definition<a class="headerlink" href="#lor-descriptors-and-sinogram-definition" title="Link to this heading"></a></h1>
+<p>In a scanner with “cylindrical symmetry”, all possible lines of response (LORs)
+between two LOR endpoints can be sorted into a sinogram containing a radial,
+view and plane dimension.
+This example shows how this can be done using the <a class="reference internal" href="../../python_api.html#parallelproj.pet_lors.RegularPolygonPETLORDescriptor" title="parallelproj.pet_lors.RegularPolygonPETLORDescriptor"><code class="xref py py-class docutils literal notranslate"><span class="pre">RegularPolygonPETLORDescriptor</span></code></a></p>
+<div class="admonition tip">
+<p class="admonition-title">Tip</p>
+<p>parallelproj is python array API compatible meaning it supports different
+array backends (e.g. numpy, cupy, torch, …) and devices (CPU or GPU).
+Choose your preferred array API <code class="docutils literal notranslate"><span class="pre">xp</span></code> and device <code class="docutils literal notranslate"><span class="pre">dev</span></code> below.</p>
+</div>
+<a class="reference external image-reference" href="https://mybinder.org/v2/gh/gschramm/parallelproj/master?labpath=examples"><img alt="https://mybinder.org/badge_logo.svg" src="https://mybinder.org/badge_logo.svg" />
+</a>
+<div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><span class="linenos">20</span> <span class="kn">import</span> <span class="nn">array_api_compat.numpy</span> <span class="k">as</span> <span class="nn">xp</span>
+<span class="linenos">21</span>
+<span class="linenos">22</span> <span class="c1"># import array_api_compat.cupy as xp</span>
+<span class="linenos">23</span> <span class="c1"># import array_api_compat.torch as xp</span>
+<span class="linenos">24</span>
+<span class="linenos">25</span> <span class="kn">import</span> <span class="nn">parallelproj</span>
+<span class="linenos">26</span> <span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+<span class="linenos">27</span>
+<span class="linenos">28</span> <span class="c1"># choose a device (CPU or CUDA GPU)</span>
+<span class="linenos">29</span> <span class="k">if</span> <span class="s2">&quot;numpy&quot;</span> <span class="ow">in</span> <span class="n">xp</span><span class="o">.</span><span class="vm">__name__</span><span class="p">:</span>
+<span class="linenos">30</span>     <span class="c1"># using numpy, device must be cpu</span>
+<span class="linenos">31</span>     <a href="https://docs.python.org/3/library/stdtypes.html#str" title="builtins.str" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">dev</span></a> <span class="o">=</span> <span class="s2">&quot;cpu&quot;</span>
+<span class="linenos">32</span> <span class="k">elif</span> <span class="s2">&quot;cupy&quot;</span> <span class="ow">in</span> <span class="n">xp</span><span class="o">.</span><span class="vm">__name__</span><span class="p">:</span>
+<span class="linenos">33</span>     <span class="c1"># using cupy, only cuda devices are possible</span>
+<span class="linenos">34</span>     <a href="https://docs.python.org/3/library/stdtypes.html#str" title="builtins.str" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">dev</span></a> <span class="o">=</span> <span class="n">xp</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">Device</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="linenos">35</span> <span class="k">elif</span> <span class="s2">&quot;torch&quot;</span> <span class="ow">in</span> <span class="n">xp</span><span class="o">.</span><span class="vm">__name__</span><span class="p">:</span>
+<span class="linenos">36</span>     <span class="c1"># using torch valid choices are &#39;cpu&#39; or &#39;cuda&#39;</span>
+<span class="linenos">37</span>     <a href="https://docs.python.org/3/library/stdtypes.html#str" title="builtins.str" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">dev</span></a> <span class="o">=</span> <span class="s2">&quot;cuda&quot;</span>
+</pre></div>
+</div>
+<p>setup a small regular polygon PET scanner with 5 rings (polygons)</p>
+<div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><span class="linenos">43</span> <a href="https://docs.python.org/3/library/functions.html#int" title="builtins.int" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">num_rings</span></a> <span class="o">=</span> <span class="mi">5</span>
+<span class="linenos">44</span> <span class="n">scanner</span> <span class="o">=</span> <span class="n">parallelproj</span><span class="o">.</span><span class="n">RegularPolygonPETScannerGeometry</span><span class="p">(</span>
+<span class="linenos">45</span>     <span class="n">xp</span><span class="p">,</span>
+<span class="linenos">46</span>     <a href="https://docs.python.org/3/library/stdtypes.html#str" title="builtins.str" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">dev</span></a><span class="p">,</span>
+<span class="linenos">47</span>     <span class="n">radius</span><span class="o">=</span><span class="mf">65.0</span><span class="p">,</span>
+<span class="linenos">48</span>     <span class="n">num_sides</span><span class="o">=</span><span class="mi">12</span><span class="p">,</span>
+<span class="linenos">49</span>     <span class="n">num_lor_endpoints_per_side</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span>
+<span class="linenos">50</span>     <span class="n">lor_spacing</span><span class="o">=</span><span class="mf">8.0</span><span class="p">,</span>
+<span class="linenos">51</span>     <span class="n">ring_positions</span><span class="o">=</span><span class="n">xp</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="o">-</span><span class="mi">8</span><span class="p">,</span> <span class="mi">8</span><span class="p">,</span> <a href="https://docs.python.org/3/library/functions.html#int" title="builtins.int" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">num_rings</span></a><span class="p">),</span>
+<span class="linenos">52</span>     <span class="n">symmetry_axis</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+<span class="linenos">53</span> <span class="p">)</span>
+</pre></div>
+</div>
+<section id="defining-a-sinogram-using-an-lor-descriptor">
+<h2>Defining a sinogram using an LOR descriptor<a class="headerlink" href="#defining-a-sinogram-using-an-lor-descriptor" title="Link to this heading"></a></h2>
+<p><a class="reference internal" href="../../python_api.html#parallelproj.pet_lors.RegularPolygonPETLORDescriptor" title="parallelproj.pet_lors.RegularPolygonPETLORDescriptor"><code class="xref py py-class docutils literal notranslate"><span class="pre">RegularPolygonPETLORDescriptor</span></code></a> can be used to order all possible
+combinations of LOR endpoints into a sinogram with a radial, view and plane dimension.</p>
+<p><cite>max_ring_difference</cite> defines the maximum ring (polygon) difference between of a valid LOR
+and <cite>radial_trim</cite> defines the number of radial bins to be trimmed from the sinogram edges.</p>
+<p><cite>sinogram_order</cite> of type <a class="reference internal" href="../../python_api.html#parallelproj.pet_lors.SinogramSpatialAxisOrder" title="parallelproj.pet_lors.SinogramSpatialAxisOrder"><code class="xref py py-class docutils literal notranslate"><span class="pre">SinogramSpatialAxisOrder</span></code></a> defines the order of the sinogram dimensions
+(e.g. RVP -&gt; [radial, view, plane], PRV -&gt; [plane, radial, view])</p>
+<div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><span class="linenos">68</span> <span class="n">lor_desc1</span> <span class="o">=</span> <a href="https://docs.python.org/3/library/abc.html#abc.ABC" title="abc.ABC" class="sphx-glr-backref-module-abc sphx-glr-backref-type-py-class"><span class="n">parallelproj</span><span class="o">.</span><span class="n">RegularPolygonPETLORDescriptor</span></a><span class="p">(</span>
+<span class="linenos">69</span>     <span class="n">scanner</span><span class="p">,</span>
+<span class="linenos">70</span>     <span class="n">radial_trim</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span>
+<span class="linenos">71</span>     <span class="n">max_ring_difference</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
+<span class="linenos">72</span>     <span class="n">sinogram_order</span><span class="o">=</span><span class="n">parallelproj</span><span class="o">.</span><span class="n">SinogramSpatialAxisOrder</span><span class="o">.</span><span class="n">RVP</span><span class="p">,</span>
+<span class="linenos">73</span> <span class="p">)</span>
+<span class="linenos">74</span>
+<span class="linenos">75</span> <span class="nb">print</span><span class="p">(</span><span class="n">lor_desc1</span><span class="p">)</span>
+<span class="linenos">76</span> <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;sinogram order: </span><span class="si">{</span><span class="n">lor_desc1</span><span class="o">.</span><span class="n">sinogram_order</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="linenos">77</span> <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;sinogram shape: </span><span class="si">{</span><span class="n">lor_desc1</span><span class="o">.</span><span class="n">spatial_sinogram_shape</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="linenos">78</span> <span class="nb">print</span><span class="p">(</span>
+<span class="linenos">79</span>     <span class="sa">f</span><span class="s2">&quot;num rad: </span><span class="si">{</span><span class="n">lor_desc1</span><span class="o">.</span><span class="n">num_rad</span><span class="si">}</span><span class="s2">  num views: </span><span class="si">{</span><span class="n">lor_desc1</span><span class="o">.</span><span class="n">num_views</span><span class="si">}</span><span class="s2">  num planes: </span><span class="si">{</span><span class="n">lor_desc1</span><span class="o">.</span><span class="n">num_planes</span><span class="si">}</span><span class="s2">&quot;</span>
+<span class="linenos">80</span> <span class="p">)</span>
+<span class="linenos">81</span> <span class="nb">print</span><span class="p">(</span>
+<span class="linenos">82</span>     <span class="sa">f</span><span class="s2">&quot;radial axis num: </span><span class="si">{</span><span class="n">lor_desc1</span><span class="o">.</span><span class="n">radial_axis_num</span><span class="si">}</span><span class="s2">  view axis num: </span><span class="si">{</span><span class="n">lor_desc1</span><span class="o">.</span><span class="n">view_axis_num</span><span class="si">}</span><span class="s2">  plane axis num: </span><span class="si">{</span><span class="n">lor_desc1</span><span class="o">.</span><span class="n">plane_axis_num</span><span class="si">}</span><span class="s2">&quot;</span>
+<span class="linenos">83</span> <span class="p">)</span>
+</pre></div>
+</div>
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>RegularPolygonPETLORDescriptor with spatial sinogram shape (29R, 24V, 19P)
+sinogram order: RVP
+sinogram shape: (29, 24, 19)
+num rad: 29  num views: 24  num planes: 19
+radial axis num: 0  view axis num: 1  plane axis num: 2
+</pre></div>
+</div>
+<p>Define a 2nd LOR descriptor with sinogram order “PRV”</p>
+<div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><span class="linenos"> 88</span> <span class="n">lor_desc2</span> <span class="o">=</span> <a href="https://docs.python.org/3/library/abc.html#abc.ABC" title="abc.ABC" class="sphx-glr-backref-module-abc sphx-glr-backref-type-py-class"><span class="n">parallelproj</span><span class="o">.</span><span class="n">RegularPolygonPETLORDescriptor</span></a><span class="p">(</span>
+<span class="linenos"> 89</span>     <span class="n">scanner</span><span class="p">,</span>
+<span class="linenos"> 90</span>     <span class="n">radial_trim</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span>
+<span class="linenos"> 91</span>     <span class="n">max_ring_difference</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
+<span class="linenos"> 92</span>     <span class="n">sinogram_order</span><span class="o">=</span><span class="n">parallelproj</span><span class="o">.</span><span class="n">SinogramSpatialAxisOrder</span><span class="o">.</span><span class="n">PRV</span><span class="p">,</span>
+<span class="linenos"> 93</span> <span class="p">)</span>
+<span class="linenos"> 94</span>
+<span class="linenos"> 95</span> <span class="nb">print</span><span class="p">(</span><span class="n">lor_desc2</span><span class="p">)</span>
+<span class="linenos"> 96</span> <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;sinogram order: </span><span class="si">{</span><span class="n">lor_desc2</span><span class="o">.</span><span class="n">sinogram_order</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="linenos"> 97</span> <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;sinogram shape: </span><span class="si">{</span><span class="n">lor_desc2</span><span class="o">.</span><span class="n">spatial_sinogram_shape</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="linenos"> 98</span> <span class="nb">print</span><span class="p">(</span>
+<span class="linenos"> 99</span>     <span class="sa">f</span><span class="s2">&quot;num rad: </span><span class="si">{</span><span class="n">lor_desc2</span><span class="o">.</span><span class="n">num_rad</span><span class="si">}</span><span class="s2">  num views: </span><span class="si">{</span><span class="n">lor_desc2</span><span class="o">.</span><span class="n">num_views</span><span class="si">}</span><span class="s2">  num planes: </span><span class="si">{</span><span class="n">lor_desc2</span><span class="o">.</span><span class="n">num_planes</span><span class="si">}</span><span class="s2">&quot;</span>
+<span class="linenos">100</span> <span class="p">)</span>
+<span class="linenos">101</span> <span class="nb">print</span><span class="p">(</span>
+<span class="linenos">102</span>     <span class="sa">f</span><span class="s2">&quot;radial axis num: </span><span class="si">{</span><span class="n">lor_desc2</span><span class="o">.</span><span class="n">radial_axis_num</span><span class="si">}</span><span class="s2">  view axis num: </span><span class="si">{</span><span class="n">lor_desc2</span><span class="o">.</span><span class="n">view_axis_num</span><span class="si">}</span><span class="s2">  plane axis num: </span><span class="si">{</span><span class="n">lor_desc2</span><span class="o">.</span><span class="n">plane_axis_num</span><span class="si">}</span><span class="s2">&quot;</span>
+<span class="linenos">103</span> <span class="p">)</span>
+</pre></div>
+</div>
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>RegularPolygonPETLORDescriptor with spatial sinogram shape (19P, 29R, 24V)
+sinogram order: PRV
+sinogram shape: (19, 29, 24)
+num rad: 29  num views: 24  num planes: 19
+radial axis num: 1  view axis num: 2  plane axis num: 0
+</pre></div>
+</div>
+</section>
+<section id="obtaining-world-coordinates-of-lor-start-and-endpoints">
+<h2>Obtaining world coordinates of LOR start and endpoints<a class="headerlink" href="#obtaining-world-coordinates-of-lor-start-and-endpoints" title="Link to this heading"></a></h2>
+<p>Every LOR is defined by two LOR endpoints.
+<a class="reference internal" href="../../python_api.html#parallelproj.pet_lors.RegularPolygonPETLORDescriptor.get_lor_coordinates" title="parallelproj.pet_lors.RegularPolygonPETLORDescriptor.get_lor_coordinates"><code class="xref py py-meth docutils literal notranslate"><span class="pre">RegularPolygonPETLORDescriptor.get_lor_coordinates()</span></code></a> can be used to
+to obtain the 3 world coordinates of them (for all views or a subset of
+views).</p>
+<div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><span class="linenos">114</span> <span class="n">lor_start_points1</span><span class="p">,</span> <span class="n">lor_end_points1</span> <span class="o">=</span> <span class="n">lor_desc1</span><span class="o">.</span><span class="n">get_lor_coordinates</span><span class="p">()</span>
+<span class="linenos">115</span> <span class="nb">print</span><span class="p">(</span><a href="https://docs.python.org/3/library/stdtypes.html#tuple" title="builtins.tuple" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">lor_start_points1</span><span class="o">.</span><span class="n">shape</span></a><span class="p">,</span> <a href="https://docs.python.org/3/library/stdtypes.html#tuple" title="builtins.tuple" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">lor_end_points1</span><span class="o">.</span><span class="n">shape</span></a><span class="p">)</span>
+<span class="linenos">116</span>
+<span class="linenos">117</span> <span class="c1"># print the start and end coordinates of the LOR corresponding to the 1st view</span>
+<span class="linenos">118</span> <span class="c1"># the 2nd plane and the 3rd radial bin</span>
+<span class="linenos">119</span> <span class="nb">print</span><span class="p">(</span><span class="n">lor_start_points1</span><span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="p">:])</span>
+<span class="linenos">120</span> <span class="nb">print</span><span class="p">(</span><span class="n">lor_end_points1</span><span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="p">:])</span>
+</pre></div>
+</div>
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>(29, 24, 19, 3) (29, 24, 19, 3)
+[54.29165 -4.      35.9641 ]
+[ 29.03592   -4.       -58.291637]
+</pre></div>
+</div>
+<p>Do the same for the 2nd LOR descriptor that uses sinogram order “PRV”
+<strong>The indexing has to be different compared to “RVP” to get the same LOR.</strong></p>
+<div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><span class="linenos">126</span> <span class="n">lor_start_points2</span><span class="p">,</span> <span class="n">lor_end_points2</span> <span class="o">=</span> <span class="n">lor_desc2</span><span class="o">.</span><span class="n">get_lor_coordinates</span><span class="p">()</span>
+<span class="linenos">127</span> <span class="nb">print</span><span class="p">(</span><a href="https://docs.python.org/3/library/stdtypes.html#tuple" title="builtins.tuple" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">lor_start_points2</span><span class="o">.</span><span class="n">shape</span></a><span class="p">,</span> <a href="https://docs.python.org/3/library/stdtypes.html#tuple" title="builtins.tuple" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">lor_end_points2</span><span class="o">.</span><span class="n">shape</span></a><span class="p">)</span>
+<span class="linenos">128</span>
+<span class="linenos">129</span> <span class="c1"># print the start and end coordinates of the LOR corresponding to the 1st view</span>
+<span class="linenos">130</span> <span class="c1"># the 2nd plane and the 3rd radial bin</span>
+<span class="linenos">131</span> <span class="nb">print</span><span class="p">(</span><span class="n">lor_start_points2</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="p">:])</span>
+<span class="linenos">132</span> <span class="nb">print</span><span class="p">(</span><span class="n">lor_end_points2</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="p">:])</span>
+</pre></div>
+</div>
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>(19, 29, 24, 3) (19, 29, 24, 3)
+[54.29165 -4.      35.9641 ]
+[ 29.03592   -4.       -58.291637]
+</pre></div>
+</div>
+</section>
+<section id="definition-of-plane-numbers">
+<h2>Definition of plane numbers<a class="headerlink" href="#definition-of-plane-numbers" title="Link to this heading"></a></h2>
+<p>The plane number definition corresponds to a span 1 Michelogram.</p>
+<div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><span class="linenos">140</span> <span class="k">for</span> <a href="https://docs.python.org/3/library/functions.html#int" title="builtins.int" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">i</span></a> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">lor_desc1</span><span class="o">.</span><span class="n">num_planes</span><span class="p">):</span>
+<span class="linenos">141</span>     <span class="n">st_pl</span> <span class="o">=</span> <span class="n">lor_desc1</span><span class="o">.</span><span class="n">start_plane_index</span><span class="p">[</span><a href="https://docs.python.org/3/library/functions.html#int" title="builtins.int" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">i</span></a><span class="p">]</span>
+<span class="linenos">142</span>     <span class="n">end_pl</span> <span class="o">=</span> <span class="n">lor_desc1</span><span class="o">.</span><span class="n">end_plane_index</span><span class="p">[</span><a href="https://docs.python.org/3/library/functions.html#int" title="builtins.int" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">i</span></a><span class="p">]</span>
+<span class="linenos">143</span>     <span class="nb">print</span><span class="p">(</span>
+<span class="linenos">144</span>         <span class="sa">f</span><span class="s2">&quot;plane num: </span><span class="si">{</span><a href="https://docs.python.org/3/library/functions.html#int" title="builtins.int" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">i</span></a><span class="si">:</span><span class="s2">02</span><span class="si">}</span><span class="s2"> - start ring </span><span class="si">{</span><span class="n">st_pl</span><span class="si">}</span><span class="s2"> - end ring </span><span class="si">{</span><span class="n">end_pl</span><span class="si">}</span><span class="s2"> - ring diff. </span><span class="si">{</span><span class="p">(</span><span class="n">end_pl</span><span class="o">-</span><span class="n">st_pl</span><span class="p">)</span><span class="si">:</span><span class="s2">&gt;2</span><span class="si">}</span><span class="s2">&quot;</span>
+<span class="linenos">145</span>     <span class="p">)</span>
+</pre></div>
+</div>
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>plane num: 00 - start ring 0 - end ring 0 - ring diff.  0
+plane num: 01 - start ring 1 - end ring 1 - ring diff.  0
+plane num: 02 - start ring 2 - end ring 2 - ring diff.  0
+plane num: 03 - start ring 3 - end ring 3 - ring diff.  0
+plane num: 04 - start ring 4 - end ring 4 - ring diff.  0
+plane num: 05 - start ring 0 - end ring 1 - ring diff.  1
+plane num: 06 - start ring 1 - end ring 2 - ring diff.  1
+plane num: 07 - start ring 2 - end ring 3 - ring diff.  1
+plane num: 08 - start ring 3 - end ring 4 - ring diff.  1
+plane num: 09 - start ring 1 - end ring 0 - ring diff. -1
+plane num: 10 - start ring 2 - end ring 1 - ring diff. -1
+plane num: 11 - start ring 3 - end ring 2 - ring diff. -1
+plane num: 12 - start ring 4 - end ring 3 - ring diff. -1
+plane num: 13 - start ring 0 - end ring 2 - ring diff.  2
+plane num: 14 - start ring 1 - end ring 3 - ring diff.  2
+plane num: 15 - start ring 2 - end ring 4 - ring diff.  2
+plane num: 16 - start ring 2 - end ring 0 - ring diff. -2
+plane num: 17 - start ring 3 - end ring 1 - ring diff. -2
+plane num: 18 - start ring 4 - end ring 2 - ring diff. -2
+</pre></div>
+</div>
+</section>
+<section id="visualize-the-defined-lor-endpoints">
+<h2>Visualize the defined LOR endpoints<a class="headerlink" href="#visualize-the-defined-lor-endpoints" title="Link to this heading"></a></h2>
+<p><a class="reference internal" href="../../python_api.html#parallelproj.pet_scanners.RegularPolygonPETScannerGeometry.show_lor_endpoints" title="parallelproj.pet_scanners.RegularPolygonPETScannerGeometry.show_lor_endpoints"><code class="xref py py-meth docutils literal notranslate"><span class="pre">RegularPolygonPETScannerGeometry.show_lor_endpoints()</span></code></a> can be used
+to visualize the defined LOR endpoints. Note that a zig-zag sampling pattern
+is used to define a view.</p>
+<div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><span class="linenos">155</span> <span class="n">fig</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">16</span><span class="p">,</span> <span class="mi">8</span><span class="p">),</span> <span class="n">tight_layout</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="linenos">156</span> <span class="n">ax1</span> <span class="o">=</span> <span class="n">fig</span><span class="o">.</span><span class="n">add_subplot</span><span class="p">(</span><span class="mi">121</span><span class="p">,</span> <span class="n">projection</span><span class="o">=</span><span class="s2">&quot;3d&quot;</span><span class="p">)</span>
+<span class="linenos">157</span> <span class="n">ax2</span> <span class="o">=</span> <span class="n">fig</span><span class="o">.</span><span class="n">add_subplot</span><span class="p">(</span><span class="mi">122</span><span class="p">,</span> <span class="n">projection</span><span class="o">=</span><span class="s2">&quot;3d&quot;</span><span class="p">)</span>
+<span class="linenos">158</span> <span class="n">scanner</span><span class="o">.</span><span class="n">show_lor_endpoints</span><span class="p">(</span><span class="n">ax1</span><span class="p">)</span>
+<span class="linenos">159</span> <span class="n">lor_desc1</span><span class="o">.</span><span class="n">show_views</span><span class="p">(</span>
+<span class="linenos">160</span>     <span class="n">ax1</span><span class="p">,</span>
+<span class="linenos">161</span>     <span class="n">views</span><span class="o">=</span><span class="n">xp</span><span class="o">.</span><span class="n">asarray</span><span class="p">([</span><span class="mi">0</span><span class="p">],</span> <span class="n">device</span><span class="o">=</span><a href="https://docs.python.org/3/library/stdtypes.html#str" title="builtins.str" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">dev</span></a><span class="p">),</span>
+<span class="linenos">162</span>     <span class="n">planes</span><span class="o">=</span><span class="n">xp</span><span class="o">.</span><span class="n">asarray</span><span class="p">([</span><a href="https://docs.python.org/3/library/functions.html#int" title="builtins.int" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">num_rings</span></a> <span class="o">//</span> <span class="mi">2</span><span class="p">],</span> <span class="n">device</span><span class="o">=</span><a href="https://docs.python.org/3/library/stdtypes.html#str" title="builtins.str" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">dev</span></a><span class="p">),</span>
+<span class="linenos">163</span>     <span class="n">lw</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span>
+<span class="linenos">164</span>     <span class="n">color</span><span class="o">=</span><span class="s2">&quot;k&quot;</span><span class="p">,</span>
+<span class="linenos">165</span> <span class="p">)</span>
+<span class="linenos">166</span> <span class="n">ax1</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;view 0, plane </span><span class="si">{</span><a href="https://docs.python.org/3/library/functions.html#int" title="builtins.int" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">num_rings</span></a><span class="w"> </span><span class="o">//</span><span class="w"> </span><span class="mi">2</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="linenos">167</span> <span class="n">scanner</span><span class="o">.</span><span class="n">show_lor_endpoints</span><span class="p">(</span><span class="n">ax2</span><span class="p">)</span>
+<span class="linenos">168</span> <span class="n">lor_desc1</span><span class="o">.</span><span class="n">show_views</span><span class="p">(</span>
+<span class="linenos">169</span>     <span class="n">ax2</span><span class="p">,</span>
+<span class="linenos">170</span>     <span class="n">views</span><span class="o">=</span><span class="n">xp</span><span class="o">.</span><span class="n">asarray</span><span class="p">([</span><span class="n">lor_desc1</span><span class="o">.</span><span class="n">num_views</span> <span class="o">//</span> <span class="mi">2</span><span class="p">],</span> <span class="n">device</span><span class="o">=</span><a href="https://docs.python.org/3/library/stdtypes.html#str" title="builtins.str" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">dev</span></a><span class="p">),</span>
+<span class="linenos">171</span>     <span class="n">planes</span><span class="o">=</span><span class="n">xp</span><span class="o">.</span><span class="n">asarray</span><span class="p">([</span><span class="n">lor_desc1</span><span class="o">.</span><span class="n">num_planes</span> <span class="o">-</span> <span class="mi">1</span><span class="p">],</span> <span class="n">device</span><span class="o">=</span><a href="https://docs.python.org/3/library/stdtypes.html#str" title="builtins.str" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">dev</span></a><span class="p">),</span>
+<span class="linenos">172</span>     <span class="n">lw</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span>
+<span class="linenos">173</span>     <span class="n">color</span><span class="o">=</span><span class="s2">&quot;k&quot;</span><span class="p">,</span>
+<span class="linenos">174</span> <span class="p">)</span>
+<span class="linenos">175</span> <span class="n">ax2</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;view </span><span class="si">{</span><span class="n">lor_desc1</span><span class="o">.</span><span class="n">num_views</span><span class="w"> </span><span class="o">//</span><span class="w"> </span><span class="mi">2</span><span class="si">}</span><span class="s2">, plane </span><span class="si">{</span><span class="n">lor_desc1</span><span class="o">.</span><span class="n">num_planes</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="mi">1</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="linenos">176</span> <span class="n">fig</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+<img src="../../_images/sphx_glr_02_run_regular_polygon_pet_sino_001.png" srcset="../../_images/sphx_glr_02_run_regular_polygon_pet_sino_001.png" alt="view 0, plane 2, view 12, plane 18" class = "sphx-glr-single-img"/></section>
+<section id="defining-sinograms-in-open-pet-scanner-geometries">
+<h2>Defining sinograms in open PET scanner geometries<a class="headerlink" href="#defining-sinograms-in-open-pet-scanner-geometries" title="Link to this heading"></a></h2>
+<p><a class="reference internal" href="../../python_api.html#parallelproj.pet_lors.RegularPolygonPETLORDescriptor" title="parallelproj.pet_lors.RegularPolygonPETLORDescriptor"><code class="xref py py-class docutils literal notranslate"><span class="pre">RegularPolygonPETLORDescriptor</span></code></a> can also be used with
+“open” PET scanner geometries. Note, however, that the definition
+of “views” is not trivial due to the presence of “missing” sides (gaps).
+The view definition still uses the “zig-zag” sampling which leads to
+unconvential (very non-parallel) views in the sinogram as shown below.</p>
+<div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><span class="linenos">188</span> <span class="n">open_scanner</span> <span class="o">=</span> <span class="n">parallelproj</span><span class="o">.</span><span class="n">RegularPolygonPETScannerGeometry</span><span class="p">(</span>
+<span class="linenos">189</span>     <span class="n">xp</span><span class="p">,</span>
+<span class="linenos">190</span>     <a href="https://docs.python.org/3/library/stdtypes.html#str" title="builtins.str" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">dev</span></a><span class="p">,</span>
+<span class="linenos">191</span>     <span class="n">radius</span><span class="o">=</span><span class="mf">65.0</span><span class="p">,</span>
+<span class="linenos">192</span>     <span class="n">num_sides</span><span class="o">=</span><span class="mi">6</span><span class="p">,</span>
+<span class="linenos">193</span>     <span class="n">num_lor_endpoints_per_side</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span>
+<span class="linenos">194</span>     <span class="n">lor_spacing</span><span class="o">=</span><span class="mf">8.0</span><span class="p">,</span>
+<span class="linenos">195</span>     <span class="n">ring_positions</span><span class="o">=</span><span class="n">xp</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="o">-</span><span class="mi">8</span><span class="p">,</span> <span class="mi">8</span><span class="p">,</span> <a href="https://docs.python.org/3/library/functions.html#int" title="builtins.int" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">num_rings</span></a><span class="p">),</span>
+<span class="linenos">196</span>     <span class="n">symmetry_axis</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+<span class="linenos">197</span>     <span class="n">phis</span><span class="o">=</span><span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <a href="https://docs.python.org/3/library/functions.html#float" title="builtins.float" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">xp</span><span class="o">.</span><span class="n">pi</span></a> <span class="o">/</span> <span class="mi">12</span><span class="p">)</span> <span class="o">*</span> <span class="n">xp</span><span class="o">.</span><span class="n">asarray</span><span class="p">([</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">6</span><span class="p">,</span> <span class="mi">7</span><span class="p">]),</span>
+<span class="linenos">198</span> <span class="p">)</span>
+<span class="linenos">199</span>
+<span class="linenos">200</span> <span class="n">open_lor_desc</span> <span class="o">=</span> <a href="https://docs.python.org/3/library/abc.html#abc.ABC" title="abc.ABC" class="sphx-glr-backref-module-abc sphx-glr-backref-type-py-class"><span class="n">parallelproj</span><span class="o">.</span><span class="n">RegularPolygonPETLORDescriptor</span></a><span class="p">(</span>
+<span class="linenos">201</span>     <span class="n">open_scanner</span><span class="p">,</span>
+<span class="linenos">202</span>     <span class="n">radial_trim</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+<span class="linenos">203</span>     <span class="n">sinogram_order</span><span class="o">=</span><span class="n">parallelproj</span><span class="o">.</span><span class="n">SinogramSpatialAxisOrder</span><span class="o">.</span><span class="n">RVP</span><span class="p">,</span>
+<span class="linenos">204</span> <span class="p">)</span>
+<span class="linenos">205</span>
+<span class="linenos">206</span> <span class="n">fig2</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">16</span><span class="p">,</span> <span class="mi">8</span><span class="p">),</span> <span class="n">tight_layout</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="linenos">207</span> <span class="n">ax2a</span> <span class="o">=</span> <span class="n">fig2</span><span class="o">.</span><span class="n">add_subplot</span><span class="p">(</span><span class="mi">121</span><span class="p">,</span> <span class="n">projection</span><span class="o">=</span><span class="s2">&quot;3d&quot;</span><span class="p">)</span>
+<span class="linenos">208</span> <span class="n">ax2b</span> <span class="o">=</span> <span class="n">fig2</span><span class="o">.</span><span class="n">add_subplot</span><span class="p">(</span><span class="mi">122</span><span class="p">,</span> <span class="n">projection</span><span class="o">=</span><span class="s2">&quot;3d&quot;</span><span class="p">)</span>
+<span class="linenos">209</span> <span class="n">open_scanner</span><span class="o">.</span><span class="n">show_lor_endpoints</span><span class="p">(</span><span class="n">ax2a</span><span class="p">)</span>
+<span class="linenos">210</span> <span class="n">open_lor_desc</span><span class="o">.</span><span class="n">show_views</span><span class="p">(</span>
+<span class="linenos">211</span>     <span class="n">ax2a</span><span class="p">,</span>
+<span class="linenos">212</span>     <span class="n">views</span><span class="o">=</span><span class="n">xp</span><span class="o">.</span><span class="n">asarray</span><span class="p">([</span><span class="mi">0</span><span class="p">],</span> <span class="n">device</span><span class="o">=</span><a href="https://docs.python.org/3/library/stdtypes.html#str" title="builtins.str" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">dev</span></a><span class="p">),</span>
+<span class="linenos">213</span>     <span class="n">planes</span><span class="o">=</span><span class="n">xp</span><span class="o">.</span><span class="n">asarray</span><span class="p">([</span><a href="https://docs.python.org/3/library/functions.html#int" title="builtins.int" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">num_rings</span></a> <span class="o">//</span> <span class="mi">2</span><span class="p">],</span> <span class="n">device</span><span class="o">=</span><a href="https://docs.python.org/3/library/stdtypes.html#str" title="builtins.str" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">dev</span></a><span class="p">),</span>
+<span class="linenos">214</span>     <span class="n">lw</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span>
+<span class="linenos">215</span>     <span class="n">color</span><span class="o">=</span><span class="s2">&quot;k&quot;</span><span class="p">,</span>
+<span class="linenos">216</span> <span class="p">)</span>
+<span class="linenos">217</span> <span class="n">ax2a</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;view 0, plane </span><span class="si">{</span><a href="https://docs.python.org/3/library/functions.html#int" title="builtins.int" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">num_rings</span></a><span class="w"> </span><span class="o">//</span><span class="w"> </span><span class="mi">2</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="linenos">218</span> <span class="n">open_scanner</span><span class="o">.</span><span class="n">show_lor_endpoints</span><span class="p">(</span><span class="n">ax2b</span><span class="p">)</span>
+<span class="linenos">219</span> <span class="n">open_lor_desc</span><span class="o">.</span><span class="n">show_views</span><span class="p">(</span>
+<span class="linenos">220</span>     <span class="n">ax2b</span><span class="p">,</span>
+<span class="linenos">221</span>     <span class="n">views</span><span class="o">=</span><span class="n">xp</span><span class="o">.</span><span class="n">asarray</span><span class="p">([</span><span class="n">open_lor_desc</span><span class="o">.</span><span class="n">num_views</span> <span class="o">//</span> <span class="mi">2</span><span class="p">],</span> <span class="n">device</span><span class="o">=</span><a href="https://docs.python.org/3/library/stdtypes.html#str" title="builtins.str" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">dev</span></a><span class="p">),</span>
+<span class="linenos">222</span>     <span class="n">planes</span><span class="o">=</span><span class="n">xp</span><span class="o">.</span><span class="n">asarray</span><span class="p">([</span><a href="https://docs.python.org/3/library/functions.html#int" title="builtins.int" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">num_rings</span></a> <span class="o">//</span> <span class="mi">2</span><span class="p">],</span> <span class="n">device</span><span class="o">=</span><a href="https://docs.python.org/3/library/stdtypes.html#str" title="builtins.str" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">dev</span></a><span class="p">),</span>
+<span class="linenos">223</span>     <span class="n">lw</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span>
+<span class="linenos">224</span>     <span class="n">color</span><span class="o">=</span><span class="s2">&quot;k&quot;</span><span class="p">,</span>
+<span class="linenos">225</span> <span class="p">)</span>
+<span class="linenos">226</span> <span class="n">ax2b</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;view </span><span class="si">{</span><span class="n">open_lor_desc</span><span class="o">.</span><span class="n">num_views</span><span class="w"> </span><span class="o">//</span><span class="w"> </span><span class="mi">2</span><span class="si">}</span><span class="s2">, plane </span><span class="si">{</span><a href="https://docs.python.org/3/library/functions.html#int" title="builtins.int" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">num_rings</span></a><span class="w"> </span><span class="o">//</span><span class="w"> </span><span class="mi">2</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="linenos">227</span> <span class="n">fig2</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+<img src="../../_images/sphx_glr_02_run_regular_polygon_pet_sino_002.png" srcset="../../_images/sphx_glr_02_run_regular_polygon_pet_sino_002.png" alt="view 0, plane 2, view 6, plane 2" class = "sphx-glr-single-img"/><p class="sphx-glr-timing"><strong>Total running time of the script:</strong> (0 minutes 0.553 seconds)</p>
+<div class="sphx-glr-footer sphx-glr-footer-example docutils container" id="sphx-glr-download-auto-examples-01-pet-geometry-02-run-regular-polygon-pet-sino-py">
+<div class="sphx-glr-download sphx-glr-download-jupyter docutils container">
+<p><a class="reference download internal" download="" href="../../_downloads/2aaff5488b0e5a0b405dcebffe5d12a4/02_run_regular_polygon_pet_sino.ipynb"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Jupyter</span> <span class="pre">notebook:</span> <span class="pre">02_run_regular_polygon_pet_sino.ipynb</span></code></a></p>
+</div>
+<div class="sphx-glr-download sphx-glr-download-python docutils container">
+<p><a class="reference download internal" download="" href="../../_downloads/e4a4b02060dfb046349b889f4c226ed5/02_run_regular_polygon_pet_sino.py"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Python</span> <span class="pre">source</span> <span class="pre">code:</span> <span class="pre">02_run_regular_polygon_pet_sino.py</span></code></a></p>
+</div>
+<div class="sphx-glr-download sphx-glr-download-zip docutils container">
+<p><a class="reference download internal" download="" href="../../_downloads/faf959d865beb3f2e77c9ee7f3d5ad79/02_run_regular_polygon_pet_sino.zip"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">zipped:</span> <span class="pre">02_run_regular_polygon_pet_sino.zip</span></code></a></p>
+</div>
+</div>
+<p class="rubric">Related examples</p>
+<div class="sphx-glr-thumbnails"><div class="sphx-glr-thumbcontainer" tooltip="This example demonstrates the use of the MLEM algorithm to minimize the negative Poisson log-likelihood function using &quot;sinogram&quot; data from an open PET geometry."><img alt="" src="../../_images/sphx_glr_07_run_mlem_open_geometry_thumb.png" />
+<p><a class="reference internal" href="../05_algorithms/07_run_mlem_open_geometry.html#sphx-glr-auto-examples-05-algorithms-07-run-mlem-open-geometry-py"><span class="std std-ref">MLEM with projection data of an open PET geometry</span></a></p>
+  <div class="sphx-glr-thumbnail-title">MLEM with projection data of an open PET geometry</div>
+</div><div class="sphx-glr-thumbcontainer" tooltip="This example shows how to create and visualize PET scanners where the LOR endpoints can be modeled as a stack of regular polygons."><img alt="" src="../../_images/sphx_glr_01_run_regular_polygon_pet_scanner_thumb.png" />
+<p><a class="reference internal" href="01_run_regular_polygon_pet_scanner.html#sphx-glr-auto-examples-01-pet-geometry-01-run-regular-polygon-pet-scanner-py"><span class="std std-ref">Regular polygon PET scanner geometry</span></a></p>
+  <div class="sphx-glr-thumbnail-title">Regular polygon PET scanner geometry</div>
+</div><div class="sphx-glr-thumbcontainer" tooltip="This example demonstrates the use of the MLEM algorithm to minimize the negative Poisson log-likelihood function."><img alt="" src="../../_images/sphx_glr_04_run_osem_projection_data_thumb.gif" />
+<p><a class="reference internal" href="../05_algorithms/04_run_osem_projection_data.html#sphx-glr-auto-examples-05-algorithms-04-run-osem-projection-data-py"><span class="std std-ref">TOF OSEM with projection data</span></a></p>
+  <div class="sphx-glr-thumbnail-title">TOF OSEM with projection data</div>
+</div><div class="sphx-glr-thumbcontainer" tooltip="In this example we will show how to setup and use a PET sinogram projector consisting of a geometrical forward projector (Joseph&#x27;s method),  a resolution model and a correction for attenuation."><img alt="" src="../../_images/sphx_glr_01_run_pet_non_tof_sinogram_projector_thumb.png" />
+<p><a class="reference internal" href="../02_pet_sinogram_projections/01_run_pet_non_tof_sinogram_projector.html#sphx-glr-auto-examples-02-pet-sinogram-projections-01-run-pet-non-tof-sinogram-projector-py"><span class="std std-ref">PET non-TOF sinogram projector</span></a></p>
+  <div class="sphx-glr-thumbnail-title">PET non-TOF sinogram projector</div>
+</div></div><p class="sphx-glr-signature"><a class="reference external" href="https://sphinx-gallery.github.io">Gallery generated by Sphinx-Gallery</a></p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="01_run_regular_polygon_pet_scanner.html" class="btn btn-neutral float-left" title="Regular polygon PET scanner geometry" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="03_run_block_scanner.html" class="btn btn-neutral float-right" title="Modularized (block) PET scanner geometry" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2023, Georg Schramm.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  
+<div class="rst-versions" data-toggle="rst-versions" role="note" aria-label="versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    <span class="fa fa-book"> Other Versions</span>
+    v: master
+    <span class="fa fa-caret-down"></span>
+  </span>
+  <div class="rst-other-versions">
+    <dl>
+      <dt>Tags</dt>
+      <dd><a href="../../../v1.10.0/index.html">v1.10.0</a></dd>
+    </dl>
+    <dl>
+      <dt>Branches</dt>
+      <dd><a href="02_run_regular_polygon_pet_sino.html">master</a></dd>
+    </dl>
+  </div>
+</div><script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+    <!-- Theme Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-WFK38K0TGS"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+
+      gtag('config', 'G-WFK38K0TGS', {
+          'anonymize_ip': true,
+      });
+    </script> 
+
+</body>
+</html>
