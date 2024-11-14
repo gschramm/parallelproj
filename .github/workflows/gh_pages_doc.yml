@@ -32,12 +32,28 @@ jobs:
       - run: |
           sphinx-multiversion docs/source _build/html
 
-      - name: Create 'stable' version
+      - name: Create 'stable' version if deploying
         if: github.event_name == 'push' && (github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/tags/'))
         run: |
-          latest_tag=$(git tag --sort=-v:refname | head -n 1)
-          echo "Latest tag is: $latest_tag"
-          cp -r _build/html/$latest_tag _build/html/stable
+          if [ "$(git tag)" ]; then
+            latest_tag=$(git tag --sort=-v:refname | head -n 1)
+            echo "Latest tag is: $latest_tag"
+            cp -r _build/html/$latest_tag _build/html/stable
+            redirect_target="stable/index.html"
+          else
+            echo "No tags found. Using 'master' as fallback."
+            redirect_target="master/index.html"
+          fi
+          echo '<!DOCTYPE html>' > _build/html/index.html
+          echo '<html>' >> _build/html/index.html
+          echo '<head>' >> _build/html/index.html
+          echo '  <meta http-equiv="refresh" content="0; url='$redirect_target'">' >> _build/html/index.html
+          echo '  <title>Redirecting...</title>' >> _build/html/index.html
+          echo '</head>' >> _build/html/index.html
+          echo '<body>' >> _build/html/index.html
+          echo '  <p>If you are not redirected automatically, follow this <a href="'$redirect_target'">link to the documentation</a>.</p>' >> _build/html/index.html
+          echo '</body>' >> _build/html/index.html
+          echo '</html>' >> _build/html/index.html
 
       - name: Deploy to GitHub Pages
         if: github.event_name == 'push' && (github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/tags/'))
