@@ -58,7 +58,9 @@ intersphinx_disabled_domains = ["std"]
 
 
 sphinx_gallery_conf = {
-    "examples_dirs": ["../../examples"],
+    "examples_dirs": [
+        os.path.abspath(os.path.join(os.path.dirname(__file__), "../../examples"))
+    ],
     "filename_pattern": r"/\d{2}_run_",
     "example_extensions": {".py"},
     "run_stale_examples": True,
