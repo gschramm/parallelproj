@@ -20,10 +20,13 @@ jobs:
       - name: Set up Miniconda
         uses: conda-incubator/setup-miniconda@v3
         with:
-          auto-update-conda: true
+          miniforge-version: latest
           python-version: 3.12 # Specify the Python version compatible with your environment
           environment-file: docs/environment.yml # Use your environment.yml to install dependencies
           activate-environment: readthedocs # Name from environment.yml
+          auto-activate-base: false
+        #with:
+        #  auto-update-conda: true
       - run: |
           conda info
           conda list
