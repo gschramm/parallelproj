@@ -122,9 +122,13 @@ html_sidebars = {
 # }
 
 # sphinx multiversion settings
-smv_tag_whitelist = r"^v\d+\.\d+$"  # Include tags like v1.0, v2.1, etc.
-smv_branch_whitelist = r"^master|stable$"  # Include specific branches
+smv_tag_whitelist = r"^.*"  # Include tags like v1.0, v2.1, etc.
 smv_latest_version = "master"
+
+smv_branch_whitelist = r"^master|stable$"  # Include specific branches
+# Allow all branches when building in a PR context
+if os.environ.get("GITHUB_EVENT_NAME") == "pull_request":
+    smv_branch_whitelist = r".*"
 
 # -- Options for EPUB output -------------------------------------------------
 epub_show_urls = "footnote"
