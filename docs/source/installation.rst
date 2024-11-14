@@ -61,18 +61,32 @@ To install parallelproj and pytorch (optional) from conda-forge, run
 
 .. tab-set::
 
-    .. tab-item:: mamba
+    .. tab-item:: mamba, pytorch with CUDA support
+
+        .. code-block:: console
+        
+           $ mamba install libparallelproj parallelproj pytorch cupy "numpy<2"
+
+    .. tab-item:: mamba, pytorch without CUDA support
 
         .. code-block:: console
         
            $ mamba install libparallelproj parallelproj pytorch "numpy<2"
 
-    .. tab-item:: conda
+    .. tab-item:: conda pytorch with CUDA support
+
+        .. code-block:: console
+        
+           $ conda install -c conda-forge libparallelproj parallelproj pytorch cupy "numpy<2"
+
+    .. tab-item:: conda pytorch without CUDA support
 
         .. code-block:: console
         
            $ conda install -c conda-forge libparallelproj parallelproj pytorch "numpy<2"
 
+Note that in case you want to use parallelproj with pytorch GPU tensors, cupy must be installed
+next to pytorch as well, as shown in tabs above.
 
 .. note::
    In case you are interested in the compiled projection libraries, but not in the python interface, you can install the **libparallelproj** package from conda-forge.
