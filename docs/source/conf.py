@@ -45,7 +45,7 @@ extensions = [
     "sphinx_multiversion",
 ]
 
-bibtex_bibfiles = ["refs.bib"]
+bibtex_bibfiles = [os.path.abspath(os.path.join(os.path.dirname(__file__), "refs.bib"))]
 templates_path = ["_templates"]
 exclude_patterns = []
 
@@ -124,7 +124,9 @@ html_sidebars = {
 # }
 
 # sphinx multiversion settings
-smv_tag_whitelist = r"^.*"  # Include tags like v1.0, v2.1, etc.
+smv_tag_whitelist = (
+    r"^v(1\.(1[0-9]|[2-9][0-9])\.\d+|[2-9]\d*\.\d+\.\d+)$"  # build versions >= v1.10.0
+)
 smv_latest_version = "master"
 
 smv_branch_whitelist = r"^master|stable$"  # Include specific branches
