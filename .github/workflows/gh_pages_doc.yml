@@ -27,18 +27,8 @@ jobs:
           environment-file: docs/environment.yml # Use your environment.yml to install dependencies
           activate-environment: readthedocs # Name from environment.yml
           auto-activate-base: false
-        #with:
-        #  auto-update-conda: true
       - run: |
-          conda info
-          conda list
           sphinx-multiversion docs/source _build/html
-
-      #- name: Install Sphinx multiversion extension
-      #  run: conda install -c conda-forge sphinx-multiversion
-
-      #- name: Build documentation
-      #  run: sphinx-multiversion docs/source _build/html
 
       # Conditional deployment step
       - name: Deploy to GitHub Pages
