@@ -1,0 +1,41 @@
+name: Build and Deploy docs to GH pages
+
+on:
+  push:
+    branches:
+      - master
+    tags:
+      - "v*"
+  pull_request:
+    branches: ["master"]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash -el {0}
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0 # Fetch all history for all branches and tags
+
+      - name: Set up Miniconda
+        uses: conda-incubator/setup-miniconda@v3
+        with:
+          miniforge-version: latest
+          python-version: 3.12 # Specify the Python version compatible with your environment
+          environment-file: docs/environment.yml # Use your environment.yml to install dependencies
+          activate-environment: readthedocs # Name from environment.yml
+          auto-activate-base: false
+      - run: |
+          sphinx-multiversion docs/source _build/html
+
+      # Conditional deployment step
+      - name: Deploy to GitHub Pages
+        if: github.event_name == 'push' # Only run on push to main branch, not on PRs
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: _build/html

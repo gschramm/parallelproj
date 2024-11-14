@@ -16,6 +16,9 @@ from sphinx_gallery.sorting import FileNameSortKey
 with open("../../pyproject.toml", "rb") as f:
     project_data = tomllib.load(f)["project"]
 
+# Set the base directory
+docs_dir = os.path.abspath(os.path.dirname(__file__))
+
 # -- Project information -----------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 
@@ -39,9 +42,10 @@ extensions = [
     "sphinx_design",
     "sphinx_copybutton",
     "sphinxcontrib.bibtex",
+    "sphinx_multiversion",
 ]
 
-bibtex_bibfiles = ["refs.bib"]
+bibtex_bibfiles = [os.path.abspath(os.path.join(os.path.dirname(__file__), "refs.bib"))]
 templates_path = ["_templates"]
 exclude_patterns = []
 
@@ -54,7 +58,9 @@ intersphinx_disabled_domains = ["std"]
 
 
 sphinx_gallery_conf = {
-    "examples_dirs": ["../../examples"],
+    "examples_dirs": [
+        os.path.abspath(os.path.join(os.path.dirname(__file__), "../../examples"))
+    ],
     "filename_pattern": r"/\d{2}_run_",
     "example_extensions": {".py"},
     "run_stale_examples": True,
@@ -75,20 +81,23 @@ sphinx_gallery_conf = {
     "line_numbers": True,
     "recommender": {"enable": True, "n_examples": 4},
     "matplotlib_animations": True,
-    "default_thumb_file": "./parallelproj-thumbnail.png",
+    "default_thumb_file": os.path.join(
+        docs_dir, "_static", "parallelproj-thumbnail.png"
+    ),
 }
 
 # -- Options for HTML output -------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
 
+html_static_path = ["_static"]
 html_theme = "sphinx_rtd_theme"
-html_logo = "parallelproj-logo.svg"
+html_logo = os.path.join(docs_dir, "_static", "parallelproj-logo.svg")
 
 html_theme_options = {
     "analytics_id": "G-WFK38K0TGS",
     "analytics_anonymize_ip": True,
     "logo_only": True,
-    "display_version": True,
+    # "display_version": True,
     "prev_next_buttons_location": "bottom",
     "style_external_links": False,
     "vcs_pageview_mode": "",
@@ -101,12 +110,29 @@ html_theme_options = {
     "titles_only": False,
 }
 
+html_sidebars = {
+    "**": [
+        "versioning.html",
+    ],
+}
+
 # html_context = {
 #  'display_github': True,
 #  'github_user': 'gschramm',
 #  'github_repo': 'parallelproj',
 #  'github_version': 'master/docs/source/',
 # }
+
+# sphinx multiversion settings
+smv_tag_whitelist = (
+    r"^v(1\.(1[0-9]|[2-9][0-9])\.\d+|[2-9]\d*\.\d+\.\d+)$"  # build versions >= v1.10.0
+)
+smv_latest_version = "master"
+
+smv_branch_whitelist = r"^master|stable$"  # Include specific branches
+# Allow all branches when building in a PR context
+if os.environ.get("GITHUB_EVENT_NAME") == "pull_request":
+    smv_branch_whitelist = r".*"
 
 # -- Options for EPUB output -------------------------------------------------
 epub_show_urls = "footnote"
