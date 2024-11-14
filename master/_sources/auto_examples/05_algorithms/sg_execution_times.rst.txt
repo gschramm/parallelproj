@@ -6,7 +6,7 @@
 
 Computation times
 =================
-**00:58.396** total execution time for 7 files **from auto_examples/05_algorithms**:
+**00:58.655** total execution time for 7 files **from auto_examples/05_algorithms**:
 
 .. container::
 
@@ -33,23 +33,23 @@ Computation times
      - Time
      - Mem (MB)
    * - :ref:`sphx_glr_auto_examples_05_algorithms_03_run_mlem_projection_data.py` (``03_run_mlem_projection_data.py``)
-     - 00:36.786
+     - 00:36.936
      - 0.0
    * - :ref:`sphx_glr_auto_examples_05_algorithms_05_run_fbp.py` (``05_run_fbp.py``)
-     - 00:11.628
+     - 00:11.647
      - 0.0
    * - :ref:`sphx_glr_auto_examples_05_algorithms_04_run_osem_projection_data.py` (``04_run_osem_projection_data.py``)
-     - 00:08.372
+     - 00:08.414
      - 0.0
    * - :ref:`sphx_glr_auto_examples_05_algorithms_07_run_mlem_open_geometry.py` (``07_run_mlem_open_geometry.py``)
-     - 00:00.820
+     - 00:00.843
      - 0.0
    * - :ref:`sphx_glr_auto_examples_05_algorithms_01_run_mlem_basic.py` (``01_run_mlem_basic.py``)
-     - 00:00.334
+     - 00:00.348
      - 0.0
    * - :ref:`sphx_glr_auto_examples_05_algorithms_02_run_osem_basic.py` (``02_run_osem_basic.py``)
-     - 00:00.328
+     - 00:00.334
      - 0.0
    * - :ref:`sphx_glr_auto_examples_05_algorithms_06_run_depierro.py` (``06_run_depierro.py``)
-     - 00:00.128
+     - 00:00.133
      - 0.0

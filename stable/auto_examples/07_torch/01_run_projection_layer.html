@@ -1,0 +1,674 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>pytorch parallelproj projection layer &mdash; parallelproj 1.10.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../../_static/copybutton.css?v=76b2166b" />
+      <link rel="stylesheet" type="text/css" href="../../_static/sg_gallery.css?v=d2d258e8" />
+      <link rel="stylesheet" type="text/css" href="../../_static/sg_gallery-binder.css?v=f4aeca0c" />
+      <link rel="stylesheet" type="text/css" href="../../_static/sg_gallery-dataframe.css?v=2082cf3c" />
+      <link rel="stylesheet" type="text/css" href="../../_static/sg_gallery-rendered-html.css?v=1277b6f3" />
+      <link rel="stylesheet" type="text/css" href="../../_static/sphinx-design.min.css?v=95c83b7e" />
+
+  
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../_static/documentation_options.js?v=1d24b1d9"></script>
+      <script src="../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../_static/clipboard.min.js?v=a7894cd8"></script>
+      <script src="../../_static/copybutton.js?v=f281be69"></script>
+      <script src="../../_static/design-tabs.js?v=f930bc37"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="Low-level projector interface parallelproj.backend" href="../../python_api.html" />
+    <link rel="prev" title="PDHG and LM-SPHG to optimize the Poisson logL and total variation" href="../06_listmode_algorithms/03_lm_spdhg.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html">
+            
+              <img src="../../_static/parallelproj-logo.svg" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Getting started</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../installation.html">Installation</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../index.html">Examples</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../index.html#pet-scanner-and-sinogram-geometry-examples">PET scanner and sinogram geometry examples</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../index.html#high-level-pet-sinogram-projector-examples">High-level PET sinogram projector examples</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../index.html#high-level-pet-listmode-projector-examples">High-level PET listmode projector examples</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../index.html#low-level-projection-examples">Low-level projection examples</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../index.html#iterative-algorithm-examples">Iterative algorithm examples</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../index.html#iterative-listmode-algorithm-examples">Iterative listmode algorithm examples</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="../index.html#parallelproj-pytorch-examples">Parallelproj pytorch examples</a><ul class="current">
+<li class="toctree-l3 current"><a class="current reference internal" href="#">pytorch parallelproj projection layer</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#setup-the-forward-projection-layer">Setup the forward projection layer</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#setup-the-back-projection-layer">Setup the back projection layer</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#setup-a-minimal-non-tof-pet-projector">Setup a minimal non-TOF PET projector</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#define-a-mini-batch-of-input-and-output-tensors">Define a mini batch of input and output tensors</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#define-the-forward-and-backward-projection-layers">Define the forward and backward projection layers</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#define-a-dummy-loss-function-and-trigger-the-backpropagation">Define a dummy loss function and trigger the backpropagation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#check-whether-the-gradients-are-calculated-correctly">Check whether the gradients are calculated correctly</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#visualize-the-scanner-geometry-and-image-fov">Visualize the scanner geometry and image FOV</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Python API</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../python_api.html">Low-level projector interface <code class="docutils literal notranslate"><span class="pre">parallelproj.backend</span></code></a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../python_api.html#module-parallelproj.pet_scanners">PET scanner geometries <code class="docutils literal notranslate"><span class="pre">parallelproj.pet_scanners</span></code></a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../python_api.html#module-parallelproj.pet_lors">PET LOR / sinogram descriptors <code class="docutils literal notranslate"><span class="pre">parallelproj.pet_lors</span></code></a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../python_api.html#module-parallelproj.tof">PET TOF parameters <code class="docutils literal notranslate"><span class="pre">parallelproj.tof</span></code></a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../python_api.html#module-parallelproj.projectors">PET projectors <code class="docutils literal notranslate"><span class="pre">parallelproj.projectors</span></code></a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../python_api.html#module-parallelproj.operators">Linear operators <code class="docutils literal notranslate"><span class="pre">parallelproj.operators</span></code></a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">C/CUDA lib API</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../libparallelproj_c.html">libparallelproj_c</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../libparallelproj_cuda.html">libparallelproj_cuda</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../cuda_kernels.html">cuda projector kernels</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">parallelproj</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Examples</a></li>
+      <li class="breadcrumb-item active">pytorch parallelproj projection layer</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../../_sources/auto_examples/07_torch/01_run_projection_layer.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <div class="sphx-glr-download-link-note admonition note">
+<p class="admonition-title">Note</p>
+<p><a class="reference internal" href="#sphx-glr-download-auto-examples-07-torch-01-run-projection-layer-py"><span class="std std-ref">Go to the end</span></a>
+to download the full example code.</p>
+</div>
+<section class="sphx-glr-example-title" id="pytorch-parallelproj-projection-layer">
+<span id="sphx-glr-auto-examples-07-torch-01-run-projection-layer-py"></span><h1>pytorch parallelproj projection layer<a class="headerlink" href="#pytorch-parallelproj-projection-layer" title="Link to this heading"></a></h1>
+<p>In this example, we show how to define a custom pytorch layer that can be used
+to define a feed forward neural network that includes a parallelproj forward and back
+backward projections (or any <a class="reference internal" href="../../python_api.html#parallelproj.operators.LinearOperator" title="parallelproj.operators.LinearOperator"><code class="xref py py-class docutils literal notranslate"><span class="pre">LinearOperator</span></code></a>) that can be used with pytorch’s
+autograd engine.</p>
+<a class="reference external image-reference" href="https://mybinder.org/v2/gh/gschramm/parallelproj/master?labpath=examples"><img alt="https://mybinder.org/badge_logo.svg" src="https://mybinder.org/badge_logo.svg" />
+</a>
+<div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><span class="linenos">16</span> <span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">annotations</span>
+<span class="linenos">17</span>
+<span class="linenos">18</span> <span class="kn">import</span> <span class="nn">array_api_compat.torch</span> <span class="k">as</span> <span class="nn">torch</span>
+<span class="linenos">19</span> <span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+<span class="linenos">20</span> <span class="kn">import</span> <span class="nn">parallelproj</span>
+<span class="linenos">21</span> <span class="kn">from</span> <span class="nn">array_api_compat</span> <span class="kn">import</span> <span class="n">device</span>
+<span class="linenos">22</span>
+<span class="linenos">23</span>
+<span class="linenos">24</span> <span class="c1"># device variable (cpu or cuda) that determines whether calculations</span>
+<span class="linenos">25</span> <span class="c1"># are performed on the cpu or cuda gpu</span>
+<span class="linenos">26</span> <span class="k">if</span> <a href="https://docs.python.org/3/library/functions.html#bool" title="builtins.bool" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">parallelproj</span><span class="o">.</span><span class="n">cuda_present</span></a><span class="p">:</span>
+<span class="linenos">27</span>     <a href="https://docs.python.org/3/library/stdtypes.html#str" title="builtins.str" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">dev</span></a> <span class="o">=</span> <span class="s2">&quot;cuda&quot;</span>
+<span class="linenos">28</span> <span class="k">else</span><span class="p">:</span>
+<span class="linenos">29</span>     <a href="https://docs.python.org/3/library/stdtypes.html#str" title="builtins.str" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">dev</span></a> <span class="o">=</span> <span class="s2">&quot;cpu&quot;</span>
+</pre></div>
+</div>
+<section id="setup-the-forward-projection-layer">
+<h2>Setup the forward projection layer<a class="headerlink" href="#setup-the-forward-projection-layer" title="Link to this heading"></a></h2>
+<p>We subclass <a class="reference external" href="https://pytorch.org/docs/stable/autograd.html#torch.autograd.Function" title="(in PyTorch v2.5)"><code class="xref py py-class docutils literal notranslate"><span class="pre">torch.autograd.Function</span></code></a> to define a custom pytorch layer
+that is compatible with pytorch’s autograd engine.
+see also: <a class="reference external" href="https://pytorch.org/tutorials/beginner/examples_autograd/two_layer_net_custom_function.html">https://pytorch.org/tutorials/beginner/examples_autograd/two_layer_net_custom_function.html</a></p>
+<div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><span class="linenos"> 40</span> <span class="k">class</span> <span class="nc">LinearSingleChannelOperator</span><span class="p">(</span><a href="https://pytorch.org/docs/stable/autograd.html#torch.autograd.Function" title="torch.autograd.Function" class="sphx-glr-backref-module-torch-autograd sphx-glr-backref-type-py-class"><span class="n">torch</span><span class="o">.</span><span class="n">autograd</span><span class="o">.</span><span class="n">Function</span></a><span class="p">):</span>
+<span class="linenos"> 41</span><span class="w">     </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="linenos"> 42</span><span class="sd">     Function representing a linear operator acting on a mini batch of single channel images</span>
+<span class="linenos"> 43</span><span class="sd">     &quot;&quot;&quot;</span>
+<span class="linenos"> 44</span>
+<span class="linenos"> 45</span>     <span class="nd">@staticmethod</span>
+<span class="linenos"> 46</span>     <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span>
+<span class="linenos"> 47</span>         <span class="n">ctx</span><span class="p">,</span> <a href="https://pytorch.org/docs/stable/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">x</span></a><span class="p">:</span> <a href="https://pytorch.org/docs/stable/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class"><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span></a><span class="p">,</span> <span class="n">operator</span><span class="p">:</span> <a href="https://docs.python.org/3/library/abc.html#abc.ABC" title="abc.ABC" class="sphx-glr-backref-module-abc sphx-glr-backref-type-py-class"><span class="n">parallelproj</span><span class="o">.</span><span class="n">LinearOperator</span></a>
+<span class="linenos"> 48</span>     <span class="p">)</span> <span class="o">-&gt;</span> <a href="https://pytorch.org/docs/stable/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class"><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span></a><span class="p">:</span>
+<span class="linenos"> 49</span><span class="w">         </span><span class="sd">&quot;&quot;&quot;forward pass of the linear operator</span>
+<span class="linenos"> 50</span>
+<span class="linenos"> 51</span><span class="sd">         Parameters</span>
+<span class="linenos"> 52</span><span class="sd">         ----------</span>
+<span class="linenos"> 53</span><span class="sd">         ctx : context object</span>
+<span class="linenos"> 54</span><span class="sd">             that can be used to store information for the backward pass</span>
+<span class="linenos"> 55</span><span class="sd">         x : torch.Tensor</span>
+<span class="linenos"> 56</span><span class="sd">             mini batch of 3D images with dimension (batch_size, 1, num_voxels_x, num_voxels_y, num_voxels_z)</span>
+<span class="linenos"> 57</span><span class="sd">         operator : parallelproj.LinearOperator</span>
+<span class="linenos"> 58</span><span class="sd">             linear operator that can act on a single 3D image</span>
+<span class="linenos"> 59</span>
+<span class="linenos"> 60</span><span class="sd">         Returns</span>
+<span class="linenos"> 61</span><span class="sd">         -------</span>
+<span class="linenos"> 62</span><span class="sd">         torch.Tensor</span>
+<span class="linenos"> 63</span><span class="sd">             mini batch of 3D images with dimension (batch_size, opertor.out_shape)</span>
+<span class="linenos"> 64</span><span class="sd">         &quot;&quot;&quot;</span>
+<span class="linenos"> 65</span>
+<span class="linenos"> 66</span>         <span class="c1"># https://pytorch.org/docs/stable/notes/extending.html#how-to-use</span>
+<span class="linenos"> 67</span>         <span class="n">ctx</span><span class="o">.</span><span class="n">set_materialize_grads</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span>
+<span class="linenos"> 68</span>         <span class="n">ctx</span><span class="o">.</span><span class="n">operator</span> <span class="o">=</span> <span class="n">operator</span>
+<span class="linenos"> 69</span>
+<span class="linenos"> 70</span>         <a href="https://docs.python.org/3/library/functions.html#int" title="builtins.int" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">batch_size</span></a> <span class="o">=</span> <a href="https://pytorch.org/docs/stable/size.html#torch.Size" title="torch.Size" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">x</span><span class="o">.</span><span class="n">shape</span></a><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+<span class="linenos"> 71</span>         <a href="https://pytorch.org/docs/stable/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">y</span></a> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span>
+<span class="linenos"> 72</span>             <span class="p">(</span><a href="https://docs.python.org/3/library/functions.html#int" title="builtins.int" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">batch_size</span></a><span class="p">,)</span> <span class="o">+</span> <span class="n">operator</span><span class="o">.</span><span class="n">out_shape</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><a href="https://pytorch.org/docs/stable/tensor_attributes.html#torch.dtype" title="torch.dtype" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">x</span><span class="o">.</span><span class="n">dtype</span></a><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">(</span><a href="https://pytorch.org/docs/stable/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">x</span></a><span class="p">)</span>
+<span class="linenos"> 73</span>         <span class="p">)</span>
+<span class="linenos"> 74</span>
+<span class="linenos"> 75</span>         <span class="c1"># loop over all samples in the batch and apply linear operator</span>
+<span class="linenos"> 76</span>         <span class="c1"># to the first channel</span>
+<span class="linenos"> 77</span>         <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><a href="https://docs.python.org/3/library/functions.html#int" title="builtins.int" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">batch_size</span></a><span class="p">):</span>
+<span class="linenos"> 78</span>             <a href="https://pytorch.org/docs/stable/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">y</span></a><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span> <span class="o">=</span> <span class="n">operator</span><span class="p">(</span><a href="https://pytorch.org/docs/stable/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">x</span></a><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span><span class="o">.</span><span class="n">detach</span><span class="p">())</span>
+<span class="linenos"> 79</span>
+<span class="linenos"> 80</span>         <span class="k">return</span> <a href="https://pytorch.org/docs/stable/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">y</span></a>
+<span class="linenos"> 81</span>
+<span class="linenos"> 82</span>     <span class="nd">@staticmethod</span>
+<span class="linenos"> 83</span>     <span class="k">def</span> <span class="nf">backward</span><span class="p">(</span><span class="n">ctx</span><span class="p">,</span> <span class="n">grad_output</span><span class="p">:</span> <a href="https://pytorch.org/docs/stable/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class"><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span></a><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><a href="https://pytorch.org/docs/stable/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class"><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span></a><span class="p">,</span> <span class="kc">None</span><span class="p">]:</span>
+<span class="linenos"> 84</span><span class="w">         </span><span class="sd">&quot;&quot;&quot;backward pass of the forward pass</span>
+<span class="linenos"> 85</span>
+<span class="linenos"> 86</span><span class="sd">         Parameters</span>
+<span class="linenos"> 87</span><span class="sd">         ----------</span>
+<span class="linenos"> 88</span><span class="sd">         ctx : context object</span>
+<span class="linenos"> 89</span><span class="sd">             that can be used to obtain information from the forward pass</span>
+<span class="linenos"> 90</span><span class="sd">         grad_output : torch.Tensor</span>
+<span class="linenos"> 91</span><span class="sd">             mini batch of dimension (batch_size, operator.out_shape)</span>
+<span class="linenos"> 92</span>
+<span class="linenos"> 93</span><span class="sd">         Returns</span>
+<span class="linenos"> 94</span><span class="sd">         -------</span>
+<span class="linenos"> 95</span><span class="sd">         torch.Tensor, None</span>
+<span class="linenos"> 96</span><span class="sd">             mini batch of 3D images with dimension (batch_size, 1, opertor.in_shape)</span>
+<span class="linenos"> 97</span><span class="sd">         &quot;&quot;&quot;</span>
+<span class="linenos"> 98</span>
+<span class="linenos"> 99</span>         <span class="c1"># For details on how to implement the backward pass, see</span>
+<span class="linenos">100</span>         <span class="c1"># https://pytorch.org/docs/stable/notes/extending.html#how-to-use</span>
+<span class="linenos">101</span>
+<span class="linenos">102</span>         <span class="c1"># since forward takes two input arguments (x, operator)</span>
+<span class="linenos">103</span>         <span class="c1"># we have to return two arguments (the latter is None)</span>
+<span class="linenos">104</span>         <span class="k">if</span> <span class="n">grad_output</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+<span class="linenos">105</span>             <span class="k">return</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span>
+<span class="linenos">106</span>         <span class="k">else</span><span class="p">:</span>
+<span class="linenos">107</span>             <span class="n">operator</span> <span class="o">=</span> <span class="n">ctx</span><span class="o">.</span><span class="n">operator</span>
+<span class="linenos">108</span>
+<span class="linenos">109</span>             <a href="https://docs.python.org/3/library/functions.html#int" title="builtins.int" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">batch_size</span></a> <span class="o">=</span> <span class="n">grad_output</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+<span class="linenos">110</span>             <a href="https://pytorch.org/docs/stable/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">x</span></a> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span>
+<span class="linenos">111</span>                 <span class="p">(</span><a href="https://docs.python.org/3/library/functions.html#int" title="builtins.int" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">batch_size</span></a><span class="p">,</span> <span class="mi">1</span><span class="p">)</span> <span class="o">+</span> <span class="n">operator</span><span class="o">.</span><span class="n">in_shape</span><span class="p">,</span>
+<span class="linenos">112</span>                 <span class="n">dtype</span><span class="o">=</span><span class="n">grad_output</span><span class="o">.</span><span class="n">dtype</span><span class="p">,</span>
+<span class="linenos">113</span>                 <span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">(</span><span class="n">grad_output</span><span class="p">),</span>
+<span class="linenos">114</span>             <span class="p">)</span>
+<span class="linenos">115</span>
+<span class="linenos">116</span>             <span class="c1"># loop over all samples in the batch and apply linear operator</span>
+<span class="linenos">117</span>             <span class="c1"># to the first channel</span>
+<span class="linenos">118</span>             <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><a href="https://docs.python.org/3/library/functions.html#int" title="builtins.int" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">batch_size</span></a><span class="p">):</span>
+<span class="linenos">119</span>                 <a href="https://pytorch.org/docs/stable/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">x</span></a><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span> <span class="o">=</span> <span class="n">operator</span><span class="o">.</span><span class="n">adjoint</span><span class="p">(</span><span class="n">grad_output</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span><span class="o">.</span><span class="n">detach</span><span class="p">())</span>
+<span class="linenos">120</span>
+<span class="linenos">121</span>             <span class="k">return</span> <a href="https://pytorch.org/docs/stable/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">x</span></a><span class="p">,</span> <span class="kc">None</span>
+</pre></div>
+</div>
+</section>
+<section id="setup-the-back-projection-layer">
+<h2>Setup the back projection layer<a class="headerlink" href="#setup-the-back-projection-layer" title="Link to this heading"></a></h2>
+<p>We subclass <a class="reference external" href="https://pytorch.org/docs/stable/autograd.html#torch.autograd.Function" title="(in PyTorch v2.5)"><code class="xref py py-class docutils literal notranslate"><span class="pre">torch.autograd.Function</span></code></a> to define a custom pytorch layer
+that is compatible with pytorch’s autograd engine.
+see also: <a class="reference external" href="https://pytorch.org/tutorials/beginner/examples_autograd/two_layer_net_custom_function.html">https://pytorch.org/tutorials/beginner/examples_autograd/two_layer_net_custom_function.html</a></p>
+<div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><span class="linenos">133</span> <span class="k">class</span> <span class="nc">AdjointLinearSingleChannelOperator</span><span class="p">(</span><a href="https://pytorch.org/docs/stable/autograd.html#torch.autograd.Function" title="torch.autograd.Function" class="sphx-glr-backref-module-torch-autograd sphx-glr-backref-type-py-class"><span class="n">torch</span><span class="o">.</span><span class="n">autograd</span><span class="o">.</span><span class="n">Function</span></a><span class="p">):</span>
+<span class="linenos">134</span><span class="w">     </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="linenos">135</span><span class="sd">     Function representing the adjoint of a linear operator acting on a mini batch of single channel images</span>
+<span class="linenos">136</span><span class="sd">     &quot;&quot;&quot;</span>
+<span class="linenos">137</span>
+<span class="linenos">138</span>     <span class="nd">@staticmethod</span>
+<span class="linenos">139</span>     <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span>
+<span class="linenos">140</span>         <span class="n">ctx</span><span class="p">,</span> <a href="https://pytorch.org/docs/stable/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">x</span></a><span class="p">:</span> <a href="https://pytorch.org/docs/stable/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class"><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span></a><span class="p">,</span> <span class="n">operator</span><span class="p">:</span> <a href="https://docs.python.org/3/library/abc.html#abc.ABC" title="abc.ABC" class="sphx-glr-backref-module-abc sphx-glr-backref-type-py-class"><span class="n">parallelproj</span><span class="o">.</span><span class="n">LinearOperator</span></a>
+<span class="linenos">141</span>     <span class="p">)</span> <span class="o">-&gt;</span> <a href="https://pytorch.org/docs/stable/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class"><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span></a><span class="p">:</span>
+<span class="linenos">142</span><span class="w">         </span><span class="sd">&quot;&quot;&quot;forward pass of the adjoint of the linear operator</span>
+<span class="linenos">143</span>
+<span class="linenos">144</span><span class="sd">         Parameters</span>
+<span class="linenos">145</span><span class="sd">         ----------</span>
+<span class="linenos">146</span><span class="sd">         ctx : context object</span>
+<span class="linenos">147</span><span class="sd">             that can be used to store information for the backward pass</span>
+<span class="linenos">148</span><span class="sd">         x : torch.Tensor</span>
+<span class="linenos">149</span><span class="sd">             mini batch of 3D images with dimension (batch_size, 1, operator.out_shape)</span>
+<span class="linenos">150</span><span class="sd">         operator : parallelproj.LinearOperator</span>
+<span class="linenos">151</span><span class="sd">             linear operator that can act on a single 3D image</span>
+<span class="linenos">152</span>
+<span class="linenos">153</span><span class="sd">         Returns</span>
+<span class="linenos">154</span><span class="sd">         -------</span>
+<span class="linenos">155</span><span class="sd">         torch.Tensor</span>
+<span class="linenos">156</span><span class="sd">             mini batch of 3D images with dimension (batch_size, 1, opertor.in_shape)</span>
+<span class="linenos">157</span><span class="sd">         &quot;&quot;&quot;</span>
+<span class="linenos">158</span>
+<span class="linenos">159</span>         <span class="n">ctx</span><span class="o">.</span><span class="n">set_materialize_grads</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span>
+<span class="linenos">160</span>         <span class="n">ctx</span><span class="o">.</span><span class="n">operator</span> <span class="o">=</span> <span class="n">operator</span>
+<span class="linenos">161</span>
+<span class="linenos">162</span>         <a href="https://docs.python.org/3/library/functions.html#int" title="builtins.int" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">batch_size</span></a> <span class="o">=</span> <a href="https://pytorch.org/docs/stable/size.html#torch.Size" title="torch.Size" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">x</span><span class="o">.</span><span class="n">shape</span></a><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+<span class="linenos">163</span>         <a href="https://pytorch.org/docs/stable/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">y</span></a> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span>
+<span class="linenos">164</span>             <span class="p">(</span><a href="https://docs.python.org/3/library/functions.html#int" title="builtins.int" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">batch_size</span></a><span class="p">,</span> <span class="mi">1</span><span class="p">)</span> <span class="o">+</span> <span class="n">operator</span><span class="o">.</span><span class="n">in_shape</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><a href="https://pytorch.org/docs/stable/tensor_attributes.html#torch.dtype" title="torch.dtype" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">x</span><span class="o">.</span><span class="n">dtype</span></a><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">(</span><a href="https://pytorch.org/docs/stable/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">x</span></a><span class="p">)</span>
+<span class="linenos">165</span>         <span class="p">)</span>
+<span class="linenos">166</span>
+<span class="linenos">167</span>         <span class="c1"># loop over all samples in the batch and apply linear operator</span>
+<span class="linenos">168</span>         <span class="c1"># to the first channel</span>
+<span class="linenos">169</span>         <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><a href="https://docs.python.org/3/library/functions.html#int" title="builtins.int" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">batch_size</span></a><span class="p">):</span>
+<span class="linenos">170</span>             <a href="https://pytorch.org/docs/stable/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">y</span></a><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span> <span class="o">=</span> <span class="n">operator</span><span class="o">.</span><span class="n">adjoint</span><span class="p">(</span><a href="https://pytorch.org/docs/stable/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">x</span></a><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span><span class="o">.</span><span class="n">detach</span><span class="p">())</span>
+<span class="linenos">171</span>
+<span class="linenos">172</span>         <span class="k">return</span> <a href="https://pytorch.org/docs/stable/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">y</span></a>
+<span class="linenos">173</span>
+<span class="linenos">174</span>     <span class="nd">@staticmethod</span>
+<span class="linenos">175</span>     <span class="k">def</span> <span class="nf">backward</span><span class="p">(</span><span class="n">ctx</span><span class="p">,</span> <span class="n">grad_output</span><span class="p">):</span>
+<span class="linenos">176</span><span class="w">         </span><span class="sd">&quot;&quot;&quot;backward pass of the forward pass</span>
+<span class="linenos">177</span>
+<span class="linenos">178</span><span class="sd">         Parameters</span>
+<span class="linenos">179</span><span class="sd">         ----------</span>
+<span class="linenos">180</span><span class="sd">         ctx : context object</span>
+<span class="linenos">181</span><span class="sd">             that can be used to obtain information from the forward pass</span>
+<span class="linenos">182</span><span class="sd">         grad_output : torch.Tensor</span>
+<span class="linenos">183</span><span class="sd">             mini batch of dimension (batch_size, 1, operator.in_shape)</span>
+<span class="linenos">184</span>
+<span class="linenos">185</span><span class="sd">         Returns</span>
+<span class="linenos">186</span><span class="sd">         -------</span>
+<span class="linenos">187</span><span class="sd">         torch.Tensor, None</span>
+<span class="linenos">188</span><span class="sd">             mini batch of 3D images with dimension (batch_size, 1, opertor.out_shape)</span>
+<span class="linenos">189</span><span class="sd">         &quot;&quot;&quot;</span>
+<span class="linenos">190</span>
+<span class="linenos">191</span>         <span class="c1"># For details on how to implement the backward pass, see</span>
+<span class="linenos">192</span>         <span class="c1"># https://pytorch.org/docs/stable/notes/extending.html#how-to-use</span>
+<span class="linenos">193</span>
+<span class="linenos">194</span>         <span class="c1"># since forward takes two input arguments (x, operator)</span>
+<span class="linenos">195</span>         <span class="c1"># we have to return two arguments (the latter is None)</span>
+<span class="linenos">196</span>         <span class="k">if</span> <span class="n">grad_output</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+<span class="linenos">197</span>             <span class="k">return</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span>
+<span class="linenos">198</span>         <span class="k">else</span><span class="p">:</span>
+<span class="linenos">199</span>             <span class="n">operator</span> <span class="o">=</span> <span class="n">ctx</span><span class="o">.</span><span class="n">operator</span>
+<span class="linenos">200</span>
+<span class="linenos">201</span>             <a href="https://docs.python.org/3/library/functions.html#int" title="builtins.int" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">batch_size</span></a> <span class="o">=</span> <span class="n">grad_output</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+<span class="linenos">202</span>             <a href="https://pytorch.org/docs/stable/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">x</span></a> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span>
+<span class="linenos">203</span>                 <span class="p">(</span><a href="https://docs.python.org/3/library/functions.html#int" title="builtins.int" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">batch_size</span></a><span class="p">,)</span> <span class="o">+</span> <span class="n">operator</span><span class="o">.</span><span class="n">out_shape</span><span class="p">,</span>
+<span class="linenos">204</span>                 <span class="n">dtype</span><span class="o">=</span><span class="n">grad_output</span><span class="o">.</span><span class="n">dtype</span><span class="p">,</span>
+<span class="linenos">205</span>                 <span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">(</span><span class="n">grad_output</span><span class="p">),</span>
+<span class="linenos">206</span>             <span class="p">)</span>
+<span class="linenos">207</span>
+<span class="linenos">208</span>             <span class="c1"># loop over all samples in the batch and apply linear operator</span>
+<span class="linenos">209</span>             <span class="c1"># to the first channel</span>
+<span class="linenos">210</span>             <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><a href="https://docs.python.org/3/library/functions.html#int" title="builtins.int" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">batch_size</span></a><span class="p">):</span>
+<span class="linenos">211</span>                 <a href="https://pytorch.org/docs/stable/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">x</span></a><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span> <span class="o">=</span> <span class="n">operator</span><span class="p">(</span><span class="n">grad_output</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span><span class="o">.</span><span class="n">detach</span><span class="p">())</span>
+<span class="linenos">212</span>
+<span class="linenos">213</span>             <span class="k">return</span> <a href="https://pytorch.org/docs/stable/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">x</span></a><span class="p">,</span> <span class="kc">None</span>
+</pre></div>
+</div>
+</section>
+<section id="setup-a-minimal-non-tof-pet-projector">
+<h2>Setup a minimal non-TOF PET projector<a class="headerlink" href="#setup-a-minimal-non-tof-pet-projector" title="Link to this heading"></a></h2>
+<p>We setup a minimal non-TOF PET projector of small scanner with
+three rings.</p>
+<div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><span class="linenos">223</span> <a href="https://docs.python.org/3/library/functions.html#int" title="builtins.int" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">num_rings</span></a> <span class="o">=</span> <span class="mi">3</span>
+<span class="linenos">224</span> <span class="n">scanner</span> <span class="o">=</span> <span class="n">parallelproj</span><span class="o">.</span><span class="n">RegularPolygonPETScannerGeometry</span><span class="p">(</span>
+<span class="linenos">225</span>     <span class="n">torch</span><span class="p">,</span>
+<span class="linenos">226</span>     <a href="https://docs.python.org/3/library/stdtypes.html#str" title="builtins.str" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">dev</span></a><span class="p">,</span>
+<span class="linenos">227</span>     <span class="n">radius</span><span class="o">=</span><span class="mf">35.0</span><span class="p">,</span>
+<span class="linenos">228</span>     <span class="n">num_sides</span><span class="o">=</span><span class="mi">12</span><span class="p">,</span>
+<span class="linenos">229</span>     <span class="n">num_lor_endpoints_per_side</span><span class="o">=</span><span class="mi">6</span><span class="p">,</span>
+<span class="linenos">230</span>     <span class="n">lor_spacing</span><span class="o">=</span><span class="mf">3.0</span><span class="p">,</span>
+<span class="linenos">231</span>     <span class="n">ring_positions</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="o">-</span><span class="mi">4</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <a href="https://docs.python.org/3/library/functions.html#int" title="builtins.int" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">num_rings</span></a><span class="p">),</span>
+<span class="linenos">232</span>     <span class="n">symmetry_axis</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+<span class="linenos">233</span> <span class="p">)</span>
+<span class="linenos">234</span>
+<span class="linenos">235</span> <span class="c1"># setup the LOR descriptor that defines the sinogram</span>
+<span class="linenos">236</span> <span class="n">lor_desc</span> <span class="o">=</span> <a href="https://docs.python.org/3/library/abc.html#abc.ABC" title="abc.ABC" class="sphx-glr-backref-module-abc sphx-glr-backref-type-py-class"><span class="n">parallelproj</span><span class="o">.</span><span class="n">RegularPolygonPETLORDescriptor</span></a><span class="p">(</span>
+<span class="linenos">237</span>     <span class="n">scanner</span><span class="p">,</span>
+<span class="linenos">238</span>     <span class="n">radial_trim</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span>
+<span class="linenos">239</span>     <span class="n">max_ring_difference</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+<span class="linenos">240</span>     <span class="n">sinogram_order</span><span class="o">=</span><span class="n">parallelproj</span><span class="o">.</span><span class="n">SinogramSpatialAxisOrder</span><span class="o">.</span><span class="n">RVP</span><span class="p">,</span>
+<span class="linenos">241</span> <span class="p">)</span>
+<span class="linenos">242</span>
+<span class="linenos">243</span> <span class="n">proj</span> <span class="o">=</span> <a href="https://docs.python.org/3/library/abc.html#abc.ABC" title="abc.ABC" class="sphx-glr-backref-module-abc sphx-glr-backref-type-py-class"><span class="n">parallelproj</span><span class="o">.</span><span class="n">RegularPolygonPETProjector</span></a><span class="p">(</span>
+<span class="linenos">244</span>     <span class="n">lor_desc</span><span class="p">,</span> <span class="n">img_shape</span><span class="o">=</span><span class="p">(</span><span class="mi">20</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">20</span><span class="p">),</span> <span class="n">voxel_size</span><span class="o">=</span><span class="p">(</span><span class="mf">2.0</span><span class="p">,</span> <span class="mf">2.0</span><span class="p">,</span> <span class="mf">2.0</span><span class="p">)</span>
+<span class="linenos">245</span> <span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="define-a-mini-batch-of-input-and-output-tensors">
+<h2>Define a mini batch of input and output tensors<a class="headerlink" href="#define-a-mini-batch-of-input-and-output-tensors" title="Link to this heading"></a></h2>
+<div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><span class="linenos">251</span> <a href="https://docs.python.org/3/library/functions.html#int" title="builtins.int" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">batch_size</span></a> <span class="o">=</span> <span class="mi">2</span>
+<span class="linenos">252</span>
+<span class="linenos">253</span> <a href="https://pytorch.org/docs/stable/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">x</span></a> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span>
+<span class="linenos">254</span>     <span class="p">(</span><a href="https://docs.python.org/3/library/functions.html#int" title="builtins.int" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">batch_size</span></a><span class="p">,</span> <span class="mi">1</span><span class="p">)</span> <span class="o">+</span> <span class="n">proj</span><span class="o">.</span><span class="n">in_shape</span><span class="p">,</span>
+<span class="linenos">255</span>     <span class="n">device</span><span class="o">=</span><a href="https://docs.python.org/3/library/stdtypes.html#str" title="builtins.str" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">dev</span></a><span class="p">,</span>
+<span class="linenos">256</span>     <span class="n">dtype</span><span class="o">=</span><a href="https://pytorch.org/docs/stable/tensor_attributes.html#torch.dtype" title="torch.dtype" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">torch</span><span class="o">.</span><span class="n">float32</span></a><span class="p">,</span>
+<span class="linenos">257</span>     <span class="n">requires_grad</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+<span class="linenos">258</span> <span class="p">)</span>
+<span class="linenos">259</span>
+<span class="linenos">260</span> <a href="https://pytorch.org/docs/stable/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">y</span></a> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span>
+<span class="linenos">261</span>     <span class="p">(</span><a href="https://docs.python.org/3/library/functions.html#int" title="builtins.int" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">batch_size</span></a><span class="p">,)</span> <span class="o">+</span> <span class="n">proj</span><span class="o">.</span><span class="n">out_shape</span><span class="p">,</span>
+<span class="linenos">262</span>     <span class="n">device</span><span class="o">=</span><a href="https://docs.python.org/3/library/stdtypes.html#str" title="builtins.str" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">dev</span></a><span class="p">,</span>
+<span class="linenos">263</span>     <span class="n">dtype</span><span class="o">=</span><a href="https://pytorch.org/docs/stable/tensor_attributes.html#torch.dtype" title="torch.dtype" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">torch</span><span class="o">.</span><span class="n">float32</span></a><span class="p">,</span>
+<span class="linenos">264</span>     <span class="n">requires_grad</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+<span class="linenos">265</span> <span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="define-the-forward-and-backward-projection-layers">
+<h2>Define the forward and backward projection layers<a class="headerlink" href="#define-the-forward-and-backward-projection-layers" title="Link to this heading"></a></h2>
+<div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><span class="linenos">271</span> <span class="n">fwd_op_layer</span> <span class="o">=</span> <span class="n">LinearSingleChannelOperator</span><span class="o">.</span><span class="n">apply</span>
+<span class="linenos">272</span> <span class="n">adjoint_op_layer</span> <span class="o">=</span> <span class="n">AdjointLinearSingleChannelOperator</span><span class="o">.</span><span class="n">apply</span>
+<span class="linenos">273</span>
+<span class="linenos">274</span> <a href="https://pytorch.org/docs/stable/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">f1</span></a> <span class="o">=</span> <span class="n">fwd_op_layer</span><span class="p">(</span><a href="https://pytorch.org/docs/stable/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">x</span></a><span class="p">,</span> <span class="n">proj</span><span class="p">)</span>
+<span class="linenos">275</span> <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;forward projection (Ax) .:&quot;</span><span class="p">,</span> <a href="https://pytorch.org/docs/stable/size.html#torch.Size" title="torch.Size" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">f1</span><span class="o">.</span><span class="n">shape</span></a><span class="p">,</span> <span class="nb">type</span><span class="p">(</span><a href="https://pytorch.org/docs/stable/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">f1</span></a><span class="p">),</span> <span class="n">device</span><span class="p">(</span><a href="https://pytorch.org/docs/stable/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">f1</span></a><span class="p">))</span>
+<span class="linenos">276</span>
+<span class="linenos">277</span> <a href="https://pytorch.org/docs/stable/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">b1</span></a> <span class="o">=</span> <span class="n">adjoint_op_layer</span><span class="p">(</span><a href="https://pytorch.org/docs/stable/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">y</span></a><span class="p">,</span> <span class="n">proj</span><span class="p">)</span>
+<span class="linenos">278</span> <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;back projection (A^T y) .:&quot;</span><span class="p">,</span> <a href="https://pytorch.org/docs/stable/size.html#torch.Size" title="torch.Size" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">b1</span><span class="o">.</span><span class="n">shape</span></a><span class="p">,</span> <span class="nb">type</span><span class="p">(</span><a href="https://pytorch.org/docs/stable/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">b1</span></a><span class="p">),</span> <span class="n">device</span><span class="p">(</span><a href="https://pytorch.org/docs/stable/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">b1</span></a><span class="p">))</span>
+<span class="linenos">279</span>
+<span class="linenos">280</span> <a href="https://pytorch.org/docs/stable/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">fb1</span></a> <span class="o">=</span> <span class="n">adjoint_op_layer</span><span class="p">(</span><span class="n">fwd_op_layer</span><span class="p">(</span><a href="https://pytorch.org/docs/stable/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">x</span></a><span class="p">,</span> <span class="n">proj</span><span class="p">),</span> <span class="n">proj</span><span class="p">)</span>
+<span class="linenos">281</span> <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;back + forward projection (A^TAx) .:&quot;</span><span class="p">,</span> <a href="https://pytorch.org/docs/stable/size.html#torch.Size" title="torch.Size" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">fb1</span><span class="o">.</span><span class="n">shape</span></a><span class="p">,</span> <span class="nb">type</span><span class="p">(</span><a href="https://pytorch.org/docs/stable/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">fb1</span></a><span class="p">),</span> <span class="n">device</span><span class="p">(</span><a href="https://pytorch.org/docs/stable/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">fb1</span></a><span class="p">))</span>
+</pre></div>
+</div>
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>forward projection (Ax) .: torch.Size([2, 53, 36, 7]) &lt;class &#39;torch.Tensor&#39;&gt; cpu
+back projection (A^T y) .: torch.Size([2, 1, 20, 5, 20]) &lt;class &#39;torch.Tensor&#39;&gt; cpu
+back + forward projection (A^TAx) .: torch.Size([2, 1, 20, 5, 20]) &lt;class &#39;torch.Tensor&#39;&gt; cpu
+</pre></div>
+</div>
+</section>
+<section id="define-a-dummy-loss-function-and-trigger-the-backpropagation">
+<h2>Define a dummy loss function and trigger the backpropagation<a class="headerlink" href="#define-a-dummy-loss-function-and-trigger-the-backpropagation" title="Link to this heading"></a></h2>
+<div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><span class="linenos">288</span> <span class="c1"># define a dummy loss function</span>
+<span class="linenos">289</span> <a href="https://pytorch.org/docs/stable/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">dummy_loss</span></a> <span class="o">=</span> <span class="p">(</span><a href="https://pytorch.org/docs/stable/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">fb1</span></a><span class="o">**</span><span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+<span class="linenos">290</span> <span class="c1"># trigger the backpropagation</span>
+<span class="linenos">291</span> <a href="https://pytorch.org/docs/stable/generated/torch.Tensor.backward.html#torch.Tensor.backward" title="torch.Tensor.backward" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-method"><span class="n">dummy_loss</span><span class="o">.</span><span class="n">backward</span></a><span class="p">()</span>
+<span class="linenos">292</span>
+<span class="linenos">293</span> <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot; backpropagted gradient </span><span class="si">{</span><a href="https://pytorch.org/docs/stable/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">x</span><span class="o">.</span><span class="n">grad</span></a><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>backpropagted gradient tensor([[[[[20294314.0000, 22078562.0000, 23227036.0000,  ...,
+           23013244.0000, 21839854.0000, 20082764.0000],
+          [ 7550424.5000,  9807450.0000, 12227049.0000,  ...,
+           12081740.0000,  9770218.0000,  7505605.5000],
+          [31928158.0000, 34340368.0000, 35595052.0000,  ...,
+           35546936.0000, 34339628.0000, 31989650.0000],
+          [ 7384997.0000,  9642519.0000, 12058178.0000,  ...,
+           11999619.0000,  9689145.0000,  7418703.0000],
+          [19737656.0000, 21504760.0000, 22616058.0000,  ...,
+           22402650.0000, 21351176.0000, 19679626.0000]],
+
+         [[22105506.0000, 23609364.0000, 24547890.0000,  ...,
+           24238054.0000, 23273438.0000, 21818304.0000],
+          [ 9847453.0000, 12735757.0000, 15342983.0000,  ...,
+           15138131.0000, 12590063.0000,  9733970.0000],
+          [34335728.0000, 36241140.0000, 37145336.0000,  ...,
+           37043548.0000, 36234740.0000, 34382768.0000],
+          [ 9678371.0000, 12572549.0000, 15119246.0000,  ...,
+           15065067.0000, 12542917.0000,  9662591.0000],
+          [21516948.0000, 23008548.0000, 23923766.0000,  ...,
+           23584158.0000, 22770082.0000, 21356660.0000]],
+
+         [[23313394.0000, 24617714.0000, 25332248.0000,  ...,
+           24939610.0000, 24202690.0000, 22923032.0000],
+          [12230799.0000, 15409426.0000, 18424236.0000,  ...,
+           18008150.0000, 15108078.0000, 12102594.0000],
+          [35632104.0000, 37116596.0000, 37685424.0000,  ...,
+           37621896.0000, 37106504.0000, 35582804.0000],
+          [12038173.0000, 15155642.0000, 18015504.0000,  ...,
+           17853206.0000, 15037603.0000, 12019775.0000],
+          [22649778.0000, 23930552.0000, 24641384.0000,  ...,
+           24203186.0000, 23578716.0000, 22345310.0000]],
+
+         ...,
+
+         [[23332094.0000, 24690872.0000, 25406962.0000,  ...,
+           24865300.0000, 24153912.0000, 22920940.0000],
+          [12349166.0000, 15459843.0000, 18425204.0000,  ...,
+           18360200.0000, 15422004.0000, 12275469.0000],
+          [35759880.0000, 37365360.0000, 37885576.0000,  ...,
+           37912224.0000, 37370480.0000, 35893372.0000],
+          [11970557.0000, 14973790.0000, 17810086.0000,  ...,
+           17816336.0000, 15005178.0000, 11951326.0000],
+          [22336668.0000, 23549122.0000, 24165176.0000,  ...,
+           24323988.0000, 23612950.0000, 22369146.0000]],
+
+         [[22190188.0000, 23736498.0000, 24684802.0000,  ...,
+           24159170.0000, 23234182.0000, 21756110.0000],
+          [ 9926644.0000, 12882161.0000, 15493573.0000,  ...,
+           15403890.0000, 12812307.0000,  9891155.0000],
+          [34609256.0000, 36535604.0000, 37366716.0000,  ...,
+           37399400.0000, 36531056.0000, 34585028.0000],
+          [ 9623652.0000, 12475926.0000, 14984095.0000,  ...,
+           14982450.0000, 12489261.0000,  9649024.0000],
+          [21259256.0000, 22654824.0000, 23478784.0000,  ...,
+           23664766.0000, 22743406.0000, 21273716.0000]],
+
+         [[20352176.0000, 22175842.0000, 23373696.0000,  ...,
+           22881262.0000, 21781772.0000, 20026432.0000],
+          [ 7626282.0000,  9960522.0000, 12345541.0000,  ...,
+           12314489.0000,  9878922.0000,  7576229.5000],
+          [32210906.0000, 34623716.0000, 35850788.0000,  ...,
+           35879336.0000, 34700972.0000, 32251894.0000],
+          [ 7395256.0000,  9649952.0000, 11930766.0000,  ...,
+           11995333.0000,  9634759.0000,  7391067.5000],
+          [19574206.0000, 21229224.0000, 22272312.0000,  ...,
+           22394578.0000, 21305806.0000, 19563808.0000]]]],
+
+
+
+       [[[[20653540.0000, 22518020.0000, 23656652.0000,  ...,
+           23000152.0000, 21880948.0000, 20135298.0000],
+          [ 7593354.0000,  9903370.0000, 12344536.0000,  ...,
+           11999745.0000,  9719239.0000,  7474369.5000],
+          [32054204.0000, 34490984.0000, 35733224.0000,  ...,
+           35839216.0000, 34578216.0000, 32212004.0000],
+          [ 7510508.0000,  9765543.0000, 12177197.0000,  ...,
+           12103989.0000,  9755014.0000,  7487802.5000],
+          [20278266.0000, 22049474.0000, 23173726.0000,  ...,
+           23059106.0000, 21854152.0000, 20085218.0000]],
+
+         [[22525332.0000, 24108434.0000, 25044232.0000,  ...,
+           24204800.0000, 23288258.0000, 21855054.0000],
+          [ 9931604.0000, 12891275.0000, 15508302.0000,  ...,
+           15039912.0000, 12513723.0000,  9700653.0000],
+          [34424928.0000, 36365904.0000, 37312052.0000,  ...,
+           37383384.0000, 36548048.0000, 34718736.0000],
+          [ 9792418.0000, 12677488.0000, 15259752.0000,  ...,
+           15215009.0000, 12616630.0000,  9744007.0000],
+          [22054238.0000, 23547020.0000, 24463256.0000,  ...,
+           24281900.0000, 23321700.0000, 21860754.0000]],
+
+         [[23802640.0000, 25123484.0000, 25797216.0000,  ...,
+           24873206.0000, 24151710.0000, 22901312.0000],
+          [12376693.0000, 15586945.0000, 18526748.0000,  ...,
+           17953560.0000, 15019420.0000, 12048032.0000],
+          [35748684.0000, 37248944.0000, 37811084.0000,  ...,
+           38080344.0000, 37580092.0000, 36028612.0000],
+          [12139677.0000, 15270459.0000, 18192310.0000,  ...,
+           18187470.0000, 15196538.0000, 12142312.0000],
+          [23174738.0000, 24427882.0000, 25134952.0000,  ...,
+           25022270.0000, 24281152.0000, 23017138.0000]],
+
+         ...,
+
+         [[23731512.0000, 25063062.0000, 25726938.0000,  ...,
+           25542944.0000, 24872834.0000, 23590334.0000],
+          [12544230.0000, 15705285.0000, 18668396.0000,  ...,
+           18319994.0000, 15393401.0000, 12261443.0000],
+          [36104860.0000, 37654684.0000, 38135268.0000,  ...,
+           37713396.0000, 37100916.0000, 35572524.0000],
+          [12137248.0000, 15166344.0000, 18111650.0000,  ...,
+           18238392.0000, 15283482.0000, 12133368.0000],
+          [23162236.0000, 24450272.0000, 25164660.0000,  ...,
+           25501376.0000, 24806044.0000, 23509862.0000]],
+
+         [[22604582.0000, 24147268.0000, 25068686.0000,  ...,
+           24822202.0000, 23969522.0000, 22463224.0000],
+          [10061737.0000, 13078873.0000, 15747481.0000,  ...,
+           15380873.0000, 12828415.0000,  9934356.0000],
+          [34910220.0000, 36813428.0000, 37654108.0000,  ...,
+           37228684.0000, 36311920.0000, 34398032.0000],
+          [ 9762407.0000, 12640755.0000, 15206858.0000,  ...,
+           15249347.0000, 12666680.0000,  9796024.0000],
+          [22084304.0000, 23558434.0000, 24473944.0000,  ...,
+           24728276.0000, 23806404.0000, 22301768.0000]],
+
+         [[20756880.0000, 22582590.0000, 23768472.0000,  ...,
+           23517426.0000, 22445612.0000, 20641066.0000],
+          [ 7711764.5000, 10085150.0000, 12520200.0000,  ...,
+           12332666.0000,  9917466.0000,  7625215.0000],
+          [32479664.0000, 34895432.0000, 36170280.0000,  ...,
+           35741452.0000, 34520900.0000, 32124266.0000],
+          [ 7519870.5000,  9796270.0000, 12124261.0000,  ...,
+           12173133.0000,  9771930.0000,  7532045.5000],
+          [20298364.0000, 22075260.0000, 23227106.0000,  ...,
+           23375974.0000, 22264190.0000, 20495502.0000]]]]])
+</pre></div>
+</div>
+</section>
+<section id="check-whether-the-gradients-are-calculated-correctly">
+<h2>Check whether the gradients are calculated correctly<a class="headerlink" href="#check-whether-the-gradients-are-calculated-correctly" title="Link to this heading"></a></h2>
+<p>We use pytorch’s gradcheck function to check whether the implementation
+of the backward pass, needed to calculate the gradients, is correct.</p>
+<p>This test can be slow which is why we only execute it on the gpu.
+Note that parallelproj’s projectors use single precision precision
+which is why we have to use a larger atol and rtol.</p>
+<div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><span class="linenos">307</span> <span class="k">if</span> <a href="https://docs.python.org/3/library/stdtypes.html#str" title="builtins.str" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">dev</span></a> <span class="o">==</span> <span class="s2">&quot;cpu&quot;</span><span class="p">:</span>
+<span class="linenos">308</span>     <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;skipping (slow) gradient checks on cpu&quot;</span><span class="p">)</span>
+<span class="linenos">309</span> <span class="k">else</span><span class="p">:</span>
+<span class="linenos">310</span>     <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Running forward projection layer gradient test&quot;</span><span class="p">)</span>
+<span class="linenos">311</span>     <span class="n">grad_test_fwd</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">autograd</span><span class="o">.</span><span class="n">gradcheck</span><span class="p">(</span>
+<span class="linenos">312</span>         <span class="n">fwd_op_layer</span><span class="p">,</span> <span class="p">(</span><a href="https://pytorch.org/docs/stable/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">x</span></a><span class="p">,</span> <span class="n">proj</span><span class="p">),</span> <span class="n">eps</span><span class="o">=</span><span class="mf">1e-1</span><span class="p">,</span> <span class="n">atol</span><span class="o">=</span><span class="mf">1e-3</span><span class="p">,</span> <span class="n">rtol</span><span class="o">=</span><span class="mf">1e-3</span>
+<span class="linenos">313</span>     <span class="p">)</span>
+<span class="linenos">314</span>
+<span class="linenos">315</span>     <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Running adjoint projection layer gradient test&quot;</span><span class="p">)</span>
+<span class="linenos">316</span>     <span class="n">grad_test_fwd</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">autograd</span><span class="o">.</span><span class="n">gradcheck</span><span class="p">(</span>
+<span class="linenos">317</span>         <span class="n">adjoint_op_layer</span><span class="p">,</span> <span class="p">(</span><a href="https://pytorch.org/docs/stable/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">y</span></a><span class="p">,</span> <span class="n">proj</span><span class="p">),</span> <span class="n">eps</span><span class="o">=</span><span class="mf">1e-1</span><span class="p">,</span> <span class="n">atol</span><span class="o">=</span><span class="mf">1e-3</span><span class="p">,</span> <span class="n">rtol</span><span class="o">=</span><span class="mf">1e-3</span>
+<span class="linenos">318</span>     <span class="p">)</span>
+</pre></div>
+</div>
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>skipping (slow) gradient checks on cpu
+</pre></div>
+</div>
+</section>
+<section id="visualize-the-scanner-geometry-and-image-fov">
+<h2>Visualize the scanner geometry and image FOV<a class="headerlink" href="#visualize-the-scanner-geometry-and-image-fov" title="Link to this heading"></a></h2>
+<div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><span class="linenos">324</span> <span class="n">fig</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">10</span><span class="p">))</span>
+<span class="linenos">325</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">fig</span><span class="o">.</span><span class="n">add_subplot</span><span class="p">(</span><span class="mi">111</span><span class="p">,</span> <span class="n">projection</span><span class="o">=</span><span class="s2">&quot;3d&quot;</span><span class="p">)</span>
+<span class="linenos">326</span> <span class="n">proj</span><span class="o">.</span><span class="n">show_geometry</span><span class="p">(</span><span class="n">ax</span><span class="p">)</span>
+<span class="linenos">327</span> <span class="n">fig</span><span class="o">.</span><span class="n">tight_layout</span><span class="p">()</span>
+<span class="linenos">328</span> <span class="n">fig</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+<img src="../../_images/sphx_glr_01_run_projection_layer_001.png" srcset="../../_images/sphx_glr_01_run_projection_layer_001.png" alt="01 run projection layer" class = "sphx-glr-single-img"/><p class="sphx-glr-timing"><strong>Total running time of the script:</strong> (0 minutes 0.184 seconds)</p>
+<div class="sphx-glr-footer sphx-glr-footer-example docutils container" id="sphx-glr-download-auto-examples-07-torch-01-run-projection-layer-py">
+<div class="sphx-glr-download sphx-glr-download-jupyter docutils container">
+<p><a class="reference download internal" download="" href="../../_downloads/3e8fe67db38f70b651f344c38d792c16/01_run_projection_layer.ipynb"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Jupyter</span> <span class="pre">notebook:</span> <span class="pre">01_run_projection_layer.ipynb</span></code></a></p>
+</div>
+<div class="sphx-glr-download sphx-glr-download-python docutils container">
+<p><a class="reference download internal" download="" href="../../_downloads/b21e0871a142b7c3b77d3a10e932c580/01_run_projection_layer.py"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Python</span> <span class="pre">source</span> <span class="pre">code:</span> <span class="pre">01_run_projection_layer.py</span></code></a></p>
+</div>
+<div class="sphx-glr-download sphx-glr-download-zip docutils container">
+<p><a class="reference download internal" download="" href="../../_downloads/7757babb4ecf1eec605cf09a5ca0c9be/01_run_projection_layer.zip"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">zipped:</span> <span class="pre">01_run_projection_layer.zip</span></code></a></p>
+</div>
+</div>
+<p class="rubric">Related examples</p>
+<div class="sphx-glr-thumbnails"><div class="sphx-glr-thumbcontainer" tooltip="This example demonstrates the use of the MLEM algorithm to minimize the negative Poisson log-likelihood function."><img alt="" src="../../_images/sphx_glr_04_run_osem_projection_data_thumb.gif" />
+<p><a class="reference internal" href="../05_algorithms/04_run_osem_projection_data.html#sphx-glr-auto-examples-05-algorithms-04-run-osem-projection-data-py"><span class="std std-ref">TOF OSEM with projection data</span></a></p>
+  <div class="sphx-glr-thumbnail-title">TOF OSEM with projection data</div>
+</div><div class="sphx-glr-thumbcontainer" tooltip="This example demonstrates the use of the MLEM algorithm to minimize the negative Poisson log-likelihood function."><img alt="" src="../../_images/sphx_glr_03_run_mlem_projection_data_thumb.gif" />
+<p><a class="reference internal" href="../05_algorithms/03_run_mlem_projection_data.html#sphx-glr-auto-examples-05-algorithms-03-run-mlem-projection-data-py"><span class="std std-ref">TOF-MLEM with projection data</span></a></p>
+  <div class="sphx-glr-thumbnail-title">TOF-MLEM with projection data</div>
+</div><div class="sphx-glr-thumbcontainer" tooltip="In this example we will show how to setup and use a TOF PET sinogram projector consisting of a geometrical TOF forward projector (Joseph&#x27;s method),  a resolution model and a correction for attenuation."><img alt="" src="../../_images/sphx_glr_02_run_pet_tof_sinogram_projector_thumb.png" />
+<p><a class="reference internal" href="../02_pet_sinogram_projections/02_run_pet_tof_sinogram_projector.html#sphx-glr-auto-examples-02-pet-sinogram-projections-02-run-pet-tof-sinogram-projector-py"><span class="std std-ref">PET TOF sinogram projector</span></a></p>
+  <div class="sphx-glr-thumbnail-title">PET TOF sinogram projector</div>
+</div><div class="sphx-glr-thumbcontainer" tooltip="In this example, we show how to perform non-TOF and TOF projections using a  PET scanner consisting of multiple block modules where each block module  consists of a regular grid of LOR endpoints."><img alt="" src="../../_images/sphx_glr_03_run_equalblock_projector_thumb.png" />
+<p><a class="reference internal" href="../02_pet_sinogram_projections/03_run_equalblock_projector.html#sphx-glr-auto-examples-02-pet-sinogram-projections-03-run-equalblock-projector-py"><span class="std std-ref">Non-TOF and TOF projections using a modularized (block) PET scanner geometry</span></a></p>
+  <div class="sphx-glr-thumbnail-title">Non-TOF and TOF projections using a modularized (block) PET scanner geometry</div>
+</div></div><p class="sphx-glr-signature"><a class="reference external" href="https://sphinx-gallery.github.io">Gallery generated by Sphinx-Gallery</a></p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="../06_listmode_algorithms/03_lm_spdhg.html" class="btn btn-neutral float-left" title="PDHG and LM-SPHG to optimize the Poisson logL and total variation" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="../../python_api.html" class="btn btn-neutral float-right" title="Low-level projector interface parallelproj.backend" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2023, Georg Schramm.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  
+<div class="rst-versions" data-toggle="rst-versions" role="note" aria-label="versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    <span class="fa fa-book"> Other Versions</span>
+    v: v1.10.0
+    <span class="fa fa-caret-down"></span>
+  </span>
+  <div class="rst-other-versions">
+    <dl>
+      <dt>Tags</dt>
+      <dd><a href="01_run_projection_layer.html">v1.10.0</a></dd>
+    </dl>
+    <dl>
+      <dt>Branches</dt>
+      <dd><a href="../../../master/index.html">master</a></dd>
+    </dl>
+  </div>
+</div><script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+    <!-- Theme Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-WFK38K0TGS"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+
+      gtag('config', 'G-WFK38K0TGS', {
+          'anonymize_ip': true,
+      });
+    </script> 
+
+</body>
+</html>

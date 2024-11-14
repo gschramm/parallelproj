@@ -6,7 +6,7 @@
 
 Computation times
 =================
-**00:10.429** total execution time for 3 files **from auto_examples/02_pet_sinogram_projections**:
+**00:10.659** total execution time for 3 files **from auto_examples/02_pet_sinogram_projections**:
 
 .. container::
 
@@ -33,11 +33,11 @@ Computation times
      - Time
      - Mem (MB)
    * - :ref:`sphx_glr_auto_examples_02_pet_sinogram_projections_02_run_pet_tof_sinogram_projector.py` (``02_run_pet_tof_sinogram_projector.py``)
-     - 00:05.539
+     - 00:05.607
      - 0.0
    * - :ref:`sphx_glr_auto_examples_02_pet_sinogram_projections_01_run_pet_non_tof_sinogram_projector.py` (``01_run_pet_non_tof_sinogram_projector.py``)
-     - 00:04.057
+     - 00:04.185
      - 0.0
    * - :ref:`sphx_glr_auto_examples_02_pet_sinogram_projections_03_run_equalblock_projector.py` (``03_run_equalblock_projector.py``)
-     - 00:00.833
+     - 00:00.867
      - 0.0
