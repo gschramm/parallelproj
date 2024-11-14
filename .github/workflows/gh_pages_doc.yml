@@ -61,17 +61,17 @@ jobs:
       - name: Build documentation for PR
         if: env.build_context == 'pr'
         run: |
-          sphinx-build -E docs _build/html
+          sphinx-build -E docs/source _build/html
 
       - name: Build all tagged versions for master push
         if: env.build_context == 'master' && env.exists == 'false'
         run: |
-          sphinx-multiversion docs _build/html
+          sphinx-multiversion docs/source _build/html
 
       - name: Build tag version for tag push
         if: env.build_context == 'tag'
         run: |
-          sphinx-multiversion docs _build/html --tag ${{ github.ref_name }}
+          sphinx-multiversion docs/source _build/html --tag ${{ github.ref_name }}
 
       - name: Deploy to gh-pages
         if: env.build_context != 'pr'
