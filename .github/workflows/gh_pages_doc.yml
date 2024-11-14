@@ -29,35 +29,62 @@ jobs:
           environment-file: docs/environment.yml # Use your environment.yml to install dependencies
           activate-environment: readthedocs # Name from environment.yml
           auto-activate-base: false
-      - run: |
-          sphinx-multiversion docs/source _build/html
-
-      - name: Create 'stable' version if deploying
-        if: github.event_name == 'push' && (github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/tags/'))
+      - name: Determine build context
+        id: context
         run: |
-          if [ "$(git tag)" ]; then
-            latest_tag=$(git tag --sort=-v:refname | head -n 1)
-            echo "Latest tag is: $latest_tag"
-            cp -r _build/html/$latest_tag _build/html/stable
-            redirect_target="stable/index.html"
+          if [ "${{ github.event_name }}" == "pull_request" ]; then
+            echo "Build context: PR"
+            echo "build_context=pr" >> $GITHUB_ENV
+          elif [[ "${{ github.ref }}" == refs/tags/* ]]; then
+            echo "Build context: Tag"
+            echo "build_context=tag" >> $GITHUB_ENV
           else
-            echo "No tags found. Using 'master' as fallback."
-            redirect_target="master/index.html"
+            echo "Build context: Master"
+            echo "build_context=master" >> $GITHUB_ENV
           fi
-          echo '<!DOCTYPE html>' > _build/html/index.html
-          echo '<html>' >> _build/html/index.html
-          echo '<head>' >> _build/html/index.html
-          echo '  <meta http-equiv="refresh" content="0; url='$redirect_target'">' >> _build/html/index.html
-          echo '  <title>Redirecting...</title>' >> _build/html/index.html
-          echo '</head>' >> _build/html/index.html
-          echo '<body>' >> _build/html/index.html
-          echo '  <p>If you are not redirected automatically, follow this <a href="'$redirect_target'">link to the documentation</a>.</p>' >> _build/html/index.html
-          echo '</body>' >> _build/html/index.html
-          echo '</html>' >> _build/html/index.html
 
-      - name: Deploy to GitHub Pages
-        if: github.event_name == 'push' && (github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/tags/'))
+      - name: Check if tagged version already exists on gh-pages
+        if: env.build_context == 'master'
+        id: check_exists
+        run: |
+          git fetch origin gh-pages
+          version=$(git tag --sort=-v:refname | head -n 1)
+          echo "Checking if version $version exists..."
+          if git ls-tree --name-only origin/gh-pages | grep -q "^$version/"; then
+            echo "Version $version exists."
+            echo "exists=true" >> $GITHUB_ENV
+          else
+            echo "No existing build for $version."
+            echo "exists=false" >> $GITHUB_ENV
+          fi
+
+      - name: Build documentation for PR
+        if: env.build_context == 'pr'
+        run: |
+          sphinx-build -E docs _build/html
+
+      - name: Build all tagged versions for master push
+        if: env.build_context == 'master' && env.exists == 'false'
+        run: |
+          sphinx-multiversion docs _build/html
+
+      - name: Build tag version for tag push
+        if: env.build_context == 'tag'
+        run: |
+          sphinx-multiversion docs _build/html --tag ${{ github.ref_name }}
+
+      - name: Deploy to gh-pages
+        if: env.build_context != 'pr'
         uses: peaceiris/actions-gh-pages@v3
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: _build/html
+
+      - name: Deploy PR preview to GitHub Pages preview branch
+        if: env.build_context == 'pr'
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: _build/html
+          publish_branch: gh-pages-preview
+          cname: false  # Disable custom domain if set
