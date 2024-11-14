@@ -9,7 +9,9 @@ dependencies:
   - sphinx-design
   - sphinx-copybutton
   - sphinxcontrib-bibtex
+  - sphinx-multiversion
   - libparallelproj
+  - matplotlib
+  - array-api-compat
   - pytorch
   - scipy
-  
