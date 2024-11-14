@@ -6,7 +6,7 @@
 
 Computation times
 =================
-**00:03.603** total execution time for 3 files **from auto_examples/01_pet_geometry**:
+**00:03.906** total execution time for 3 files **from auto_examples/01_pet_geometry**:
 
 .. container::
 
@@ -33,11 +33,11 @@ Computation times
      - Time
      - Mem (MB)
    * - :ref:`sphx_glr_auto_examples_01_pet_geometry_01_run_regular_polygon_pet_scanner.py` (``01_run_regular_polygon_pet_scanner.py``)
-     - 00:02.426
+     - 00:02.696
      - 0.0
    * - :ref:`sphx_glr_auto_examples_01_pet_geometry_03_run_block_scanner.py` (``03_run_block_scanner.py``)
-     - 00:00.614
+     - 00:00.652
      - 0.0
    * - :ref:`sphx_glr_auto_examples_01_pet_geometry_02_run_regular_polygon_pet_sino.py` (``02_run_regular_polygon_pet_sino.py``)
-     - 00:00.562
+     - 00:00.559
      - 0.0
