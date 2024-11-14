@@ -81,11 +81,13 @@ jobs:
           publish_dir: _build/html
           keep_files: true
 
-      - name: Deploy PR preview to GitHub Pages preview branch
+      - name: Deploy PR preview to a subfolder in gh-pages
         if: env.build_context == 'pr'
         uses: peaceiris/actions-gh-pages@v3
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: _build/html
-          publish_branch: gh-pages-preview
-          cname: false  # Disable custom domain if set
+          publish_branch: gh-pages
+          destination_dir: pr-${{ github.event.pull_request.number }}
+          keep_files: true
+
