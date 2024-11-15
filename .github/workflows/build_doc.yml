@@ -1,0 +1,101 @@
+name: Build and Deploy latest Documentation
+
+on:
+  push:
+    branches:
+      - master
+    tags:
+      - "v*.*.*"
+  pull_request:
+    branches:
+      - master
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash -el {0}
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0 # Fetch full history and all tags
+
+      - name: Set up Miniconda
+        uses: conda-incubator/setup-miniconda@v3
+        with:
+          miniforge-version: latest
+          python-version: 3.12 # Specify the Python version compatible with your environment
+          environment-file: docs/environment.yml # Use your environment.yml to install dependencies
+          activate-environment: readthedocs # Name from environment.yml
+          auto-activate-base: false
+
+      - name: Determine build type
+        id: context
+        run: |
+          if [ "${{ github.event_name }}" == "pull_request" ]; then
+            echo "build_context=pr" >> $GITHUB_ENV
+          elif [[ "${{ github.ref }}" == refs/tags/* ]]; then
+            echo "build_context=tag" >> $GITHUB_ENV
+          else
+            echo "build_context=master" >> $GITHUB_ENV
+          fi
+
+      - name: Build PR preview docs
+        if: env.build_context == 'pr'
+        run: sphinx-build -E docs/source _build/html/pr-${{ github.event.pull_request.number }}
+
+      - name: Build master docs
+        if: env.build_context == 'master'
+        run: sphinx-build -E docs/source _build/html/master
+
+      - name: Build tagged version docs
+        if: env.build_context == 'tag'
+        run: |
+          tag=${{ github.ref_name }}
+          sphinx-build -E docs/source _build/html/$tag
+
+      - name: Create index.html redirect
+        if: env.build_context != 'pr'
+        run: |
+          git fetch origin gh-pages
+          git checkout gh-pages
+
+          # Determine redirect target
+          tagged_versions=$(ls _build/html | grep '^v')
+          if [ -n "$tagged_versions" ]; then
+            latest_tag=$(echo "$tagged_versions" | sort -V | tail -n 1)
+            redirect_target="$latest_tag/index.html"
+          else
+            redirect_target="master/index.html"
+          fi
+
+          # Create index.html for redirect
+          echo '<!DOCTYPE html>' > _build/html/index.html
+          echo '<html>' >> _build/html/index.html
+          echo '<head>' >> _build/html/index.html
+          echo '  <meta http-equiv="refresh" content="0; url='$redirect_target'">' >> _build/html/index.html
+          echo '  <title>Redirecting...</title>' >> _build/html/index.html
+          echo '</head>' >> _build/html/index.html
+          echo '<body>' >> _build/html/index.html
+          echo '  <p>If you are not redirected automatically, follow this <a href="'$redirect_target'">link</a>.</p>' >> _build/html/index.html
+          echo '</body>' >> _build/html/index.html
+          echo '</html>' >> _build/html/index.html
+
+      - name: Deploy to GitHub Pages
+        if: env.build_context != 'pr'
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: _build/html
+          keep_files: true
+
+      - name: Deploy PR preview
+        if: env.build_context == 'pr'
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: _build/html
+          publish_branch: gh-pages-preview
+          destination_dir: pr-${{ github.event.pull_request.number }}
