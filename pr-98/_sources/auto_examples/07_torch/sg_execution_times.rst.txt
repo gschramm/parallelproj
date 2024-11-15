@@ -6,7 +6,7 @@
 
 Computation times
 =================
-**00:00.185** total execution time for 1 file **from auto_examples/07_torch**:
+**00:00.193** total execution time for 1 file **from auto_examples/07_torch**:
 
 .. container::
 
@@ -33,5 +33,5 @@ Computation times
      - Time
      - Mem (MB)
    * - :ref:`sphx_glr_auto_examples_07_torch_01_run_projection_layer.py` (``01_run_projection_layer.py``)
-     - 00:00.185
+     - 00:00.193
      - 0.0
