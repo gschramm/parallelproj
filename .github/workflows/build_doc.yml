@@ -48,13 +48,13 @@ jobs:
 
       - name: Build master docs
         if: env.build_context == 'master'
-        run: sphinx-multiversion docs/source _build/html --branch master
+        run: sphinx-multiversion docs/source _build/html -D "smv_tag_whitelist=None" -D "smv_branch_whitelist=master"
 
       - name: Build tagged version docs
         if: env.build_context == 'tag'
         run: |
           tag=${{ github.ref_name }}
-          sphinx-multiversion docs/source _build/html --tag $tag
+          sphinx-multiversion docs/source _build/html -D "smv_tag_whitelist=$tag" -D "smv_branch_whitelist=None"
 
       - name: Create index.html redirect
         if: env.build_context != 'pr'
