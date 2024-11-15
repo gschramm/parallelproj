@@ -48,13 +48,13 @@ jobs:
 
       - name: Build master docs
         if: env.build_context == 'master'
-        run: sphinx-build -E docs/source _build/html/master
+        run: sphinx-multiversion docs/source _build/html --branch master
 
       - name: Build tagged version docs
         if: env.build_context == 'tag'
         run: |
           tag=${{ github.ref_name }}
-          sphinx-build -E docs/source _build/html/$tag
+          sphinx-multiversion docs/source _build/html --tag $tag
 
       - name: Create index.html redirect
         if: env.build_context != 'pr'
