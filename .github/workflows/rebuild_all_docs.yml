@@ -1,25 +1,16 @@
-name: Build and Deploy docs to GH pages
+name: Manual Rebuild Documentation
 
 on:
-  push:
-    branches:
-      - master
-    tags:
-      - "v*"
-  pull_request:
-    branches: ["master"]
+  workflow_dispatch:
 
 jobs:
-  deploy:
+  rebuild:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        shell: bash -el {0}
     steps:
       - name: Check out repository
         uses: actions/checkout@v3
         with:
-          fetch-depth: 0 # Fetch all history for all branches and tags
+          fetch-depth: 0 # Fetch full history and all tags
 
       - name: Set up Miniconda
         uses: conda-incubator/setup-miniconda@v3
@@ -29,21 +20,26 @@ jobs:
           environment-file: docs/environment.yml # Use your environment.yml to install dependencies
           activate-environment: readthedocs # Name from environment.yml
           auto-activate-base: false
-      - run: |
-          sphinx-multiversion docs/source _build/html
 
-      - name: Create 'stable' version if deploying
-        if: github.event_name == 'push' && (github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/tags/'))
+      - name: Rebuild all versions using sphinx-multiversion
+        run: sphinx-multiversion docs/source _build/html
+
+      - name: Create index.html redirect
+        if: env.build_context != 'pr'
         run: |
-          if [ "$(git tag)" ]; then
-            latest_tag=$(git tag --sort=-v:refname | head -n 1)
-            echo "Latest tag is: $latest_tag"
-            cp -r _build/html/$latest_tag _build/html/stable
-            redirect_target="stable/index.html"
+          git fetch origin gh-pages
+          git checkout gh-pages
+
+          # Determine redirect target
+          tagged_versions=$(ls _build/html | grep '^v')
+          if [ -n "$tagged_versions" ]; then
+            latest_tag=$(echo "$tagged_versions" | sort -V | tail -n 1)
+            redirect_target="$latest_tag/index.html"
           else
-            echo "No tags found. Using 'master' as fallback."
             redirect_target="master/index.html"
           fi
+
+          # Create index.html for redirect
           echo '<!DOCTYPE html>' > _build/html/index.html
           echo '<html>' >> _build/html/index.html
           echo '<head>' >> _build/html/index.html
@@ -51,12 +47,11 @@ jobs:
           echo '  <title>Redirecting...</title>' >> _build/html/index.html
           echo '</head>' >> _build/html/index.html
           echo '<body>' >> _build/html/index.html
-          echo '  <p>If you are not redirected automatically, follow this <a href="'$redirect_target'">link to the documentation</a>.</p>' >> _build/html/index.html
+          echo '  <p>If you are not redirected automatically, follow this <a href="'$redirect_target'">link</a>.</p>' >> _build/html/index.html
           echo '</body>' >> _build/html/index.html
           echo '</html>' >> _build/html/index.html
 
       - name: Deploy to GitHub Pages
-        if: github.event_name == 'push' && (github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/tags/'))
         uses: peaceiris/actions-gh-pages@v3
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
