@@ -321,7 +321,7 @@ See :cite:p:`DePierro1995` for more details.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** (0 minutes 0.126 seconds)
+   **Total running time of the script:** (0 minutes 0.128 seconds)
 
 
 .. _sphx_glr_download_auto_examples_05_algorithms_06_run_depierro.py:

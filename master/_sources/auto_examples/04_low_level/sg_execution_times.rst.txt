@@ -6,7 +6,7 @@
 
 Computation times
 =================
-**00:00.008** total execution time for 3 files **from auto_examples/04_low_level**:
+**00:00.009** total execution time for 3 files **from auto_examples/04_low_level**:
 
 .. container::
 

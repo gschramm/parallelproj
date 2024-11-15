@@ -6,7 +6,7 @@
 
 Computation times
 =================
-**01:14.959** total execution time for 22 files **from all galleries**:
+**01:15.299** total execution time for 22 files **from all galleries**:
 
 .. container::
 
@@ -32,69 +32,69 @@ Computation times
    * - Example
      - Time
      - Mem (MB)
-   * - :ref:`sphx_glr_auto_examples_05_algorithms_03_run_mlem_projection_data.py` (``../../examples/05_algorithms/03_run_mlem_projection_data.py``)
-     - 00:36.864
+   * - :ref:`sphx_glr_auto_examples_05_algorithms_03_run_mlem_projection_data.py` (``../../../../../home/runner/work/parallelproj/parallelproj/examples/05_algorithms/03_run_mlem_projection_data.py``)
+     - 00:36.888
      - 0.0
-   * - :ref:`sphx_glr_auto_examples_05_algorithms_05_run_fbp.py` (``../../examples/05_algorithms/05_run_fbp.py``)
-     - 00:11.662
+   * - :ref:`sphx_glr_auto_examples_05_algorithms_05_run_fbp.py` (``../../../../../home/runner/work/parallelproj/parallelproj/examples/05_algorithms/05_run_fbp.py``)
+     - 00:11.685
      - 0.0
-   * - :ref:`sphx_glr_auto_examples_05_algorithms_04_run_osem_projection_data.py` (``../../examples/05_algorithms/04_run_osem_projection_data.py``)
-     - 00:08.351
+   * - :ref:`sphx_glr_auto_examples_05_algorithms_04_run_osem_projection_data.py` (``../../../../../home/runner/work/parallelproj/parallelproj/examples/05_algorithms/04_run_osem_projection_data.py``)
+     - 00:08.428
      - 0.0
-   * - :ref:`sphx_glr_auto_examples_02_pet_sinogram_projections_02_run_pet_tof_sinogram_projector.py` (``../../examples/02_pet_sinogram_projections/02_run_pet_tof_sinogram_projector.py``)
-     - 00:05.576
+   * - :ref:`sphx_glr_auto_examples_02_pet_sinogram_projections_02_run_pet_tof_sinogram_projector.py` (``../../../../../home/runner/work/parallelproj/parallelproj/examples/02_pet_sinogram_projections/02_run_pet_tof_sinogram_projector.py``)
+     - 00:05.577
      - 0.0
-   * - :ref:`sphx_glr_auto_examples_02_pet_sinogram_projections_01_run_pet_non_tof_sinogram_projector.py` (``../../examples/02_pet_sinogram_projections/01_run_pet_non_tof_sinogram_projector.py``)
-     - 00:04.101
+   * - :ref:`sphx_glr_auto_examples_02_pet_sinogram_projections_01_run_pet_non_tof_sinogram_projector.py` (``../../../../../home/runner/work/parallelproj/parallelproj/examples/02_pet_sinogram_projections/01_run_pet_non_tof_sinogram_projector.py``)
+     - 00:04.218
      - 0.0
-   * - :ref:`sphx_glr_auto_examples_01_pet_geometry_01_run_regular_polygon_pet_scanner.py` (``../../examples/01_pet_geometry/01_run_regular_polygon_pet_scanner.py``)
-     - 00:02.453
+   * - :ref:`sphx_glr_auto_examples_01_pet_geometry_01_run_regular_polygon_pet_scanner.py` (``../../../../../home/runner/work/parallelproj/parallelproj/examples/01_pet_geometry/01_run_regular_polygon_pet_scanner.py``)
+     - 00:02.435
      - 0.0
-   * - :ref:`sphx_glr_auto_examples_03_pet_listmode_projections_02_run_pet_tof_listmode_projector.py` (``../../examples/03_pet_listmode_projections/02_run_pet_tof_listmode_projector.py``)
-     - 00:01.080
+   * - :ref:`sphx_glr_auto_examples_03_pet_listmode_projections_02_run_pet_tof_listmode_projector.py` (``../../../../../home/runner/work/parallelproj/parallelproj/examples/03_pet_listmode_projections/02_run_pet_tof_listmode_projector.py``)
+     - 00:01.097
      - 0.0
-   * - :ref:`sphx_glr_auto_examples_03_pet_listmode_projections_01_run_pet_non_tof_listmode_projector.py` (``../../examples/03_pet_listmode_projections/01_run_pet_non_tof_listmode_projector.py``)
-     - 00:01.068
+   * - :ref:`sphx_glr_auto_examples_03_pet_listmode_projections_01_run_pet_non_tof_listmode_projector.py` (``../../../../../home/runner/work/parallelproj/parallelproj/examples/03_pet_listmode_projections/01_run_pet_non_tof_listmode_projector.py``)
+     - 00:01.085
      - 0.0
-   * - :ref:`sphx_glr_auto_examples_02_pet_sinogram_projections_03_run_equalblock_projector.py` (``../../examples/02_pet_sinogram_projections/03_run_equalblock_projector.py``)
-     - 00:00.841
+   * - :ref:`sphx_glr_auto_examples_02_pet_sinogram_projections_03_run_equalblock_projector.py` (``../../../../../home/runner/work/parallelproj/parallelproj/examples/02_pet_sinogram_projections/03_run_equalblock_projector.py``)
+     - 00:00.858
      - 0.0
-   * - :ref:`sphx_glr_auto_examples_05_algorithms_07_run_mlem_open_geometry.py` (``../../examples/05_algorithms/07_run_mlem_open_geometry.py``)
-     - 00:00.820
+   * - :ref:`sphx_glr_auto_examples_05_algorithms_07_run_mlem_open_geometry.py` (``../../../../../home/runner/work/parallelproj/parallelproj/examples/05_algorithms/07_run_mlem_open_geometry.py``)
+     - 00:00.842
      - 0.0
-   * - :ref:`sphx_glr_auto_examples_01_pet_geometry_03_run_block_scanner.py` (``../../examples/01_pet_geometry/03_run_block_scanner.py``)
-     - 00:00.598
+   * - :ref:`sphx_glr_auto_examples_01_pet_geometry_03_run_block_scanner.py` (``../../../../../home/runner/work/parallelproj/parallelproj/examples/01_pet_geometry/03_run_block_scanner.py``)
+     - 00:00.618
      - 0.0
-   * - :ref:`sphx_glr_auto_examples_01_pet_geometry_02_run_regular_polygon_pet_sino.py` (``../../examples/01_pet_geometry/02_run_regular_polygon_pet_sino.py``)
-     - 00:00.550
+   * - :ref:`sphx_glr_auto_examples_01_pet_geometry_02_run_regular_polygon_pet_sino.py` (``../../../../../home/runner/work/parallelproj/parallelproj/examples/01_pet_geometry/02_run_regular_polygon_pet_sino.py``)
+     - 00:00.565
      - 0.0
-   * - :ref:`sphx_glr_auto_examples_05_algorithms_01_run_mlem_basic.py` (``../../examples/05_algorithms/01_run_mlem_basic.py``)
-     - 00:00.339
+   * - :ref:`sphx_glr_auto_examples_05_algorithms_01_run_mlem_basic.py` (``../../../../../home/runner/work/parallelproj/parallelproj/examples/05_algorithms/01_run_mlem_basic.py``)
+     - 00:00.344
      - 0.0
-   * - :ref:`sphx_glr_auto_examples_05_algorithms_02_run_osem_basic.py` (``../../examples/05_algorithms/02_run_osem_basic.py``)
-     - 00:00.329
+   * - :ref:`sphx_glr_auto_examples_05_algorithms_02_run_osem_basic.py` (``../../../../../home/runner/work/parallelproj/parallelproj/examples/05_algorithms/02_run_osem_basic.py``)
+     - 00:00.336
      - 0.0
-   * - :ref:`sphx_glr_auto_examples_07_torch_01_run_projection_layer.py` (``../../examples/07_torch/01_run_projection_layer.py``)
-     - 00:00.194
+   * - :ref:`sphx_glr_auto_examples_07_torch_01_run_projection_layer.py` (``../../../../../home/runner/work/parallelproj/parallelproj/examples/07_torch/01_run_projection_layer.py``)
+     - 00:00.186
      - 0.0
-   * - :ref:`sphx_glr_auto_examples_05_algorithms_06_run_depierro.py` (``../../examples/05_algorithms/06_run_depierro.py``)
-     - 00:00.126
+   * - :ref:`sphx_glr_auto_examples_05_algorithms_06_run_depierro.py` (``../../../../../home/runner/work/parallelproj/parallelproj/examples/05_algorithms/06_run_depierro.py``)
+     - 00:00.128
      - 0.0
-   * - :ref:`sphx_glr_auto_examples_04_low_level_02_run_tof_sinogram_projections.py` (``../../examples/04_low_level/02_run_tof_sinogram_projections.py``)
+   * - :ref:`sphx_glr_auto_examples_04_low_level_02_run_tof_sinogram_projections.py` (``../../../../../home/runner/work/parallelproj/parallelproj/examples/04_low_level/02_run_tof_sinogram_projections.py``)
      - 00:00.003
      - 0.0
-   * - :ref:`sphx_glr_auto_examples_04_low_level_03_run_tof_listmode_projections.py` (``../../examples/04_low_level/03_run_tof_listmode_projections.py``)
+   * - :ref:`sphx_glr_auto_examples_04_low_level_03_run_tof_listmode_projections.py` (``../../../../../home/runner/work/parallelproj/parallelproj/examples/04_low_level/03_run_tof_listmode_projections.py``)
      - 00:00.003
      - 0.0
-   * - :ref:`sphx_glr_auto_examples_04_low_level_01_run_nontof_projections.py` (``../../examples/04_low_level/01_run_nontof_projections.py``)
+   * - :ref:`sphx_glr_auto_examples_04_low_level_01_run_nontof_projections.py` (``../../../../../home/runner/work/parallelproj/parallelproj/examples/04_low_level/01_run_nontof_projections.py``)
      - 00:00.003
      - 0.0
-   * - :ref:`sphx_glr_auto_examples_06_listmode_algorithms_01_listmode_mlem.py` (``../../examples/06_listmode_algorithms/01_listmode_mlem.py``)
+   * - :ref:`sphx_glr_auto_examples_06_listmode_algorithms_01_listmode_mlem.py` (``../../../../../home/runner/work/parallelproj/parallelproj/examples/06_listmode_algorithms/01_listmode_mlem.py``)
      - 00:00.000
      - 0.0
-   * - :ref:`sphx_glr_auto_examples_06_listmode_algorithms_02_listmode_osem.py` (``../../examples/06_listmode_algorithms/02_listmode_osem.py``)
+   * - :ref:`sphx_glr_auto_examples_06_listmode_algorithms_02_listmode_osem.py` (``../../../../../home/runner/work/parallelproj/parallelproj/examples/06_listmode_algorithms/02_listmode_osem.py``)
      - 00:00.000
      - 0.0
-   * - :ref:`sphx_glr_auto_examples_06_listmode_algorithms_03_lm_spdhg.py` (``../../examples/06_listmode_algorithms/03_lm_spdhg.py``)
+   * - :ref:`sphx_glr_auto_examples_06_listmode_algorithms_03_lm_spdhg.py` (``../../../../../home/runner/work/parallelproj/parallelproj/examples/06_listmode_algorithms/03_lm_spdhg.py``)
      - 00:00.000
      - 0.0
