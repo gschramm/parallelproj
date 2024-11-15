@@ -1,0 +1,100 @@
+
+:orphan:
+
+.. _sphx_glr_sg_execution_times:
+
+
+Computation times
+=================
+**01:15.003** total execution time for 22 files **from all galleries**:
+
+.. container::
+
+  .. raw:: html
+
+    <style scoped>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet" />
+    <link href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css" rel="stylesheet" />
+    </style>
+    <script src="https://code.jquery.com/jquery-3.7.0.js"></script>
+    <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
+    <script type="text/javascript" class="init">
+    $(document).ready( function () {
+        $('table.sg-datatable').DataTable({order: [[1, 'desc']]});
+    } );
+    </script>
+
+  .. list-table::
+   :header-rows: 1
+   :class: table table-striped sg-datatable
+
+   * - Example
+     - Time
+     - Mem (MB)
+   * - :ref:`sphx_glr_auto_examples_05_algorithms_03_run_mlem_projection_data.py` (``../../examples/05_algorithms/03_run_mlem_projection_data.py``)
+     - 00:36.886
+     - 0.0
+   * - :ref:`sphx_glr_auto_examples_05_algorithms_05_run_fbp.py` (``../../examples/05_algorithms/05_run_fbp.py``)
+     - 00:11.613
+     - 0.0
+   * - :ref:`sphx_glr_auto_examples_05_algorithms_04_run_osem_projection_data.py` (``../../examples/05_algorithms/04_run_osem_projection_data.py``)
+     - 00:08.384
+     - 0.0
+   * - :ref:`sphx_glr_auto_examples_02_pet_sinogram_projections_02_run_pet_tof_sinogram_projector.py` (``../../examples/02_pet_sinogram_projections/02_run_pet_tof_sinogram_projector.py``)
+     - 00:05.543
+     - 0.0
+   * - :ref:`sphx_glr_auto_examples_02_pet_sinogram_projections_01_run_pet_non_tof_sinogram_projector.py` (``../../examples/02_pet_sinogram_projections/01_run_pet_non_tof_sinogram_projector.py``)
+     - 00:04.116
+     - 0.0
+   * - :ref:`sphx_glr_auto_examples_01_pet_geometry_01_run_regular_polygon_pet_scanner.py` (``../../examples/01_pet_geometry/01_run_regular_polygon_pet_scanner.py``)
+     - 00:02.415
+     - 0.0
+   * - :ref:`sphx_glr_auto_examples_03_pet_listmode_projections_02_run_pet_tof_listmode_projector.py` (``../../examples/03_pet_listmode_projections/02_run_pet_tof_listmode_projector.py``)
+     - 00:01.101
+     - 0.0
+   * - :ref:`sphx_glr_auto_examples_03_pet_listmode_projections_01_run_pet_non_tof_listmode_projector.py` (``../../examples/03_pet_listmode_projections/01_run_pet_non_tof_listmode_projector.py``)
+     - 00:01.086
+     - 0.0
+   * - :ref:`sphx_glr_auto_examples_02_pet_sinogram_projections_03_run_equalblock_projector.py` (``../../examples/02_pet_sinogram_projections/03_run_equalblock_projector.py``)
+     - 00:00.856
+     - 0.0
+   * - :ref:`sphx_glr_auto_examples_05_algorithms_07_run_mlem_open_geometry.py` (``../../examples/05_algorithms/07_run_mlem_open_geometry.py``)
+     - 00:00.845
+     - 0.0
+   * - :ref:`sphx_glr_auto_examples_01_pet_geometry_03_run_block_scanner.py` (``../../examples/01_pet_geometry/03_run_block_scanner.py``)
+     - 00:00.600
+     - 0.0
+   * - :ref:`sphx_glr_auto_examples_01_pet_geometry_02_run_regular_polygon_pet_sino.py` (``../../examples/01_pet_geometry/02_run_regular_polygon_pet_sino.py``)
+     - 00:00.554
+     - 0.0
+   * - :ref:`sphx_glr_auto_examples_05_algorithms_01_run_mlem_basic.py` (``../../examples/05_algorithms/01_run_mlem_basic.py``)
+     - 00:00.342
+     - 0.0
+   * - :ref:`sphx_glr_auto_examples_05_algorithms_02_run_osem_basic.py` (``../../examples/05_algorithms/02_run_osem_basic.py``)
+     - 00:00.334
+     - 0.0
+   * - :ref:`sphx_glr_auto_examples_07_torch_01_run_projection_layer.py` (``../../examples/07_torch/01_run_projection_layer.py``)
+     - 00:00.187
+     - 0.0
+   * - :ref:`sphx_glr_auto_examples_05_algorithms_06_run_depierro.py` (``../../examples/05_algorithms/06_run_depierro.py``)
+     - 00:00.134
+     - 0.0
+   * - :ref:`sphx_glr_auto_examples_04_low_level_02_run_tof_sinogram_projections.py` (``../../examples/04_low_level/02_run_tof_sinogram_projections.py``)
+     - 00:00.003
+     - 0.0
+   * - :ref:`sphx_glr_auto_examples_04_low_level_03_run_tof_listmode_projections.py` (``../../examples/04_low_level/03_run_tof_listmode_projections.py``)
+     - 00:00.003
+     - 0.0
+   * - :ref:`sphx_glr_auto_examples_04_low_level_01_run_nontof_projections.py` (``../../examples/04_low_level/01_run_nontof_projections.py``)
+     - 00:00.003
+     - 0.0
+   * - :ref:`sphx_glr_auto_examples_06_listmode_algorithms_01_listmode_mlem.py` (``../../examples/06_listmode_algorithms/01_listmode_mlem.py``)
+     - 00:00.000
+     - 0.0
+   * - :ref:`sphx_glr_auto_examples_06_listmode_algorithms_02_listmode_osem.py` (``../../examples/06_listmode_algorithms/02_listmode_osem.py``)
+     - 00:00.000
+     - 0.0
+   * - :ref:`sphx_glr_auto_examples_06_listmode_algorithms_03_lm_spdhg.py` (``../../examples/06_listmode_algorithms/03_lm_spdhg.py``)
+     - 00:00.000
+     - 0.0
