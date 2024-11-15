@@ -25,18 +25,26 @@ jobs:
         run: sphinx-multiversion docs/source _build/html
 
       - name: Create index.html redirect
-        if: env.build_context != 'pr'
         run: |
           git fetch origin gh-pages
           git checkout gh-pages
 
           # Determine redirect target
-          tagged_versions=$(ls _build/html | grep '^v')
+          tagged_versions=$(ls _build/html | grep '^v' || true)
           if [ -n "$tagged_versions" ]; then
             latest_tag=$(echo "$tagged_versions" | sort -V | tail -n 1)
             redirect_target="$latest_tag/index.html"
           else
             redirect_target="master/index.html"
+          fi
+
+          # Ensure _build/html directory exists
+          mkdir -p _build/html
+
+          # Ensure index.html can be overwritten
+          if [ -f _build/html/index.html ]; then
+            echo "Overwriting existing _build/html/index.html"
+            rm _build/html/index.html
           fi
 
           # Create index.html for redirect
