@@ -62,10 +62,17 @@ jobs:
           git fetch origin gh-pages
           git checkout gh-pages
 
-          # Determine redirect target
-          tagged_versions=$(ls _build/html | grep '^v' || true)
-          if [ -n "$tagged_versions" ]; then
-            latest_tag=$(echo "$tagged_versions" | sort -V | tail -n 1)
+          # Collect version folders from gh-pages
+          gh_pages_tags=$(git ls-tree --name-only origin/gh-pages | grep '^v' || true)
+
+          # Collect version folders from current _build/html
+          local_tags=$(ls _build/html | grep '^v' || true)
+
+          # Combine both lists, sort them, and find the latest version
+          all_tags=$(echo -e "$gh_pages_tags\n$local_tags" | sort -V | uniq)
+
+          if [ -n "$all_tags" ]; then
+            latest_tag=$(echo "$all_tags" | tail -n 1)
             redirect_target="$latest_tag/index.html"
           else
             redirect_target="master/index.html"
@@ -73,12 +80,6 @@ jobs:
 
           # Ensure _build/html directory exists
           mkdir -p _build/html
-
-          # Ensure index.html can be overwritten
-          if [ -f _build/html/index.html ]; then
-            echo "Overwriting existing _build/html/index.html"
-            rm _build/html/index.html
-          fi
 
           # Create index.html for redirect
           echo '<!DOCTYPE html>' > _build/html/index.html
