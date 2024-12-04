@@ -117,7 +117,7 @@ res_model = parallelproj.GaussianFilterOperator(
 )
 
 # compose all 3 operators into a single linear operator
-pet_lin_op = parallelproj.CompositeLinearOperator((att_op, proj, res_model))
+proj = parallelproj.CompositeLinearOperator((proj, res_model))
 
 
 # %%
@@ -128,7 +128,7 @@ pet_lin_op = parallelproj.CompositeLinearOperator((att_op, proj, res_model))
 # noise-free and noisy data :math:`y` by adding Poisson noise.
 
 # simulated noise-free data
-noise_free_data = pet_lin_op(x_true)
+noise_free_data = att_op(proj(x_true))
 
 # generate a contant contamination sinogram
 contamination = xp.full(
@@ -178,7 +178,8 @@ y = xp.asarray(
 def em_update(
     x_cur: Array,
     data: Array,
-    op: parallelproj.LinearOperator,
+    p: parallelproj.LinearOperator,
+    m: parallelproj.LinearOperator | None,
     s: Array,
     adjoint_ones: Array,
 ) -> Array:
@@ -190,8 +191,10 @@ def em_update(
         current solution
     data : Array
         data
-    op : parallelproj.LinearOperator
-        linear forward operator
+    p : parallelproj.LinearOperator
+        projection operator excluding mult. corrections
+    m : parallelproj.LinearOperator
+        (non-TOF) multiplicative corrections operator
     s : Array
         contamination
     adjoint_ones : Array
@@ -202,8 +205,15 @@ def em_update(
     Array
         _description_
     """
-    ybar = op(x_cur) + s
-    return x_cur * op.adjoint(data / ybar) / adjoint_ones
+
+    if m is None:
+        ybar = p(x_cur) + s
+        res = x_cur * p.adjoint(data / ybar) / adjoint_ones
+    else:
+        ybar = m(p(x_cur)) + s
+        res = x_cur * p.adjoint(m.adjoint(data / ybar)) / adjoint_ones
+
+    return res
 
 
 # %%
@@ -211,45 +221,32 @@ def em_update(
 # -----------------------
 
 # number of MLEM iterations
-num_iter = 100
+num_iter = 200
 
 # initialize x
-x = xp.ones(pet_lin_op.in_shape, dtype=xp.float32, device=dev)
+x = xp.ones(proj.in_shape, dtype=xp.float32, device=dev)
 # calculate A^H 1
-adjoint_ones = pet_lin_op.adjoint(
-    xp.ones(pet_lin_op.out_shape, dtype=xp.float32, device=dev)
+adjoint_ones = proj.adjoint(
+    att_op.adjoint(xp.ones(proj.out_shape, dtype=xp.float32, device=dev))
 )
 
 for i in range(num_iter):
     print(f"MLEM iteration {(i + 1):03} / {num_iter:03}", end="\r")
-    x = em_update(x, y, pet_lin_op, contamination, adjoint_ones)
+    x = em_update(x, y, proj, att_op, contamination, adjoint_ones)
 
 
 # %%
 # Run the MLEM iterations without accounting for attenuation sinogram
 # -------------------------------------------------------------------
 
-if proj.tof:
-    att_op_nac = parallelproj.TOFNonTOFElementwiseMultiplicationOperator(
-        proj.out_shape, att_sino * 0 + gain
-    )
-else:
-    att_op_nac = parallelproj.ElementwiseMultiplicationOperator(att_sino * 0 + gain)
-
-# compose all 3 operators into a single linear operator
-pet_lin_op_nac = parallelproj.CompositeLinearOperator((att_op_nac, proj, res_model))
-
-
 # initialize x
-x_nac = xp.ones(pet_lin_op_nac.in_shape, dtype=xp.float32, device=dev)
+x_nac = xp.ones(proj.in_shape, dtype=xp.float32, device=dev)
 # calculate A^H 1
-adjoint_ones_nac = pet_lin_op_nac.adjoint(
-    xp.ones(pet_lin_op.out_shape, dtype=xp.float32, device=dev)
-)
+adjoint_ones_nac = proj.adjoint(xp.ones(proj.out_shape, dtype=xp.float32, device=dev))
 
 for i in range(num_iter):
     print(f"MLEM iteration {(i + 1):03} / {num_iter:03}", end="\r")
-    x_nac = em_update(x, y, pet_lin_op_nac, contamination, adjoint_ones_nac)
+    x_nac = em_update(x, y, proj, None, contamination, adjoint_ones_nac)
 
 
 # %%
