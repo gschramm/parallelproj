@@ -288,14 +288,11 @@ for i_outer in range(num_outer_iterations):
 
             # calculate the the function f we want to minimize
             f = p_i - ((y * p_it) / ybar).sum(-1)
-            print(i_mlacf, (f * mask).min(), (f * mask).max(), end="\r")
             fprime = ((y * (p_it**2)) / (ybar**2)).sum(-1)
 
             update = xp.zeros_like(f)
             inds = xp.where(fprime != 0)
             update[inds] = f[inds] / fprime[inds]
-
-            update *= mask
 
             # update the attn sino and the attenuation operator
             att_sino_cur -= update
