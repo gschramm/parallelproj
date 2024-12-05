@@ -25,7 +25,13 @@ elif "torch" in xp.__name__:
         dev = "cpu"
 
 # %%
-gain = 100.0  # gain factor controlling sensitivity -> higher for more counts
+gain = 5.0  # gain factor controlling sensitivity -> higher for more counts
+
+# number of MLEM iterations
+num_mlem_updates = 10
+num_mlacf_newton_updates = 10
+num_outer_iterations = 20
+
 
 # %%
 # Setup of the forward model :math:`\bar{y}(x) = A x + s`
@@ -86,6 +92,9 @@ x_true[:, -20:, :] = 0
 
 # setup an attenuation image
 x_att = 0.01 * xp.astype(x_true > 0, xp.float32)
+x_att[110:150, 110:150] = 0.02
+x_att[50:90, 50:90] = 0.003
+
 # calculate the attenuation sinogram
 att_sino = gain * xp.exp(-proj(x_att))
 
@@ -98,19 +107,13 @@ att_sino = gain * xp.exp(-proj(x_att))
 # a non-TOF or TOF PET projector and an attenuation model
 # into a single linear operator.
 
-# enable TOF - comment if you want to run non-TOF
 proj.tof_parameters = parallelproj.TOFParameters(
     num_tofbins=51, tofbin_width=12.0, sigma_tof=12.0
 )
 
-# setup the attenuation multiplication operator which is different
-# for TOF and non-TOF since the attenuation sinogram is always non-TOF
-if proj.tof:
-    att_op = parallelproj.TOFNonTOFElementwiseMultiplicationOperator(
-        proj.out_shape, att_sino
-    )
-else:
-    att_op = parallelproj.ElementwiseMultiplicationOperator(att_sino)
+att_op = parallelproj.TOFNonTOFElementwiseMultiplicationOperator(
+    proj.out_shape, att_sino
+)
 
 res_model = parallelproj.GaussianFilterOperator(
     proj.in_shape, sigma=4.5 / (2.35 * proj.voxel_size)
@@ -220,39 +223,87 @@ def em_update(
 # Run the MLEM iterations
 # -----------------------
 
-# number of MLEM iterations
-num_iter = 200
-
 # initialize x
-x = xp.ones(proj.in_shape, dtype=xp.float32, device=dev)
+x_mlem = xp.ones(proj.in_shape, dtype=xp.float32, device=dev)
 # calculate A^H 1
-adjoint_ones = proj.adjoint(
+adjoint_ones_mlem = proj.adjoint(
     att_op.adjoint(xp.ones(proj.out_shape, dtype=xp.float32, device=dev))
 )
 
+num_iter = num_outer_iterations * num_mlem_updates
+
 for i in range(num_iter):
     print(f"MLEM iteration {(i + 1):03} / {num_iter:03}", end="\r")
-    x = em_update(x, y, proj, att_op, contamination, adjoint_ones)
+    x_mlem = em_update(x_mlem, y, proj, att_op, contamination, adjoint_ones_mlem)
 
 
 # %%
 # Run the MLEM iterations without accounting for attenuation sinogram
 # -------------------------------------------------------------------
 
-# initialize x
-x_nac = xp.ones(proj.in_shape, dtype=xp.float32, device=dev)
-# calculate A^H 1
-adjoint_ones_nac = proj.adjoint(xp.ones(proj.out_shape, dtype=xp.float32, device=dev))
+# initialize variables
+x_mlacf = xp.ones(proj.in_shape, dtype=xp.float32, device=dev)
 
-for i in range(num_iter):
-    print(f"MLEM iteration {(i + 1):03} / {num_iter:03}", end="\r")
-    x_nac = em_update(x, y, proj, None, contamination, adjoint_ones_nac)
+att_sino_cur = 0 * att_sino + gain
+att_sino_init = att_sino_cur.copy()
+att_op_cur = parallelproj.TOFNonTOFElementwiseMultiplicationOperator(
+    proj.out_shape, att_sino_cur
+)
+#############################
 
+for i_outer in range(num_outer_iterations):
+    print(f"Outer iteration {(i_outer + 1):03} / {num_outer_iterations:03}")
+    # calculate A^H 1 with current attenuation sinogram
+    adjoint_ones_cur = proj.adjoint(
+        att_op_cur.adjoint(xp.ones(proj.out_shape, dtype=xp.float32, device=dev))
+    )
+
+    # run activity MLEM updates using current attenuation sinogram and adjoint ones
+    for i in range(num_mlem_updates):
+        print(f"MLEM update {(i + 1):03} / {num_mlem_updates:03}", end="\r")
+        x_mlacf = em_update(
+            x_mlacf, y, proj, att_op_cur, contamination, adjoint_ones_cur
+        )
+    print()
+
+    #############################
+    # MLACF attenuation sinogram update
+
+    # TOF projection excluding attenuation
+    p_it = proj(x_mlacf)
+    # TOF projection excluding attenuation summed over TOF bins
+    p_i = p_it.sum(-1)
+    # mask for MLACF attenuation sino update
+    mask = p_i > (0.01 * p_i.max())
+
+    for i_mlacf in range(num_mlacf_newton_updates):
+        ybar = att_op_cur(p_it) + contamination
+
+        # calculate the the function f we want to minimize
+        f = p_i - ((y * p_it) / ybar).sum(-1)
+        print(i_mlacf, (f * mask).min(), (f * mask).max(), end="\r")
+        fprime = ((y * (p_it**2)) / (ybar**2)).sum(-1)
+
+        update = xp.zeros_like(f)
+        inds = xp.where(fprime != 0)
+        update[inds] = f[inds] / fprime[inds]
+
+        update *= mask
+
+        # update the attn sino and the attenuation operator
+        att_sino_cur -= update
+        # clip negative values
+        att_sino_cur = xp.clip(att_sino_cur, 0, None)
+
+        att_op_cur = parallelproj.TOFNonTOFElementwiseMultiplicationOperator(
+            proj.out_shape, att_sino_cur
+        )
+    print()
 
 # %%
 
 fig, ax = plt.subplots(1, 4, figsize=(16, 4), tight_layout=True)
 ax[0].imshow(x_true[:, :, 0].get(), cmap="Greys")
-ax[1].imshow(x[:, :, 0].get(), cmap="Greys")
-ax[2].imshow(x_nac[:, :, 0].get(), cmap="Greys")
+ax[1].imshow(x_mlem[:, :, 0].get(), cmap="Greys")
+ax[2].imshow(x_mlacf[:, :, 0].get(), cmap="Greys")
 fig.show()
