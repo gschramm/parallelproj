@@ -28,17 +28,16 @@ elif "torch" in xp.__name__:
         dev = "cpu"
 
 # %%
-gain = 1.0  # gain factor controlling sensitivity -> higher for more counts
-fwhm_tof_mm = 30.0
+gain = 0.1  # gain factor controlling sensitivity -> higher for more counts
+fwhm_tof_mm = 10.0
 res_fwhm_mm = 4.5
 
 # number of MLEM iterations
 num_mlem_updates = 5
 num_mlacf_newton_updates = 10
 num_outer_iterations = 40
-mlacf_update_type: str = (
-    "poisson-newton"  # "poisson-newton" or "unweighted-gauss-analytic", "weighted-gauss-analytic"  or "None"
-)
+# "poisson-newton" or "unweighted-gauss-analytic", "weighted-gauss-analytic"  or "None"
+mlacf_update_type: str = "poisson-newton"
 
 # %%
 if mlacf_update_type not in [
@@ -381,6 +380,10 @@ x_mlacf_np_smooth = gaussian_filter(
     x_mlacf_np, sigma=ps_fwhm_mm / (2.35 * np.array(voxel_size))
 )
 
+# correct gain (sens) factor in attn sinos
+att_sino_np /= gain
+att_sino_mlacf_np /= gain
+
 # %%
 
 kws = dict(cmap="Greys", vmin=0, vmax=1.2 * float(x_true_np.max()))
@@ -445,5 +448,10 @@ ax[0, 4].set_ylim(pmin, pmax)
 
 for i in [(2, 0), (1, 4), (2, 4)]:
     ax[i].set_axis_off()
+
+ax[0, 4].set_title(
+    f"counts: {float(y.sum()):.1E}, FWHM tof: {fwhm_tof_mm} mm\n FWHM res: {res_fwhm_mm} mm",
+    fontsize="small",
+)
 
 fig.show()
