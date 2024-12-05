@@ -28,8 +28,8 @@ elif "torch" in xp.__name__:
         dev = "cpu"
 
 # %%
-gain = 0.1  # gain factor controlling sensitivity -> higher for more counts
-fwhm_tof_mm = 10.0
+gain = 1.0  # gain factor controlling sensitivity -> higher for more counts
+fwhm_tof_mm = 30.0
 res_fwhm_mm = 4.5
 
 # number of MLEM iterations
@@ -307,6 +307,15 @@ for i_outer in range(num_outer_iterations):
 
     if mlacf_update_type == "poisson-newton":
         # initialize with the weighted gaussian analytic update
+        inds = xp.where(mask)
+        att_sino_cur[inds] = (y[inds] - contamination[inds]).sum(-1) / p_i[inds]
+
+        # clip negative values
+        att_sino_cur = xp.clip(att_sino_cur, 0, None)
+
+        att_op_cur = parallelproj.TOFNonTOFElementwiseMultiplicationOperator(
+            proj.out_shape, att_sino_cur
+        )
 
         for i_mlacf in range(num_mlacf_newton_updates):
             ybar = att_op_cur(p_it) + contamination
