@@ -10,6 +10,8 @@ import array_api_compat.numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.animation as animation
 
+from scipy.ndimage import gaussian_filter
+
 # choose a device (CPU or CUDA GPU)
 if "numpy" in xp.__name__:
     # using numpy, device must be cpu
@@ -25,12 +27,13 @@ elif "torch" in xp.__name__:
         dev = "cpu"
 
 # %%
-gain = 5.0  # gain factor controlling sensitivity -> higher for more counts
+gain = 1.0  # gain factor controlling sensitivity -> higher for more counts
 
 # number of MLEM iterations
 num_mlem_updates = 10
 num_mlacf_newton_updates = 10
 num_outer_iterations = 20
+mlacf_update_type = "poisson-newton"  # "poisson-newton" or "unweighted-gauss-analytic", "weighted-gauss-analytic"  other options result in no update
 
 
 # %%
@@ -276,34 +279,96 @@ for i_outer in range(num_outer_iterations):
     # mask for MLACF attenuation sino update
     mask = p_i > (0.01 * p_i.max())
 
-    for i_mlacf in range(num_mlacf_newton_updates):
-        ybar = att_op_cur(p_it) + contamination
+    if mlacf_update_type == "poisson-newton":
+        print("poisson-newton attenuation sinogram update")
+        # initialize with the weighted gaussian analytic update
 
-        # calculate the the function f we want to minimize
-        f = p_i - ((y * p_it) / ybar).sum(-1)
-        print(i_mlacf, (f * mask).min(), (f * mask).max(), end="\r")
-        fprime = ((y * (p_it**2)) / (ybar**2)).sum(-1)
+        for i_mlacf in range(num_mlacf_newton_updates):
+            ybar = att_op_cur(p_it) + contamination
 
-        update = xp.zeros_like(f)
-        inds = xp.where(fprime != 0)
-        update[inds] = f[inds] / fprime[inds]
+            # calculate the the function f we want to minimize
+            f = p_i - ((y * p_it) / ybar).sum(-1)
+            print(i_mlacf, (f * mask).min(), (f * mask).max(), end="\r")
+            fprime = ((y * (p_it**2)) / (ybar**2)).sum(-1)
 
-        update *= mask
+            update = xp.zeros_like(f)
+            inds = xp.where(fprime != 0)
+            update[inds] = f[inds] / fprime[inds]
 
-        # update the attn sino and the attenuation operator
-        att_sino_cur -= update
+            update *= mask
+
+            # update the attn sino and the attenuation operator
+            att_sino_cur -= update
+            # clip negative values
+            att_sino_cur = xp.clip(att_sino_cur, 0, None)
+            att_op_cur = parallelproj.TOFNonTOFElementwiseMultiplicationOperator(
+                proj.out_shape, att_sino_cur
+            )
+        print()
+    elif mlacf_update_type == "unweighted-gauss-analytic":
+        print("unweighted gauss-analytic attenuation sinogram update")
+        inds = xp.where(mask)
+        att_sino_cur[inds] = ((y[inds] - contamination[inds]) * p_it[inds]).sum(-1) / (
+            p_it**2
+        ).sum(-1)[inds]
+
         # clip negative values
         att_sino_cur = xp.clip(att_sino_cur, 0, None)
 
         att_op_cur = parallelproj.TOFNonTOFElementwiseMultiplicationOperator(
             proj.out_shape, att_sino_cur
         )
-    print()
+    elif mlacf_update_type == "weighted-gauss-analytic":
+        print("weighted gauss-analytic attenuation sinogram update")
+        inds = xp.where(mask)
+        att_sino_cur[inds] = (y[inds] - contamination[inds]).sum(-1) / p_i[inds]
+
+        # clip negative values
+        att_sino_cur = xp.clip(att_sino_cur, 0, None)
+
+        att_op_cur = parallelproj.TOFNonTOFElementwiseMultiplicationOperator(
+            proj.out_shape, att_sino_cur
+        )
+    else:
+        print("no attenuation sinogram update")
+
+# %%
+# calculate the Poisson log-likelihood of the final MLEM and MLACF solutions
+
+exp_mlem = att_op(proj(x_mlem)) + contamination
+logL_mlem = float((y * xp.log(exp_mlem) - exp_mlem).sum())
+
+exp_mlacf = att_op_cur(proj(x_mlacf)) + contamination
+logL_mlacf = float((y * xp.log(exp_mlacf) - exp_mlacf).sum())
+
+print(f"MLEM log-likelihood: {logL_mlem}")
+print(f"MLACF {mlacf_update_type} log-likelihood: {logL_mlacf}")
 
 # %%
 
-fig, ax = plt.subplots(1, 4, figsize=(16, 4), tight_layout=True)
-ax[0].imshow(x_true[:, :, 0].get(), cmap="Greys")
-ax[1].imshow(x_mlem[:, :, 0].get(), cmap="Greys")
-ax[2].imshow(x_mlacf[:, :, 0].get(), cmap="Greys")
+x_true_np = parallelproj.to_numpy_array(x_true)
+x_mlem_np = parallelproj.to_numpy_array(x_mlem)
+x_mlacf_np = parallelproj.to_numpy_array(x_mlacf)
+x_att_np = parallelproj.to_numpy_array(x_att)
+
+ps_fwhm_mm = 6.0
+x_true_np_smooth = gaussian_filter(
+    x_true_np, sigma=ps_fwhm_mm / (2.35 * np.array(voxel_size))
+)
+x_mlem_np_smooth = gaussian_filter(
+    x_mlem_np, sigma=ps_fwhm_mm / (2.35 * np.array(voxel_size))
+)
+x_mlacf_np_smooth = gaussian_filter(
+    x_mlacf_np, sigma=ps_fwhm_mm / (2.35 * np.array(voxel_size))
+)
+
+sl_z = proj.in_shape[2] // 2
+
+fig, ax = plt.subplots(2, 4, figsize=(12, 6), tight_layout=True)
+ax[0, 0].imshow(x_true_np[:, :, sl_z], cmap="Greys")
+ax[0, 1].imshow(x_mlem_np[:, :, sl_z], cmap="Greys")
+ax[0, 2].imshow(x_mlacf_np[:, :, sl_z], cmap="Greys")
+ax[0, 3].imshow(x_att_np[:, :, sl_z], cmap="Greys")
+ax[1, 1].imshow(x_mlem_np_smooth[:, :, sl_z], cmap="Greys")
+ax[1, 2].imshow(x_mlacf_np_smooth[:, :, sl_z], cmap="Greys")
 fig.show()
