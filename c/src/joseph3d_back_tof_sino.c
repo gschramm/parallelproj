@@ -46,6 +46,18 @@ void joseph3d_back_tof_sino(const float *xstart,
   # pragma omp parallel for schedule(static)
   for(i = 0; i < nlors; i++)
   {
+    float tof_lor_sum = 0;
+
+    // check whether the sum over TOF of the TOF sinogram to be backprojcted is > 0
+    // if it is 0, we can skip the backprojection of this LOR
+    for (int j = 0; j < n_tofbins; j++) {
+      tof_lor_sum += p[i * n_tofbins + j];
+    }
+
+    if (tof_lor_sum == 0) {
+      continue;
+    }
+
     float d0, d1, d2, d0_sq, d1_sq, d2_sq;
     float cs0, cs1, cs2, cf; 
     float lsq, cos0_sq, cos1_sq, cos2_sq;

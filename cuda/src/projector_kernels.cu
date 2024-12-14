@@ -816,8 +816,20 @@ extern "C" __global__ void joseph3d_back_tof_sino_cuda_kernel(float *xstart,
 
   int n_half = n_tofbins/2;
 
+  float tof_lor_sum = 0.0f;
+
   if(i < nlors)
   {
+    // check whether the sum over TOF of the TOF sinogram to be backprojcted is > 0
+    // if it is 0, we can skip the backprojection of this LOR
+    for (int j = 0; j < n_tofbins; j++) {
+      tof_lor_sum += p[i * n_tofbins + j];
+    }
+
+    if (tof_lor_sum == 0) {
+      return;
+    }
+
     float d0, d1, d2, d0_sq, d1_sq, d2_sq;
     float cs0, cs1, cs2, cf; 
     float lsq, cos0_sq, cos1_sq, cos2_sq;
