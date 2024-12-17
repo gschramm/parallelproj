@@ -1,7 +1,7 @@
 [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/gschramm/parallelproj/master?labpath=examples)
 
 <p align="center">
-<img src="./docs/source/parallelproj-logo-white-bg.svg" width="350">
+<img src="./docs/source/_static/parallelproj-logo-white-bg.svg" width="350">
 </p>
 
 **OpenMP and CUDA libraries + python interface for 3D Joseph non-TOF and TOF forward and back projectors.**
