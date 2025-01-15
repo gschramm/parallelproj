@@ -115,12 +115,12 @@ html_sidebars = {
     ],
 }
 
-# html_context = {
-#  'display_github': True,
-#  'github_user': 'gschramm',
-#  'github_repo': 'parallelproj',
-#  'github_version': 'master/docs/source/',
-# }
+html_context = {
+    "display_github": True,
+    "github_user": "gschramm",
+    "github_repo": "parallelproj",
+    "github_version": "master/docs/source/",
+}
 
 # -- Options for EPUB output -------------------------------------------------
 epub_show_urls = "footnote"
