@@ -4,14 +4,12 @@ build:
   os: "ubuntu-lts-latest"
   tools:
     python: "mambaforge-latest"
-  environ:
-    PARALLELPROJ_C_LIB: "${READTHEDOCS_REPOSITORY_PATH}/libparallelproj_install/lib/libparallelproj_c.so"
   jobs:
     post_install:
       - cmake -B ./build -DCMAKE_INSTALL_PREFIX=./libparallelproj_install
       - cmake --build ./build --target install
       - ls -l ./libparallelproj_install/lib
-      - echo ${PARALLELPROJ_C_LIB} 
+      - echo ${PARALLELPROJ_C_LIB} # defined in the RTD project settings
       - ls -l ${PARALLELPROJ_C_LIB} 
 
 conda:
