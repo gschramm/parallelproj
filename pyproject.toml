@@ -7,7 +7,7 @@ authors = [
 ]
 dependencies = [
     "numpy>=1.23",
-    "scipy~=1.0",
+    "scipy>=1.0",
     "array-api-compat~=1.7",
     "matplotlib~=3.8",
 ]
