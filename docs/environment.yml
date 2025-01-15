@@ -13,3 +13,4 @@ dependencies:
   - array-api-compat
   - pytorch
   - scipy
+  - cmake
