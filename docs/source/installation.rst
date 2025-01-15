@@ -20,13 +20,13 @@ To install parallelproj (and the required compiled libraries) from conda-forge, 
 
         .. code-block:: console
         
-           $ mamba install libparallelproj parallelproj
+           $ mamba install parallelproj
 
     .. tab-item:: conda
 
         .. code-block:: console
         
-           $ conda install -c conda-forge libparallelproj parallelproj
+           $ conda install -c conda-forge parallelproj
 
 .. tip::
 
@@ -40,18 +40,18 @@ To install parallelproj and cupy (optional and only if you have a CUDA GPU) from
 
         .. code-block:: console
         
-           $ mamba install libparallelproj parallelproj cupy "numpy<2"
+           $ mamba install parallelproj cupy
 
     .. tab-item:: conda
 
         .. code-block:: console
         
-           $ conda install -c conda-forge libparallelproj parallelproj cupy "numpy<2"
+           $ conda install -c conda-forge parallelproj cupy
 
 .. note::
-   Support for numpy version 2 is not yet available in cupy and pytorch. Therefore, we have to restrict the numpy version for now (July 2024).
-   In the future, this will change.
-
+   On conda-forge, CPU, CUDA 11 and CUDA 12 builds of `libparallelproj` are availalbe.
+   conda / mamba should automatically install the correct version on your local CUDA system.
+   Nevertheless, you can explicitly specify the CUDA version by adding the package `cuda-version=11.X` or `cuda-version=12.X` to the install command.
 
 .. tip::
 
@@ -65,25 +65,25 @@ To install parallelproj and pytorch (optional) from conda-forge, run
 
         .. code-block:: console
         
-           $ mamba install libparallelproj parallelproj pytorch cupy "numpy<2"
+           $ mamba install parallelproj pytorch cupy
 
     .. tab-item:: mamba, pytorch without CUDA support
 
         .. code-block:: console
         
-           $ mamba install libparallelproj parallelproj pytorch "numpy<2"
+           $ mamba install parallelproj pytorch
 
     .. tab-item:: conda pytorch with CUDA support
 
         .. code-block:: console
         
-           $ conda install -c conda-forge libparallelproj parallelproj pytorch cupy "numpy<2"
+           $ conda install -c conda-forge parallelproj pytorch cupy
 
     .. tab-item:: conda pytorch without CUDA support
 
         .. code-block:: console
         
-           $ conda install -c conda-forge libparallelproj parallelproj pytorch "numpy<2"
+           $ conda install -c conda-forge parallelproj pytorch
 
 Note that in case you want to use parallelproj with pytorch GPU tensors, cupy must be installed
 next to pytorch as well, as shown in tabs above.

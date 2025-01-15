@@ -1,3 +1,10 @@
+## 1.10.1 (Jan 15, 2025)
+
+- add a check whether sum of tof bins along LOR is non-zero before running
+  TOF sinogram back projector
+- update installation instructions after conda-forge recipe was updated
+- clean up RTD docs build
+
 ## 1.10.0 (July 29, 2024)
 
 - add support for numpy>=2.0
