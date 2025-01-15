@@ -8,7 +8,9 @@ build:
     post_install:
       - cmake -B ./build -DCMAKE_INSTALL_PREFIX=./libparallelproj_install
       - cmake --build ./build --target install
-      - export PARALLELPROJ_C_LIB=./libparallelproj_install/lib/libparallelproj_c.so
+      - ls -l ./libparallelproj_install/lib
+      #- export PARALLELPROJ_C_LIB=./libparallelproj_install/lib/libparallelproj_c.so
+      # the PARALLELPROJ_C_LIB environment variable must be defiend in the RTD project dashboard
       - ls -l ${PARALLELPROJ_C_LIB} 
 
 conda:
