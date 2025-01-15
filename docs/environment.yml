@@ -2,16 +2,15 @@ name: readthedocs
 channels:
   - conda-forge
 dependencies:
-  - python < 3.13
+  - python
   - sphinx>=7.0
-  - sphinx_rtd_theme
+  - sphinx-rtd-theme
   - sphinx-gallery
   - sphinx-design
   - sphinx-copybutton
   - sphinxcontrib-bibtex
-  - sphinx-multiversion
-  - libparallelproj
   - matplotlib
   - array-api-compat
   - pytorch
   - scipy
+  - cmake
