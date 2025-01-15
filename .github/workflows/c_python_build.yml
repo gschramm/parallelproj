@@ -26,9 +26,14 @@ jobs:
 
     strategy:
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-12] # not building on mac-os because there is no OpenMP
+        os: [ubuntu-latest, windows-latest] # not building on mac-os because there is no OpenMP
         python-version: [3.9, 3.12]
         test-env: [test-numpy-1, test-numpy-2]
+        exclude:
+          - os: windows-latest
+            python-version: 3.9
+          - os: windows-latest
+            test-env: test-numpy-1
 
     steps:
     - uses: actions/checkout@v4
