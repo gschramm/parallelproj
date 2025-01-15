@@ -4,12 +4,14 @@ build:
   os: "ubuntu-lts-latest"
   tools:
     python: "mambaforge-latest"
+  environ:
+    PARALLELPROJ_C_LIB: "${READTHEDOCS_REPOSITORY_PATH}/libparallelproj_install/lib/libparallelproj_c.so"
   jobs:
     post_install:
       - cmake -B ./build -DCMAKE_INSTALL_PREFIX=./libparallelproj_install
       - cmake --build ./build --target install
       - ls -l ./libparallelproj_install/lib
-      - export PARALLELPROJ_C_LIB=${PWD}/libparallelproj_install/lib/libparallelproj_c.so
+      - echo ${PARALLELPROJ_C_LIB} 
       - ls -l ${PARALLELPROJ_C_LIB} 
 
 conda:
