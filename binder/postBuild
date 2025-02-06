@@ -1,7 +1,8 @@
 # convert all sphinx-gallery scripts to jupyer notebooks
-find examples -name "??_*.py" -exec sphx_glr_python_to_jupyter.py {} \;
-# remove the python scripts
-find examples -name "??_*.py" -exec rm {} \;
+find examples -name "??_*.py" -exec sphinx_gallery_py2jupyter {} \;
 
-# install the package
-pip install -e .
+## remove the python scripts
+#find examples -name "??_*.py" -exec rm {} \;
+
+## install the package
+#pip install -e .
