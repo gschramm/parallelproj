@@ -27,14 +27,12 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest]
+        python-version: [3.12]
+        numpy-version: [latest]
         include:
           - python-version: 3.9
             numpy-version: 1.23
-          - python-version: 3.12
-            numpy-version: latest
-        exclude:
-          - os: windows-latest  #  Exclude Windows builds for:
-            python-version: 3.9  # Python 3.9
+            os: ubuntu-latest
 
     steps:
     - uses: actions/checkout@v4
