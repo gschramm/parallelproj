@@ -62,6 +62,7 @@ jobs:
         python -m build
 
     - name: Install numpy
+      shell: bash 
       run: |
         if [ "${{ matrix.numpy-version }}" = "latest" ]; then
           pip install numpy
