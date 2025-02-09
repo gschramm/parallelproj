@@ -27,13 +27,14 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest] # not building on mac-os because there is no OpenMP
-        python-version: [3.9, 3.12]
-        numpy-version: [1.23, 2.0]
+        include:
+          - python-version: 3.9
+            numpy-version: 1.23  # Python 3.9 -> NumPy 1.23
+          - python-version: 3.12
+            numpy-version: latest  # Python 3.12 -> Latest NumPy
         exclude:
           - os: windows-latest
             python-version: 3.9
-          - os: windows-latest
-            numpy-version: 1.23
 
     steps:
     - uses: actions/checkout@v4
