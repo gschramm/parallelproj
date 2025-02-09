@@ -1,3 +1,7 @@
+[build-system]
+requires = ["setuptools >= 61.0", "wheel", "setuptools-scm"]
+build-backend = "setuptools.build_meta"
+
 [project]
 name = "parallelproj"
 version = "1.10.1"
@@ -21,28 +25,6 @@ classifiers = [
 
 [project.urls]
 Homepage = "https://github.com/gschramm/parallelproj"
-
-[build-system]
-requires = ["pdm-backend"]
-build-backend = "pdm.backend"
-
-[tool.pdm]
-distribution = true
-
-[tool.pdm.dev-dependencies]
-test-numpy-1 = [
-    "pytest>=8.1.1",
-    "pytest-cov>=4.1.0",
-    "array-api-strict~=1.0",
-    "numpy<2",
-    "torch~=2.0"
-]
-test-numpy-2 = [
-    "pytest>=8.1.1",
-    "pytest-cov>=4.1.0",
-    "array-api-strict~=1.0",
-    "numpy>=2"
-]
 
 [tool.coverage.report]
 exclude_lines = [
@@ -72,4 +54,3 @@ exclude_lines = [
     "elif not cupy_enabled and torch_enabled",
     "elif cupy_enabled and not torch_enabled"
 ]
-

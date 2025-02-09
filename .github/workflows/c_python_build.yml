@@ -26,17 +26,24 @@ jobs:
 
     strategy:
       matrix:
-        os: [ubuntu-latest, windows-latest] # not building on mac-os because there is no OpenMP
-        python-version: [3.9, 3.12]
-        test-env: [test-numpy-1, test-numpy-2]
-        exclude:
-          - os: windows-latest
-            python-version: 3.9
-          - os: windows-latest
-            test-env: test-numpy-1
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        python-version: [3.13]
+        numpy-version: [latest]
+        include:
+          - python-version: 3.9
+            numpy-version: 1.23
+            os: ubuntu-latest
 
     steps:
     - uses: actions/checkout@v4
+
+    - name: Install openmp on macOS
+      if: runner.os == 'macOS'
+      run: |
+        brew update
+        brew install llvm libomp  # Install OpenMP
+        echo "CC=/opt/homebrew/opt/llvm/bin/clang" >> $GITHUB_ENV
+        echo "CXX=/opt/homebrew/opt/llvm/bin/clang++" >> $GITHUB_ENV
 
     - name: Configure CMake
       # Configure CMake in a 'build' subdirectory. `CMAKE_BUILD_TYPE` is only required if you are using a single-configuration generator such as make.
@@ -47,29 +54,57 @@ jobs:
       # Build your program with the given configuration
       run: cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}} --target install
 
-    - name: Set up PDM
-      uses: pdm-project/setup-pdm@v4
+    - name: Set up Python
+      uses: actions/setup-python@v4
       with:
         python-version: ${{ matrix.python-version }}
 
-    - name: Show package version
+    - name: Install build and setuptools
       run: |
-        pdm show --version
-    - name: Install dependencies and package
+        python -m pip install --upgrade pip
+        pip install setuptools wheel
+        pip install build
+
+    - name: Build the package
       run: |
-        pdm install -d -G ${{ matrix.test-env }}
+        python -m build
+
+    - name: Install numpy
+      shell: bash 
+      run: |
+        if [ "${{ matrix.numpy-version }}" = "latest" ]; then
+          pip install numpy
+        else
+          pip install numpy==${{ matrix.numpy-version }}
+        fi
+
+    - name: Install the package
+      shell: bash 
+      run: |
+        pip install dist/*.whl
+    
+    - name: Install tests dependencies
+      run: |
+        pip install pytest pytest-cov
+        pip install array-api-strict~=1.0
 
     - if: matrix.os == 'ubuntu-latest'
       name: Run Tests
       run: |
-        pdm run -v pytest tests -v --cov-report term-missing --cov "src/parallelproj"  --cov-fail-under=100
+        pytest tests -vv --cov-report term-missing --cov parallelproj  --cov-fail-under=100
       env: 
         PARALLELPROJ_C_LIB: ${{github.workspace}}/libparallelproj_install/lib/libparallelproj_c.so
+
+    - if: matrix.os == 'macos-latest'
+      name: Run Tests
+      run: |
+        pytest tests -vv --cov-report term-missing --cov parallelproj  --cov-fail-under=100
+      env: 
+        PARALLELPROJ_C_LIB: ${{github.workspace}}/libparallelproj_install/lib/libparallelproj_c.dylib
 
     - if: matrix.os == 'windows-latest'
       name: Run Tests
       run: |
-        pdm run -v pytest tests -v --cov-report term-missing --cov "src/parallelproj"  --cov-fail-under=100
+        pytest tests -vv --cov-report term-missing --cov parallelproj  --cov-fail-under=100
       env: 
         PARALLELPROJ_C_LIB: ${{github.workspace}}\libparallelproj_install\bin\parallelproj_c.dll
-
