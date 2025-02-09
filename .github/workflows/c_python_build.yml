@@ -95,6 +95,13 @@ jobs:
       env: 
         PARALLELPROJ_C_LIB: ${{github.workspace}}/libparallelproj_install/lib/libparallelproj_c.so
 
+    - if: matrix.os == 'macos-latest'
+      name: Run Tests
+      run: |
+        pytest tests -vv --cov-report term-missing --cov parallelproj  --cov-fail-under=100
+      env: 
+        PARALLELPROJ_C_LIB: ${{github.workspace}}/libparallelproj_install/lib/libparallelproj_c.dylib
+
     - if: matrix.os == 'windows-latest'
       name: Run Tests
       run: |
