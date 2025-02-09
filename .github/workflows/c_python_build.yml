@@ -26,15 +26,15 @@ jobs:
 
     strategy:
       matrix:
-        os: [ubuntu-latest, windows-latest] # not building on mac-os because there is no OpenMP
+        os: [ubuntu-latest, windows-latest]
         include:
           - python-version: 3.9
-            numpy-version: 1.23  # Python 3.9 -> NumPy 1.23
+            numpy-version: 1.23
           - python-version: 3.12
-            numpy-version: latest  # Python 3.12 -> Latest NumPy
+            numpy-version: latest
         exclude:
-          - os: windows-latest
-            python-version: 3.9
+          - os: windows-latest  #  Exclude Windows builds for:
+            python-version: 3.9  # Python 3.9
 
     steps:
     - uses: actions/checkout@v4
@@ -65,7 +65,11 @@ jobs:
 
     - name: Install numpy
       run: |
-        pip install numpy==${{ matrix.numpy-version }}
+        if [ "${{ matrix.numpy-version }}" = "latest" ]; then
+          pip install numpy
+        else
+          pip install numpy==${{ matrix.numpy-version }}
+        fi
 
     - name: Install the package
       run: |
