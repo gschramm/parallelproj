@@ -33,6 +33,8 @@ jobs:
           - python-version: 3.9
             numpy-version: 1.23
             os: ubuntu-latest
+    
+    name: ${{ matrix.os }}_py-${{ python-version }}_np-${{ numpy-version }}
 
     steps:
     - uses: actions/checkout@v4
