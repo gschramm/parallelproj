@@ -42,6 +42,8 @@ jobs:
       run: |
         brew update
         brew install llvm libomp  # Install OpenMP
+        echo "CC=/opt/homebrew/opt/llvm/bin/clang" >> $GITHUB_ENV
+        echo "CXX=/opt/homebrew/opt/llvm/bin/clang++" >> $GITHUB_ENV
         export PATH="/opt/homebrew/opt/llvm/bin:$PATH"
         export LDFLAGS="-L/opt/homebrew/opt/llvm/lib"
         export CFLAGS="-I/opt/homebrew/opt/llvm/include"
