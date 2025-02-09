@@ -71,6 +71,7 @@ jobs:
         fi
 
     - name: Install the package
+      shell: bash 
       run: |
         pip install dist/*.whl
     
