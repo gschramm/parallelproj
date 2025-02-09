@@ -44,10 +44,6 @@ jobs:
         brew install llvm libomp  # Install OpenMP
         echo "CC=/opt/homebrew/opt/llvm/bin/clang" >> $GITHUB_ENV
         echo "CXX=/opt/homebrew/opt/llvm/bin/clang++" >> $GITHUB_ENV
-        export PATH="/opt/homebrew/opt/llvm/bin:$PATH"
-        export LDFLAGS="-L/opt/homebrew/opt/llvm/lib"
-        export CFLAGS="-I/opt/homebrew/opt/llvm/include"
-        export CPPFLAGS="-I/opt/homebrew/opt/llvm/include"
 
     - name: Configure CMake
       # Configure CMake in a 'build' subdirectory. `CMAKE_BUILD_TYPE` is only required if you are using a single-configuration generator such as make.
