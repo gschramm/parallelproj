@@ -40,7 +40,8 @@ jobs:
     - name: Install openmp on macOS
       if: runner.os == 'macOS'
       run: |
-        brew install libomp  # Install OpenMP
+        brew update
+        brew install llvm libomp  # Install OpenMP
 
 
     - name: Configure CMake
