@@ -28,12 +28,12 @@ jobs:
       matrix:
         os: [ubuntu-latest, windows-latest] # not building on mac-os because there is no OpenMP
         python-version: [3.9, 3.12]
-        test-env: [test-numpy-1, test-numpy-2]
+        numpy-version: [1.23, 2.0]
         exclude:
           - os: windows-latest
             python-version: 3.9
           - os: windows-latest
-            test-env: test-numpy-1
+            numpy-version: 1.23
 
     steps:
     - uses: actions/checkout@v4
@@ -47,29 +47,43 @@ jobs:
       # Build your program with the given configuration
       run: cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}} --target install
 
-    - name: Set up PDM
-      uses: pdm-project/setup-pdm@v4
+    - name: Set up Python
+      uses: actions/setup-python@v4
       with:
         python-version: ${{ matrix.python-version }}
 
-    - name: Show package version
+    - name: Install build
       run: |
-        pdm show --version
-    - name: Install dependencies and package
+        python -m pip install --upgrade pip
+        pip install build
+
+    - name: Build the package
       run: |
-        pdm install -d -G ${{ matrix.test-env }}
+        python -m build
+
+    - name: Install numpy
+      run: |
+        pip install numpy==${{ matrix.numpy-version }}
+
+    - name: Install the package
+      run: |
+        pip install dist/*.whl
+    
+    - name: Install tests dependencies
+      run: |
+        pip install pytest
+        pip install array-api-strict~=1.0
 
     - if: matrix.os == 'ubuntu-latest'
       name: Run Tests
       run: |
-        pdm run -v pytest tests -v --cov-report term-missing --cov "src/parallelproj"  --cov-fail-under=100
+        pytest tests -vv --cov-report term-missing --cov "src/parallelproj"  --cov-fail-under=100
       env: 
         PARALLELPROJ_C_LIB: ${{github.workspace}}/libparallelproj_install/lib/libparallelproj_c.so
 
     - if: matrix.os == 'windows-latest'
       name: Run Tests
       run: |
-        pdm run -v pytest tests -v --cov-report term-missing --cov "src/parallelproj"  --cov-fail-under=100
+        pytest tests -vv --cov-report term-missing --cov "src/parallelproj"  --cov-fail-under=100
       env: 
         PARALLELPROJ_C_LIB: ${{github.workspace}}\libparallelproj_install\bin\parallelproj_c.dll
-
