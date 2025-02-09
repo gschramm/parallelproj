@@ -81,13 +81,13 @@ jobs:
     - if: matrix.os == 'ubuntu-latest'
       name: Run Tests
       run: |
-        pytest tests -vv --cov-report term-missing --cov "src/parallelproj"  --cov-fail-under=100
+        pytest tests -vv --cov-report term-missing --cov parallelproj  --cov-fail-under=100
       env: 
         PARALLELPROJ_C_LIB: ${{github.workspace}}/libparallelproj_install/lib/libparallelproj_c.so
 
     - if: matrix.os == 'windows-latest'
       name: Run Tests
       run: |
-        pytest tests -vv --cov-report term-missing --cov "src/parallelproj"  --cov-fail-under=100
+        pytest tests -vv --cov-report term-missing --cov parallelproj  --cov-fail-under=100
       env: 
         PARALLELPROJ_C_LIB: ${{github.workspace}}\libparallelproj_install\bin\parallelproj_c.dll
