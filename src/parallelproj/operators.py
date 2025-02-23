@@ -765,19 +765,22 @@ class GradientFieldProjectionOperator(LinearOperator):
        P_{\\xi_n}x = x - \\langle \\xi_n, x \\rangle \\xi_n
 
     .. math::
-       \\xi_n = \\nabla v_n / \\| \\nabla v_n \\|_{\\eta}
+       \\xi_n = g_n / \\| g_n \\|_{\\eta}
+
+    for the joint gradient field :math:`g_n`
     """
 
     def __init__(self, gradient_field: Array, eta: float = 0.0):
-        """init method
-
+        """
         Parameters
         ----------
         gradient_field : Array
             gradient field. In 3D, the shape would be [3,n0,n1,n2].
             In 2D, the shape would be [2,n0,n1].
+            This can be e.g. the output of the FiniteForwardDifference operator
+            applied to a structural prior image.
         eta : float, optional
-            smoothing parameter
+            smoothing parameter used in the pointwise gradient norm
             default 0.0
         """
 
@@ -810,18 +813,22 @@ class GradientFieldProjectionOperator(LinearOperator):
 
     @property
     def xp(self):
+        """array module of the operator"""
         return self._xp
 
     @property
     def dev(self):
+        """device of the operator"""
         return self._dev
 
     @property
     def eta(self) -> float:
+        """smoothing parameter"""
         return self._eta
 
     @property
     def normalized_gradient_field(self):
+        """normalized gradient field"""
         return self._normalized_gradient_field
 
     def _apply(self, x: Array) -> Array:
