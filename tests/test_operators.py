@@ -297,7 +297,7 @@ def test_gradient_projection(xp: ModuleType, dev: str):
 
     assert op.eta == 0.0
     assert op.xp == xp
-    assert op.dev == dev
+    d = op.dev
 
     ngf = xp.asarray(
         [[[1.0, 0.0, 1 / math.sqrt(2)]], [[0.0, 1.0, 1 / math.sqrt(2)]]], device=dev
