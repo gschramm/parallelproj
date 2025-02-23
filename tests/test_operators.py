@@ -295,6 +295,8 @@ def test_gradient_projection(xp: ModuleType, dev: str):
 
     op = parallelproj.GradientFieldProjectionOperator(g, eta=0.0)
 
+    assert op.eta == 0.0
+
     ngf = xp.asarray(
         [[[1.0, 0.0, 1 / math.sqrt(2)]], [[0.0, 1.0, 1 / math.sqrt(2)]]], device=dev
     )
