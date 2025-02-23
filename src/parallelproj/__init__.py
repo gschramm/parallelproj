@@ -31,6 +31,7 @@ from .operators import (
     VstackOperator,
     LinearOperatorSequence,
     FiniteForwardDifference,
+    GradientFieldProjectionOperator,
 )
 
 from .projectors import (
@@ -82,6 +83,7 @@ __all__ = [
     "VstackOperator",
     "LinearOperatorSequence",
     "FiniteForwardDifference",
+    "GradientFieldProjectionOperator",
     "ParallelViewProjector2D",
     "ParallelViewProjector3D",
     "RegularPolygonPETProjector",

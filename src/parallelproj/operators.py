@@ -788,28 +788,35 @@ class GradientFieldProjectionOperator(LinearOperator):
         self._dev = device(gradient_field)
         self._eta = eta
 
-        norm = self._xp.sqrt(self._xp.sum(gradient_field**2 + self._eta**2, axis=0))
+        self._in_shape = gradient_field.shape
+        self._out_shape = gradient_field.shape
+
+        gradient_field_float = self._xp.astype(gradient_field, self._xp.float64)
+
+        norm = self._xp.sqrt(
+            self._xp.sum(gradient_field_float**2 + self._eta**2, axis=0)
+        )
         inds = norm > 0
         self._normalized_gradient_field = self._xp.zeros(
             gradient_field.shape,
-            dtype=gradient_field.dtype,
+            dtype=self._xp.float64,
             device=self._dev,
         )
 
         for i in range(self.out_shape[0]):
             self._normalized_gradient_field[i, ...][inds] = (
-                gradient_field[i, ...][inds] / norm[inds]
+                gradient_field_float[i, ...][inds] / norm[inds]
             )
 
         super().__init__()
 
     @property
     def in_shape(self) -> tuple[int]:
-        return self._normalized_gradient_field.shape
+        return self._in_shape
 
     @property
     def out_shape(self) -> tuple[int]:
-        return self._normalized_gradient_field.shape
+        return self._out_shape
 
     @property
     def xp(self):

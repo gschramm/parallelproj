@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import pytest
+import math
 import parallelproj
 import array_api_compat
 import array_api_compat.numpy as np
@@ -284,3 +285,32 @@ def test_finite_difference(xp: ModuleType, dev: str):
 
     with pytest.raises(ValueError):
         A = parallelproj.FiniteForwardDifference((3, 3, 3, 3, 3))
+
+
+def test_gradient_projection(xp: ModuleType, dev: str):
+    np.random.seed(0)
+
+    # g = xp.asarray([[[1.0, 0.0, 1.0]], [[0.0, 1.0, 1.0]]], device=dev)
+    g = xp.asarray([[[1, 0, 1]], [[0, 1, 1]]], device=dev)
+
+    op = parallelproj.GradientFieldProjectionOperator(g, eta=0.0)
+
+    ngf = xp.asarray(
+        [[[1.0, 0.0, 1 / math.sqrt(2)]], [[0.0, 1.0, 1 / math.sqrt(2)]]], device=dev
+    )
+
+    assert allclose(ngf, op.normalized_gradient_field)
+
+    x = xp.asarray([[[1.0, 1.0, 1.0]], [[0.0, 0.0, 0.0]]], device=dev)
+
+    px = op(x)
+    px2 = (
+        x
+        - xp.sum(x * op.normalized_gradient_field, axis=0)
+        * op.normalized_gradient_field
+    )
+
+    assert allclose(px, px2)
+
+    # test call to norm
+    op_norm = op.norm(xp, dev)
