@@ -19,7 +19,7 @@ import array_api_compat
 import numpy.ctypeslib as npct
 
 from types import ModuleType
-from typing import Union
+from typing import Union, TYPE_CHECKING
 
 
 # check if cuda is present
@@ -31,25 +31,13 @@ cupy_enabled = importlib.util.find_spec("cupy") is not None
 # check if cupy is available
 torch_enabled = importlib.util.find_spec("torch") is not None
 
-if cupy_enabled and torch_enabled:
+if TYPE_CHECKING:
     import array_api_compat.cupy as cp
     import array_api_compat.torch as torch
 
-    # type alias for array
-    Array = Union[np.ndarray, cp.ndarray, torch.Tensor]
-elif cupy_enabled and not torch_enabled:
-    import array_api_compat.cupy as cp
-
-    # type alias for array
-    Array = Union[np.ndarray, cp.ndarray]
-elif not cupy_enabled and torch_enabled:
-    import array_api_compat.torch as torch
-
-    # type alias for array
-    Array = Union[np.ndarray, torch.Tensor]
+    Array = Union[np.ndarray, cp.ndarray, torch.Tensor]  # Used for type checking
 else:
-    # type alias for array
-    Array = np.ndarray
+    Array = np.ndarray  # Default at runtime
 
 
 # numpy ctypes lib array definitions
@@ -1455,7 +1443,6 @@ def count_event_multiplicity(events: Array) -> Array:
     mu = xp.reshape(mu, (array_api_compat.size(mu),))
 
     return mu
-
 
 
 def to_numpy_array(x: Array) -> np.ndarray:
