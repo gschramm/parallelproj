@@ -44,7 +44,8 @@ extensions = [
     "sphinxcontrib.bibtex",
 ]
 
-bibtex_bibfiles = [os.path.abspath(os.path.join(os.path.dirname(__file__), "refs.bib"))]
+# bibtex_bibfiles = [os.path.abspath(os.path.join(os.path.dirname(__file__), "refs.bib"))]
+bibtex_bibfiles = ["refs.bib"]
 templates_path = ["_templates"]
 exclude_patterns = []
 

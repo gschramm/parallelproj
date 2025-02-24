@@ -6,7 +6,7 @@ from types import ModuleType
 import abc
 import numpy as np
 import array_api_compat
-from array_api_compat import device
+from array_api_compat import device, get_namespace
 from parallelproj import Array
 from collections.abc import Sequence
 
@@ -753,3 +753,104 @@ class FiniteForwardDifference(LinearOperator):
             res = div0 + div1 + div2 + div3
 
         return res
+
+
+class GradientFieldProjectionOperator(LinearOperator):
+    """Gradient Field Projection Operator
+
+    See Ehrhardt and Betcke: "Multicontrast MRI Reconstruction with Structure-Guided Total Variation"
+    https://doi.org/10.1137/15M1047325
+
+    .. math::
+       P_{\\xi_n}x = x - \\langle \\xi_n, x \\rangle \\xi_n
+
+    .. math::
+       \\xi_n = g_n / \\| g_n \\|_{\\eta}
+
+    for the joint gradient field :math:`g_n`
+    """
+
+    def __init__(self, gradient_field: Array, eta: float = 0.0):
+        """
+        Parameters
+        ----------
+        gradient_field : Array
+            a real gradient field. In 3D, the shape would be [3,n0,n1,n2].
+            In 2D, the shape would be [2,n0,n1].
+            This can be e.g. the output of the FiniteForwardDifference operator
+            applied to a structural prior image.
+        eta : float, optional
+            smoothing parameter used in the pointwise gradient norm
+            default 0.0
+        """
+
+        self._xp = get_namespace(gradient_field)
+        self._dev = device(gradient_field)
+
+        if (
+            gradient_field.dtype == self._xp.complex64
+            or gradient_field.dtype == self._xp.complex128
+        ):
+            raise ValueError("complex gradient fields not supported")
+
+        self._eta = eta
+
+        self._in_shape = gradient_field.shape
+        self._out_shape = gradient_field.shape
+
+        gradient_field_float = self._xp.astype(gradient_field, self._xp.float64)
+
+        norm = self._xp.sqrt(
+            self._xp.sum(gradient_field_float**2 + self._eta**2, axis=0)
+        )
+        inds = norm > 0
+        self._normalized_gradient_field = self._xp.zeros(
+            gradient_field.shape,
+            dtype=self._xp.float64,
+            device=self._dev,
+        )
+
+        for i in range(self.out_shape[0]):
+            self._normalized_gradient_field[i, ...][inds] = (
+                gradient_field_float[i, ...][inds] / norm[inds]
+            )
+
+        super().__init__()
+
+    @property
+    def in_shape(self) -> tuple[int]:
+        return self._in_shape
+
+    @property
+    def out_shape(self) -> tuple[int]:
+        return self._out_shape
+
+    @property
+    def xp(self):
+        """array module of the operator"""
+        return self._xp
+
+    @property
+    def dev(self):
+        """device of the operator"""
+        return self._dev
+
+    @property
+    def eta(self) -> float:
+        """smoothing parameter"""
+        return self._eta
+
+    @property
+    def normalized_gradient_field(self):
+        """normalized gradient field"""
+        return self._normalized_gradient_field
+
+    def _apply(self, x: Array) -> Array:
+        return (
+            x
+            - self._xp.sum(x * self._normalized_gradient_field, axis=0)
+            * self._normalized_gradient_field
+        )
+
+    def _adjoint(self, y: Array) -> Array:
+        return self._apply(y)
