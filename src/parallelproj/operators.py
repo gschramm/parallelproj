@@ -810,9 +810,8 @@ class GradientFieldProjectionOperator(LinearOperator):
 
         super().__init__()
 
-        if (
-            self._xp.dtype(gradient_field) == self._xp.complex64
-            or self._xp.dtype(gradient_field) == self._xp.complex128
+        if self._xp.isdtype(gradient_field, self._xp.complex64) or self._xp.isdtype(
+            gradient_field, self._xp.complex128
         ):
             raise ValueError("complex gradient fields not supported")
 
