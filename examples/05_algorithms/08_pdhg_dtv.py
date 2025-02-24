@@ -7,7 +7,7 @@ to minimize the negative  Poisson log-likelihood function combined with a
 directional total variation regularizer (a structural prior):
 
 .. math::
-    f(x) = \\sum_{i=1}^m \\bar{d}_i (x) - d_i \\log(\\bar{d}_i (x)) + \\beta \\|P_\\{\\xi} \\nabla x \\|_{1,2}
+    f(x) = \\sum_{i=1}^m \\bar{d}_i (x) - d_i \\log(\\bar{d}_i (x)) + \\beta \\|P_{\\xi} \\nabla x \\|_{1,2}
 
 subject to
 
@@ -19,9 +19,7 @@ using the linear forward model
 .. math::
     \\bar{d}(x) = A x + s
 
-See Ehrhardt and Betcke:
-"Multi-Contrast MRI Reconstruction with Structure-Guided Total Variation"
-SIAM, https://doi.org/10.1137/15M1047325
+see :cite:p:`Ehrhardt2016` and :cite:p:`Ehrhardt2019` for details.
     
 .. tip::
     parallelproj is python array API compatible meaning it supports different 
