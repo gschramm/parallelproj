@@ -786,6 +786,13 @@ class GradientFieldProjectionOperator(LinearOperator):
 
         self._xp = get_namespace(gradient_field)
         self._dev = device(gradient_field)
+
+        if (
+            gradient_field.dtype == self._xp.complex64
+            or gradient_field.dtype == self._xp.complex128
+        ):
+            raise ValueError("complex gradient fields not supported")
+
         self._eta = eta
 
         self._in_shape = gradient_field.shape
@@ -809,11 +816,6 @@ class GradientFieldProjectionOperator(LinearOperator):
             )
 
         super().__init__()
-
-        if self._xp.isdtype(gradient_field, self._xp.complex64) or self._xp.isdtype(
-            gradient_field, self._xp.complex128
-        ):
-            raise ValueError("complex gradient fields not supported")
 
     @property
     def in_shape(self) -> tuple[int]:
