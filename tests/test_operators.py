@@ -318,3 +318,7 @@ def test_gradient_projection(xp: ModuleType, dev: str):
 
     # test call to norm
     op_norm = op.norm(xp, dev)
+
+    with pytest.raises(ValueError):
+        gc = xp.asarray([[[1j, 0, 1]], [[0, 1, 1]]], device=dev)
+        A = parallelproj.GradientFieldProjectionOperator(gc)

@@ -775,7 +775,7 @@ class GradientFieldProjectionOperator(LinearOperator):
         Parameters
         ----------
         gradient_field : Array
-            gradient field. In 3D, the shape would be [3,n0,n1,n2].
+            a real gradient field. In 3D, the shape would be [3,n0,n1,n2].
             In 2D, the shape would be [2,n0,n1].
             This can be e.g. the output of the FiniteForwardDifference operator
             applied to a structural prior image.
@@ -809,6 +809,12 @@ class GradientFieldProjectionOperator(LinearOperator):
             )
 
         super().__init__()
+
+        if (
+            self._xp.dtype(gradient_field) == self._xp.complex64
+            or self._xp.dtype(gradient_field) == self._xp.complex128
+        ):
+            raise ValueError("complex gradient fields not supported")
 
     @property
     def in_shape(self) -> tuple[int]:
