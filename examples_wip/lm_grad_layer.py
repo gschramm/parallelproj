@@ -15,10 +15,8 @@ of an autograd layer.
 from __future__ import annotations
 from parallelproj import Array
 
-#import array_api_compat.numpy as xp
-
-import array_api_compat.cupy as xp
-# import array_api_compat.torch as xp
+import array_api_compat.numpy as np
+import array_api_compat.torch as xp
 
 import parallelproj
 from array_api_compat import to_device, size
@@ -218,7 +216,8 @@ lm_pet_lin_op = parallelproj.CompositeLinearOperator((lm_att_op, lm_proj, res_mo
 # the same holds for adjoint_ones (should be precomputed and saved to disk)
 
 # calculate the gradient of the negative Poisson log-likelihood for a random image x
-x = xp.random.rand(*proj.in_shape)
+np.random.seed(1)
+x = xp.asarray(np.random.rand(*proj.in_shape), device=dev, dtype=xp.float32)
 
 # affine forward model evaluated at x
 z_sino = pet_lin_op(x) + contamination
@@ -249,7 +248,7 @@ assert xp.allclose(lm_grad,sino_grad, atol = 1e-2) # lower limit to the abs tole
 # the backward pass needs to compute the Hessian(x) applied to an image w
 
 # grad_output next to ctx is usually the input passed to the backward pass
-grad_output = xp.random.rand(*proj.in_shape)
+grad_output = xp.asarray(np.random.rand(*proj.in_shape), device=dev, dtype=xp.float32)
 hess_app_grad_output =  pet_lin_op.adjoint(y * pet_lin_op(grad_output) / (z_sino**2))
 hess_app_grad_output_lm = lm_pet_lin_op.adjoint(lm_pet_lin_op(grad_output) / z_lm**2)
 
@@ -257,3 +256,6 @@ hess_app_grad_output_lm = lm_pet_lin_op.adjoint(lm_pet_lin_op(grad_output) / z_l
 # the 2nd way should be faster and more memory efficient for real world low count PET data
 
 assert xp.allclose(hess_app_grad_output, hess_app_grad_output_lm, atol = 1e-2) # lower limit to the abs tolerance is needed
+
+# the only thing that is now left is to properly wrap everything in a pytorch autograd layer
+# as done in ../examples/07_torch/01_run_projection_layer.py
