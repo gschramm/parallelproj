@@ -18,6 +18,8 @@ from parallelproj import Array
 import array_api_compat.numpy as np
 import array_api_compat.torch as xp
 
+import array_api_compat.torch as torch
+
 import parallelproj
 from array_api_compat import to_device, size
 import array_api_compat.numpy as np
@@ -259,3 +261,13 @@ assert xp.allclose(hess_app_grad_output, hess_app_grad_output_lm, atol = 1e-2) #
 
 # the only thing that is now left is to properly wrap everything in a pytorch autograd layer
 # as done in ../examples/07_torch/01_run_projection_layer.py
+
+# %%
+# calculate the gradient of the negative Poisson log-likelihood in listmode using a dedicated pytorch autograd layer
+
+from utils import LMPoissonLogLDescent
+lm_grad_layer = LMPoissonLogLDescent.apply
+
+lm_grad2 = lm_grad_layer(x.unsqueeze(0).unsqueeze(0), lm_pet_lin_op, contamination_list.unsqueeze(0), adjoint_ones.unsqueeze(0))
+
+assert xp.allclose(lm_grad, lm_grad2, atol = 1e-4) # lower limit to the abs tolerance is needed
