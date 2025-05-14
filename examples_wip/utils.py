@@ -59,7 +59,7 @@ class LMPoissonLogLDescent(torch.autograd.Function):
             g[i, ...] = adjoint_ones[i, ...] - lm_fwd_operator.adjoint(1/z_lm[i, ...])
         
         # save z for the backward pass
-        ctx.z_lm = z_lm
+        ctx.save_for_backward(z_lm)
 
         return g
 
@@ -89,7 +89,8 @@ class LMPoissonLogLDescent(torch.autograd.Function):
             return None, None, None, None
         else:
             lm_fwd_operator = ctx.lm_fwd_operator
-            z_lm = ctx.z_lm
+            z_lm = ctx.saved_tensors[0]
+
 
             batch_size = grad_output.shape[0]
 
