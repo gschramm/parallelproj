@@ -40,13 +40,13 @@ To install parallelproj and cupy (optional and only if you have a CUDA GPU) from
 
         .. code-block:: console
         
-           $ mamba install parallelproj cupy
+           $ mamba install parallelproj cupy<=13.4
 
     .. tab-item:: conda
 
         .. code-block:: console
         
-           $ conda install -c conda-forge parallelproj cupy
+           $ conda install -c conda-forge parallelproj cupy<=13.4
 
 .. note::
    On conda-forge, CPU, CUDA 11 and CUDA 12 builds of `libparallelproj` are availalbe.
@@ -65,7 +65,7 @@ To install parallelproj and pytorch (optional) from conda-forge, run
 
         .. code-block:: console
         
-           $ mamba install parallelproj pytorch cupy
+           $ mamba install parallelproj pytorch cupy<=13.4
 
     .. tab-item:: mamba, pytorch without CUDA support
 
@@ -77,7 +77,7 @@ To install parallelproj and pytorch (optional) from conda-forge, run
 
         .. code-block:: console
         
-           $ conda install -c conda-forge parallelproj pytorch cupy
+           $ conda install -c conda-forge parallelproj pytorch cupy<=13.4
 
     .. tab-item:: conda pytorch without CUDA support
 
