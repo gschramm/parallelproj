@@ -1,3 +1,9 @@
+## 1.10.2 (Aug 20, 2025)
+
+- add compatibility for latest cupy version (>= 13.5) which require `from_dlpack` to convert
+from torch tensors
+- fix minor issues to be compatible with `array-api-strict~=2.0`
+
 ## 1.10.1 (Jan 15, 2025)
 
 - add a check whether sum of tof bins along LOR is non-zero before running
