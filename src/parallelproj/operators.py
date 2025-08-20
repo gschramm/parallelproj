@@ -479,9 +479,11 @@ class GaussianFilterOperator(LinearOperator):
             else:
                 sigma = self._sigma
 
-            return xp.asarray(
-                ndimagex.gaussian_filter(cp.asarray(x), sigma=sigma, **self._kwargs),
-                device=device(x),
+            return array_api_compat.to_device(
+                xp.from_dlpack(
+                    ndimagex.gaussian_filter(cp.asarray(x), sigma=sigma, **self._kwargs)
+                ),
+                device(x),
             )
         else:
             import scipy.ndimage as ndimage
@@ -491,9 +493,11 @@ class GaussianFilterOperator(LinearOperator):
             else:
                 sigma = self._sigma
 
-            return xp.asarray(
-                ndimage.gaussian_filter(np.asarray(x), sigma=sigma, **self._kwargs),
-                device=device(x),
+            return array_api_compat.to_device(
+                xp.from_dlpack(
+                    ndimage.gaussian_filter(np.asarray(x), sigma=sigma, **self._kwargs)
+                ),
+                device(x),
             )
 
     def _adjoint(self, y: Array) -> Array:

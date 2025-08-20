@@ -5,6 +5,8 @@ from __future__ import annotations
 import abc
 from parallelproj import Array
 import matplotlib.pyplot as plt
+import numpy as np
+import array_api_compat
 
 from types import ModuleType
 from array_api_compat import size
@@ -226,26 +228,20 @@ class BlockPETScannerModule(PETScannerModule):
         self._spacing = spacing
 
         # calculate the LOR endpoints
-        x0 = spacing[0] * (
-            xp.arange(shape[0], device=dev, dtype=xp.float32) - (shape[0] - 1) / 2
-        )
-        x1 = spacing[1] * (
-            xp.arange(shape[1], device=dev, dtype=xp.float32) - (shape[1] - 1) / 2
-        )
-        x2 = spacing[2] * (
-            xp.arange(shape[2], device=dev, dtype=xp.float32) - (shape[2] - 1) / 2
-        )
+        x0 = spacing[0] * (np.arange(shape[0], dtype=np.float32) - (shape[0] - 1) / 2)
+        x1 = spacing[1] * (np.arange(shape[1], dtype=np.float32) - (shape[1] - 1) / 2)
+        x2 = spacing[2] * (np.arange(shape[2], dtype=np.float32) - (shape[2] - 1) / 2)
 
-        X0, X1, X2 = xp.meshgrid(x0, x1, x2, indexing="ij")
+        # in the current version (1.12.0) of array_api_compat.torch the indexing kwargs is ignored
+        # which is why we stick to numpy
+        X0, X1, X2 = np.meshgrid(x0, x1, x2, indexing="ij")
 
-        self._lor_endpoints = xp.stack(
-            (
-                xp.reshape(X0, (-1,)),
-                xp.reshape(X1, (-1,)),
-                xp.reshape(X2, (-1,)),
-            ),
+        self._lor_endpoints = np.stack(
+            (X0.ravel(), X1.ravel(), X2.ravel()),
             axis=-1,
         )
+
+        self._lor_endpoints = xp.asarray(self._lor_endpoints, device=dev)
 
         if affine_transformation_matrix is not None:
             tmp = xp.ones((self._lor_endpoints.shape[0], 4), device=dev)
@@ -500,7 +496,7 @@ class ModularizedPETScannerGeometry:
                     self._all_lor_endpoints_index_offset[i] + module.num_lor_endpoints
                 ),
                 :,
-            ] = module.get_lor_endpoints()
+            ] = self.xp.astype(module.get_lor_endpoints(), self.xp.float32)
 
         self._all_lor_endpoints_module_number = [
             int(self._num_lor_endpoints_per_module[i]) * [i]

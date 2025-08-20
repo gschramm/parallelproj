@@ -327,6 +327,8 @@ if cuda_present:
 
     # ---------------------------------------------------------------------------------------
     if cupy_enabled:
+        import cupy as cp
+
         if "PARALLELPROJ_CUDA_KERNEL_FILE" in os.environ:
             cuda_kernel_file = Path(os.environ["PARALLELPROJ_CUDA_KERNEL_FILE"])
         else:
@@ -536,7 +538,9 @@ def joseph3d_fwd(
                 np.asarray(img.shape, dtype=np.int32),
             )
 
-    return xp.asarray(img_fwd, device=array_api_compat.device(img))
+    return array_api_compat.to_device(
+        xp.from_dlpack(img_fwd), array_api_compat.device(img)
+    )
 
 
 def joseph3d_back(
@@ -651,7 +655,9 @@ def joseph3d_back(
                 np.asarray(back_img.shape, dtype=np.int32),
             )
 
-    return xp.asarray(back_img, device=array_api_compat.device(img_fwd))
+    return array_api_compat.to_device(
+        xp.from_dlpack(back_img), array_api_compat.device(img_fwd)
+    )
 
 
 def joseph3d_fwd_tof_sino(
@@ -1439,7 +1445,7 @@ def count_event_multiplicity(events: Array) -> Array:
     else:
         tmp = np.unique(events, axis=0, return_counts=True, return_inverse=True)
 
-    mu = xp.asarray(tmp[2][tmp[1]], device=dev)
+    mu = array_api_compat.to_device(xp.from_dlpack(tmp[2][tmp[1]]), dev)
     mu = xp.reshape(mu, (array_api_compat.size(mu),))
 
     return mu
