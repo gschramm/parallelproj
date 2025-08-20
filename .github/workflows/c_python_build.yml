@@ -86,7 +86,7 @@ jobs:
     - name: Install tests dependencies
       run: |
         pip install pytest pytest-cov
-        pip install array-api-strict~=1.0
+        pip install array-api-strict~=2.0
 
     - if: matrix.os == 'ubuntu-latest'
       name: Run Tests

@@ -179,8 +179,8 @@ class EqualBlockPETLORDescriptor(PETLORDescriptor):
         )
 
         for i, block_pair_num in enumerate(block_pair_nums):
-            bs = self._all_block_pairs[block_pair_num, 0]
-            be = self._all_block_pairs[block_pair_num, 1]
+            bs = int(self._all_block_pairs[block_pair_num, 0])
+            be = int(self._all_block_pairs[block_pair_num, 1])
 
             eps = self.scanner.get_lor_endpoints(
                 self.xp.asarray([bs], device=self.dev),
@@ -408,14 +408,22 @@ class RegularPolygonPETLORDescriptor(PETLORDescriptor):
         )
 
         for view in np.arange(self._num_views):
-            self._start_in_ring_index[view, :] = (
-                self.xp.concat((self.xp.arange(m) // 2, self.xp.asarray([n // 2])))
-                - view
-            )[self._radial_trim : -self._radial_trim]
-            self._end_in_ring_index[view, :] = (
-                self.xp.concat((self.xp.asarray([-1]), -((self.xp.arange(m) + 4) // 2)))
-                - view
-            )[self._radial_trim : -self._radial_trim]
+            self._start_in_ring_index[view, :] = self.xp.astype(
+                (
+                    self.xp.concat((self.xp.arange(m) // 2, self.xp.asarray([n // 2])))
+                    - int(view)
+                )[self._radial_trim : -self._radial_trim],
+                self.xp.int32,
+            )
+            self._end_in_ring_index[view, :] = self.xp.astype(
+                (
+                    self.xp.concat(
+                        (self.xp.asarray([-1]), -((self.xp.arange(m) + 4) // 2))
+                    )
+                    - int(view)
+                )[self._radial_trim : -self._radial_trim],
+                self.xp.int32,
+            )
 
         # shift the negative indices
         self._start_in_ring_index = self.xp.where(

@@ -73,7 +73,7 @@ def test_tof_sino_fwd(
                 )
 
                 trunc_factor = 1.0 / erf(ns / math.sqrt(2))
-                trunc_dist = ns * math.sqrt(sig_t ** 2 + (delta ** 2) / 12)
+                trunc_dist = ns * math.sqrt(sig_t**2 + (delta**2) / 12)
 
                 for i in range(num_tofbins // 2):
 
@@ -99,10 +99,12 @@ def test_tof_sino_fwd(
                                 sig_t,
                                 i,
                                 theory_value,
-                                float(p_tof[0, num_tofbins // 2 + i] - theory_value),
+                                float(p_tof[0, num_tofbins // 2 + i]) - theory_value,
                             )
 
-                        abs_diff = abs(p_tof[0, num_tofbins // 2 + i] - theory_value)
+                        abs_diff = abs(
+                            float(p_tof[0, num_tofbins // 2 + i]) - theory_value
+                        )
                         assert abs_diff < atol
 
                         rel_diff = abs_diff / theory_value
@@ -133,18 +135,18 @@ def test_adjointness(
     # generate random LORs on a sphere around the image volume
     R = 0.8 * xp.max((xp.asarray(img_dim, dtype=xp.float32, device=dev) * voxel_size))
 
-    phis = xp.asarray(np.random.rand(nLORs) * 2 * np.pi, device=dev)
-    costheta = xp.asarray(np.random.rand(nLORs) * 2 - 1, device=dev)
-    sintheta = xp.sqrt(1 - costheta ** 2)
+    phis = xp.asarray(np.random.rand(nLORs) * 2 * np.pi, device=dev, dtype=xp.float32)
+    costheta = xp.asarray(np.random.rand(nLORs) * 2 - 1, device=dev, dtype=xp.float32)
+    sintheta = xp.sqrt(1 - costheta**2)
 
     xstart = xp.zeros((nLORs, 3), dtype=xp.float32, device=dev)
     xstart[:, 0] = R * sintheta * xp.cos(phis)
     xstart[:, 1] = R * sintheta * xp.sin(phis)
     xstart[:, 2] = R * costheta
 
-    phis = xp.asarray(np.random.rand(nLORs) * 2 * np.pi, device=dev)
-    costheta = xp.asarray(np.random.rand(nLORs) * 2 - 1, device=dev)
-    sintheta = xp.sqrt(1 - costheta ** 2)
+    phis = xp.asarray(np.random.rand(nLORs) * 2 * np.pi, device=dev, dtype=xp.float32)
+    costheta = xp.asarray(np.random.rand(nLORs) * 2 - 1, device=dev, dtype=xp.float32)
+    sintheta = xp.sqrt(1 - costheta**2)
 
     xend = xp.zeros((nLORs, 3), dtype=xp.float32, device=dev)
     xend[:, 0] = R * sintheta * xp.cos(phis)
@@ -220,7 +222,7 @@ def test_tof_sino_fwd_sum(
     n = 101
     vsize = 1.0
     voxsize = xp.asarray([vsize, vsize, vsize], dtype=xp.float32, device=dev)
-    tmp = (-0.5 * n + 0.5) * voxsize[0]
+    tmp = float((-0.5 * n + 0.5) * voxsize[0])
     img_origin = xp.asarray([tmp, tmp, tmp], dtype=xp.float32, device=dev)
     num_off = 30
 
