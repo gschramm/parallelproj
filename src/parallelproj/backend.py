@@ -822,7 +822,9 @@ def joseph3d_fwd_tof_sino(
                 lor_dependent_tofcenter_offset,
             )
 
-    return xp.asarray(img_fwd, device=array_api_compat.device(img))
+    return array_api_compat.to_device(
+        xp.from_dlpack(img_fwd), array_api_compat.device(img)
+    )
 
 
 def joseph3d_back_tof_sino(
@@ -1001,7 +1003,9 @@ def joseph3d_back_tof_sino(
                 lor_dependent_tofcenter_offset,
             )
 
-    return xp.asarray(back_img, device=array_api_compat.device(img_fwd))
+    return array_api_compat.to_device(
+        xp.from_dlpack(back_img), array_api_compat.device(img_fwd)
+    )
 
 
 def joseph3d_fwd_tof_lm(
@@ -1169,7 +1173,9 @@ def joseph3d_fwd_tof_lm(
                 lor_dependent_tofcenter_offset,
             )
 
-    return xp.asarray(img_fwd, device=array_api_compat.device(img))
+    return array_api_compat.to_device(
+        xp.from_dlpack(img_fwd), array_api_compat.device(img)
+    )
 
 
 def joseph3d_back_tof_lm(
@@ -1349,7 +1355,9 @@ def joseph3d_back_tof_lm(
                 lor_dependent_tofcenter_offset,
             )
 
-    return xp.asarray(back_img, device=array_api_compat.device(img_fwd))
+    return array_api_compat.to_device(
+        xp.from_dlpack(back_img), array_api_compat.device(img_fwd)
+    )
 
 
 if cupy_enabled:
