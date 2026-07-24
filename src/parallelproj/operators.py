@@ -19,10 +19,14 @@ import array_api_compat
 
 # GPU arrays (CuPy / PyTorch CUDA) are filtered with ``cupyx.scipy.ndimage``
 # directly (see GaussianFilterOperator); CPU arrays (NumPy, PyTorch CPU,
-# array-api-strict) go through ``scipy.ndimage``, which converts them via
-# ``np.asarray``.  Neither path relies on scipy's array-API delegation, so the
-# ``SCIPY_ARRAY_API`` env var is not needed and the operator is independent of
-# the scipy / parallelproj import order.
+# array-api-strict) are converted to a NumPy view first and then filtered with
+# ``scipy.ndimage``.  Neither path relies on scipy's array-API *delegation*
+# (where scipy would compute natively in the input's namespace): under
+# delegation ``gaussian_filter1d`` reverses the kernel with a negative-step
+# slice ``weights[::-1]`` that e.g. PyTorch does not support.  Converting to
+# NumPy ourselves makes the operator robust regardless of the scipy version or
+# the ``SCIPY_ARRAY_API`` env var (and independent of the scipy / parallelproj
+# import order).
 import scipy.ndimage as ndimage
 from array_api_compat import device, get_namespace
 
@@ -31,7 +35,7 @@ try:
 except Exception:
     cp = None
 
-from parallelproj import Array
+from parallelproj import Array, to_numpy_array
 
 
 class LinearOperator(abc.ABC):
@@ -600,10 +604,17 @@ class GaussianFilterOperator(LinearOperator):
             )
             return xp.asarray(xp.from_dlpack(y_cp))
 
-        # CPU arrays (NumPy, PyTorch CPU, array-api-strict) via scipy.ndimage.
-        # scipy may return a plain numpy array even for non-numpy inputs, so
-        # convert the result back to the input's array namespace/device.
-        result = ndimage.gaussian_filter(x, **self._kwargs)
+        # CPU arrays (NumPy, PyTorch CPU, array-api-strict): filter on a NumPy
+        # view, then convert the result back to the input's namespace/device.
+        # We convert to NumPy *ourselves* instead of passing ``x`` to scipy,
+        # because modern (array-API-aware) scipy would otherwise compute
+        # natively in the input's namespace, where ``gaussian_filter1d``
+        # reverses the kernel with a negative-step slice ``weights[::-1]`` that
+        # e.g. PyTorch does not support.  On CPU the torch / array-api-strict
+        # <-> NumPy conversions are zero-copy (shared buffer); only scipy's
+        # output allocation remains, exactly as in the pure-NumPy path.
+        x_np = np.asarray(to_numpy_array(x))
+        result = ndimage.gaussian_filter(x_np, **self._kwargs)
         return xp.asarray(result, device=dev, dtype=x.dtype)
 
     def _adjoint(self, y: Array) -> Array:
