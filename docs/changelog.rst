@@ -4,6 +4,22 @@ Changelog
 2.x
 ---
 
+2.0.1 (Jul 24, 2026)
+^^^^^^^^^^^^^^^^^^^^
+
+Bug fixes
+~~~~~~~~~
+
+- **``GaussianFilterOperator`` now works with PyTorch (and array-api-strict) CPU
+  arrays under modern scipy.** The CPU path previously passed the input array
+  straight to ``scipy.ndimage.gaussian_filter``; with array-API-aware scipy
+  (``SCIPY_ARRAY_API`` / scipy ≥ 1.16) this made scipy compute natively in the
+  input's namespace, where ``gaussian_filter1d`` reverses the kernel with a
+  negative-step slice (``weights[::-1]``) that PyTorch does not support. The
+  operator now filters on a NumPy view (zero-copy on CPU) and converts back, so
+  it is robust regardless of the scipy version or ``SCIPY_ARRAY_API``. This
+  fixes downstream use via e.g. DeepInv.
+
 2.0.0 (Jul 17, 2026)
 ^^^^^^^^^^^^^^^^^^^^
 
