@@ -4,6 +4,22 @@ Changelog
 2.x
 ---
 
+2.0.2 (Jul 29, 2026)
+^^^^^^^^^^^^^^^^^^^^
+
+Bug fixes
+~~~~~~~~~
+
+- **``GaussianFilterOperator``: fully fix tensor-valued ``sigma``.** The 2.0.1
+  fix converted the input array to NumPy, but the actual trigger is a *tensor*
+  ``sigma``: ``scipy.ndimage`` builds the Gaussian kernel in ``sigma``'s array
+  namespace, so a torch / CuPy tensor ``sigma`` yields a tensor kernel that
+  ``gaussian_filter1d`` reverses with a negative-step slice (``weights[::-1]``),
+  which PyTorch does not support — failing even for a plain NumPy input array.
+  ``GaussianFilterOperator`` now coerces ``sigma`` (and other array-valued
+  kwargs) to native Python values (the input NumPy-view safeguard from 2.0.1 is
+  retained). This fully fixes downstream use via e.g. DeepInv.
+
 2.0.1 (Jul 24, 2026)
 ^^^^^^^^^^^^^^^^^^^^
 
