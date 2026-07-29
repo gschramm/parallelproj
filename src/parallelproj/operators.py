@@ -17,16 +17,21 @@ import abc
 import numpy as np
 import array_api_compat
 
-# GPU arrays (CuPy / PyTorch CUDA) are filtered with ``cupyx.scipy.ndimage``
-# directly (see GaussianFilterOperator); CPU arrays (NumPy, PyTorch CPU,
-# array-api-strict) are converted to a NumPy view first and then filtered with
-# ``scipy.ndimage``.  Neither path relies on scipy's array-API *delegation*
-# (where scipy would compute natively in the input's namespace): under
-# delegation ``gaussian_filter1d`` reverses the kernel with a negative-step
-# slice ``weights[::-1]`` that e.g. PyTorch does not support.  Converting to
-# NumPy ourselves makes the operator robust regardless of the scipy version or
-# the ``SCIPY_ARRAY_API`` env var (and independent of the scipy / parallelproj
-# import order).
+# GaussianFilterOperator filters GPU arrays (CuPy / PyTorch CUDA) with
+# ``cupyx.scipy.ndimage`` and CPU arrays (NumPy, PyTorch CPU, array-api-strict)
+# with ``scipy.ndimage``.  Two precautions keep it backend-robust:
+#   * filter kwargs such as ``sigma`` are coerced to native Python values
+#     (see ``_to_builtin``).  scipy builds the Gaussian kernel in ``sigma``'s
+#     array namespace, so a *tensor* ``sigma`` yields a tensor kernel that
+#     ``gaussian_filter1d`` then reverses with a negative-step slice
+#     ``weights[::-1]`` -- unsupported by e.g. PyTorch.  This is the root cause
+#     of the failure; it fires even for a plain NumPy input array.
+#   * on the CPU path the input is additionally converted to a NumPy view, so
+#     scipy never relies on its array-API *delegation* (scipy >= 1.16 /
+#     ``SCIPY_ARRAY_API``) to compute natively in the input's namespace.
+# Together the scipy call is always the canonical ``gaussian_filter(numpy,
+# float)`` form, independent of scipy version and scipy / parallelproj import
+# order.
 import scipy.ndimage as ndimage
 from array_api_compat import device, get_namespace
 
@@ -541,6 +546,30 @@ class ElementwiseMultiplicationOperator(LinearOperator):
         ) or self.xp.isdtype(self._values.dtype, self.xp.complex128)
 
 
+def _to_builtin(value):
+    """Coerce an array/tensor-valued filter kwarg to native Python.
+
+    scipy.ndimage builds the Gaussian kernel in the array namespace of
+    ``sigma``, so a torch / CuPy / array-api tensor ``sigma`` yields a tensor
+    kernel that ``gaussian_filter1d`` reverses with a negative-step slice
+    (``weights[::-1]``), which PyTorch does not support.  Passing native Python
+    scalars / lists avoids this for every backend.
+
+    Plain Python scalars, strings and ``None`` are returned unchanged;
+    lists / tuples are converted element-wise (preserving the container type);
+    NumPy scalars and 0-d / 1-d arrays / tensors become a Python scalar or list.
+    """
+    if isinstance(value, np.generic):
+        return value.item()
+    if value is None or isinstance(value, (bool, int, float, str)):
+        return value
+    if isinstance(value, (list, tuple)):
+        return type(value)(_to_builtin(v) for v in value)
+    # numpy / torch / cupy / array-api arrays (to_numpy_array always returns a
+    # NumPy ndarray, incl. a device->host copy for GPU arrays)
+    return to_numpy_array(value).tolist()
+
+
 class GaussianFilterOperator(LinearOperator):
     """Isotropic Gaussian smoothing operator (self-adjoint).
 
@@ -565,10 +594,15 @@ class GaussianFilterOperator(LinearOperator):
         **kwargs : dict
             passed to scipy.ndimage.gaussian_filter; most commonly ``sigma``
             (standard deviation in pixels), plus optional ``mode``, ``truncate``, etc.
+            Array/tensor-valued arguments (e.g. a torch tensor ``sigma``) are
+            coerced to native Python values so scipy builds the kernel in NumPy
+            (see :func:`_to_builtin`).
         """
         super().__init__()
         self._in_shape = in_shape
-        self._kwargs = kwargs
+        # coerce array/tensor kwargs (most importantly ``sigma``) to native
+        # Python so scipy never builds the kernel in a tensor namespace.
+        self._kwargs = {k: _to_builtin(v) for k, v in kwargs.items()}
 
     @property
     def in_shape(self) -> tuple[int, ...]:
@@ -605,14 +639,12 @@ class GaussianFilterOperator(LinearOperator):
             return xp.asarray(xp.from_dlpack(y_cp))
 
         # CPU arrays (NumPy, PyTorch CPU, array-api-strict): filter on a NumPy
-        # view, then convert the result back to the input's namespace/device.
-        # We convert to NumPy *ourselves* instead of passing ``x`` to scipy,
-        # because modern (array-API-aware) scipy would otherwise compute
-        # natively in the input's namespace, where ``gaussian_filter1d``
-        # reverses the kernel with a negative-step slice ``weights[::-1]`` that
-        # e.g. PyTorch does not support.  On CPU the torch / array-api-strict
-        # <-> NumPy conversions are zero-copy (shared buffer); only scipy's
-        # output allocation remains, exactly as in the pure-NumPy path.
+        # view so scipy never delegates to the input's array namespace (scipy
+        # >= 1.16 / SCIPY_ARRAY_API), then convert the result back.  ``sigma``
+        # & co. were already coerced to native Python in __init__.  On CPU the
+        # torch / array-api-strict <-> NumPy conversions are zero-copy (shared
+        # buffer); only scipy's output allocation remains, as in the pure-NumPy
+        # path.
         x_np = np.asarray(to_numpy_array(x))
         result = ndimage.gaussian_filter(x_np, **self._kwargs)
         return xp.asarray(result, device=dev, dtype=x.dtype)

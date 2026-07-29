@@ -484,3 +484,40 @@ def test_resolve_namespace_device_requires_xp(xp: ModuleType, dev: str) -> None:
     rxp, _ = mop._resolve_namespace_device(None, None)
     assert rxp is mop.xp
     assert mop._resolve_namespace_device(xp, "explicit-dev") == (xp, "explicit-dev")
+
+
+def test_gaussian_filter_to_builtin(xp: ModuleType, dev: str) -> None:
+    """Cover every branch of ``operators._to_builtin`` (sigma coercion).
+
+    Ensures array/tensor-valued filter kwargs are turned into native Python so
+    scipy never builds the Gaussian kernel in a tensor namespace.
+    """
+    import numpy as realnp
+
+    to_builtin = ppo._to_builtin
+
+    # plain python scalars / str / None / bool pass through unchanged
+    assert to_builtin(1.5) == 1.5 and isinstance(to_builtin(1.5), float)
+    assert to_builtin(3) == 3
+    assert to_builtin("reflect") == "reflect"
+    assert to_builtin(None) is None
+    assert to_builtin(True) is True
+
+    # numpy scalar (np.generic) -> python scalar
+    b = to_builtin(realnp.float32(1.5))
+    assert b == 1.5 and isinstance(b, float)
+
+    # list / tuple recurse, preserving container type and coercing elements
+    assert to_builtin((1.5, 2.5)) == (1.5, 2.5)
+    assert to_builtin([realnp.float32(1.0), 2]) == [1.0, 2]
+
+    # array / tensor branch (per backend): 1-d -> list, 0-d -> scalar
+    assert to_builtin(xp.asarray([1.5, 2.0, 2.5], device=dev)) == [1.5, 2.0, 2.5]
+    assert to_builtin(xp.asarray(1.5, device=dev)) == 1.5
+
+    # end-to-end: the operator accepts an array/tensor sigma without error
+    op = ppo.GaussianFilterOperator(
+        (6, 6, 4), sigma=xp.asarray([1.0, 1.0, 1.0], device=dev)
+    )
+    y = op(xp.ones((6, 6, 4), dtype=xp.float32, device=dev))
+    assert tuple(y.shape) == (6, 6, 4)
